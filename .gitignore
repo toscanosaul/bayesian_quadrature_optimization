@@ -1,0 +1,32 @@
+.*
+!.gitignore
+!.gitmodules
+!.scaffold.yaml
+
+#Java
+*.class
+
+log/
+tmp/
+/out/
+ins.xml
+
+# Python
+*.pyc
+.cache
+
+#Packages
+*.egg-info
+
+#Ignore python virtual environments
+env
+
+#test
+htmlcov
+.coverage
+cover/*
+coverage/*
+coverage.xml
+junit.xml
+
+data/problems

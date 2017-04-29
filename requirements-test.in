@@ -1,0 +1,7 @@
+coverage
+doubles
+pytest
+pytest-cov
+flake8
+vcrpy
+zest.releaser
