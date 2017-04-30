@@ -2,13 +2,16 @@ from __future__ import absolute_import
 
 import numpy as np
 
-from collections import defaultdict
-
 from stratified_bayesian_optimization.kernels.abstract_kernel import AbstractKernel
 from stratified_bayesian_optimization.lib.distances import Distances
 from stratified_bayesian_optimization.entities.parameter import ParameterEntity
 from stratified_bayesian_optimization.lib.util import \
     convert_dictionary_gradient_to_simple_dictionary
+from stratified_bayesian_optimization.lib.constant import (
+    MATERN52_NAME,
+    LENGTH_SCALE_NAME,
+    SIGMA2_NAME,
+)
 
 
 class Matern52(AbstractKernel):
@@ -20,7 +23,7 @@ class Matern52(AbstractKernel):
         :param sigma: ParameterEntity
         """
 
-        name = 'Matern52'
+        name = MATERN52_NAME
 
         super(Matern52, self).__init__(name, dimension)
 
@@ -56,7 +59,6 @@ class Matern52(AbstractKernel):
         if sigma2 is not None:
             self.sigma2 = sigma2
 
-
     @classmethod
     def define_kernel_from_array(cls, dimension, params):
         """
@@ -67,8 +69,8 @@ class Matern52(AbstractKernel):
         :return: Matern52
         """
 
-        length_scale = ParameterEntity('length_scale', params[0:dimension], None)
-        sigma2 = ParameterEntity('sigma2', params[dimension:dimension+1], None)
+        length_scale = ParameterEntity(LENGTH_SCALE_NAME, params[0:dimension], None)
+        sigma2 = ParameterEntity(SIGMA2_NAME, params[dimension:dimension+1], None)
 
         return cls(dimension, length_scale, sigma2)
 
@@ -145,8 +147,7 @@ class Matern52(AbstractKernel):
         :param inputs: np.array(nxm)
         :param dimension: (int) dimension of the domain of the kernel
         :return: {
-            'length_scale': {'entry (int)': nxn},
-            'sigma_square': nxn,
+            (int) i: (nxn), derivative respect to the ith parameter
         }
         """
         matern52 = cls.define_kernel_from_array(dimension, params)
@@ -208,8 +209,8 @@ class GradientLSMatern52(object):
         r2 = np.abs(Distances.dist_square_length_scale(ls.value, inputs_1, inputs_2))
         r = np.sqrt(r2)
 
-        part_1 = ((1.0 + np.sqrt(5)*r + (5.0/3.0)*r2) * np.exp (-np.sqrt(5)* r) * (-np.sqrt(5)))
-        part_2 = (np.exp (-np.sqrt(5)* r) * (np.sqrt(5) + (10.0/3.0) * r))
+        part_1 = (1.0 + np.sqrt(5) * r + (5.0/3.0) * r2) * np.exp(-np.sqrt(5) * r) * (-np.sqrt(5))
+        part_2 = (np.exp(-np.sqrt(5) * r) * (np.sqrt(5) + (10.0/3.0) * r))
         derivate_respect_to_r = part_1 + part_2
         return derivate_respect_to_r * sigma2.value
 
@@ -225,7 +226,6 @@ class GradientLSMatern52(object):
 
         :return: np.array(nxd)
         """
-        ##TO DO: GENERALIZE FOR THE CASE WHEN W isn't discrete and does depend on x?
 
         derivate_respect_to_r = cls.gradient_respect_distance_cross(ls, sigma2, point, inputs)
         grad_distance_point = \

@@ -33,3 +33,21 @@ def convert_dictionary_gradient_to_simple_dictionary(dictionary, order_keys):
         simple_dictionary[index] = element
 
     return simple_dictionary
+
+
+def convert_dictionary_from_names_kernels_to_only_parameters(dictionary, order_kernels):
+    """
+
+    :param dictionary: {
+            (str) kernel: {keys_kernel: value_kernel},
+        }
+    :param order_kernels: [str]
+    :return: {
+        {keys_kernel + 'kernel_name': value_kernel}
+    } the indexes are set based on order_keys.
+    """
+    result = {}
+    for kernel in order_kernels:
+        for parameter in dictionary[kernel]:
+            result[parameter] = dictionary[kernel][parameter]
+    return result

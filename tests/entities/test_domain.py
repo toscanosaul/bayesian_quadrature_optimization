@@ -73,7 +73,6 @@ class TestDomainEntity(unittest.TestCase):
         self.spec['problem_name'] = 'test'
         DomainEntity.from_dict(self.spec)
 
-
     def test_validate(self):
 
         self.domain.validate()

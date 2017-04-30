@@ -2,8 +2,6 @@ from __future__ import absolute_import
 
 import unittest
 
-from doubles import expect
-
 import numpy as np
 
 from copy import deepcopy
@@ -16,11 +14,13 @@ class TestFiniteDifferences(unittest.TestCase):
 
     def setUp(self):
         self.h = np.array([1.0])
+
         def f(x):
+
             return Matern52.evaluate_cov_defined_by_params(x, np.array([[2.0, 0.0], [0.0, 2.0]]), 2)
+
         self.f = f
         self.x = np.array([1.0, 1.0, 1.0])
-
 
     def test_forward_difference(self):
 

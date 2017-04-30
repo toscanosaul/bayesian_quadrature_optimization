@@ -2,12 +2,27 @@ from __future__ import absolute_import
 
 from functools import reduce
 
+import numpy as np
+
 from stratified_bayesian_optimization.kernels.abstract_kernel import AbstractKernel
+from stratified_bayesian_optimization.lib.util import (
+    convert_dictionary_gradient_to_simple_dictionary,
+    convert_dictionary_from_names_kernels_to_only_parameters,
+)
+from stratified_bayesian_optimization.lib.constant import (
+    MATERN52_NAME,
+    TASKS_KERNEL_NAME,
+    PRODUCT_KERNELS_SEPARABLE,
+)
+from stratified_bayesian_optimization.lib.util_kernels import find_define_kernel_from_array
 
 
 class ProductKernels(AbstractKernel):
     # TODO - Generaliza to more than two kernels, and cover the case where kernels are defined in
     # the same domain.
+
+    # Possible kernels for the product
+    _possible_kernels_ = [MATERN52_NAME, TASKS_KERNEL_NAME]
 
     def __init__(self, *kernels):
         """
@@ -15,14 +30,13 @@ class ProductKernels(AbstractKernel):
         :param *kernels: ([AbstractKernel])
         """
 
-        name = 'Product_of_'
+        name = PRODUCT_KERNELS_SEPARABLE + ':'
         dimension = 0
         for kernel in kernels:
             name += kernel.name + '_'
             dimension += kernel.dimension
 
         super(ProductKernels, self).__init__(name, dimension)
-
 
         self.kernels = {}
         self.parameters = {}
@@ -36,6 +50,39 @@ class ProductKernels(AbstractKernel):
     @property
     def hypers(self):
         return self.parameters
+
+    @property
+    def name_parameters_as_list(self):
+        """
+
+        :return: ([(name_param, name_params)]) name_params can be other list if name_param
+            represents several parameters (like an array), otherwise name_params=None.
+        """
+        names = []
+        for name in self.names:
+            tmp_names = self.kernels[name].name_parameters_as_list
+            tmp_names = [name_tmp for name_tmp in tmp_names]
+            names += tmp_names
+        return names
+
+    @classmethod
+    def define_kernel_from_array(cls, dimension, params, *args):
+        """
+        :param dimension: [int] list with the dimensions of the kernel
+        :param params: [np.array(k)] The first part are related to the parameters of the first
+            kernel and so on.
+        :param args: [str] List with the names of the kernels.
+
+        :return: ProductKernels
+        """
+
+        kernels = []
+
+        for name, dim, param in zip(args[0], dimension, params):
+            kernel_ct = find_define_kernel_from_array(name)
+            kernels.append(kernel_ct(dim, param))
+
+        return cls(*kernels)
 
     def set_parameters(self, parameters):
         """
@@ -52,13 +99,44 @@ class ProductKernels(AbstractKernel):
     def cov(self, inputs):
         """
 
-        :param inputs: {(str) kernel_name: np.array(nxd)}
+        :param inputs: np.array(nxd)
         :return: np.array(nxn)
         """
 
         return self.cross_cov(inputs, inputs)
 
     def cross_cov(self, inputs_1, inputs_2):
+        """
+
+        :param inputs_1: np.array(nxd)
+        :param inputs_2:  np.array(mxd)
+        :return: np.array(nxm)
+        """
+
+        inputs_1_dict = self.inputs_from_array_to_dict(inputs_1)
+        inputs_2_dict = self.inputs_from_array_to_dict(inputs_2)
+
+        return self.cross_cov_dict(inputs_1_dict, inputs_2_dict)
+
+    def inputs_from_array_to_dict(self, inputs):
+        inputs_1_dict = {}
+        cont = 0
+        for name in self.names:
+            inputs_1_dict[name] = inputs[:, cont: cont + self.kernels[name].dimension]
+            cont += self.kernels[name].dimension
+
+        return inputs_1_dict
+
+    def cov_dict(self, inputs):
+        """
+
+        :param inputs: {(str) kernel_name: np.array(nxd)}
+        :return: np.array(nxn)
+        """
+
+        return self.cross_cov_dict(inputs, inputs)
+
+    def cross_cov_dict(self, inputs_1, inputs_2):
         """
 
         :param inputs_1: {(str) kernel_name: np.array(nxd)}
@@ -74,7 +152,7 @@ class ProductKernels(AbstractKernel):
         """
         :param inputs: {(str) kernel_name: np.array(nxd)}
         :return: {
-            (str) kernel_name: { (str) parameter_name: np.array(nxn) }
+            (str) kernel_name: { (str) parameter_name: np.array(nxn) or {'entry (int)': nxn}}
         }
         """
         # TODO - Generalize to more than two kernels
@@ -91,12 +169,41 @@ class ProductKernels(AbstractKernel):
         for i in range(2):
             grad_product[self.names[i]] = {}
             for name_param in self.kernels[self.names[i]].hypers:
-                grad_product[self.names[i]][name_param] = \
-                    cov[self.names[(i + 1) % 2]] * grad[self.names[i]][name_param]
+                if type(grad[self.names[i]][name_param]) == dict:
+                    grad_product[self.names[i]][name_param] = {}
+                    for entry in grad[self.names[i]][name_param]:
+                        grad_product[self.names[i]][name_param][entry] = \
+                            cov[self.names[(i + 1) % 2]] * grad[self.names[i]][name_param][entry]
+                else:
+                    grad_product[self.names[i]][name_param] = \
+                        cov[self.names[(i + 1) % 2]] * grad[self.names[i]][name_param]
 
         return grad_product
 
     def grad_respect_point(self, point, inputs):
+        """
+        Computes the vector of the gradients of cov(point, inputs) respect point.
+
+        :param point: np.array(1xd)
+        :param inputs: np.array(nxd)
+
+        :return: np.array(nxd)
+        """
+        # TODO - Generalize when the gradients share the same inputs
+        # TODO - Generalize to more than two kernels
+
+        point_dict = self.inputs_from_array_to_dict(point)
+        inputs_dict = self.inputs_from_array_to_dict(inputs)
+
+        grad_dict = self.grad_respect_point_dict(point_dict, inputs_dict)
+
+        grad = []
+        for name in self.names:
+            grad.append(grad_dict[name])
+
+        return np.concatenate(grad, 1)
+
+    def grad_respect_point_dict(self, point, inputs):
         """
         Computes the vector of the gradients of cov(point, inputs) respect point.
 
@@ -120,4 +227,44 @@ class ProductKernels(AbstractKernel):
         for i in range(2):
             gradient[self.names[i]] = grad[self.names[i]] * cov[self.names[(i + 1) % 2]]
 
+        return gradient
+
+    @classmethod
+    def evaluate_cov_defined_by_params(cls, params, inputs, dimension, *args):
+        """
+        Evaluate the covariance of the kernel defined by params.
+
+        :param dimension: [int] list with the dimensions of the kernel
+        :param params: [np.array(k)] The first part are related to the parameters of the first
+            kernel and so on.
+        :param inputs: np.array(nxd)
+        :param args: [str] List with the names of the kernels.
+
+        :return: cov(inputs) where the kernel is defined with params
+        """
+
+        kernel = cls.define_kernel_from_array(dimension, params, *args)
+        return kernel.cov_dict(inputs)
+
+    @classmethod
+    def evaluate_grad_defined_by_params_respect_params(cls, params, inputs, dimension, *args):
+        """
+        Evaluate the gradient respect the parameters of the kernel defined by params.
+
+        :param dimension: [int] list with the dimensions of the kernel
+        :param params: [np.array(k)] The first part are related to the parameters of the first
+            kernel and so on.
+        :param inputs: {(str) kernel_name: np.array(nxd)}
+        :param args: [str] List with the names of the kernels.
+        :return: {
+            (int) i: (nxn), derivative respect to the ith parameter
+        }
+        """
+        kernel = cls.define_kernel_from_array(dimension, params, *args)
+
+        gradient = kernel.gradient_respect_parameters(inputs)
+
+        gradient = convert_dictionary_from_names_kernels_to_only_parameters(gradient, kernel.names)
+        names = kernel.name_parameters_as_list
+        gradient = convert_dictionary_gradient_to_simple_dictionary(gradient, names)
         return gradient

@@ -42,13 +42,13 @@ class TestMatern52(unittest.TestCase):
         assert self.matern52.cov(self.inputs) == 0
 
     def test_cross_cov(self):
-
-       # expect(dist_square_length_scale).once().and_return(4.0)
         r2 = np.array([[0.0, 1.25], [1.25, 0.0]])
-        r= np.sqrt(r2)
+        r = np.sqrt(r2)
 
-        assert np.all(((1.0 + np.sqrt(5)*r + (5.0/3.0)*r2) * np.exp(-np.sqrt(5)*r) * np.array([3]))[0,1] \
-               == self.matern52.cross_cov(self.inputs, self.inputs)[0, 1])
+        left_term = ((1.0 + np.sqrt(5)*r + (5.0/3.0)*r2) * np.exp(-np.sqrt(5) * r) *
+                     np.array([3]))[0, 1]
+        comparisons = left_term == self.matern52.cross_cov(self.inputs, self.inputs)[0, 1]
+        assert np.all(comparisons)
 
         point_1 = np.array([[2.0, 4.0]])
         point_2 = np.array([[3.0, 5.0]])
@@ -75,7 +75,7 @@ class TestMatern52(unittest.TestCase):
         inputs_2 = np.array([[1.5, 9.0]])
 
         npt.assert_almost_equal(matern52.cross_cov(inputs_1, inputs_2),
-                      np.array([[0.87752659905500319], [1.0880320585678382]]))
+                                np.array([[0.87752659905500319], [1.0880320585678382]]))
 
     def test_gradient_respect_parameters(self):
         expect(GradientLSMatern52).gradient_respect_parameters_ls.once().and_return({'a': 0})
@@ -105,7 +105,6 @@ class TestMatern52(unittest.TestCase):
         dh = 0.000000000001
         inputs_1 = np.array([[2.0, 4.0], [3.0, 5.0]])
         point = np.array([[42.0, 35.0]])
-        params = np.array([2.0, 3.0, 4.0])
         finite_diff = FiniteDifferences.forward_difference(
             lambda point: self.matern52_.cross_cov(point.reshape([1, 2]), inputs_1),
             np.array([42.0, 35.0]), np.array([dh]))
@@ -114,16 +113,14 @@ class TestMatern52(unittest.TestCase):
         for i in range(2):
             npt.assert_almost_equal(finite_diff[i], gradient[:, i:i+1].transpose())
 
-
     def test_gradient_respect_parameters_ls(self):
         expect(GradientLSMatern52).gradient_respect_distance.once().and_return(4)
         expect(Distances).gradient_distance_length_scale_respect_ls.once().and_return(
-            {0: 3, 1:2}
+            {0: 3, 1: 2}
         )
 
         assert GradientLSMatern52.gradient_respect_parameters_ls(
-            self.inputs, self.length_scale, self.sigma2) == {'scale': {
-            0: 12, 1: 8}}
+            self.inputs, self.length_scale, self.sigma2) == {'scale': {0: 12, 1: 8}}
 
     def test_gradient_respect_distance(self):
         expect(GradientLSMatern52).gradient_respect_distance_cross.once().and_return(0)
@@ -137,19 +134,16 @@ class TestMatern52(unittest.TestCase):
         assert GradientLSMatern52.gradient_respect_distance_cross(
             self.length_scale, self.sigma2, self.inputs, self.inputs) == np.array([0.0])
 
-    def test_grad_respect_point(self):
+    def test_grad_respect_point_2(self):
         expect(GradientLSMatern52).gradient_respect_distance_cross.once().and_return(
-            np.array([[1,0], [0, 1]]))
+            np.array([[1, 0], [0, 1]]))
         expect(Distances).gradient_distance_length_scale_respect_point.once().and_return(
             1.0
         )
-        assert np.all(GradientLSMatern52.grad_respect_point(self.length_scale, self.sigma2,
-                                                     self.inputs, self.inputs) \
-               == np.array([[1, 0], [0, 1]]))
-
-
-        # TODO: test with finite differences
-
+        comparisons = GradientLSMatern52.grad_respect_point(self.length_scale, self.sigma2,
+                                                            self.inputs, self.inputs) == \
+            np.array([[1, 0], [0, 1]])
+        assert np.all(comparisons)
 
     def test_grad_respect_point_matern(self):
         expect(GradientLSMatern52).grad_respect_point.once().and_return(0.0)
@@ -162,7 +156,7 @@ class TestMatern52(unittest.TestCase):
 
     def test_define_kernel_from_array(self):
         kernel = Matern52.define_kernel_from_array(2, np.array([1, 3, 5]))
-        assert np.all(kernel.length_scale.value ==  np.array([1, 3]))
+        assert np.all(kernel.length_scale.value == np.array([1, 3]))
         assert kernel.sigma2.value == np.array([5])
 
     def test_evaluate_cov_defined_by_params(self):
@@ -178,5 +172,5 @@ class TestMatern52(unittest.TestCase):
         kernel = Matern52.define_kernel_from_array(2, np.array([1, 3, 5]))
 
         grad_kernel = kernel.gradient_respect_parameters(np.array([[4, 5]]))
-        assert result == {0: grad_kernel['length_scale'][0],1: grad_kernel['length_scale'][1],
-                          2:grad_kernel['sigma2']}
+        assert result == {0: grad_kernel['length_scale'][0], 1: grad_kernel['length_scale'][1],
+                          2: grad_kernel['sigma2']}

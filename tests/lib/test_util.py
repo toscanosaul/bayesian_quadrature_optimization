@@ -18,4 +18,3 @@ class TestUtil(unittest.TestCase):
         result = convert_dictionary_gradient_to_simple_dictionary(self.dictionary, self.order_keys)
 
         assert result == {0: np.array([3]), 1: np.array([8]), 2: np.array([2])}
-

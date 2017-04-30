@@ -6,6 +6,7 @@ from copy import deepcopy
 
 import numpy as np
 
+
 class FiniteDifferences(object):
 
     @staticmethod

@@ -7,7 +7,6 @@ import mock
 import numpy as np
 
 from stratified_bayesian_optimization.priors.uniform import UniformPrior
-from stratified_bayesian_optimization.priors.abstract_prior import AbstractPrior
 
 
 class TestUniformPrior(unittest.TestCase):
