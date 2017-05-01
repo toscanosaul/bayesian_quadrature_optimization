@@ -323,6 +323,11 @@ class ValidationGPModel(object):
 
         n_data = len(training_data['evaluations'])
 
+        noise = True
+        if training_data.get('var_noise') is None:
+            noise = False
+
+
         training_data_sets = {}
         test_points = {}
         gp_objects = {}
@@ -338,7 +343,7 @@ class ValidationGPModel(object):
             training_data_sets[i]['points'] = training_data['points'][selector, :]
             test_points[i]['points'] = training_data['points'][[i], :]
 
-            if training_data.get('var_noise'):
+            if noise:
                 training_data_sets[i]['var_noise'] = training_data['var_noise'][selector]
                 test_points[i]['var_noise'] = training_data['var_noise'][i]
 
@@ -359,8 +364,13 @@ class ValidationGPModel(object):
             success_runs += 1
             posterior = new_gp_objects[i].compute_posterior_parameters(test_points[i]['points'])
             posterior_parameters[i] = posterior
-            correct[i] = cls.check_value_within_ci(
-                test_points[i]['evaluations'], posterior[0], posterior[1][0, 0])
+            if noise:
+                correct[i] = cls.check_value_within_ci(
+                    test_points[i]['evaluations'], posterior[0], posterior[1][0, 0],
+                    var_noise=test_points[i]['var_noise'])
+            else:
+                correct[i] = cls.check_value_within_ci(
+                    test_points[i]['evaluations'], posterior[0], posterior[1][0, 0])
             if correct[i]:
                 number_correct += 1
 
@@ -372,18 +382,20 @@ class ValidationGPModel(object):
         plt.scatter(np.arange(N), y, color='r')
         plt.savefig("diagnostic_kernel.png")
 
-        return number_correct, len(y), means, standard_dev
-
     @staticmethod
-    def check_value_within_ci(value, mean, std, noise=None):
+    def check_value_within_ci(value, mean, variance, var_noise=None):
         """
         Check if value is within [mean - 1.96 * std, mean + 1.96 * std]
         :param value: float
         :param mean: float
-        :param std: float
-        :param noise: float
+        :param variance: float
+        :param var_noise: float
         :return: booleans
         """
-        # TODO: add the case when we have noise
 
-        return mean - 1.96 * std <= value <= mean + 1.96 * std
+        if var_noise is None:
+            var_noise = 0
+
+        std = np.sqrt(variance + var_noise)
+
+        return mean - 2.0 * std <= value <= mean + 2.0 * std
