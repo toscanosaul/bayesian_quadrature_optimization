@@ -177,8 +177,8 @@ class GPFittingGaussian(object):
         """
 
         samples = []
-        samples.append(self.var_noise.sample_parameters(n_samples))
-        samples.append(self.mean.sample_parameters(n_samples))
+        samples.append(self.var_noise.sample_from_prior(n_samples))
+        samples.append(self.mean.sample_from_prior(n_samples))
         samples.append(self.kernel.sample_parameters(n_samples))
 
         return np.concatenate(samples, 1)
@@ -385,7 +385,7 @@ class ValidationGPModel(object):
     @staticmethod
     def check_value_within_ci(value, mean, variance, var_noise=None):
         """
-        Check if value is within [mean - 1.96 * std, mean + 1.96 * std]
+        Check if value is within [mean - 1.96 * sqrt(variance), mean + 1.96 * sqrt(variance)]
         :param value: float
         :param mean: float
         :param variance: float
