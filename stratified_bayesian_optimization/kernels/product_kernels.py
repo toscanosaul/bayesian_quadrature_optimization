@@ -14,7 +14,10 @@ from stratified_bayesian_optimization.lib.constant import (
     TASKS_KERNEL_NAME,
     PRODUCT_KERNELS_SEPARABLE,
 )
-from stratified_bayesian_optimization.lib.util_kernels import find_define_kernel_from_array
+from stratified_bayesian_optimization.lib.util_kernels import (
+    find_define_kernel_from_array,
+    find_kernel_constructor,
+)
 
 
 class ProductKernels(AbstractKernel):
@@ -32,11 +35,13 @@ class ProductKernels(AbstractKernel):
 
         name = PRODUCT_KERNELS_SEPARABLE + ':'
         dimension = 0
+        dimension_parameters = 0
         for kernel in kernels:
             name += kernel.name + '_'
             dimension += kernel.dimension
+            dimension_parameters += kernel.dimension_parameters
 
-        super(ProductKernels, self).__init__(name, dimension)
+        super(ProductKernels, self).__init__(name, dimension, dimension_parameters)
 
         self.kernels = {}
         self.parameters = {}
@@ -50,6 +55,24 @@ class ProductKernels(AbstractKernel):
     @property
     def hypers(self):
         return self.parameters
+
+    @property
+    def hypers_values_as_array(self):
+        parameters = []
+        for name in self.names:
+            parameters.append(self.kernels[name].hypers_values_as_array)
+        return np.concatenate(parameters)
+
+    def sample_parameters(self, number_samples):
+        """
+
+        :param number_samples: (int) number of samples
+        :return: np.array(number_samples x k)
+        """
+        samples = []
+        for name in self.names:
+            samples.append(self.kernels[name].sample_parameters(number_samples))
+        return np.concatenate(samples, 1)
 
     @property
     def name_parameters_as_list(self):
@@ -84,6 +107,21 @@ class ProductKernels(AbstractKernel):
 
         return cls(*kernels)
 
+    @classmethod
+    def define_default_kernel(cls, dimension, *args):
+        """
+        :param dimension: [(int)] dimension of the domain of the kernels
+        :param args: [str] List with the names of the kernels.
+
+        :return: ProductKernels
+        """
+        kernels = []
+        for name, dim in zip(args[0], dimension):
+            constructor = find_kernel_constructor(name)
+            kernels.append(constructor.define_default_kernel(dim))
+
+        return cls(*kernels)
+
     def set_parameters(self, parameters):
         """
 
@@ -95,6 +133,17 @@ class ProductKernels(AbstractKernel):
             if name in parameters:
                 self.kernels[name].set_parameters(**parameters[name])
                 self.parameters[name] = self.kernels[name].hypers
+
+    def update_value_parameters(self, params):
+        """
+        :param params: np.array(n)
+        """
+        index = 0
+        for name in self.names:
+            dim_param = self.kernels[name].dimension_parameters
+            self.kernels[name].update_value_parameters(
+                params[index: index + dim_param])
+            index += dim_param
 
     def cov(self, inputs):
         """
@@ -257,7 +306,7 @@ class ProductKernels(AbstractKernel):
         :param inputs: {(str) kernel_name: np.array(nxd)}
         :param args: [str] List with the names of the kernels.
         :return: {
-            (int) i: (nxn), derivative respect to the ith parameter
+            (int) i: np.array(nxn), derivative respect to the ith parameter
         }
         """
         kernel = cls.define_kernel_from_array(dimension, params, *args)

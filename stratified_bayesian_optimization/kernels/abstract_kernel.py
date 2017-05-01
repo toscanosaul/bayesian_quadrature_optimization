@@ -6,18 +6,24 @@ from abc import ABCMeta, abstractmethod
 class AbstractKernel(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, name, dimension):
+    def __init__(self, name, dimension, dimension_parameters):
         """
 
         :param name: str
         :param dimension: int
+        :param dimension_parameters: int
         """
 
         self.name = name
         self.dimension = dimension
+        self.dimension_parameters = dimension_parameters
 
     @property
     def hypers(self):
+        raise NotImplementedError("Not implemented")
+
+    @property
+    def hypers_values_as_array(self):
         raise NotImplementedError("Not implemented")
 
     @property
@@ -28,9 +34,18 @@ class AbstractKernel(object):
     def set_parameters(self, *params):
         raise NotImplementedError("Not implemented")
 
+    @abstractmethod
+    def update_value_parameters(self, params):
+        raise NotImplementedError("Not implemented")
+
     @classmethod
     @abstractmethod
     def define_kernel_from_array(cls, dimension, params):
+        raise NotImplementedError("Not implemented")
+
+    @classmethod
+    @abstractmethod
+    def define_default_kernel(cls, dimension):
         raise NotImplementedError("Not implemented")
 
     @abstractmethod
@@ -58,4 +73,8 @@ class AbstractKernel(object):
     @classmethod
     @abstractmethod
     def evaluate_grad_defined_by_params_respect_params(cls, params, inputs, dimension):
+        raise NotImplementedError("Not implemented")
+
+    @abstractmethod
+    def sample_parameters(self, number_samples):
         raise NotImplementedError("Not implemented")

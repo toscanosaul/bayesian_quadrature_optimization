@@ -12,6 +12,7 @@ from stratified_bayesian_optimization.lib.constant import (
     LENGTH_SCALE_NAME,
     SIGMA2_NAME,
 )
+from stratified_bayesian_optimization.priors.uniform import UniformPrior
 
 
 class Matern52(AbstractKernel):
@@ -24,8 +25,9 @@ class Matern52(AbstractKernel):
         """
 
         name = MATERN52_NAME
+        dimension_parameters = length_scale.dimension + sigma2.dimension
 
-        super(Matern52, self).__init__(name, dimension)
+        super(Matern52, self).__init__(name, dimension, dimension_parameters)
 
         self.length_scale = length_scale
         self.sigma2 = sigma2
@@ -36,6 +38,26 @@ class Matern52(AbstractKernel):
             self.length_scale.name: self.length_scale,
             self.sigma2.name: self.sigma2,
         }
+
+    @property
+    def hypers_values_as_array(self):
+        parameters = []
+        parameters.append(self.length_scale.value)
+        parameters.append(self.sigma2.value)
+
+        return np.concatenate(parameters)
+
+    def sample_parameters(self, number_samples):
+        """
+
+        :param number_samples: (int) number of samples
+        :return: np.array(number_samples x k)
+        """
+        parameters = self.hypers
+        samples = []
+        for parameter in parameters:
+            samples.append(parameter.sample(number_samples))
+        return np.concatenate(samples, 1)
 
     @property
     def name_parameters_as_list(self):
@@ -59,6 +81,14 @@ class Matern52(AbstractKernel):
         if sigma2 is not None:
             self.sigma2 = sigma2
 
+    def update_value_parameters(self, params):
+        """
+
+        :param params: np.array(n)
+        """
+        self.length_scale.set_value(params[0:self.dimension])
+        self.sigma2.set_Value(params[self.dimension:self.dimension+1])
+
     @classmethod
     def define_kernel_from_array(cls, dimension, params):
         """
@@ -73,6 +103,20 @@ class Matern52(AbstractKernel):
         sigma2 = ParameterEntity(SIGMA2_NAME, params[dimension:dimension+1], None)
 
         return cls(dimension, length_scale, sigma2)
+
+    @classmethod
+    def define_default_kernel(cls, dimension):
+        """
+        :param dimension: (int) dimension of the domain of the kernel
+
+        :return: Matern52
+        """
+        kernel = cls.define_kernel_from_array(dimension, np.ones(dimension + 1))
+        kernel.length_scale.prior = UniformPrior(
+            dimension, dimension * [1e-10], dimension * [10e10])
+        kernel.sigma2.prior = UniformPrior(1, [1e-10], [10e10])
+
+        return kernel
 
     def cov(self, inputs):
         """

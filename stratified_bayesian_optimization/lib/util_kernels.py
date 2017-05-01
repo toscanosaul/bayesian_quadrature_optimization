@@ -22,3 +22,20 @@ def find_define_kernel_from_array(kernel_name):
         return TasksKernel.define_kernel_from_array
 
     raise NameError(kernel_name + " doesn't exist")
+
+def find_kernel_constructor(kernel_name):
+    """
+
+    :param kernel_name: (str) Name of the kernel
+    :return: kernel constructor
+    """
+
+    if kernel_name == MATERN52_NAME:
+        return Matern52
+
+    if kernel_name == TASKS_KERNEL_NAME:
+        return TasksKernel
+
+    raise NameError(kernel_name + " doesn't exist")
+
+

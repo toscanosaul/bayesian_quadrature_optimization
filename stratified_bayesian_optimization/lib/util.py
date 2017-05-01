@@ -51,3 +51,25 @@ def convert_dictionary_from_names_kernels_to_only_parameters(dictionary, order_k
         for parameter in dictionary[kernel]:
             result[parameter] = dictionary[kernel][parameter]
     return result
+
+
+def separate_numpy_arrays_in_lists(array, division):
+    """
+    Separate the m-axis of the array in a list such that [array(nxdivision), array(nx(division:))]
+    :param array: np.array(nxm) or np.array(n)
+    :param division: (int)
+    :return: [np.array(nxdivision), np.array(nx(division:))]
+    """
+    if len(array.shape) == 2:
+        return [array[:, 0: division], array[:, division: array.shape[1]]]
+    else:
+        return [array[0: division], array[division: array.shape[1]]]
+
+def wrapper_fit_gp_regression(self):
+    """
+    Wrapper of fit_gp_regression
+    :param self: instance of class GPFittingGaussian
+    :return: updated self
+    """
+
+    return self.fit_gp_regression()

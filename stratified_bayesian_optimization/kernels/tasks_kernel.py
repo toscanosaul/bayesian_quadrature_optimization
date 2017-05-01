@@ -10,6 +10,7 @@ from stratified_bayesian_optimization.lib.constant import (
 )
 from stratified_bayesian_optimization.lib.util import \
     convert_dictionary_gradient_to_simple_dictionary
+from stratified_bayesian_optimization.priors.uniform import UniformPrior
 
 
 class TasksKernel(AbstractKernel):
@@ -24,14 +25,14 @@ class TasksKernel(AbstractKernel):
 
         name = TASKS_KERNEL_NAME
         dimension = 1
+        dimension_parameters = np.cumsum(xrange(n_tasks + 1))[n_tasks]
 
-        super(TasksKernel, self).__init__(name, dimension)
+        super(TasksKernel, self).__init__(name, dimension, dimension_parameters)
 
         self.lower_triang = lower_triang
         self.n_tasks = n_tasks
         self.base_cov_matrix = None
         self.chol_base_cov_matrix = None
-        self.number_parameters = np.cumsum(xrange(n_tasks + 1))[n_tasks]
 
     @property
     def hypers(self):
@@ -40,13 +41,26 @@ class TasksKernel(AbstractKernel):
         }
 
     @property
+    def hypers_values_as_array(self):
+        return self.lower_traing.value
+
+    def sample_parameters(self, number_samples):
+        """
+
+        :param number_samples: (int) number of samples
+        :return: np.array(number_samples x k)
+        """
+        parameters = self.hypers
+        return parameters[self.lower_triang.name].samples(number_samples)
+
+    @property
     def name_parameters_as_list(self):
         """
 
         :return: ([(name_param, name_params)]) name_params can be other list if name_param
             represents several parameters (like an array), otherwise name_params=None.
         """
-        return [(self.lower_triang.name, [(i, None) for i in xrange(self.number_parameters)])]
+        return [(self.lower_triang.name, [(i, None) for i in xrange(self.dimension_parameters)])]
 
     def set_parameters(self, lower_triang=None):
         """
@@ -60,6 +74,15 @@ class TasksKernel(AbstractKernel):
             self.lower_triang = lower_triang
             self.compute_cov_matrix()
 
+    def update_value_parameters(self, params):
+        """
+
+        :param params: np.array(n)
+        """
+        self.base_cov_matrix = None
+        self.lower_triang.set_value(params)
+        self.compute_cov_matrix()
+
     @classmethod
     def define_kernel_from_array(cls, dimension, params):
         """
@@ -72,6 +95,19 @@ class TasksKernel(AbstractKernel):
         lower_triang = ParameterEntity(LOWER_TRIANG_NAME, params, None)
 
         return cls(dimension, lower_triang)
+
+    @classmethod
+    def define_default_kernel(cls, dimension):
+        """
+        :param dimension: (int) dimension of the domain of the kernel
+
+        :return: TasksKernel
+        """
+        kernel = TasksKernel.define_kernel_from_array(
+            dimension, np.zeros(np.cumsum(xrange(dimension + 1))[dimension]))
+        kernel.lower_triang.prior = UniformPrior(1, [-10e10], [10e10])
+
+        return kernel
 
     def cov(self, inputs):
         """

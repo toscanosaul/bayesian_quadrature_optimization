@@ -15,3 +15,9 @@ LENGTH_SCALE_NAME = 'length_scale'
 SIGMA2_NAME = 'sigma2'
 
 LOWER_TRIANG_NAME = 'lower_triangular'
+
+MEAN_NAME = 'mean'
+VAR_NOISE_NAME = 'var_noise'
+
+# Optimization methods
+LBFGS_NAME = 'lbfgs'
