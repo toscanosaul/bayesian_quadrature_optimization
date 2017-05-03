@@ -362,9 +362,8 @@ class GPFittingGaussian(object):
         """
         # TODO: check the case where n > 1
 
-        cov = self._cov_including_noise(
+        chol, cov = self._chol_cov_including_noise(
             self.var_noise.value[0], self.kernel.hypers_values_as_array)
-        chol = spla.cholesky(cov, lower=True)
 
         y_unbiased = self.training_data['evaluations'] - self.mean.value[0]
         solve = spla.cho_solve((chol, True), y_unbiased)
