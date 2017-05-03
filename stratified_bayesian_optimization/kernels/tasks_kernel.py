@@ -41,6 +41,14 @@ class TasksKernel(AbstractKernel):
         }
 
     @property
+    def hypers_as_list(self):
+        """
+        This function defines the default order of the parameters.
+        :return: [ParameterEntity]
+        """
+        return [self.lower_triang]
+
+    @property
     def hypers_values_as_array(self):
         return self.lower_traing.value
 
@@ -52,6 +60,13 @@ class TasksKernel(AbstractKernel):
         """
         parameters = self.hypers
         return parameters[self.lower_triang.name].samples(number_samples)
+
+    def get_bounds_parameters(self):
+        """
+        Return bounds of the parameters of the kernel
+        :return: [(float, float)]
+        """
+        return self.lower_triang.bounds
 
     @property
     def name_parameters_as_list(self):

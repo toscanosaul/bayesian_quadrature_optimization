@@ -57,6 +57,18 @@ class ProductKernels(AbstractKernel):
         return self.parameters
 
     @property
+    def hypers_as_list(self):
+        """
+        This function defines the default order of the parameters.
+        :return: [ParameterEntity]
+        """
+        parameters = []
+        for name in self.names:
+            parameters += self.kernels[name].hypers_as_list
+
+        return parameters
+
+    @property
     def hypers_values_as_array(self):
         parameters = []
         for name in self.names:
@@ -73,6 +85,16 @@ class ProductKernels(AbstractKernel):
         for name in self.names:
             samples.append(self.kernels[name].sample_parameters(number_samples))
         return np.concatenate(samples, 1)
+
+    def get_bounds_parameters(self):
+        """
+        Return bounds of the parameters of the kernel
+        :return: [(float, float)]
+        """
+        bounds = []
+        for name in self.names:
+            bounds += self.kernels[name].get_bounds_parameters()
+        return bounds
 
     @property
     def name_parameters_as_list(self):

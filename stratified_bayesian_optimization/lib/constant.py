@@ -21,3 +21,12 @@ VAR_NOISE_NAME = 'var_noise'
 
 # Optimization methods
 LBFGS_NAME = 'lbfgs'
+
+# Constants
+SMALLEST_POSITIVE_NUMBER = 1e-100
+SMALLEST_NUMBER = -1e100
+LARGEST_NUMBER = 1e100
+
+# Cached
+CHOL_COV = 'chol_cov'
+SOL_CHOL_Y_UNBIASED = 'sol_chol_y_unbiased'

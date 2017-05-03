@@ -23,6 +23,10 @@ class AbstractKernel(object):
         raise NotImplementedError("Not implemented")
 
     @property
+    def hypers_as_list(self):
+        raise NotImplementedError("Not implemented")
+
+    @property
     def hypers_values_as_array(self):
         raise NotImplementedError("Not implemented")
 
@@ -77,4 +81,8 @@ class AbstractKernel(object):
 
     @abstractmethod
     def sample_parameters(self, number_samples):
+        raise NotImplementedError("Not implemented")
+
+    @abstractmethod
+    def get_bounds_parameters(self):
         raise NotImplementedError("Not implemented")

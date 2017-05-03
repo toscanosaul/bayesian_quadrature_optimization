@@ -13,6 +13,7 @@ from stratified_bayesian_optimization.lib.constant import (
     SIGMA2_NAME,
 )
 from stratified_bayesian_optimization.priors.uniform import UniformPrior
+from stratified_bayesian_optimization.lib.constant import SMALLEST_POSITIVE_NUMBER
 
 
 class Matern52(AbstractKernel):
@@ -40,6 +41,14 @@ class Matern52(AbstractKernel):
         }
 
     @property
+    def hypers_as_list(self):
+        """
+        This function defines the default order of the parameters.
+        :return: [ParameterEntity]
+        """
+        return [self.length_scale, self.sigma2]
+
+    @property
     def hypers_values_as_array(self):
         parameters = []
         parameters.append(self.length_scale.value)
@@ -53,11 +62,22 @@ class Matern52(AbstractKernel):
         :param number_samples: (int) number of samples
         :return: np.array(number_samples x k)
         """
-        parameters = self.hypers
         samples = []
+        parameters = [self.length_scale, self.sigma2]
         for parameter in parameters:
             samples.append(parameter.sample(number_samples))
         return np.concatenate(samples, 1)
+
+    def get_bounds_parameters(self):
+        """
+        Return bounds of the parameters of the kernel
+        :return: [(float, float)]
+        """
+        bounds = []
+        parameters = [self.length_scale, self.sigma2]
+        for parameter in parameters:
+            bounds += parameter.bounds
+        return bounds
 
     @property
     def name_parameters_as_list(self):
@@ -115,6 +135,8 @@ class Matern52(AbstractKernel):
         kernel.length_scale.prior = UniformPrior(
             dimension, dimension * [1e-10], dimension * [10e10])
         kernel.sigma2.prior = UniformPrior(1, [1e-10], [10e10])
+
+        kernel.sigma2.bounds = [(SMALLEST_POSITIVE_NUMBER, None)]
 
         return kernel
 
