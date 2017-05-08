@@ -37,5 +37,3 @@ def find_kernel_constructor(kernel_name):
         return TasksKernel
 
     raise NameError(kernel_name + " doesn't exist")
-
-

@@ -8,17 +8,25 @@ class SliceSampling(object):
 
     def __init__(self, log_prob, **slice_sampling_params):
         """
+        For details of the procedure see  Slice Sampling by Radford Neal (2003).
 
         :param log_prob: function that computes the logarithm of the probability density,
             log_prob(point, *args_log_prob)
         :param thinning
         :param slice_sampling_params:
-            - sigma
-            - step_out
-            - max_steps_out
+            - sigma: (float) Parameter to randomly choose the x interval:
+                upper ~ U(0, sigma), lower = upper - sigma.
+
+                It's also the step size of the stepping out procedure.
+
+            - step_out: (boolean) If true, the stepping out or doubling procedure is used,
+                which finds a "good" x interval.
+            - max_steps_out: (int) Maximum number of steps out for the stepping out  or
+                doubling procedure.
             - component_wise (boolean) If true, slice sampling is applied to each component of the
                 vector point.
-            - doubling_step
+            - doubling_step: (boolean) If true, the doubling procedure is used. Otherwise, the
+                stepping out procedure is used if ste_out is true.
         """
         self.log_prob = log_prob
         self.sigma = slice_sampling_params.get('sigma', 1.0)
@@ -27,26 +35,9 @@ class SliceSampling(object):
         self.component_wise = slice_sampling_params.get('component_wise', True)
         self.doubling_step = slice_sampling_params.get('doubling_step', True)
 
-    def sample(self, model):
-        """
-        Sample parameters of the model from their posterior.
-
-        :param model: gp_fitting_gaussian
-
-        :return: np.array(n)
-        """
-        parameters = model.get_value_parameters_model
-
-        for i in xrange(self.thinning + 1):
-            parameters =  self.slice_sample(
-                parameters
-            )
-
-        return parameters
-
     def slice_sample(self, point):
         """
-        Same a point from a probability density using slice sampling.
+        Same a point from self.log_prob using slice sampling.
 
         :param point: (np.array(n)) starting point
         :return: np.array(n)
@@ -81,14 +72,22 @@ class SliceSampling(object):
 
     def acceptable(self, z, llh, L, U, direction, point):
         """
-        :param z:
-        :param llh: (float) value of log_likelihood
+        Accepts whether z * direction + point is an acceptable next point, where
+        z is in [L, U] and {z: llh < log_prob(direction * z + point)}.
+
+        :param z: float
+        :param llh: float
         :param L: (float)
         :param U: (float)
         :param direction: (np.array(n)), unitary vector
         :param point: (np.array(n))
+
         :return: boolean
         """
+
+        if not self.doubling_step:
+            return True
+
         while (U - L) > 1.1 * self.sigma:
             middle = 0.5 * (L + U)
 
@@ -97,17 +96,33 @@ class SliceSampling(object):
             else:
                 L = middle
 
-            is_split = (middle > 0 and z >= middle) or (middle <= 0 and z < middle)
+            D = (middle > 0 and z >= middle) or (middle <= 0 and z < middle)
 
-            if is_split and llh >= self.directional_log_prob(U, direction, point) and \
+            if D and llh >= self.directional_log_prob(U, direction, point) and \
                             llh >= self.directional_log_prob(L, direction, point):
                 return False
         return True
 
     def find_x_interval(self, llh, lower, upper, direction, point):
         """
+        Finds the magnitude of the lower bound and upper bound of a x-interval in slice sampling
+        such that:
+            0) the interval is defined by
+                (new_lower * direction + point, new_upper * direction + point)
+            i) containts point
+            ii) contains much of the slice {x: y < log_prob(x)}, where
+                y ~ uniform(0, log_prob(point))
+        We can do it by using the doubling procedure.
 
-        :return:
+        :param llh: (float) llh ~ uniform(0, log_prob(point))
+        :param lower: (float) starting magnitude of the lower bound of the x-interval:
+            lower * direction + point
+        :param upper: (float) starting magnitude of the upper bound of the x-interval:
+            upper * direction + point
+        :param direction: (np.array(n))
+        :param point: (np.array(n))
+
+        :return: (float, float) upper, lower
         """
         l_steps_out = 0
         u_steps_out = 0
@@ -136,13 +151,17 @@ class SliceSampling(object):
 
     def find_sample(self, lower, upper, llh, direction, point):
         """
+        Sample magnitude z to define new sample towards the direction: z * direction + point.
+        z is sampled from {x: llh < log_prob(x * direction + point)} intersected with [lower, upper]
 
-        :param lower:
-        :param upper:
-        :param llh:
-        :param direction:
-        :param point:
-        :return:
+        :param lower: (float) magnitude of the lower bound of the x-interval:
+            lower * direction + point
+        :param upper: (float) magnitude of the upper bound of the x-interval:
+            upper * direction + point
+        :param llh: (float) llh ~ uniform(0, log_prob(point))
+        :param direction: np.array(n)
+        :param point: np.array(n)
+        :return: float
         """
         start_upper = upper
         start_lower = lower
@@ -172,11 +191,15 @@ class SliceSampling(object):
     def direction_slice(self, direction, point):
         """
 
-        :param direction:
-        :param point:
+        Sample a new point by doing slice sampling, and only moving the point towards the
+        direction vector.
 
-        :return:
+        :param direction: (np.array(n)) Unitary vector
+        :param point: (np.array(n)) starting point
+
+        :return: (np.array(n)) Sample a new point
         """
+
         upper = self.sigma * npr.rand()
         lower = upper - self.sigma
         llh = np.log(npr.rand()) + self.directional_log_prob(0.0, direction, point)
@@ -187,4 +210,3 @@ class SliceSampling(object):
         new_z = self.find_sample(lower, upper, llh, direction, point)
 
         return new_z * direction + point
-

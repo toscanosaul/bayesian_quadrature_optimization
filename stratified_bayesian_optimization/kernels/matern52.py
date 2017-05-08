@@ -5,15 +5,18 @@ import numpy as np
 from stratified_bayesian_optimization.kernels.abstract_kernel import AbstractKernel
 from stratified_bayesian_optimization.lib.distances import Distances
 from stratified_bayesian_optimization.entities.parameter import ParameterEntity
-from stratified_bayesian_optimization.lib.util import \
-    convert_dictionary_gradient_to_simple_dictionary
+from stratified_bayesian_optimization.lib.util import (
+    get_number_parameters_kernel,
+    convert_dictionary_gradient_to_simple_dictionary,
+)
 from stratified_bayesian_optimization.lib.constant import (
     MATERN52_NAME,
     LENGTH_SCALE_NAME,
     SIGMA2_NAME,
+    LARGEST_NUMBER,
+    SMALLEST_POSITIVE_NUMBER,
 )
 from stratified_bayesian_optimization.priors.uniform import UniformPrior
-from stratified_bayesian_optimization.lib.constant import SMALLEST_POSITIVE_NUMBER
 
 
 class Matern52(AbstractKernel):
@@ -26,7 +29,7 @@ class Matern52(AbstractKernel):
         """
 
         name = MATERN52_NAME
-        dimension_parameters = length_scale.dimension + sigma2.dimension
+        dimension_parameters = get_number_parameters_kernel(name, dimension)
 
         super(Matern52, self).__init__(name, dimension, dimension_parameters)
 
@@ -125,16 +128,21 @@ class Matern52(AbstractKernel):
         return cls(dimension, length_scale, sigma2)
 
     @classmethod
-    def define_default_kernel(cls, dimension):
+    def define_default_kernel(cls, dimension, default_values=None):
         """
         :param dimension: (int) dimension of the domain of the kernel
+        :param default_values: (np.array(k)) The first part are the parameters for length_scale, the
+            second part is the parameter for sigma2.
 
         :return: Matern52
         """
-        kernel = cls.define_kernel_from_array(dimension, np.ones(dimension + 1))
+        if default_values is None:
+            default_values = np.ones(get_number_parameters_kernel(MATERN52_NAME, dimension))
+
+        kernel = cls.define_kernel_from_array(dimension, default_values)
         kernel.length_scale.prior = UniformPrior(
-            dimension, dimension * [1e-10], dimension * [10e10])
-        kernel.sigma2.prior = UniformPrior(1, [1e-10], [10e10])
+            dimension, dimension * [SMALLEST_POSITIVE_NUMBER], dimension * [LARGEST_NUMBER])
+        kernel.sigma2.prior = UniformPrior(1, [SMALLEST_POSITIVE_NUMBER], [LARGEST_NUMBER])
 
         kernel.sigma2.bounds = [(SMALLEST_POSITIVE_NUMBER, None)]
 

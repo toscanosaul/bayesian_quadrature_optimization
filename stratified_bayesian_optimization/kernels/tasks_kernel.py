@@ -7,9 +7,13 @@ from stratified_bayesian_optimization.entities.parameter import ParameterEntity
 from stratified_bayesian_optimization.lib.constant import (
     TASKS_KERNEL_NAME,
     LOWER_TRIANG_NAME,
+    LARGEST_NUMBER,
+    SMALLEST_NUMBER,
 )
-from stratified_bayesian_optimization.lib.util import \
-    convert_dictionary_gradient_to_simple_dictionary
+from stratified_bayesian_optimization.lib.util import (
+    get_number_parameters_kernel,
+    convert_dictionary_gradient_to_simple_dictionary,
+)
 from stratified_bayesian_optimization.priors.uniform import UniformPrior
 
 
@@ -25,7 +29,7 @@ class TasksKernel(AbstractKernel):
 
         name = TASKS_KERNEL_NAME
         dimension = 1
-        dimension_parameters = np.cumsum(xrange(n_tasks + 1))[n_tasks]
+        dimension_parameters = get_number_parameters_kernel(name, n_tasks)
 
         super(TasksKernel, self).__init__(name, dimension, dimension_parameters)
 
@@ -112,15 +116,18 @@ class TasksKernel(AbstractKernel):
         return cls(dimension, lower_triang)
 
     @classmethod
-    def define_default_kernel(cls, dimension):
+    def define_default_kernel(cls, dimension, default_values=None):
         """
         :param dimension: (int) dimension of the domain of the kernel
+        :param default_values: np.array(k)
 
         :return: TasksKernel
         """
+        if default_values is None:
+            default_values = np.zeros(get_number_parameters_kernel(TASKS_KERNEL_NAME, dimension))
         kernel = TasksKernel.define_kernel_from_array(
-            dimension, np.zeros(np.cumsum(xrange(dimension + 1))[dimension]))
-        kernel.lower_triang.prior = UniformPrior(1, [-10e10], [10e10])
+            dimension, default_values)
+        kernel.lower_triang.prior = UniformPrior(1, [SMALLEST_NUMBER], [LARGEST_NUMBER])
 
         return kernel
 

@@ -130,17 +130,30 @@ class ProductKernels(AbstractKernel):
         return cls(*kernels)
 
     @classmethod
-    def define_default_kernel(cls, dimension, *args):
+    def define_default_kernel(cls, dimension, default_values=None, *args):
         """
         :param dimension: [(int)] dimension of the domain of the kernels
+        :param default_values: [np.array(n)] List with the default value for the parameters of each
+            of the kernels of the product.
         :param args: [str] List with the names of the kernels.
 
         :return: ProductKernels
         """
         kernels = []
-        for name, dim in zip(args[0], dimension):
+
+        if default_values is None:
+            iterate = zip(args[0], dimension)
+        else:
+            iterate = zip(args[0], dimension, default_values)
+
+        for value in iterate:
+            name = value[0]
+            dim = value[1]
             constructor = find_kernel_constructor(name)
-            kernels.append(constructor.define_default_kernel(dim))
+            if default_values is None:
+                kernels.append(constructor.define_default_kernel(dim))
+            else:
+                kernels.append(constructor.define_default_kernel(dim, value[2]))
 
         return cls(*kernels)
 
