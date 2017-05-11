@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
-from stratified_bayesian_optimization.entities.domain import (
-    DomainEntity
+from stratified_bayesian_optimization.services.domain import (
+    DomainService
 )
 from stratified_bayesian_optimization.initializers.log import SBOLog
 
@@ -60,7 +60,7 @@ class BGO(object):
         """
 
         bgp = cls.from_spec(spec)
-        domain = DomainEntity.from_dict(spec)
+        domain = DomainService.from_dict(spec)
 
         result = bgp.optimize(domain, 0)
 

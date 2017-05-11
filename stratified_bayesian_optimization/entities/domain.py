@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import numpy as np
-from os import path
 
 from schematics.exceptions import ModelValidationError
 from schematics.models import Model
@@ -12,11 +11,8 @@ from schematics.types import(
 )
 from schematics.types.compound import ListType, ModelType
 
-from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.initializers.log import SBOLog
-from stratified_bayesian_optimization.lib.constant import (
-    DOMAIN_DIR,
-)
+
 
 logger = SBOLog(__name__)
 
@@ -60,9 +56,6 @@ class BoundsEntity(Model):
 
 
 class DomainEntity(Model):
-    _disc_x_filename = 'discretization_domain_x_problem_{name}_bounds_{bounds}_number_points_' \
-                       '{number_points_each_dimension}.json'.format
-
     dim_x = IntType(required=True)
     choose_noise = BooleanType(required=True)
     bounds_domain_x = ListType(ModelType(BoundsEntity), min_size=1, required=True)
@@ -72,30 +65,6 @@ class DomainEntity(Model):
     bounds_domain_w = ListType(ModelType(BoundsEntity))
     domain_w = ListType(ListType(FloatType))
     discretization_domain_x = ListType(ListType(FloatType))
-
-    @classmethod
-    def from_dict(cls, spec):
-        """
-        Create from dict
-
-        :param spec: dict
-        :return: DomainEntity
-        """
-        entry = {}
-        entry['dim_x'] = int(spec['dim_x'])
-        entry['choose_noise'] = spec['choose_noise']
-        entry['bounds_domain_x'] = spec['bounds_domain_x']
-
-        entry['dim_w'] = spec.get('dim_w')
-        entry['bounds_domain_w'] = spec.get('bounds_domain_w')
-        entry['domain_w'] = spec.get('domain_w')
-
-        if 'number_points_each_dimension' in spec:
-            entry['discretization_domain_x'] = \
-                cls.load_discretization(spec['problem_name'], entry['bounds_domain_x'],
-                                        spec['number_points_each_dimension'])
-
-        return cls(entry)
 
     @staticmethod
     def discretize_domain(bounds_domain, number_points_each_dimension):
@@ -118,39 +87,6 @@ class DomainEntity(Model):
             discretization_domain.append(list(point))
 
         return discretization_domain
-
-    @classmethod
-    def load_discretization(cls, problem_name, bounds_domain_x, number_points_each_dimension_x):
-        """
-        Try to load discretization for problem_name from file. If the file doesn't exist, will
-        generate the discretization and store it.
-
-        :param problem_name: (str)
-        :param bounds_domain_x: ([BoundsEntity])
-        :param number_points_each_dimension_x: ([int])
-
-        :return: [[float]]
-        """
-
-        bounds_str = BoundsEntity.get_bounds_as_lists(bounds_domain_x)
-
-        filename = path.join(DOMAIN_DIR, cls._disc_x_filename(
-            name=problem_name,
-            bounds=bounds_str,
-            number_points_each_dimension=number_points_each_dimension_x
-        ))
-
-        discretization_data = JSONFile.read(filename)
-        if discretization_data is not None:
-            return discretization_data
-
-        logger.info('Gnerating discretization of domain_x')
-        discretization_data = cls.discretize_domain(bounds_domain_x, number_points_each_dimension_x)
-        logger.info('Generated discretization of domain_x')
-
-        JSONFile.write(discretization_data, filename)
-
-        return discretization_data
 
     @staticmethod
     def check_dimension_each_entry(list_elements, dimension):

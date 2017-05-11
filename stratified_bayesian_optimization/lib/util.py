@@ -83,6 +83,19 @@ def wrapper_fit_gp_regression(self):
 
     return self.fit_gp_regression()
 
+def wrapper_evaluate_objective_function(cls, point, module, n_samples):
+    """
+    Wrapper of evaluate_function in training_data
+    :param cls: TrainingDataService
+    :param module:
+    :param point: [float]
+    :param n_samples: int. If noise is true, we take n_samples of the function to estimate its
+        value.
+    :return: float
+    """
+
+    return cls.evaluate_function(module, point, n_samples)
+
 def get_number_parameters_kernel(kernel_name, dim):
     """
     Returns the number of parameters associated to the kernel.
@@ -126,3 +139,30 @@ def get_default_values_kernel(kernel_name, dim):
         for name, dimension in zip(kernel_name[1:], dim[1:]):
             values += get_default_values_kernel(name, dimension)
         return values
+
+def convert_list_to_dictionary(ls):
+    """
+
+    :param ls: [object]
+    :return: {i: ls[i]}
+    """
+
+    d = {}
+    for index, value in enumerate(ls):
+        d[index] = value
+
+    return d
+
+def convert_dictionary_to_list(dictionary):
+    """
+    Return list where list[i] = b iff dictionary[i] = b.
+
+    :param dictionary: {(int) i: object}
+    :return: [object]
+    """
+    ls = [None] * len(dictionary)
+
+    for key, value in dictionary.iteritems():
+        ls[key] = value
+
+    return ls

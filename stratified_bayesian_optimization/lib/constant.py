@@ -42,3 +42,6 @@ LARGEST_NUMBER = 1e100
 # Cached
 CHOL_COV = 'chol_cov'
 SOL_CHOL_Y_UNBIASED = 'sol_chol_y_unbiased'
+
+#Random
+DEFAULT_RANDOM_SEED = 1

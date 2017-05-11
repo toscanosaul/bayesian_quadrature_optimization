@@ -2,41 +2,46 @@ from __future__ import absolute_import
 
 from os import path
 
+import numpy as np
+
 from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.lib.constant import GP_DIR
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.models.gp_fitting_gaussian import GPFittingGaussian
+from stratified_bayesian_optimization.services.training_data import TrainingDataService
+from stratified_bayesian_optimization.lib.constant import DEFAULT_RANDOM_SEED
 
 logger = SBOLog(__name__)
 
 
 class GPFittingService(object):
-    _filename = 'gp_{problem_name}_{type_kernel}_{n_training}.json'.format
+    _filename = 'gp_{model_type}_{problem_name}_{type_kernel}_{training_name}.json'.format
 
     _model_map = {
         'gp_fitting_gaussian': GPFittingGaussian,
     }
 
     @classmethod
-    def _get_filename(cls, model_type, problem_name, type_kernel, n_training):
+    def _get_filename(cls, model_type, problem_name, type_kernel, training_name):
         """
 
         :param model_type:
         :param problem_name: str
         :param type_kernel: [(str)] Must be in possible_kernels
-        :param n_training: (int) Number of training points
+        :param training_name: (str), prefix used to save the training data
         :return: str
         """
         return cls._filename(
             model_type=model_type.__name__,
             problem_name=problem_name,
             type_kernel=type_kernel,
-            n_training=n_training
+            training_name=training_name
         )
 
     @classmethod
-    def get_gp(cls, name_model, problem_name, type_kernel, dimensions, training_data,
-               mle=True, thinning=0):
+    def get_gp(cls, name_model, problem_name, type_kernel, dimensions, n_training=0, noise=False,
+               training_data=None, points=None, training_name=None, mle=True, thinning=0,
+               n_samples=1, random_seed=DEFAULT_RANDOM_SEED):
         """
         Fetch a GP model from file if it exists, otherwise train a new model and save it locally.
 
@@ -44,31 +49,48 @@ class GPFittingService(object):
         :param problem_name: str
         :param type_kernel: [(str)] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
-        :param training_data: {'points': np.array(nxm), 'evaluations': np.array(n),
-            'var_noise': np.array(n) or None}
+        :param training_data: {'points': [[float]], 'evaluations': [float],
+            'var_noise': [float] or None}
+        :param points: [[float]]. If training_data is None, we can evaluate the objective
+            function in these points.
+        :param training_name: (str), prefix used to save the training data.
+        :param n_training: int
+        :param noise: (boolean) If true, we get noisy evaluations.
         :param dimensions: [int]. It has only the n_tasks for the task_kernels, and for the
             PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product
         :param mle: (boolean) If true, fits the GP by MLE.
         :param thinning: (int)
+        :param n_samples: (int) If the objective is noisy, we take n_samples of the function to
+            estimate its value.
+        :param random_seed: (int)
 
         :return: (GPFittingGaussian) - An instance of GPFittingGaussian
         """
         model_type = cls._model_map[name_model]
 
-        n_training = len(training_data['evaluations'])
-        f_name = cls._get_filename(model_type, problem_name, type_kernel, n_training)
+        if training_name is None:
+            training_name = 'default_training_data_%d_points_rs_%d' % (n_training, random_seed)
+
+        f_name = cls._get_filename(model_type, problem_name, type_kernel, training_name)
         gp_path = path.join(GP_DIR, f_name)
 
         data = JSONFile.read(gp_path)
+
         if data is not None:
             return model_type.deserialize(data)
 
+        if training_data is None:
+            training_data = TrainingDataService.get_training_data(problem_name, training_name,
+                                                                  points=points,
+                                                                  n_training=n_training,
+                                                                  noise=noise,
+                                                                  n_samples=n_samples,
+                                                                  random_seed=random_seed)
+
         logger.info("Training %s" % model_type.__name__)
-        gp_model = model_type.train(problem_name, type_kernel, n_training, dimensions,
-                                    mle, thinning)
+
+        gp_model = model_type.train(type_kernel, dimensions, mle, training_data, thinning=thinning)
 
         JSONFile.write(gp_model.serialize(), gp_path)
 
         return gp_model
-
-    type_kernel, training_data, dimensions, mle, thinning = 0

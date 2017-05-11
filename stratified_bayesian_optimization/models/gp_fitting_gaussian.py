@@ -37,7 +37,6 @@ from stratified_bayesian_optimization.entities.parameter import ParameterEntity
 from stratified_bayesian_optimization.priors.uniform import UniformPrior
 from stratified_bayesian_optimization.samplers.slice_sampling import SliceSampling
 from stratified_bayesian_optimization.util.json_file import JSONFile
-from stratified_bayesian_optimization.services.training_data import TrainingDataService
 
 logger = SBOLog(__name__)
 
@@ -489,24 +488,18 @@ class GPFittingGaussian(object):
         return self
 
     @classmethod
-    def train(cls, problem_name, type_kernel, dimensions, n_training, mle, noise, thinning=0,
-              points=None):
+    def train(cls, type_kernel, dimensions, mle, training_data, thinning=0):
         """
-        :param problem_name: (str)
         :param type_kernel: [(str)] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
-        :param n_training: int
         :param dimensions: [int]. It has only the n_tasks for the task_kernels, and for the
             PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product
         :param mle: (boolean) If true, fits the GP by MLE.
-        :param noise: (boolean) If true, we get noisy evaluations.
+        :param training_data: {'points': np.array(nxm), 'evaluations': np.array(n),
+            'var_noise': np.array(n) or None}.
         :param thinning: (int)
-        :param points:
         :return: GPFittingGaussian
         """
-
-
-        training_data = TrainingDataService.get_training_data(problem_name, points, noise)
 
         if mle:
             gp = cls(type_kernel, training_data, dimensions, thinning)
@@ -581,7 +574,6 @@ class GradientGPFittingGaussian(object):
         :return: float
         """
 
-        #solve = spla.cho_solve((chol, True), y_unbiased)
         solve = solve.reshape((len(solve), 1))
         solve_1 = spla.cho_solve((chol, True), grad_cov)
 
