@@ -4,9 +4,9 @@ from mock import create_autospec
 from doubles import expect
 
 from stratified_bayesian_optimization.services.bayesian_global_optimization import BGO
+from stratified_bayesian_optimization.services.domain import DomainService
 from stratified_bayesian_optimization.entities.run_spec import RunSpecEntity
 from stratified_bayesian_optimization.entities.domain import BoundsEntity, DomainEntity
-
 
 class TestBGOService(unittest.TestCase):
 
@@ -32,7 +32,7 @@ class TestBGOService(unittest.TestCase):
         bgo = create_autospec(BGO)
         expect(BGO).from_spec.and_return(bgo)
         domain = create_autospec(DomainEntity)
-        expect(DomainEntity).from_dict.and_return(domain)
+        expect(DomainService).from_dict.and_return(domain)
         expect(bgo).optimize.and_return({})
 
         assert BGO.run_spec(self.spec) == {}

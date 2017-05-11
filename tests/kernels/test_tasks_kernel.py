@@ -23,7 +23,7 @@ class TestTasksKernel(unittest.TestCase):
         self.inputs_ = np.array([[0], [1]])
 
     def test_hypers(self):
-        assert self.task_kernel.number_parameters == 1
+        assert self.task_kernel.dimension_parameters == 1
         assert {'lower_triang': self.lower_triang} == self.task_kernel.hypers
 
     def test_name_parameters_as_list(self):

@@ -8,9 +8,6 @@ from stratified_bayesian_optimization.lib.constant import(
     MATERN52_NAME,
     TASKS_KERNEL_NAME,
     PRODUCT_KERNELS_SEPARABLE,
-    SMALLEST_NUMBER,
-    SMALLEST_POSITIVE_NUMBER,
-    LARGEST_NUMBER,
 )
 
 
@@ -109,7 +106,7 @@ def get_number_parameters_kernel(kernel_name, dim):
         return dim[0] + 1
 
     if kernel_name[0] == TASKS_KERNEL_NAME:
-        return np.cumsum(xrange(dim + 1))[dim[0]]
+        return np.cumsum(xrange(dim[0] + 1))[dim[0]]
 
     if kernel_name[0] == PRODUCT_KERNELS_SEPARABLE:
         n_params = 0

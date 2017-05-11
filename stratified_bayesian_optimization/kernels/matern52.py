@@ -29,7 +29,7 @@ class Matern52(AbstractKernel):
         """
 
         name = MATERN52_NAME
-        dimension_parameters = get_number_parameters_kernel(name, dimension)
+        dimension_parameters = get_number_parameters_kernel([name], [dimension])
 
         super(Matern52, self).__init__(name, dimension, dimension_parameters)
 

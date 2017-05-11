@@ -7,7 +7,7 @@ from stratified_bayesian_optimization.kernels.abstract_kernel import AbstractKer
 
 class B(AbstractKernel):
     def __init__(self):
-        super(B, self).__init__(2, 3)
+        super(B, self).__init__(2, 3, 2)
 
     @property
     def hypers(self):
@@ -27,6 +27,15 @@ class B(AbstractKernel):
 
     def grad_respect_point(self, point, inputs):
         super(B, self).grad_respect_point(point, inputs)
+
+    def get_bounds_parameters(self):
+        super(B, self).get_bounds_parameters()
+
+    def sample_parameters(self):
+        super(B, self).sample_parameters()
+
+    def update_value_parameters(self):
+        super(B, self).update_value_parameters()
 
 
 class TestAbstractKernel(unittest.TestCase):

@@ -29,7 +29,7 @@ class TasksKernel(AbstractKernel):
 
         name = TASKS_KERNEL_NAME
         dimension = 1
-        dimension_parameters = get_number_parameters_kernel(name, n_tasks)
+        dimension_parameters = get_number_parameters_kernel([name], [n_tasks])
 
         super(TasksKernel, self).__init__(name, dimension, dimension_parameters)
 
