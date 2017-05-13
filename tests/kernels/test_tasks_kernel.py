@@ -6,20 +6,27 @@ from doubles import expect
 
 import numpy as np
 import numpy.testing as npt
+import copy
 
 from stratified_bayesian_optimization.kernels.tasks_kernel import TasksKernel, GradientTasksKernel
 from stratified_bayesian_optimization.entities.parameter import ParameterEntity
 from stratified_bayesian_optimization.lib.finite_differences import FiniteDifferences
+from stratified_bayesian_optimization.priors.uniform import UniformPrior
+from stratified_bayesian_optimization.lib.constant import (
+    SMALLEST_NUMBER,
+    LARGEST_NUMBER,
+    TASKS_KERNEL_NAME,
+)
 
 
 class TestTasksKernel(unittest.TestCase):
 
     def setUp(self):
         self.n_tasks = 1
-        self.lower_triang = ParameterEntity('lower_triang', np.array([1.0]), None)
+        self.prior_2 = UniformPrior(1, [1], [100])
+        self.lower_triang = ParameterEntity('lower_triang', np.array([1.0]), self.prior_2)
         self.task_kernel = TasksKernel(self.n_tasks, self.lower_triang)
         self.inputs = np.array([[0]])
-
         self.inputs_ = np.array([[0], [1]])
 
     def test_hypers(self):
@@ -102,3 +109,74 @@ class TestTasksKernel(unittest.TestCase):
 
         for i in range(2):
             assert np.all(result[i] == grad_kernel['lower_triangular'][i])
+
+    def test_hypers_as_list(self):
+        assert self.task_kernel.hypers_as_list == [self.lower_triang]
+
+    def test_hypers_values_as_array(self):
+        assert self.task_kernel.hypers_values_as_array == np.array([1.0])
+
+    def test_sample_parameters(self):
+        np.random.seed(1)
+        value = self.lower_triang.sample_from_prior(2)
+        assert np.all(self.task_kernel.sample_parameters(2, 1) == value)
+
+    def test_get_bounds_parameters(self):
+        assert [(SMALLEST_NUMBER, LARGEST_NUMBER)] == self.task_kernel.get_bounds_parameters()
+
+    def test_update_value_parameters(self):
+        self.task_kernel.update_value_parameters(np.array([2]))
+
+        assert self.task_kernel.lower_triang.value == np.array([2])
+        assert self.task_kernel.chol_base_cov_matrix == np.exp(np.array([[2]]))
+        npt.assert_almost_equal(self.task_kernel.base_cov_matrix, np.exp(np.array([[4]])))
+
+    def test_define_default_kernel(self):
+        kern = TasksKernel.define_default_kernel(1)
+        assert kern.lower_triang.value == np.array([0])
+        assert kern.name == TASKS_KERNEL_NAME
+        assert kern.dimension == 1
+        assert kern.dimension_parameters == 1
+        assert kern.n_tasks == 1
+        assert kern.base_cov_matrix is None
+        assert kern.chol_base_cov_matrix is None
+
+        kern_1 = TasksKernel.define_default_kernel(1, np.array([3]))
+        assert kern_1.lower_triang.value == np.array([3])
+        assert kern.name == TASKS_KERNEL_NAME
+        assert kern.dimension == 1
+        assert kern.dimension_parameters == 1
+        assert kern.n_tasks == 1
+        assert kern.base_cov_matrix is None
+        assert kern.chol_base_cov_matrix is None
+
+    def test_compare_kernels(self):
+        kernel = TasksKernel.define_kernel_from_array(1, np.ones(1))
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.name = 'a'
+        assert TasksKernel.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.dimension = 2
+        assert TasksKernel.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.dimension_parameters = 5
+        assert TasksKernel.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.n_tasks = 5
+        assert TasksKernel.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.lower_triang.value = np.array([0])
+        assert TasksKernel.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.base_cov_matrix = np.array([[1]])
+        assert TasksKernel.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.chol_base_cov_matrix = np.array([[1]])
+        assert TasksKernel.compare_kernels(kernel, kernel_) is False

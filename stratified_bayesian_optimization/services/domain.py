@@ -77,22 +77,23 @@ class DomainService(object):
         return DomainEntity(entry)
 
     @classmethod
-    def get_points_domain(cls, n_samples, random_seed, bounds_domain, type_bounds=None):
+    def get_points_domain(cls, n_samples, bounds_domain, type_bounds=None, random_seed=None):
         """
         Returns a list with points in the domain
         :param n_samples: int
-        :param random_seed: int
         :param bounds_domain: [([float, float] or [float])], the first case is when the bounds are
             lower or upper bound of the respective entry; in the second case, it's list of finite
             points representing the domain of that entry.
         :param type_bounds: [0 or 1], 0 if the bounds are lower or upper bound of the respective
             entry, 1 if the bounds are all the finite options for that entry.
+        :param random_seed: int
         :return: [[float]]
         """
-        np.random.seed(random_seed)
+        if random_seed is not None:
+            np.random.seed(random_seed)
 
-        type_bounds = []
         if type_bounds is None:
+            type_bounds = []
             type_bounds += [0] * len(bounds_domain)
 
         points = []
@@ -100,7 +101,7 @@ class DomainService(object):
         for j in xrange(len(bounds_domain)):
             entry = cls.get_point_one_dimension_domain(n_samples, bounds_domain[j],
                                                         type_bounds=type_bounds[j])
-            points += entry
+            points.append(entry)
 
         return [[point[j] for point in points] for j in xrange(n_samples)]
 

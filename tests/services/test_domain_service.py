@@ -3,6 +3,8 @@ from __future__ import absolute_import
 from doubles import allow, expect
 import unittest
 
+import numpy as np
+
 from stratified_bayesian_optimization.services.domain import DomainService
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.entities.domain import(
@@ -49,3 +51,19 @@ class TestDomainService(unittest.TestCase):
         self.spec['number_points_each_dimension'] = [5]
         self.spec['problem_name'] = 'test'
         DomainService.from_dict(self.spec)
+
+    def test_get_points_domain(self):
+        sample = DomainService.get_points_domain(2, [[1, 5], [2, 3, 4]], [0, 1], 1)
+        np.random.seed(1)
+
+        a = list(np.random.uniform(1, 5, 2))
+        b = list(np.random.choice([2, 3, 4], 2))
+
+        assert sample == [[a[0], b[0]], [a[1], b[1]]]
+
+        sample_2 = DomainService.get_points_domain(2, [[1, 5], [2, 3]], random_seed=1)
+        np.random.seed(1)
+        a = list(np.random.uniform(1, 5, 2))
+        b = list(np.random.uniform(2, 3, 2))
+
+        assert sample_2 == [[a[0], b[0]], [a[1], b[1]]]

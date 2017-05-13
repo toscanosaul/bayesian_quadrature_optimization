@@ -4,6 +4,7 @@ import unittest
 
 from doubles import expect
 
+import copy
 import numpy as np
 import numpy.testing as npt
 
@@ -11,6 +12,12 @@ from stratified_bayesian_optimization.kernels.matern52 import Matern52, Gradient
 from stratified_bayesian_optimization.entities.parameter import ParameterEntity
 from stratified_bayesian_optimization.lib.distances import Distances
 from stratified_bayesian_optimization.lib.finite_differences import FiniteDifferences
+from stratified_bayesian_optimization.priors.uniform import UniformPrior
+from stratified_bayesian_optimization.lib.constant import (
+    SMALLEST_NUMBER,
+    LARGEST_NUMBER,
+    MATERN52_NAME,
+)
 
 
 class TestMatern52(unittest.TestCase):
@@ -23,8 +30,10 @@ class TestMatern52(unittest.TestCase):
 
         self.inputs = np.array([[1, 0], [0, 1]])
 
-        self.matern52_ = Matern52(2, ParameterEntity('scale', np.array([2.0, 3.0]), None),
-                                  ParameterEntity('sigma2', np.array([4.0]), None))
+        self.prior = UniformPrior(2, [1, 1], [100, 100])
+        self.prior_2 = UniformPrior(1, [1], [100])
+        self.matern52_ = Matern52(2, ParameterEntity('scale', np.array([2.0, 3.0]), self.prior),
+                                  ParameterEntity('sigma2', np.array([4.0]), self.prior_2))
 
     def test_hypers(self):
         assert {'scale': self.length_scale, 'sigma2': self.sigma2} == self.matern52.hypers
@@ -174,3 +183,68 @@ class TestMatern52(unittest.TestCase):
         grad_kernel = kernel.gradient_respect_parameters(np.array([[4, 5]]))
         assert result == {0: grad_kernel['length_scale'][0], 1: grad_kernel['length_scale'][1],
                           2: grad_kernel['sigma2']}
+
+    def test_hypers_as_list(self):
+        assert self.matern52_.hypers_as_list == [self.matern52_.length_scale, self.matern52_.sigma2]
+
+    def test_hypers_values_as_array(self):
+        assert np.all(self.matern52_.hypers_values_as_array == np.array([2.0, 3.0, 4.0]))
+
+    def test_sample_parameters(self):
+        parameters = [self.matern52_.length_scale, self.matern52_.sigma2]
+        samples = []
+        np.random.seed(1)
+        for parameter in parameters:
+            samples.append(parameter.sample_from_prior(2))
+        assert np.all(self.matern52_.sample_parameters(2, random_seed=1) == np.array([
+            [samples[0][0, 0], samples[0][0, 1], samples[1][0]],
+            [samples[0][1, 0], samples[0][1, 1], samples[1][1]]]))
+
+    def test_get_bounds_parameters(self):
+        assert self.matern52_.get_bounds_parameters() == 3 * [(SMALLEST_NUMBER, LARGEST_NUMBER)]
+
+    def test_update_value_parameters(self):
+        self.matern52_.update_value_parameters(np.array([1, 5, 10]))
+
+        assert self.matern52_.sigma2.value == np.array([10])
+        assert np.all(self.matern52_.length_scale.value == np.array([1, 5]))
+
+    def test_define_default_kernel(self):
+        kern1 = Matern52.define_default_kernel(1)
+
+        assert kern1.name == MATERN52_NAME
+        assert kern1.dimension == 1
+        assert kern1.dimension_parameters == 2
+        assert kern1.length_scale.value == np.array([1])
+        assert kern1.sigma2.value == np.array([1])
+
+        kern2 = Matern52.define_default_kernel(1, np.array([5, 6]))
+
+        assert kern2.name == MATERN52_NAME
+        assert kern2.dimension == 1
+        assert kern2.dimension_parameters == 2
+        assert kern2.length_scale.value == np.array([5])
+        assert kern2.sigma2.value == np.array([6])
+
+    def test_compare_kernels(self):
+        kernel = Matern52.define_kernel_from_array(1, np.ones(2))
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.name = 'a'
+        assert Matern52.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.dimension = 2
+        assert Matern52.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.dimension_parameters = 5
+        assert Matern52.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.length_scale.value = np.array([-1])
+        assert Matern52.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.sigma2.value = np.array([-1])
+        assert Matern52.compare_kernels(kernel, kernel_) is False

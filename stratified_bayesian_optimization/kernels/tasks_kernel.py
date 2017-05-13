@@ -54,16 +54,24 @@ class TasksKernel(AbstractKernel):
 
     @property
     def hypers_values_as_array(self):
-        return self.lower_traing.value
+        """
 
-    def sample_parameters(self, number_samples):
+        :return: np.array(n)
+        """
+        return self.lower_triang.value
+
+    def sample_parameters(self, number_samples, random_seed=None):
         """
 
         :param number_samples: (int) number of samples
+        :param random_seed: (int)
         :return: np.array(number_samples x k)
         """
+        if random_seed is not None:
+            np.random.seed(random_seed)
+
         parameters = self.hypers
-        return parameters[self.lower_triang.name].samples(number_samples)
+        return parameters[self.lower_triang.name].sample_from_prior(number_samples)
 
     def get_bounds_parameters(self):
         """
@@ -124,7 +132,8 @@ class TasksKernel(AbstractKernel):
         :return: TasksKernel
         """
         if default_values is None:
-            default_values = np.zeros(get_number_parameters_kernel(TASKS_KERNEL_NAME, dimension))
+            default_values = np.zeros(get_number_parameters_kernel([TASKS_KERNEL_NAME],
+                                                                   [dimension]))
         kernel = TasksKernel.define_kernel_from_array(
             dimension, default_values)
         kernel.lower_triang.prior = UniformPrior(1, [SMALLEST_NUMBER], [LARGEST_NUMBER])
@@ -253,6 +262,39 @@ class TasksKernel(AbstractKernel):
         gradient = convert_dictionary_gradient_to_simple_dictionary(gradient, names)
 
         return gradient
+
+    @staticmethod
+    def compare_kernels(kernel1, kernel2):
+        """
+        Compare the values of kernel1 and kernel2. Returns True if they're equal, otherwise it
+        return False.
+
+        :param kernel1: TasksKernel instance object
+        :param kernel2: TasksKernel instance object
+        :return: boolean
+        """
+        if kernel1.name != kernel2.name:
+            return False
+
+        if kernel1.dimension != kernel2.dimension:
+            return False
+
+        if kernel1.dimension_parameters != kernel2.dimension_parameters:
+            return False
+
+        if kernel1.n_tasks != kernel2.n_tasks:
+            return False
+
+        if np.any(kernel1.lower_triang.value != kernel2.lower_triang.value):
+            return False
+
+        if np.any(kernel1.base_cov_matrix != kernel2.base_cov_matrix):
+            return False
+
+        if np.any(kernel1.chol_base_cov_matrix != kernel2.chol_base_cov_matrix):
+            return False
+
+        return True
 
 
 class GradientTasksKernel(object):

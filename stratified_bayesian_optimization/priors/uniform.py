@@ -30,10 +30,13 @@ class UniformPrior(AbstractPrior):
         else:
             return 0.0
 
-    def sample(self, samples):
+    def sample(self, samples, random_seed=None):
         """
 
         :param samples: int
+        :param random_seed: int
         :return: np.array(samples, self.dimension)
         """
+        if random_seed is not None:
+            np.random.seed(random_seed)
         return self.min + np.random.rand(samples, self.dimension) * (self.max - self.min)

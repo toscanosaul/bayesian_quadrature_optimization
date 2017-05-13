@@ -31,11 +31,11 @@ class B(AbstractKernel):
     def get_bounds_parameters(self):
         super(B, self).get_bounds_parameters()
 
-    def sample_parameters(self):
-        super(B, self).sample_parameters()
+    def sample_parameters(self, n_samples, random_seed):
+        super(B, self).sample_parameters(n_samples, random_seed)
 
-    def update_value_parameters(self):
-        super(B, self).update_value_parameters()
+    def update_value_parameters(self, value):
+        super(B, self).update_value_parameters(value)
 
 
 class TestAbstractKernel(unittest.TestCase):
@@ -76,9 +76,37 @@ class TestAbstractKernel(unittest.TestCase):
         self.test.grad_respect_point(2, 3)
 
     @raises(NotImplementedError)
-    def test_evaluate_cov_defined_by_params(self):
-        self.test.evaluate_cov_defined_by_params(2, 3, 4)
+    def test_get_bounds_parameters(self):
+        self.test.get_bounds_parameters()
+
+    @raises(NotImplementedError)
+    def test_sample_parameters(self):
+        self.test.sample_parameters(2, 1)
+
+    @raises(NotImplementedError)
+    def test_update_value_parameters(self):
+        self.test.update_value_parameters(2)
 
     @raises(NotImplementedError)
     def test_evaluate_grad_defined_by_params_respect_params(self):
         self.test.evaluate_grad_defined_by_params_respect_params(2, 3, 4)
+
+    @raises(NotImplementedError)
+    def test_hypers_as_list(self):
+        self.test.hypers_as_list
+
+    @raises(NotImplementedError)
+    def test_hypers_values_as_array(self):
+        self.test.hypers_values_as_array()
+
+    @raises(NotImplementedError)
+    def test_define_default_kernel(self):
+        self.test.define_default_kernel(1, 1)
+
+    @raises(NotImplementedError)
+    def test_evaluate_cov_defined_by_params(self):
+        self.test.evaluate_cov_defined_by_params(1, 1, 1)
+
+    @raises(NotImplementedError)
+    def test_compare_kernels(self):
+        self.test.compare_kernels(1, 2)

@@ -12,8 +12,8 @@ class B(AbstractPrior):
     def logprob(self, x):
         super(B, self).logprob(x)
 
-    def sample(self, n):
-        super(B, self).sample(n)
+    def sample(self, n, random_seed):
+        super(B, self).sample(n, random_seed)
 
 
 class TestAbstractPrior(unittest.TestCase):
@@ -26,4 +26,4 @@ class TestAbstractPrior(unittest.TestCase):
     @raises(NotImplementedError)
     def test_sample(self):
         test = B()
-        test.sample(2)
+        test.sample(2, 1)

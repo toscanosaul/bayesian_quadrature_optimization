@@ -18,6 +18,8 @@ from stratified_bayesian_optimization.lib.util_kernels import (
     find_define_kernel_from_array,
     find_kernel_constructor,
 )
+from stratified_bayesian_optimization.kernels.matern52 import Matern52
+from stratified_bayesian_optimization.kernels.tasks_kernel import TasksKernel
 
 
 class ProductKernels(AbstractKernel):
@@ -70,17 +72,24 @@ class ProductKernels(AbstractKernel):
 
     @property
     def hypers_values_as_array(self):
+        """
+
+        :return: np.array(n)
+        """
         parameters = []
         for name in self.names:
             parameters.append(self.kernels[name].hypers_values_as_array)
         return np.concatenate(parameters)
 
-    def sample_parameters(self, number_samples):
+    def sample_parameters(self, number_samples, random_seed=None):
         """
 
         :param number_samples: (int) number of samples
+        :param random_seed: int
         :return: np.array(number_samples x k)
         """
+        if random_seed is not None:
+            np.random.seed(random_seed)
         samples = []
         for name in self.names:
             samples.append(self.kernels[name].sample_parameters(number_samples))
@@ -352,3 +361,42 @@ class ProductKernels(AbstractKernel):
         names = kernel.name_parameters_as_list
         gradient = convert_dictionary_gradient_to_simple_dictionary(gradient, names)
         return gradient
+
+    @staticmethod
+    def compare_kernels(kernel1, kernel2):
+        """
+        Compare the values of kernel1 and kernel2. Returns True if they're equal, otherwise it
+        return False.
+
+        :param kernel1: ProductKernels instance object
+        :param kernel2: ProductKernels instance object
+        :return: boolean
+        """
+
+        if kernel1.name != kernel2.name:
+            return False
+
+        if kernel1.dimension != kernel2.dimension:
+            return False
+
+        if kernel1.dimension_parameters != kernel2.dimension_parameters:
+            return False
+
+        if kernel1.names != kernel2.names:
+            return False
+
+        for i in xrange(len(kernel1.names)):
+            name1 = kernel1.names[i]
+
+            kernel_1 = kernel1.kernels[name1]
+            kernel_2 = kernel2.kernels[name1]
+
+            if name1 == MATERN52_NAME:
+                if Matern52.compare_kernels(kernel_1, kernel_2) is False:
+                    return False
+
+            if name1 == TASKS_KERNEL_NAME:
+                if TasksKernel.compare_kernels(kernel_1, kernel_2) is False:
+                    return False
+
+        return True

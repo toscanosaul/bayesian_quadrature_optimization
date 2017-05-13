@@ -58,7 +58,6 @@ def convert_dictionary_from_names_kernels_to_only_parameters(dictionary, order_k
             result[parameter] = dictionary[kernel][parameter]
     return result
 
-
 def separate_numpy_arrays_in_lists(array, division):
     """
     Separate the m-axis of the array in a list such that [array(nxdivision), array(nx(division:))]
@@ -69,7 +68,7 @@ def separate_numpy_arrays_in_lists(array, division):
     if len(array.shape) == 2:
         return [array[:, 0: division], array[:, division: array.shape[1]]]
     else:
-        return [array[0: division], array[division: array.shape[1]]]
+        return [array[0: division], array[division: len(array)]]
 
 def wrapper_fit_gp_regression(self):
     """
@@ -98,7 +97,9 @@ def get_number_parameters_kernel(kernel_name, dim):
     Returns the number of parameters associated to the kernel.
 
     :param kernel_name: [str]
-    :param dim: [int]
+    :param dim: [int], for standard kernels the list consists of only one element. For the product
+        of kernels the lists consists of the dimension of the product of kernels, and each of the
+        kernels of the product.
     :return: int
     """
 
@@ -111,10 +112,10 @@ def get_number_parameters_kernel(kernel_name, dim):
     if kernel_name[0] == PRODUCT_KERNELS_SEPARABLE:
         n_params = 0
         for name, dimension in zip(kernel_name[1:], dim[1:]):
-            n_params += get_number_parameters_kernel(name, dimension)
+            n_params += get_number_parameters_kernel([name], [dimension])
         return n_params
 
-    raise NameError(kernel_name + " doesn't exist")
+    raise NameError(kernel_name[0] + " doesn't exist")
 
 def get_default_values_kernel(kernel_name, dim):
     """
@@ -134,7 +135,7 @@ def get_default_values_kernel(kernel_name, dim):
     if kernel_name[0] == PRODUCT_KERNELS_SEPARABLE:
         values = []
         for name, dimension in zip(kernel_name[1:], dim[1:]):
-            values += get_default_values_kernel(name, dimension)
+            values += get_default_values_kernel([name], [dimension])
         return values
 
 def convert_list_to_dictionary(ls):
@@ -163,3 +164,39 @@ def convert_dictionary_to_list(dictionary):
         ls[key] = value
 
     return ls
+
+def expand_dimension_vector(x, change_indexes, default_x):
+    """
+    Expand the dimension of x, where the new_x[i] = x[index] iff i is in
+    change_indexes, otherwise new_x[i] = default_x[index].
+
+    :param x: np.array(n)
+    :param change_indexes: [int], where its length is less than n.
+    :param default_x: np.array(m)
+
+    :return: np.array(m)
+    """
+
+    index = 0
+    new_x = default_x.copy()
+    for j in change_indexes:
+        new_x[j] = x[index]
+        index += 1
+    return new_x
+
+def reduce_dimension_vector(x, change_indexes):
+    """
+    Reduce the dimension of the vector, where the entries in change_indexes are conserved.
+
+    :param x: np.array(n)
+    :param change_indexes: [int]
+
+    :return: np.array(m)
+    """
+
+    new_x = np.zeros(len(change_indexes))
+    index = 0
+    for j in change_indexes:
+        new_x[index] = x[j]
+        index += 1
+    return new_x

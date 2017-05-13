@@ -26,3 +26,5 @@ class TestUniformPrior(unittest.TestCase):
         random_call.return_value = 0.5
 
         assert self.uniform_prior.sample(1) == 0.5
+        assert self.uniform_prior.sample(1, 2) == 0.5
+

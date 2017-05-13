@@ -23,10 +23,11 @@ class AbstractPrior(object):
         raise NotImplementedError("Not implemented")
 
     @abstractmethod
-    def sample(self, samples):
+    def sample(self, samples, random_seed):
         """
 
         :param samples: int
+        :param random_seed: int
         :return: np.array
         """
         raise NotImplementedError("Not implemented")

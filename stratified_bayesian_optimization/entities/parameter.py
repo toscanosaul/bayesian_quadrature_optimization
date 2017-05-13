@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 from copy import deepcopy
 
+import numpy as np
+
 from stratified_bayesian_optimization.lib.constant import (
     SMALLEST_NUMBER,
     LARGEST_NUMBER,
@@ -25,7 +27,7 @@ class ParameterEntity(object):
         self.value = value
         self.prior = prior
         self.dimension = len(self.value)
-        self.bounds = self.process_bounds(bounds)
+        self.bounds = self.process_bounds(self.dimension, bounds)
 
     def set_value(self, value):
         self.value = value
@@ -36,27 +38,32 @@ class ParameterEntity(object):
 
         return self.prior.logprob(value)
 
-    def sample_from_prior(self, n_samples):
+    def sample_from_prior(self, n_samples, random_seed=None):
+        if random_seed is not None:
+            np.random.seed(random_seed)
         return self.prior.sample(n_samples)
 
-    def process_bounds(self, bounds):
+    @staticmethod
+    def process_bounds(dimension, bounds):
         """
         Replace None in bounds by floats. If a lower bound is None, then it's replaced by
         _lower_bound. If a upper bound is None, then it's replaced by _upper_bound.
 
-        :param bounds: [(float/None, float/None)]
-        :return: [(float, float)]
+        :param dimension: (int) Dimension of the domain space.
+        :param bounds: [[float/None, float/None]]
+        :return: [[float, float]]
         """
 
         if bounds is None:
-            return self.dimension *  [(SMALLEST_NUMBER, LARGEST_NUMBER)]
+            return dimension *  [(SMALLEST_NUMBER, LARGEST_NUMBER)]
 
         new_bounds = deepcopy(bounds)
+
 
         for index, bound in enumerate(bounds):
             if bound[0] is None:
                 new_bounds[index][0] = SMALLEST_NUMBER
-            if bounds[1] is None:
+            if bound[1] is None:
                 new_bounds[index][1] = LARGEST_NUMBER
 
         return new_bounds

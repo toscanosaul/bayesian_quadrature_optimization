@@ -2,7 +2,10 @@ from __future__ import absolute_import
 
 import unittest
 
-from stratified_bayesian_optimization.lib.util_kernels import find_define_kernel_from_array
+from stratified_bayesian_optimization.lib.util_kernels import (
+    find_define_kernel_from_array,
+    find_kernel_constructor,
+)
 from stratified_bayesian_optimization.lib.constant import (
     MATERN52_NAME,
     TASKS_KERNEL_NAME,
@@ -19,3 +22,10 @@ class TestUtilKernels(unittest.TestCase):
             TASKS_KERNEL_NAME)
         with self.assertRaises(NameError):
             find_define_kernel_from_array('a')
+
+    def test_find_kernel_constructor(self):
+        assert find_kernel_constructor(MATERN52_NAME) == Matern52
+        assert find_kernel_constructor(TASKS_KERNEL_NAME) == TasksKernel
+
+        with self.assertRaises(NameError):
+            find_kernel_constructor('a')

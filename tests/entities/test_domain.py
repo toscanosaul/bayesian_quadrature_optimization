@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-from doubles import allow, expect
 import unittest
 
 from stratified_bayesian_optimization.entities.domain import(

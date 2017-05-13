@@ -53,22 +53,29 @@ class Matern52(AbstractKernel):
 
     @property
     def hypers_values_as_array(self):
+        """
+
+        :return: np.array(n)
+        """
         parameters = []
         parameters.append(self.length_scale.value)
         parameters.append(self.sigma2.value)
 
         return np.concatenate(parameters)
 
-    def sample_parameters(self, number_samples):
+    def sample_parameters(self, number_samples, random_seed=None):
         """
 
         :param number_samples: (int) number of samples
+        :param random_seed: int
         :return: np.array(number_samples x k)
         """
+        if random_seed is not None:
+            np.random.seed(random_seed)
         samples = []
         parameters = [self.length_scale, self.sigma2]
         for parameter in parameters:
-            samples.append(parameter.sample(number_samples))
+            samples.append(parameter.sample_from_prior(number_samples))
         return np.concatenate(samples, 1)
 
     def get_bounds_parameters(self):
@@ -110,7 +117,7 @@ class Matern52(AbstractKernel):
         :param params: np.array(n)
         """
         self.length_scale.set_value(params[0:self.dimension])
-        self.sigma2.set_Value(params[self.dimension:self.dimension+1])
+        self.sigma2.set_value(params[self.dimension:self.dimension+1])
 
     @classmethod
     def define_kernel_from_array(cls, dimension, params):
@@ -137,7 +144,7 @@ class Matern52(AbstractKernel):
         :return: Matern52
         """
         if default_values is None:
-            default_values = np.ones(get_number_parameters_kernel(MATERN52_NAME, dimension))
+            default_values = np.ones(get_number_parameters_kernel([MATERN52_NAME], [dimension]))
 
         kernel = cls.define_kernel_from_array(dimension, default_values)
         kernel.length_scale.prior = UniformPrior(
@@ -232,6 +239,32 @@ class Matern52(AbstractKernel):
         gradient = convert_dictionary_gradient_to_simple_dictionary(gradient, names)
         return gradient
 
+    @staticmethod
+    def compare_kernels(kernel1, kernel2):
+        """
+        Compare the values of kernel1 and kernel2. Returns True if they're equal, otherwise it
+        return False.
+
+        :param kernel1: Matern52 instance object
+        :param kernel2: Matern52 instance object
+        :return: boolean
+        """
+        if kernel1.name != kernel2.name:
+            return False
+
+        if kernel1.dimension != kernel2.dimension:
+            return False
+
+        if kernel1.dimension_parameters != kernel2.dimension_parameters:
+            return False
+
+        if np.any(kernel1.length_scale.value != kernel2.length_scale.value):
+            return False
+
+        if kernel1.sigma2.value != kernel2.sigma2.value:
+            return False
+
+        return True
 
 class GradientLSMatern52(object):
 
@@ -294,7 +327,7 @@ class GradientLSMatern52(object):
         Computes the vector of the gradients of cov(point, inputs) respect point.
 
         :param ls: (ParameterEntity) length_scale
-        :param sigma: (ParameterEntity)
+        :param sigma2: (ParameterEntity)
         :param point: np.array(1xd)
         :param inputs: np.array(nxd)
 
@@ -308,3 +341,5 @@ class GradientLSMatern52(object):
         gradient = grad_distance_point * derivate_respect_to_r.transpose()
 
         return gradient
+
+

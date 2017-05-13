@@ -3,8 +3,6 @@ from __future__ import absolute_import
 import scipy.linalg as spla
 import numpy as np
 
-import matplotlib.pyplot as plt
-
 from os import path
 
 from stratified_bayesian_optimization.lib.constant import (
@@ -28,6 +26,8 @@ from stratified_bayesian_optimization.lib.util import (
     separate_numpy_arrays_in_lists,
     wrapper_fit_gp_regression,
     get_default_values_kernel,
+    expand_dimension_vector,
+    reduce_dimension_vector,
 )
 from stratified_bayesian_optimization.lib.optimization import Optimization
 from stratified_bayesian_optimization.lib.constant import LBFGS_NAME
@@ -393,14 +393,17 @@ class GPFittingGaussian(object):
 
         return gradient_array
 
-    def sample_parameters_prior(self, n_samples):
+    def sample_parameters_prior(self, n_samples, random_seed=None):
         """
         Sample parameters of the GP model from their prior
 
         :param n_samples: int
+        :param random_seed: int
         :return: np.array(n_samples, n_parameters)
         """
 
+        if random_seed is not None:
+            np.random_seed(random_seed)
         samples = []
         samples.append(self.var_noise.sample_from_prior(n_samples))
         samples.append(self.mean.sample_from_prior(n_samples))
@@ -408,13 +411,16 @@ class GPFittingGaussian(object):
 
         return np.concatenate(samples, 1)
 
-    def sample_parameters_posterior(self, n_samples):
+    def sample_parameters_posterior(self, n_samples, random_seed=None):
         """
         Sample parameters of the GP model from their posterior.
 
         :param n_samples:
+        :param random_seed: (int)
         :return: np.array(n_samples, n_parameters)
         """
+        if random_seed is not None:
+            np.random.seed(random_seed)
         parameters = self.get_value_parameters_model
         samples = []
         for j in xrange(n_samples):
@@ -422,7 +428,6 @@ class GPFittingGaussian(object):
                 parameters =  self.slice_sampler.slice_sample(parameters)
             samples.append(parameters)
         return np.concatenate(samples, 1)
-
 
     @property
     def get_bounds_parameters(self):
@@ -437,12 +442,14 @@ class GPFittingGaussian(object):
 
         return bounds
 
-    def mle_parameters(self, start=None):
+    def mle_parameters(self, start=None, indexes=None):
         """
         Computes the mle parameters of the kernel of a GP process, and mean and variance of the
         noise of the Gaussian regression.
 
         :param start: (np.array(n)) starting point of the optimization of the llh.
+        :parameter indexes: [int], we optimize the MLE only over all the parameters, but the
+            parameters of the indexes. If it's None, we optimize over all the parameters.
 
         :return: {
             'solution': (np.array(n)) mle parameters,
@@ -456,23 +463,57 @@ class GPFittingGaussian(object):
         if start is None:
             start = self.sample_parameters_posterior(1)[0, :]
 
+        def default_objective_function(params):
+            return self.log_likelihood(params[0], params[1], params[2:])
+
+        def default_grad_function(params):
+            return self.grad_log_likelihood(params[0], params[1], params[2:])
+
+        bounds = self.get_bounds_parameters
+
+        if indexes is not None:
+            default_values = self.get_value_parameters_model
+            change_indexes_ = [i for i in xrange(len(default_values)) if i not in indexes]
+
+            default_bounds = list(self.get_bounds_parameters)
+            bounds = []
+            for j in change_indexes_:
+                bounds.append(default_bounds[j])
+
+            def objective_function(params):
+                new_params = expand_dimension_vector(
+                    params, change_indexes_, default_values)
+                return default_objective_function(new_params)
+
+            def grad_function(params):
+                new_params = expand_dimension_vector(
+                    params, change_indexes_, default_values)
+                grad = default_grad_function(new_params)
+                new_grad = reduce_dimension_vector(grad, change_indexes_)
+                return new_grad
+        else:
+            objective_function = default_objective_function
+            grad_function = default_grad_function
+
         optimization = Optimization(
             LBFGS_NAME,
-            lambda params: self.log_likelihood(params[0], params[1], params[2:]),
-            self.get_bounds_parameters,
-            lambda params: self.grad_log_likelihood(params[0], params[1], params[2:]),
+            objective_function,
+            bounds,
+            grad_function,
             minimize=False)
 
         return optimization.optimize(start)
 
-    def fit_gp_regression(self):
+    def fit_gp_regression(self, indexes=None):
         """
         Fit a GP regression model
 
+        :parameter indexes: [int],  we optimize the MLE only over all the parameters, but the
+            parameters of the indexes. If it's None, we optimize over all the parameters.
         :return: self
         """
 
-        results = self.mle_parameters()
+        results = self.mle_parameters(indexes)
 
         logger.info("Results of the GP fitting: ")
         logger.info(results)
@@ -616,6 +657,16 @@ class ValidationGPModel(object):
     @classmethod
     def cross_validation_mle_parameters(cls, type_kernel, training_data, dimensions, problem_name):
         """
+        A json file with the percentage of success is generated. The output can be used to create
+        a histogram and a diagnostic plot.
+
+        The histogram would be of the vector (y_eval-means)/std_vec. We'd expect to have an
+        histogram similar to the one of a standard Gaussian random variable.
+
+         Diagnostic plot: For each point of the test fold, we plot the value of the function in that
+         point, and its C.I. based on the GP model. We would expect that around 95% of the test
+         points stay within their C.I.
+
         :param type_kernel: [(str)] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
         :param training_data: {'points': np.array(nxm), 'evaluations': np.array(n),
@@ -623,6 +674,18 @@ class ValidationGPModel(object):
         :param dimensions: [int]. It has only the n_tasks for the task_kernels, and for the
             PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product
         :param problem_name: (str)
+
+        :return: {
+            'means': (np.array(n)), vector with the means of the GP at the points chosen in each of
+                the test folds.
+            'std_vec': (np.array(n)), vector with the std of the GP at the points chosen in each of
+                the test folds.
+            'y_eval': np.array(n), vector with the actual values of the function at the chosen
+                points.
+            'n_data': int, total number of points.
+            'filename_plot': str,
+            'filename_histogram': str
+        }
         """
 
         n_data = len(training_data['evaluations'])
@@ -630,7 +693,6 @@ class ValidationGPModel(object):
         noise = True
         if training_data.get('var_noise') is None:
             noise = False
-
 
         training_data_sets = {}
         test_points = {}
@@ -701,19 +763,18 @@ class ValidationGPModel(object):
             problem=problem_name
         ))
 
-        plt.figure()
-        plt.ylabel('Prediction of the function')
-        plt.errorbar(np.arange(n_data), means, yerr=2.0 * std_vec, fmt='o')
-        plt.scatter(np.arange(n_data), y_eval, color='r')
-        plt.savefig(filename_plot)
-
         filename_histogram = path.join(DIAGNOSTIC_KERNEL_DIR, cls._validation_filename_histogram(
             problem=problem_name
         ))
 
-        plt.figure()
-        plt.hist((y_eval - means) / std_vec, bins=15)
-        plt.savefig(filename_histogram)
+        return {
+            'means': means,
+            'std_vec': std_vec,
+            'y_eval': y_eval,
+            'n_data': n_data,
+            'filename_plot': filename_plot,
+            'filename_histogram': filename_histogram,
+        }
 
     @staticmethod
     def check_value_within_ci(value, mean, variance, var_noise=None):

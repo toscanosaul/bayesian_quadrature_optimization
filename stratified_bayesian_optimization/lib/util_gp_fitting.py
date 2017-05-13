@@ -28,13 +28,16 @@ def get_kernel_default(kernel_name, dimension, default_values=None):
     if kernel_name[0] == PRODUCT_KERNELS_SEPARABLE:
         values = []
         cont = 0
-        for name, dimension in zip(kernel_name[1:], dimension):
-            n_params = get_number_parameters_kernel(name, dimension)
-            value_kernel = default_values[cont: cont + n_params]
+        for name, dim in zip(kernel_name[1:], dimension[1:]):
+            n_params = get_number_parameters_kernel([name], [dim])
+            if default_values is not None:
+                value_kernel = default_values[cont: cont + n_params]
+            else:
+                value_kernel = None
             cont += n_params
             values.append(value_kernel)
 
-        return ProductKernels.define_default_kernel(dimension, values, kernel_name[1:])
+        return ProductKernels.define_default_kernel(dimension[1:], values, kernel_name[1:])
 
 
 def get_kernel_class(kernel_name):

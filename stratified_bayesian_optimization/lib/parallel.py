@@ -23,8 +23,8 @@ class Parallel(object):
 
         n_jobs = min(len(arguments), mp.cpu_count())
 
+        pool = mp.Pool(processes=n_jobs)
         try:
-            pool = mp.Pool(processes=n_jobs)
             for key, argument in arguments.iteritems():
                 job = pool.apply_async(function, args=(argument, ), kwds=kwargs)
                 jobs[key] = job
@@ -45,5 +45,4 @@ class Parallel(object):
                     raise e
                 else:
                     logger.info("job %d failed"%key)
-
         return results

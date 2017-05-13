@@ -5,17 +5,22 @@ from doubles import expect
 
 import numpy as np
 import numpy.testing as npt
+import copy
 
 from stratified_bayesian_optimization.kernels.product_kernels import ProductKernels
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
 from stratified_bayesian_optimization.kernels.tasks_kernel import TasksKernel
 from stratified_bayesian_optimization.entities.parameter import ParameterEntity
+from stratified_bayesian_optimization.priors.uniform import UniformPrior
 from stratified_bayesian_optimization.lib.constant import (
     MATERN52_NAME,
     TASKS_KERNEL_NAME,
     LENGTH_SCALE_NAME,
     SIGMA2_NAME,
     LOWER_TRIANG_NAME,
+    PRODUCT_KERNELS_SEPARABLE,
+    SMALLEST_NUMBER,
+    LARGEST_NUMBER,
 )
 from stratified_bayesian_optimization.lib.finite_differences import FiniteDifferences
 
@@ -34,12 +39,17 @@ class TestProductKernels(unittest.TestCase):
         self.tasks = create_autospec(TasksKernel)
         self.kernel = ProductKernels(self.matern52, self.task_kernel)
 
-        self.length_scale_ = ParameterEntity(LENGTH_SCALE_NAME, np.array([1.0, 5.0]), None)
-        self.sigma2_ = ParameterEntity(SIGMA2_NAME, np.array([3]), None)
+        self.prior = UniformPrior(2, [1, 1], [100, 100])
+        self.prior_2 = UniformPrior(1, [1], [100])
+        self.prior_3 = UniformPrior(3, [1, 1, 1], [100, 100, 100])
+
+        self.length_scale_ = ParameterEntity(LENGTH_SCALE_NAME, np.array([1.0, 5.0]), self.prior)
+        self.sigma2_ = ParameterEntity(SIGMA2_NAME, np.array([3]), self.prior_2)
         self.matern52_ = Matern52(2, self.length_scale_, self.sigma2_)
 
         self.n_tasks_ = 2
-        self.lower_triang_ = ParameterEntity(LOWER_TRIANG_NAME, np.array([1.0, 5.0, 6.0]), None)
+        self.lower_triang_ = ParameterEntity(LOWER_TRIANG_NAME, np.array([1.0, 5.0, 6.0]),
+                                             self.prior_3)
         self.task_kernel_ = TasksKernel(self.n_tasks_, self.lower_triang_)
 
         self.kernel_ = ProductKernels(self.matern52_, self.task_kernel_)
@@ -207,3 +217,117 @@ class TestProductKernels(unittest.TestCase):
 
         for i in range(2):
             npt.assert_almost_equal(finite_diff[i], gradient[:, i:i+1].transpose())
+
+    def test_hypers_as_list(self):
+        assert self.kernel_.hypers_as_list == [self.length_scale_, self.sigma2_, self.lower_triang_]
+
+    def test_hypers_values_as_array(self):
+        assert np.all(self.kernel_.hypers_values_as_array == np.array([1, 5, 3, 1, 5, 6]))
+
+    def test_sample_parameters(self):
+        parameters = [self.length_scale_,  self.sigma2_, self.lower_triang_]
+        samples = []
+        np.random.seed(1)
+        for parameter in parameters:
+            samples.append(parameter.sample_from_prior(2))
+
+        assert np.all(self.kernel_.sample_parameters(2, random_seed=1) == np.array([
+            [samples[0][0, 0], samples[0][0, 1], samples[1][0], samples[2][0, 0], samples[2][0, 1],
+             samples[2][0, 2]],
+            [samples[0][1, 0], samples[0][1, 1], samples[1][1], samples[2][1, 0], samples[2][1, 1],
+             samples[2][1, 2]]]))
+
+    def test_get_bounds_parameters(self):
+        assert self.kernel_.get_bounds_parameters() == 6 * [(SMALLEST_NUMBER, LARGEST_NUMBER)]
+
+    def test_define_default_kernel(self):
+        kern1 = ProductKernels.define_default_kernel([1, 1], None,
+                                                     [MATERN52_NAME, TASKS_KERNEL_NAME])
+
+
+        assert kern1.name == PRODUCT_KERNELS_SEPARABLE + ':' + MATERN52_NAME + '_' + \
+                             TASKS_KERNEL_NAME + '_'
+        assert kern1.dimension == 2
+        assert kern1.dimension_parameters == 3
+        assert kern1.names == [MATERN52_NAME, TASKS_KERNEL_NAME]
+
+        assert kern1.kernels[MATERN52_NAME].length_scale.value == np.array([1])
+        assert kern1.kernels[MATERN52_NAME].sigma2.value == np.array([1])
+        assert kern1.kernels[TASKS_KERNEL_NAME].lower_triang.value == np.array([0])
+
+        assert kern1.parameters[MATERN52_NAME][LENGTH_SCALE_NAME].value == np.array([1])
+        assert kern1.parameters[MATERN52_NAME][SIGMA2_NAME].value == np.array([1])
+        assert kern1.parameters[TASKS_KERNEL_NAME][LOWER_TRIANG_NAME].value == np.array([0])
+
+        kern2 = ProductKernels.define_default_kernel([1, 1], [np.array([3, 2]), np.array([5])],
+                                                     [MATERN52_NAME, TASKS_KERNEL_NAME])
+
+        assert kern2.name == PRODUCT_KERNELS_SEPARABLE + ':' + MATERN52_NAME + '_' + \
+                             TASKS_KERNEL_NAME + '_'
+        assert kern2.dimension == 2
+        assert kern2.dimension_parameters == 3
+        assert kern2.names == [MATERN52_NAME, TASKS_KERNEL_NAME]
+
+        assert kern2.kernels[MATERN52_NAME].length_scale.value == np.array([3])
+        assert kern2.kernels[MATERN52_NAME].sigma2.value == np.array([2])
+        assert kern2.kernels[TASKS_KERNEL_NAME].lower_triang.value == np.array([5])
+
+        assert kern2.parameters[MATERN52_NAME][LENGTH_SCALE_NAME].value == np.array([3])
+        assert kern2.parameters[MATERN52_NAME][SIGMA2_NAME].value == np.array([2])
+        assert kern2.parameters[TASKS_KERNEL_NAME][LOWER_TRIANG_NAME].value == np.array([5])
+
+    def test_update_value_parameters(self):
+        self.kernel_.update_value_parameters(np.array([5, 8, 7, 15, 16, 17]))
+
+        assert np.all(self.kernel_.kernels[MATERN52_NAME].length_scale.value == np.array([5, 8]))
+        assert self.kernel_.kernels[MATERN52_NAME].sigma2.value == np.array([7])
+        assert np.all(self.kernel_.kernels[TASKS_KERNEL_NAME].lower_triang.value
+                      == np.array([15, 16, 17]))
+
+        assert np.all(self.kernel_.parameters[MATERN52_NAME][LENGTH_SCALE_NAME].value
+                      == np.array([5, 8]))
+        assert self.kernel_.parameters[MATERN52_NAME][SIGMA2_NAME].value == np.array([7])
+        assert np.all(self.kernel_.parameters[TASKS_KERNEL_NAME][LOWER_TRIANG_NAME].value ==
+                      np.array([15, 16, 17]))
+
+    def test_compare_kernels(self):
+        kernel = ProductKernels.define_kernel_from_array([1, 1], [np.array([1, 1]), np.array([0])],
+                                                         [MATERN52_NAME, TASKS_KERNEL_NAME])
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.name = 'a'
+        assert ProductKernels.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.dimension = 3
+        assert ProductKernels.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.dimension_parameters = 5
+        assert ProductKernels.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.names = ['a', 'b']
+        assert ProductKernels.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.kernels[MATERN52_NAME].name = 'a'
+        assert ProductKernels.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.kernels[TASKS_KERNEL_NAME].name = 'a'
+        assert ProductKernels.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.parameters[MATERN52_NAME][LENGTH_SCALE_NAME].value = [2]
+        assert ProductKernels.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.parameters[MATERN52_NAME][SIGMA2_NAME].value = [3]
+        assert ProductKernels.compare_kernels(kernel, kernel_) is False
+
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.parameters[TASKS_KERNEL_NAME][LOWER_TRIANG_NAME].value = [3]
+        assert ProductKernels.compare_kernels(kernel, kernel_) is False
+
+

@@ -9,6 +9,10 @@ from doubles import expect
 
 from stratified_bayesian_optimization.entities.parameter import ParameterEntity
 from stratified_bayesian_optimization.priors.uniform import UniformPrior
+from stratified_bayesian_optimization.lib.constant import (
+    SMALLEST_NUMBER,
+    LARGEST_NUMBER,
+)
 
 
 class TestParameterEntity(unittest.TestCase):
@@ -28,5 +32,11 @@ class TestParameterEntity(unittest.TestCase):
         assert 0.0 == self.parameter.log_prior()
 
     def test_sample_from_prior(self):
-        expect(self.prior).sample.once().and_return(0.0)
+        expect(self.prior).sample.twice().and_return(0.0)
         assert 0.0 == self.parameter.sample_from_prior(1)
+        assert 0.0 == self.parameter.sample_from_prior(1, 1)
+
+    def test_process_bounds(self):
+        assert self.parameter.process_bounds(2, None) == 2 *  [(SMALLEST_NUMBER, LARGEST_NUMBER)]
+        assert self.parameter.process_bounds(2, [[None, 2],[1, None]]) == \
+               [[SMALLEST_NUMBER, 2], [1, LARGEST_NUMBER]]
