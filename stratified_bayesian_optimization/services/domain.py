@@ -117,7 +117,6 @@ class DomainService(object):
             entry, 1 if the bounds are all the finite options for the entry.
         :return: [float]
         """
-
         if type_bounds == 0:
             return list(np.random.uniform(bounds[0], bounds[1], n_samples))
         else:

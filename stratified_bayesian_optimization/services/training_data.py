@@ -22,31 +22,43 @@ from stratified_bayesian_optimization.lib.util import (
 logger = SBOLog(__name__)
 
 class TrainingDataService(object):
-    _filename = 'training_data_{problem_name}_{training_name}.json'.format
+    _filename = 'training_data_{problem_name}_{training_name}_{n_points}_{random_seed}.json'.format
     _filename_domain = 'training_points_{problem_name}_{training_name}_{n_points}_' \
                        '{random_seed}.json'.format
 
     @classmethod
-    def get_training_data(cls, problem_name, training_name, points=None, n_training=0,
-                          noise=False, n_samples=None, random_seed=DEFAULT_RANDOM_SEED,
-                          parallel=True):
+    def get_training_data(cls, problem_name, training_name, bounds_domain, n_training=5,
+                          points=None, noise=False, n_samples=None,
+                          random_seed=DEFAULT_RANDOM_SEED, parallel=True, type_bounds=None):
         """
 
         :param problem_name: str
         :param training_name: (str), prefix used to save the training data.
-        :param points: [[float]]
+        :param bounds_domain: [([float, float] or [float])], the first case is when the bounds are
+            lower or upper bound of the respective entry; in the second case, it's list of finite
+            points representing the domain of that entry.
         :param n_training: (int), number of training points if points is None
+        :param points: [[float]]
         :param noise: boolean, true if the evaluations are noisy
         :param n_samples: int. If noise is true, we take n_samples of the function to estimate its
             value.
         :param random_seed: int
         :param parallel: (boolean) Train in parallel if it's True.
+        :param type_bounds: [0 or 1], 0 if the bounds are lower or upper bound of the respective
+            entry, 1 if the bounds are all the finite options for that entry.
         :return: {'points': [[float]], 'evaluations': [float], 'var_noise': [float] or None}
         """
+
+        rs = random_seed
+        if points is not None:
+            n_training = len(points)
+            rs = 0
 
         file_name = cls._filename(
             problem_name=problem_name,
             training_name=training_name,
+            n_points=n_training,
+            random_seed=rs,
         )
 
         training_dir = path.join(PROBLEM_DIR, problem_name, 'data')
@@ -59,8 +71,8 @@ class TrainingDataService(object):
         np.random.seed(random_seed)
 
         if points is None:
-            points = cls.get_points_domain(n_samples, random_seed, training_name, problem_name)
-
+            points = cls.get_points_domain(n_training, bounds_domain, random_seed, training_name,
+                                           problem_name, type_bounds)
 
         name_module = cls.get_name_module(problem_name)
         module = __import__(name_module , globals(), locals(), -1)
@@ -81,37 +93,46 @@ class TrainingDataService(object):
             JSONFile.write(training_data, training_path)
             return training_data
 
-        kwargs = {'n_samples':n_samples, 'module': module}
+        kwargs = {'n_samples':n_samples, 'name_module': name_module, 'cls': cls}
 
         arguments = convert_list_to_dictionary(points)
+
         training_points = Parallel.run_function_different_arguments_parallel(
             wrapper_evaluate_objective_function, arguments, all_success=False, **kwargs)
 
         training_points = convert_dictionary_to_list(training_points)
+
+        training_data['evaluations'] = [value[0] for value in training_points]
+
         if noise:
             training_data['var_noise'] = [value[1] for value in training_points]
-            training_data['evaluations'] = [value[0] for value in training_points]
-        else:
-            training_data['evaluations'] = [value for value in training_points]
+
+        JSONFile.write(training_data, training_path)
 
         return training_data
 
     @classmethod
-    def get_points_domain(cls, n_samples, random_seed, training_name, problem_name):
+    def get_points_domain(cls, n_training, bounds_domain, random_seed, training_name, problem_name,
+                          type_bounds=None):
         """
         Get random points in the domain.
 
-        :param n_samples: (int)
+        :param n_training: (int) Number of points
+        :param bounds_domain: [([float, float] or [float])], the first case is when the bounds are
+            lower or upper bound of the respective entry; in the second case, it's list of finite
+            points representing the domain of that entry.
         :param random_seed: (int)
         :param training_name: (str), prefix used to save the training data.
         :param problem_name: str
+        :param type_bounds: [0 or 1], 0 if the bounds are lower or upper bound of the respective
+            entry, 1 if the bounds are all the finite options for that entry.
         :return: [[float]]
         """
 
         file_name = cls._filename_domain(
             problem_name=problem_name,
             training_name=training_name,
-            n_points=n_samples,
+            n_points=n_training,
             random_seed=random_seed,
         )
 
@@ -122,7 +143,8 @@ class TrainingDataService(object):
         if points is not None:
             return points
 
-        points = DomainService.get_points_domain(n_samples, random_seed)
+        points = DomainService.get_points_domain(n_training, bounds_domain, type_bounds=type_bounds,
+                                                 random_seed=random_seed)
 
         JSONFile.write(points, training_path)
 

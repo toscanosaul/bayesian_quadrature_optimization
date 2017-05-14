@@ -43,7 +43,8 @@ class TestUtil(unittest.TestCase):
 
     def test_wrapper_evaluate_objective_function(self):
         expect(TrainingDataService).evaluate_function.once().and_return(0)
-        assert wrapper_evaluate_objective_function(TrainingDataService, 0, 0, 0) == 0
+        assert wrapper_evaluate_objective_function(0, TrainingDataService,
+                                                   "problems.test_problem.main", 0) == 0
 
     def test_get_number_parameters_kernel(self):
         assert get_number_parameters_kernel(
