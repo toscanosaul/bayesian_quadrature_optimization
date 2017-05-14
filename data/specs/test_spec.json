@@ -1,20 +1,15 @@
 {
-    "problem_name":"toy_example",
+    "problem_name":"test_problem",
     "number_points_each_dimension":[
-        5,
         5
     ],
     "bounds_domain_x":[
         [
-            0,
-            1
-        ],
-        [
-            3,
-            6
+            1,
+            100
         ]
     ],
-    "dim_x":2,
+    "dim_x":1,
     "choose_noise":true,
     "method_optimization":"SBO"
 }

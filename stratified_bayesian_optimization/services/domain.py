@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from os import path
+import os
 
 import numpy as np
 
@@ -9,13 +10,14 @@ from stratified_bayesian_optimization.entities.domain import DomainEntity
 from stratified_bayesian_optimization.entities.domain import BoundsEntity
 from stratified_bayesian_optimization.lib.constant import (
     DOMAIN_DIR,
+    PROBLEM_DIR,
 )
 from stratified_bayesian_optimization.util.json_file import JSONFile
 
 logger = SBOLog(__name__)
 
 class DomainService(object):
-    _disc_x_filename = 'discretization_domain_x_problem_{name}_bounds_{bounds}_number_points_' \
+    _disc_x_filename = 'discretization_domain_x_bounds_{bounds}_number_points_' \
                        '{number_points_each_dimension}.json'.format
 
     @classmethod
@@ -33,13 +35,22 @@ class DomainService(object):
 
         bounds_str = BoundsEntity.get_bounds_as_lists(bounds_domain_x)
 
-        filename = path.join(DOMAIN_DIR, cls._disc_x_filename(
+        filename = cls._disc_x_filename(
             name=problem_name,
             bounds=bounds_str,
             number_points_each_dimension=number_points_each_dimension_x
-        ))
+        )
 
-        discretization_data = JSONFile.read(filename)
+        domain_dir = path.join(PROBLEM_DIR, problem_name, DOMAIN_DIR)
+
+        try:
+            os.stat(domain_dir)
+        except:
+            os.mkdir(domain_dir)
+
+        domain_path = path.join(domain_dir, filename)
+
+        discretization_data = JSONFile.read(domain_path)
         if discretization_data is not None:
             return discretization_data
 
@@ -48,7 +59,7 @@ class DomainService(object):
                                                              number_points_each_dimension_x)
         logger.info('Generated discretization of domain_x')
 
-        JSONFile.write(discretization_data, filename)
+        JSONFile.write(discretization_data, domain_path)
 
         return discretization_data
 

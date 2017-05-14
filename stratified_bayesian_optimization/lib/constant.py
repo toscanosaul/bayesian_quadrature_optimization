@@ -4,7 +4,7 @@ SPECS_DIR = 'data/specs'
 MULTIPLESPECS_DIR = 'data/multiple_specs'
 
 # Directory for domain
-DOMAIN_DIR = 'data/domain'
+DOMAIN_DIR = 'domain'
 
 #Directory of diagnostics kernel
 DIAGNOSTIC_KERNEL_DIR = 'results/diagnostic_kernel'

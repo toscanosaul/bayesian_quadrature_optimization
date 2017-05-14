@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from os import path
+import os
 
 import numpy as np
 
@@ -62,6 +63,12 @@ class TrainingDataService(object):
         )
 
         training_dir = path.join(PROBLEM_DIR, problem_name, 'data')
+
+        try:
+            os.stat(training_dir)
+        except:
+            os.mkdir(training_dir)
+
         training_path = path.join(training_dir, file_name)
 
         training_data = JSONFile.read(training_path)

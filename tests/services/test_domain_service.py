@@ -34,14 +34,14 @@ class TestDomainService(unittest.TestCase):
         expect(DomainEntity).discretize_domain.once().and_return([])
         expect(BoundsEntity).get_bounds_as_lists.once().and_return([2])
 
-        assert DomainService.load_discretization(2, 1, 0) == []
+        assert DomainService.load_discretization('test_problem', 1, 0) == []
 
     def test_load_discretization_file_exists(self):
         allow(JSONFile).read.and_return([])
         expect(DomainEntity).discretize_domain.never()
         expect(BoundsEntity).get_bounds_as_lists.once().and_return([2])
 
-        assert DomainService.load_discretization(2, 1, 0) == []
+        assert DomainService.load_discretization('test_problem', 1, 0) == []
 
     def test_domain_from_dict(self):
         expect(DomainService).load_discretization.never()
