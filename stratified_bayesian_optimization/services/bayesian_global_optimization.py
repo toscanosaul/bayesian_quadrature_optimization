@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from stratified_bayesian_optimization.services.domain import (
     DomainService
 )
+from stratified_bayesian_optimization.services.training_data import TrainingDataService
 from stratified_bayesian_optimization.initializers.log import SBOLog
 
 logger = SBOLog(__name__)
@@ -20,6 +21,8 @@ class BGO(object):
         # TO DO: It now only returns domain
         """
         logger.info("Training GP model")
+
+        training_data = TrainingDataService.from_dict(spec)
         # method_optimization = spec.method_optimization
 
         gp_model = None
@@ -58,10 +61,8 @@ class BGO(object):
             }
         }
         """
-
-        bgp = cls.from_spec(spec)
+        bgo = cls.from_spec(spec)
         domain = DomainService.from_dict(spec)
 
-        result = bgp.optimize(domain, 0)
-
+        result = bgo.optimize(domain, 0)
         return result

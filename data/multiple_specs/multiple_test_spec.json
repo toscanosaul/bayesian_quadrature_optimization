@@ -1,32 +1,63 @@
 {
+    "bounds_domains":[
+        [
+            [
+                1,
+                100
+            ]
+        ]
+    ],
+    "problem_names":[
+        "test_problem"
+    ],
+    "dim_xs":[
+        1
+    ],
+    "random_seeds":[
+        1
+    ],
+    "n_sampless":[
+        0
+    ],
+    "type_boundss":[
+        [
+            0
+        ]
+    ],
+    "number_points_each_dimensions":[
+        [
+            10
+        ]
+    ],
+    "parallels":[
+        true
+    ],
     "method_optimizations":[
         "SBO"
     ],
     "choose_noises":[
         true
     ],
-    "problem_names":[
-        "toy_example"
+    "noises":[
+        false
     ],
-    "dim_xs":[
-        2
+    "pointss":[
+        [
+
+        ]
     ],
     "bounds_domain_xs":[
         [
             [
-                0,
-                1
-            ],
-            [
-                3,
-                6
+                1,
+                100
             ]
         ]
     ],
-    "number_points_each_dimensions":[
-        [
-            5,
-            5
-        ]
+    "training_names":[
+        "test_global"
+    ],
+    "n_trainings":[
+        10
     ]
 }

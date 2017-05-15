@@ -1,7 +1,8 @@
 {
-    "problem_name":"test_problem",
+    "noise":false,
+    "random_seed":1,
     "number_points_each_dimension":[
-        5
+        10
     ],
     "bounds_domain_x":[
         [
@@ -9,7 +10,24 @@
             100
         ]
     ],
+    "training_name":"test_global",
     "dim_x":1,
+    "parallel":true,
+    "n_training":10,
+    "problem_name":"test_problem",
+    "bounds_domain":[
+        [
+            1,
+            100
+        ]
+    ],
+    "points":[
+
+    ],
+    "type_bounds":[
+        0
+    ],
+    "n_samples":0,
     "choose_noise":true,
     "method_optimization":"SBO"
 }

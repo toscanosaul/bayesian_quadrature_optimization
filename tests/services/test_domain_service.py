@@ -4,6 +4,8 @@ from doubles import allow, expect
 import unittest
 
 import numpy as np
+import os
+from mock import patch, MagicMock
 
 from stratified_bayesian_optimization.services.domain import DomainService
 from stratified_bayesian_optimization.util.json_file import JSONFile
@@ -11,6 +13,14 @@ from stratified_bayesian_optimization.entities.domain import(
     BoundsEntity,
     DomainEntity,
 )
+
+
+class MockMkdir(object):
+    def __init__(self):
+        self.received_args = None
+
+    def __call__(self, *args):
+        self.received_args = args
 
 
 class TestDomainService(unittest.TestCase):
@@ -30,11 +40,15 @@ class TestDomainService(unittest.TestCase):
 
     def test_load_discretization_file_not_exists(self):
         allow(JSONFile).read
-        expect(JSONFile).write.once()
-        expect(DomainEntity).discretize_domain.once().and_return([])
-        expect(BoundsEntity).get_bounds_as_lists.once().and_return([2])
+        expect(JSONFile).write.twice()
+        expect(DomainEntity).discretize_domain.twice().and_return([])
+        expect(BoundsEntity).get_bounds_as_lists.twice().and_return([2])
 
         assert DomainService.load_discretization('test_problem', 1, 0) == []
+
+        with patch('os.path.exists', new=MagicMock(return_value=False)):
+            os.mkdir = MockMkdir()
+            assert DomainService.load_discretization('test_problem', 1, 0) == []
 
     def test_load_discretization_file_exists(self):
         allow(JSONFile).read.and_return([])

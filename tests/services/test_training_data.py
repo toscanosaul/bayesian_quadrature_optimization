@@ -3,12 +3,21 @@ from doubles import expect
 
 import numpy as np
 import numpy.testing as npt
+import os
+from mock import patch, MagicMock
 
 from stratified_bayesian_optimization.services.training_data import TrainingDataService
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.lib.constant import (
     DEFAULT_RANDOM_SEED,
 )
+
+class MockMkdir(object):
+    def __init__(self):
+        self.received_args = None
+
+    def __call__(self, *args):
+        self.received_args = args
 
 
 class TestTrainingDataService(unittest.TestCase):
@@ -36,6 +45,15 @@ class TestTrainingDataService(unittest.TestCase):
         assert training_data['var_noise'] == training_data_['var_noise']
         assert np.all(training_data['evaluations'] == training_data_['evaluations'])
         assert np.all(training_data['points'] == training_data_['points'])
+
+        with patch('os.path.exists', new=MagicMock(return_value=False)):
+            os.mkdir = MockMkdir()
+            training_data_ = \
+                TrainingDataService.get_training_data(problem_name, training_name, bounds_domain,
+                                                      parallel=False)
+            assert training_data['var_noise'] == training_data_['var_noise']
+            assert np.all(training_data['evaluations'] == training_data_['evaluations'])
+            assert np.all(training_data['points'] == training_data_['points'])
 
     def test_cached_get_training_data(self):
         problem_name = 'test_problem'

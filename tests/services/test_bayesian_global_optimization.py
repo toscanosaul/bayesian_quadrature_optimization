@@ -7,17 +7,21 @@ from stratified_bayesian_optimization.services.bayesian_global_optimization impo
 from stratified_bayesian_optimization.services.domain import DomainService
 from stratified_bayesian_optimization.entities.run_spec import RunSpecEntity
 from stratified_bayesian_optimization.entities.domain import BoundsEntity, DomainEntity
+from stratified_bayesian_optimization.util.json_file import JSONFile
+
 
 class TestBGOService(unittest.TestCase):
 
     def setUp(self):
         self.spec = RunSpecEntity({
-            'problem_name': 'toy',
+            'problem_name': 'test_problem',
             'method_optimization': 'SBO',
             'dim_x': 1,
             'choose_noise': True,
             'bounds_domain_x': [BoundsEntity({'lower_bound': 2, 'upper_bound': 3})],
-            'number_points_each_dimension': [4]
+            'number_points_each_dimension': [4],
+            'bounds_domain': [[2, 3]],
+            'n_training': 5,
         })
 
         self.acquisition_function = None
@@ -26,6 +30,7 @@ class TestBGOService(unittest.TestCase):
         self.bgo = BGO(self.acquisition_function, self.gp_model)
 
     def test_from_spec(self):
+        expect(JSONFile).read.and_return(None)
         BGO.from_spec(self.spec)
 
     def test_run_spec(self):

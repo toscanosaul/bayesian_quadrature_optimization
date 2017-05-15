@@ -43,9 +43,7 @@ class DomainService(object):
 
         domain_dir = path.join(PROBLEM_DIR, problem_name, DOMAIN_DIR)
 
-        try:
-            os.stat(domain_dir)
-        except:
+        if not os.path.exists(domain_dir):
             os.mkdir(domain_dir)
 
         domain_path = path.join(domain_dir, filename)

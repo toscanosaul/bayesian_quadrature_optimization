@@ -28,6 +28,30 @@ class TrainingDataService(object):
                        '{random_seed}.json'.format
 
     @classmethod
+    def from_dict(cls, spec):
+        """
+        Create training data from dict
+
+        :param spec: dict
+        :return: {'points': [[float]], 'evaluations': [float], 'var_noise': [float] or None}
+        """
+
+        entry = {
+            'problem_name': spec.get('problem_name'),
+            'training_name': spec.get('training_name'),
+            'bounds_domain': spec.get('bounds_domain'),
+            'n_training': spec.get('n_training'),
+            'points': spec.get('points'),
+            'noise': spec.get('noise'),
+            'n_samples': spec.get('n_samples'),
+            'random_seed': spec.get('random_seed'),
+            'parallel': spec.get('parallel'),
+            'type_bounds': spec.get('type_bounds'),
+        }
+
+        return cls.get_training_data(**entry)
+
+    @classmethod
     def get_training_data(cls, problem_name, training_name, bounds_domain, n_training=5,
                           points=None, noise=False, n_samples=None,
                           random_seed=DEFAULT_RANDOM_SEED, parallel=True, type_bounds=None):
@@ -50,8 +74,10 @@ class TrainingDataService(object):
         :return: {'points': [[float]], 'evaluations': [float], 'var_noise': [float] or None}
         """
 
+        logger.info("Getting training data")
+
         rs = random_seed
-        if points is not None:
+        if points is not None and len(points) > 0:
             n_training = len(points)
             rs = 0
 
@@ -64,9 +90,7 @@ class TrainingDataService(object):
 
         training_dir = path.join(PROBLEM_DIR, problem_name, 'data')
 
-        try:
-            os.stat(training_dir)
-        except:
+        if not os.path.exists(training_dir):
             os.mkdir(training_dir)
 
         training_path = path.join(training_dir, file_name)
@@ -74,10 +98,9 @@ class TrainingDataService(object):
         training_data = JSONFile.read(training_path)
         if training_data is not None:
             return training_data
-
         np.random.seed(random_seed)
 
-        if points is None:
+        if points is None or len(points) == 0:
             points = cls.get_points_domain(n_training, bounds_domain, random_seed, training_name,
                                            problem_name, type_bounds)
 
@@ -100,7 +123,7 @@ class TrainingDataService(object):
             JSONFile.write(training_data, training_path)
             return training_data
 
-        kwargs = {'n_samples':n_samples, 'name_module': name_module, 'cls': cls}
+        kwargs = {'name_module': name_module, 'cls': cls, 'n_samples': n_samples}
 
         arguments = convert_list_to_dictionary(points)
 
@@ -149,7 +172,6 @@ class TrainingDataService(object):
         points = JSONFile.read(training_path)
         if points is not None:
             return points
-
         points = DomainService.get_points_domain(n_training, bounds_domain, type_bounds=type_bounds,
                                                  random_seed=random_seed)
 
@@ -172,7 +194,8 @@ class TrainingDataService(object):
         :param n_samples: (int), number of samples used when the evaluations are noisy
         :return: float
         """
-        if n_samples is None:
+
+        if n_samples is None or n_samples == 0:
             return module.main(params)
         else:
             return module.main(n_samples, params)

@@ -12,7 +12,7 @@ logger = SBOLog(__name__)
 
 if __name__ == '__main__':
     # Example:
-    # python -m scripts.run spec.json --output_file "dump.json"
+    # python -m scripts.run test_spec.json --output_file "dump.json"
     parser = argparse.ArgumentParser()
     parser.add_argument('specfile', help='e.g. sample_spec.json')
     parser.add_argument('--niter', type=int, help='number of iterations', default=5)
