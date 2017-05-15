@@ -330,13 +330,14 @@ class ProductKernels(AbstractKernel):
         :param dimension: [int] list with the dimensions of the kernel
         :param params: [np.array(k)] The first part are related to the parameters of the first
             kernel and so on.
-        :param inputs: np.array(nxd)
+        :param inputs: {(str) kernel_name: np.array(nxd)}.
         :param args: [str] List with the names of the kernels.
 
         :return: cov(inputs) where the kernel is defined with params
         """
 
         kernel = cls.define_kernel_from_array(dimension, params, *args)
+
         return kernel.cov_dict(inputs)
 
     @classmethod
@@ -353,6 +354,7 @@ class ProductKernels(AbstractKernel):
             (int) i: np.array(nxn), derivative respect to the ith parameter
         }
         """
+
         kernel = cls.define_kernel_from_array(dimension, params, *args)
 
         gradient = kernel.gradient_respect_parameters(inputs)

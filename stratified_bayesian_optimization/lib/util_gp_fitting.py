@@ -36,7 +36,6 @@ def get_kernel_default(kernel_name, dimension, default_values=None):
                 value_kernel = None
             cont += n_params
             values.append(value_kernel)
-
         return ProductKernels.define_default_kernel(dimension[1:], values, kernel_name[1:])
 
 

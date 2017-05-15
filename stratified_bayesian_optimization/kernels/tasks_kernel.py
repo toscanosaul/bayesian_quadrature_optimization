@@ -155,7 +155,6 @@ class TasksKernel(AbstractKernel):
 
         if self.base_cov_matrix is not None:
             return
-
         count = 0
         L = np.zeros((self.n_tasks, self.n_tasks))
         for i in range(self.n_tasks):
@@ -194,7 +193,7 @@ class TasksKernel(AbstractKernel):
             'lower_triang': {'entry (int)': np.array(nxn)}
         }
         """
-
+        inputs = inputs.astype(int)
         self.compute_cov_matrix()
 
         gradient_base_tasks = GradientTasksKernel.gradient_respect_parameters(

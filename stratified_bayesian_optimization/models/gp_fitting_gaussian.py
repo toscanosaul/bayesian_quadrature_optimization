@@ -28,6 +28,7 @@ from stratified_bayesian_optimization.lib.util import (
     get_default_values_kernel,
     expand_dimension_vector,
     reduce_dimension_vector,
+    get_number_parameters_kernel,
 )
 from stratified_bayesian_optimization.lib.optimization import Optimization
 from stratified_bayesian_optimization.lib.constant import LBFGS_NAME
@@ -53,18 +54,20 @@ class GPFittingGaussian(object):
         :param training_data: {'points': ([[float]], dim=nxm), 'evaluations': ([float],dim=n),
             'var_noise': ([float],dim=n or [])}
         :param dimensions: [int]. It has only the n_tasks for the task_kernels, and for the
-            PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product
-        :param kernel_values: [float], contains the dafault values of the parameters of the kernel
+            PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product, and
+            the total dimension of the product_kernels_separable too in the first entry.
+        :param kernel_values: [float], contains the default values of the parameters of the kernel
         :param mean_value: [float], It contains the value of the mean parameter.
         :param var_noise_value: [float], It contains the variance of the noise of the model
         :param thinning: (int)
         :param data: {'points': ([[float]], dim=nxm), 'evaluations': ([float],dim=n),
             'var_noise': ([float],dim=n or [])}, it might contains more points than the points used
-            to train the kernel, or different points.
+            to train the kernel, or different points. If its None, it's replaced by the
+            traning_data.
         """
 
         self.type_kernel = type_kernel
-        self.class_kernel = get_kernel_class(type_kernel)
+        self.class_kernel = get_kernel_class(type_kernel[0])
 
         self.training_data = training_data
 
@@ -87,6 +90,16 @@ class GPFittingGaussian(object):
         self.var_noise_value = var_noise_value
 
         self.kernel = get_kernel_default(type_kernel, self.dimensions, np.array(kernel_values))
+
+        self.kernel_dimensions = [self.kernel.dimension]
+        if len(type_kernel) > 1:
+            for name in self.kernel.names:
+                self.kernel_dimensions.append(self.kernel.kernels[name].dimension)
+
+        self.number_parameters = [get_number_parameters_kernel(type_kernel, dimensions)]
+        if len(dimensions) > 1:
+            for type_k, dim in zip(type_kernel[1:], dimensions[1:]):
+                self.number_parameters.append(get_number_parameters_kernel([type_k], [dim]))
 
         self.mean = ParameterEntity(
             MEAN_NAME, np.array(mean_value), UniformPrior(1, [SMALLEST_NUMBER], [LARGEST_NUMBER]))
@@ -113,7 +126,7 @@ class GPFittingGaussian(object):
         :param var_noise_eval: np.array(k)
         """
         self.data['points'] = np.append(self.data['points'], point, axis=0)
-        self.data['evaluation'] = np.append(self.data['evaluation'], evaluation)
+        self.data['evaluations'] = np.append(self.data['evaluations'], evaluation)
 
         if var_noise_eval is not None:
             self.data['var_noise'] = np.append(self.data['var_noise'], var_noise_eval)
@@ -265,30 +278,35 @@ class GPFittingGaussian(object):
         :return: np.array(nxn) (chol), np.array(nxn) (cov)
         """
 
-        cached = self._get_cached_data((var_noise, parameters_kernel), CHOL_COV)
+        cached = self._get_cached_data((var_noise, tuple(parameters_kernel)), CHOL_COV)
         if cached is not False:
             return cached
 
         n = self.data['points'].shape[0]
 
         if self.type_kernel[0] == PRODUCT_KERNELS_SEPARABLE:
+            inputs = separate_numpy_arrays_in_lists(self.data['points'], self.kernel_dimensions[1])
+            inputs_dict = {}
+            for index, input in enumerate(inputs):
+                inputs_dict[self.type_kernel[index + 1]] = input
+
             cov = self.class_kernel.evaluate_cov_defined_by_params(
-                separate_numpy_arrays_in_lists(parameters_kernel, self.dimensions[0]),
-                separate_numpy_arrays_in_lists(self.data['points'], self.dimensions[0]),
-                self.dimensions, self.type_kernel[1: ])
+                separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
+                inputs_dict,
+                self.dimensions[1:], self.type_kernel[1: ])
         else:
             cov = self.class_kernel.evaluate_cov_defined_by_params(
                 parameters_kernel, self.data['points'], self.dimensions[0]
             )
 
-        if self.data.get('var_noise'):
+        if self.data.get('var_noise') is not None:
             cov += np.diag(self.data['var_noise'])
 
         cov += np.diag(var_noise * np.ones(n))
 
         chol = spla.cholesky(cov, lower=True)
 
-        self._updated_cached_data((var_noise, parameters_kernel), (chol, cov), CHOL_COV)
+        self._updated_cached_data((var_noise, tuple(parameters_kernel)), (chol, cov), CHOL_COV)
 
         return chol, cov
 
@@ -307,12 +325,12 @@ class GPFittingGaussian(object):
         chol, cov = self._chol_cov_including_noise(var_noise, parameters_kernel)
         y_unbiased = self.data['evaluations'] - mean
 
-        cached_solve = self._get_cached_data((var_noise, parameters_kernel, mean),
+        cached_solve = self._get_cached_data((var_noise, tuple(parameters_kernel), mean),
                                              SOL_CHOL_Y_UNBIASED)
 
         if cached_solve is False:
             solve = spla.cho_solve((chol, True), y_unbiased)
-            self._updated_cached_data((var_noise, parameters_kernel, mean), solve,
+            self._updated_cached_data((var_noise, tuple(parameters_kernel), mean), solve,
                                       SOL_CHOL_Y_UNBIASED)
         else:
             solve = cached_solve
@@ -331,10 +349,14 @@ class GPFittingGaussian(object):
         """
 
         if self.type_kernel[0] == PRODUCT_KERNELS_SEPARABLE:
+            inputs = separate_numpy_arrays_in_lists(self.data['points'], self.kernel_dimensions[1])
+            inputs_dict = {}
+            for index, input in enumerate(inputs):
+                inputs_dict[self.type_kernel[index + 1]] = input
             grad_cov = self.class_kernel.evaluate_grad_defined_by_params_respect_params(
-                separate_numpy_arrays_in_lists(parameters_kernel, self.dimensions[0]),
-                separate_numpy_arrays_in_lists(self.data['points'], self.dimensions[0]),
-                self.dimensions, self.type_kernel[1: ])
+                separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
+                inputs_dict,
+                self.dimensions[1:], self.type_kernel[1: ])
         else:
             grad_cov = self.class_kernel.evaluate_grad_defined_by_params_respect_params(
                 parameters_kernel, self.data['points'], self.dimensions[0])
@@ -343,11 +365,11 @@ class GPFittingGaussian(object):
 
         y_unbiased = self.data['evaluations'] - mean
 
-        cached_solve = self._get_cached_data((var_noise, parameters_kernel, mean),
+        cached_solve = self._get_cached_data((var_noise, tuple(parameters_kernel), mean),
                                              SOL_CHOL_Y_UNBIASED)
         if cached_solve is False:
             solve = spla.cho_solve((chol, True), y_unbiased)
-            self._updated_cached_data((var_noise, parameters_kernel, mean), solve,
+            self._updated_cached_data((var_noise, tuple(parameters_kernel), mean), solve,
                                       SOL_CHOL_Y_UNBIASED)
         else:
             solve = cached_solve
@@ -357,7 +379,7 @@ class GPFittingGaussian(object):
             gradient_kernel_params[i] = GradientGPFittingGaussian.\
                 compute_gradient_llh_given_grad_cov(grad_cov[i], chol, solve)
 
-        n_training_points = self.data.shape[0]
+        n_training_points = self.data['points'].shape[0]
 
         gradient = {}
         gradient['kernel_params'] = gradient_kernel_params
@@ -367,7 +389,7 @@ class GPFittingGaussian(object):
         grad_var_noise = GradientGPFittingGaussian.compute_gradient_kernel_respect_to_noise(
             n_training_points)
         gradient['var_noise'] = GradientGPFittingGaussian.compute_gradient_llh_given_grad_cov(
-            grad_var_noise, cov, solve)
+            grad_var_noise, chol, solve)
 
         return gradient
 
@@ -403,7 +425,7 @@ class GPFittingGaussian(object):
         """
 
         if random_seed is not None:
-            np.random_seed(random_seed)
+            np.random.seed(random_seed)
         samples = []
         samples.append(self.var_noise.sample_from_prior(n_samples))
         samples.append(self.mean.sample_from_prior(n_samples))
@@ -595,7 +617,7 @@ class GPFittingGaussian(object):
         index = 0
         for parameter in parameters_model:
             dimension = parameter.dimension
-            lp += parameter.prior_logprob(parameters[index: dimension])
+            lp += parameter.log_prior(parameters[index: dimension])
             index += dimension
 
         lp += self.log_likelihood(parameters[0], parameters[1], parameters[2:])
