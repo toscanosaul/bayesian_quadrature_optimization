@@ -35,7 +35,7 @@ class SliceSampling(object):
         self.component_wise = slice_sampling_params.get('component_wise', True)
         self.doubling_step = slice_sampling_params.get('doubling_step', True)
 
-    def slice_sample(self, point):
+    def slice_sample(self, point, *args_log_prob):
         """
         Same a point from self.log_prob using slice sampling.
 
@@ -52,15 +52,15 @@ class SliceSampling(object):
             for d in dims:
                 direction = np.zeros(dimensions)
                 direction[d] = 1.0
-                new_point = self.direction_slice(direction, new_point)
+                new_point = self.direction_slice(direction, new_point, *args_log_prob)
         else:
             direction = npr.randn(dimensions)
             direction = direction / np.sqrt(np.sum(direction ** 2))
-            new_point = self.direction_slice(direction, point)
+            new_point = self.direction_slice(direction, point, *args_log_prob)
 
         return new_point
 
-    def directional_log_prob(self, x, direction, point):
+    def directional_log_prob(self, x, direction, point, *args_log_prob):
         """
         Computes log_prob(direction * x + point)
         :param x: (float) magnitude of the movement towards the direction
@@ -68,9 +68,10 @@ class SliceSampling(object):
         :param point: np.array(n)
         :return: float
         """
-        return self.log_prob(point + x * direction)
 
-    def acceptable(self, z, llh, L, U, direction, point):
+        return self.log_prob(point + x * direction, *args_log_prob)
+
+    def acceptable(self, z, llh, L, U, direction, point, *args_log_prob):
         """
         Accepts whether z * direction + point is an acceptable next point, where
         z is in [L, U] and {z: llh < log_prob(direction * z + point)}.
@@ -98,12 +99,12 @@ class SliceSampling(object):
 
             D = (middle > 0 and z >= middle) or (middle <= 0 and z < middle)
 
-            if D and llh >= self.directional_log_prob(U, direction, point) and \
-                            llh >= self.directional_log_prob(L, direction, point):
+            if D and llh >= self.directional_log_prob(U, direction, point, *args_log_prob) and \
+                            llh >= self.directional_log_prob(L, direction, point, *args_log_prob):
                 return False
         return True
 
-    def find_x_interval(self, llh, lower, upper, direction, point):
+    def find_x_interval(self, llh, lower, upper, direction, point, *args_log_prob):
         """
         Finds the magnitude of the lower bound and upper bound of a x-interval in slice sampling
         such that:
@@ -128,9 +129,9 @@ class SliceSampling(object):
         u_steps_out = 0
 
         if self.doubling_step:
-            while (self.directional_log_prob(lower, direction, point) > llh or
-                           self.directional_log_prob(upper, direction, point) > llh) and \
-                    (l_steps_out + u_steps_out < self.max_steps_out):
+            while (self.directional_log_prob(lower, direction, point, *args_log_prob) > llh or
+                           self.directional_log_prob(upper, direction, point, *args_log_prob) > llh) \
+                    and (l_steps_out + u_steps_out < self.max_steps_out):
                 if npr.rand() < 0.5:
                     l_steps_out += 1
                     lower -= (upper - lower)
@@ -138,18 +139,18 @@ class SliceSampling(object):
                     u_steps_out += 1
                     upper += (upper - lower)
         else:
-            while self.directional_log_prob(lower, direction, point) > llh and \
+            while self.directional_log_prob(lower, direction, point, *args_log_prob) > llh and \
                             l_steps_out < self.max_steps_out:
                 l_steps_out += 1
                 lower -= self.sigma
-            while self.directional_log_prob(upper, direction, point) > llh and \
+            while self.directional_log_prob(upper, direction, point, *args_log_prob) > llh and \
                             u_steps_out < self.max_steps_out:
                 u_steps_out += 1
                 upper += self.sigma
 
         return upper, lower
 
-    def find_sample(self, lower, upper, llh, direction, point):
+    def find_sample(self, lower, upper, llh, direction, point, *args_log_prob):
         """
         Sample magnitude z to define new sample towards the direction: z * direction + point.
         z is sampled from {x: llh < log_prob(x * direction + point)} intersected with [lower, upper]
@@ -170,13 +171,13 @@ class SliceSampling(object):
         while True:
             steps_in += 1
             new_z = (upper - lower) * npr.rand() + lower
-            new_llh = self.directional_log_prob(new_z, direction, point)
+            new_llh = self.directional_log_prob(new_z, direction, point, *args_log_prob)
 
             if np.isnan(new_llh):
                 raise Exception("Slice sampler got a NaN")
 
             if new_llh > llh and self.acceptable(new_z, llh, start_lower, start_upper, direction,
-                                                 point):
+                                                 point, *args_log_prob):
                 break
             elif new_z < 0:
                 lower = new_z
@@ -188,7 +189,7 @@ class SliceSampling(object):
         return new_z
 
 
-    def direction_slice(self, direction, point):
+    def direction_slice(self, direction, point, *args_log_prob):
         """
 
         Sample a new point by doing slice sampling, and only moving the point towards the
@@ -202,11 +203,11 @@ class SliceSampling(object):
 
         upper = self.sigma * npr.rand()
         lower = upper - self.sigma
-        llh = np.log(npr.rand()) + self.directional_log_prob(0.0, direction, point)
+        llh = np.log(npr.rand()) + self.directional_log_prob(0.0, direction, point, *args_log_prob)
 
         if self.step_out:
-            upper, lower = self.find_x_interval(llh, lower, upper, direction, point)
+            upper, lower = self.find_x_interval(llh, lower, upper, direction, point, *args_log_prob)
 
-        new_z = self.find_sample(lower, upper, llh, direction, point)
+        new_z = self.find_sample(lower, upper, llh, direction, point, *args_log_prob)
 
         return new_z * direction + point

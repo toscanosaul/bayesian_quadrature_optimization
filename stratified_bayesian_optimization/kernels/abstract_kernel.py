@@ -49,7 +49,7 @@ class AbstractKernel(object):
 
     @classmethod
     @abstractmethod
-    def define_default_kernel(cls, dimension, default_values):
+    def define_default_kernel(cls, dimension, bounds, default_values):
         raise NotImplementedError("Not implemented")
 
     @abstractmethod

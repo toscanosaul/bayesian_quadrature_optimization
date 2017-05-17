@@ -3,6 +3,8 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 
+from copy import deepcopy
+
 from stratified_bayesian_optimization.models.gp_fitting_gaussian import GPFittingGaussian
 from stratified_bayesian_optimization.lib.constant import (
     MATERN52_NAME,
@@ -11,8 +13,12 @@ from stratified_bayesian_optimization.lib.constant import (
     SOL_CHOL_Y_UNBIASED,
     TASKS_KERNEL_NAME,
     PRODUCT_KERNELS_SEPARABLE,
+    SMALLEST_NUMBER,
+    LARGEST_NUMBER,
 )
 from stratified_bayesian_optimization.lib.finite_differences import FiniteDifferences
+from stratified_bayesian_optimization.lib.sample_functions import SampleFunctions
+from stratified_bayesian_optimization.kernels.matern52 import Matern52
 
 
 class TestGPFittingGaussian(unittest.TestCase):
@@ -72,18 +78,26 @@ class TestGPFittingGaussian(unittest.TestCase):
         self.gp_noisy = GPFittingGaussian(type_kernel, self.training_data_noisy, dimensions)
 
         np.random.seed(2)
-        normal_noise = np.random.normal(0,1.0,50)
-        points_ = list(np.linspace(0, 10, 50))
-        points = [[z] for z in points_]
-        evaluations = list([point for point in points_] + normal_noise)
-
-        self.gaussian_training_data = {
-            "evaluations": evaluations,
+        n_points = 50
+        normal_noise = np.random.normal(0, 0.5, n_points)
+        points = np.linspace(0, 500, n_points)
+        points = points.reshape([n_points, 1])
+        kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
+        function = SampleFunctions.sample_from_gp(points, kernel)
+        function = function[0, :]
+        evaluations = function + normal_noise
+        self.training_data_gp = {
+            "evaluations":list(evaluations),
             "points": points,
-            "var_noise": []
-        }
+            "var_noise":[]}
 
-        self.gp_gaussian = GPFittingGaussian(type_kernel, self.gaussian_training_data, dimensions)
+        self.gp_gaussian = GPFittingGaussian([MATERN52_NAME], self.training_data_gp, [1])
+
+        self.training_data_gp_2 = {
+            "evaluations":list(evaluations- 10.0),
+            "points": points,
+            "var_noise":[]}
+        self.gp_gaussian_central = GPFittingGaussian([MATERN52_NAME], self.training_data_gp_2, [1])
 
 
     def test_add_points_evaluations(self):
@@ -208,6 +222,7 @@ class TestGPFittingGaussian(unittest.TestCase):
         llh = self.complex_gp.log_likelihood(1.0, 1.0, np.array([1.0, 1.0, 0.0]))
         assert llh == -0.45814536593707761
 
+
     def test_grad_log_likelihood(self):
         grad = self.complex_gp_2.grad_log_likelihood(1.0, 1.0, np.array([1.0, 1.0, 0.0, 0.0, 0.0]))
 
@@ -255,9 +270,54 @@ class TestGPFittingGaussian(unittest.TestCase):
         assert np.all(grad_2[2:] == grad['kernel_params'])
 
     def test_mle_parameters(self):
-        print self.gp_gaussian.log_likelihood(1.0, 0.0, np.array([1.0, 3.0]))
-        opt = self.gp_gaussian.mle_parameters(start=np.array([1.0, 0.0, 1.0, 3.0]))
-        #opt = self.gp_gaussian.mle_parameters()
-        print opt
+        np.random.seed(1)
+        add = -45.946926660233636
+        llh = self.gp_gaussian.log_likelihood(1.0, 0.0, np.array([100.0, 1.0]))
+        npt.assert_almost_equal(llh + add, -62.8164403121)
 
+        opt = self.gp_gaussian.mle_parameters(start=np.array([1.0, 3.0, 14.0, 0.9]))
+        indexes = [1]
+        opt_2 = self.gp_gaussian.mle_parameters(start=np.array([0.9, 0.0, 14.0, 1.0]),
+                                                indexes=indexes)
 
+        assert opt['optimal_value'] >= opt_2['optimal_value']
+
+        npt.assert_almost_equal(opt_2['optimal_value'] + add, -5.238E+01, decimal=2)
+        npt.assert_almost_equal(opt_2['solution'],
+                                       np.array([0.299176213422, 97.246305699, 1.42154939935]),
+                                decimal=4)
+        assert self.gp_gaussian_central.log_likelihood(9, 0.0, np.array([100.2, 1.1])) == \
+               self.gp_gaussian.log_likelihood(9, 10.0, np.array([100.2, 1.1]))
+
+    def test_objective_llh(self):
+        funct = deepcopy(self.gp_gaussian.log_likelihood)
+        def llh(a, b, c):
+            return float(funct(a, b, c)) / 0.0
+        self.gp_gaussian.log_likelihood = llh
+        assert self.gp_gaussian.objective_llh(np.array([1.0, 3.0, 14.0, 0.9])) == -np.inf
+
+    def test_sample_parameters_prior(self):
+        sample = self.gp_gaussian.sample_parameters_prior(1, 1)[0]
+        np.random.seed(1)
+        a =  SMALLEST_POSITIVE_NUMBER + np.random.rand(1, 1) * \
+                                        (LARGEST_NUMBER - SMALLEST_POSITIVE_NUMBER)
+        assert sample[0] == a
+        a =  SMALLEST_NUMBER + np.random.rand(1, 1) * \
+                                        (LARGEST_NUMBER - SMALLEST_NUMBER)
+        assert sample[1] == a
+        a =  SMALLEST_POSITIVE_NUMBER + np.random.rand(1, 1) * \
+                                        (LARGEST_NUMBER - SMALLEST_POSITIVE_NUMBER)
+        assert sample[2] == a
+        a =  SMALLEST_POSITIVE_NUMBER + np.random.rand(1, 1) * \
+                                        (LARGEST_NUMBER - SMALLEST_POSITIVE_NUMBER)
+        assert sample[3] == a
+
+    def test_log_prob_parameters(self):
+        prob = self.gp_gaussian.log_prob_parameters(np.array([1.0, 3.0, 14.0, 0.9]))
+        lp = self.gp_gaussian.log_likelihood(1.0, 3.0, np.array([14.0, 0.9]))
+        assert prob == lp
+
+    def test_sample_parameters_posterior(self):
+      #  sample = self.gp_gaussian.sample_parameters_posterior(1, 1)
+       # print sample
+        assert True

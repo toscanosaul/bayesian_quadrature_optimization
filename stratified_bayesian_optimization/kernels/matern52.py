@@ -17,6 +17,7 @@ from stratified_bayesian_optimization.lib.constant import (
     SMALLEST_POSITIVE_NUMBER,
 )
 from stratified_bayesian_optimization.priors.uniform import UniformPrior
+from stratified_bayesian_optimization.priors.log_normal_square import LogNormalSquare
 
 
 class Matern52(AbstractKernel):
@@ -135,9 +136,11 @@ class Matern52(AbstractKernel):
         return cls(dimension, length_scale, sigma2)
 
     @classmethod
-    def define_default_kernel(cls, dimension, default_values=None):
+    def define_default_kernel(cls, dimension, bounds=None, default_values=None):
         """
         :param dimension: (int) dimension of the domain of the kernel
+        :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
+                is to compute priors in a smart way.
         :param default_values: (np.array(k)) The first part are the parameters for length_scale, the
             second part is the parameter for sigma2.
 
@@ -147,9 +150,17 @@ class Matern52(AbstractKernel):
             default_values = np.ones(get_number_parameters_kernel([MATERN52_NAME], [dimension]))
 
         kernel = cls.define_kernel_from_array(dimension, default_values)
+
+        if bounds is not None:
+            diffs = [float(bound[1] - bound[0]) for bound in bounds]
+            largest_numbers = 10.0 * diffs
+        else:
+            largest_numbers = dimension * [LARGEST_NUMBER]
+
         kernel.length_scale.prior = UniformPrior(
-            dimension, dimension * [SMALLEST_POSITIVE_NUMBER], dimension * [LARGEST_NUMBER])
-        kernel.sigma2.prior = UniformPrior(1, [SMALLEST_POSITIVE_NUMBER], [LARGEST_NUMBER])
+            dimension, dimension * [SMALLEST_POSITIVE_NUMBER], largest_numbers)
+
+        kernel.sigma2.prior = LogNormalSquare(1, 1.0, 0.0)
 
         kernel.sigma2.bounds = [(SMALLEST_POSITIVE_NUMBER, None)]
 

@@ -13,30 +13,46 @@ from stratified_bayesian_optimization.lib.util import (
 )
 
 
-def get_kernel_default(kernel_name, dimension, default_values=None):
+def get_kernel_default(kernel_name, dimension, bounds=None, default_values=None):
     """
     Returns a default kernel object associated to the kernel_name
     :param kernel_name: [str]
     :param dimension: [int]
+    :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
+            is to compute priors in a smart way.
     :param default_values: np.array(k), default values for the parameters of the kernel
     :return: kernel object
     """
     if kernel_name[0] == MATERN52_NAME:
-        return Matern52.define_default_kernel(dimension[0], default_values)
+        return Matern52.define_default_kernel(dimension[0], default_values, bounds)
     if kernel_name[0] == TASKS_KERNEL_NAME:
-        return TasksKernel.define_default_kernel(dimension[0], default_values)
+        return TasksKernel.define_default_kernel(dimension[0], default_values, bounds)
     if kernel_name[0] == PRODUCT_KERNELS_SEPARABLE:
         values = []
         cont = 0
+        bounds_ = []
+        cont_b = 0
         for name, dim in zip(kernel_name[1:], dimension[1:]):
             n_params = get_number_parameters_kernel([name], [dim])
             if default_values is not None:
                 value_kernel = default_values[cont: cont + n_params]
             else:
                 value_kernel = None
+
+            if bounds is not None:
+                if name == MATERN52_NAME:
+                    bounds_.append(bounds[cont_b: cont_b + dim])
+                    cont_b += dim
+                if name == TASKS_KERNEL_NAME:
+                    bounds_.append(bounds[cont_b: cont_b + 1])
+                    cont_b += 1
             cont += n_params
             values.append(value_kernel)
-        return ProductKernels.define_default_kernel(dimension[1:], values, kernel_name[1:])
+
+        if len(bounds_) > 0:
+            bounds = bounds_
+
+        return ProductKernels.define_default_kernel(dimension[1:], bounds, values, kernel_name[1:])
 
 
 def get_kernel_class(kernel_name):

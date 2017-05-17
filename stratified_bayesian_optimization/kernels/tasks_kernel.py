@@ -124,9 +124,11 @@ class TasksKernel(AbstractKernel):
         return cls(dimension, lower_triang)
 
     @classmethod
-    def define_default_kernel(cls, dimension, default_values=None):
+    def define_default_kernel(cls, dimension, bounds=None, default_values=None):
         """
         :param dimension: (int) dimension of the domain of the kernel
+        :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
+                is to compute priors in a smart way.
         :param default_values: np.array(k)
 
         :return: TasksKernel
