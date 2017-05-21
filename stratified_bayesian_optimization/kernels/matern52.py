@@ -18,6 +18,8 @@ from stratified_bayesian_optimization.lib.constant import (
 )
 from stratified_bayesian_optimization.priors.uniform import UniformPrior
 from stratified_bayesian_optimization.priors.log_normal_square import LogNormalSquare
+from stratified_bayesian_optimization.priors.log_normal import LogNormal
+
 
 
 class Matern52(AbstractKernel):
@@ -26,7 +28,7 @@ class Matern52(AbstractKernel):
         """
 
         :param length_scale: ParameterEntity
-        :param sigma: ParameterEntity
+        :param sigma2: ParameterEntity
         """
 
         name = MATERN52_NAME
@@ -136,31 +138,38 @@ class Matern52(AbstractKernel):
         return cls(dimension, length_scale, sigma2)
 
     @classmethod
-    def define_default_kernel(cls, dimension, bounds=None, default_values=None):
+    def define_default_kernel(cls, dimension, bounds=None, default_values=None,
+                              **parameters_priors):
         """
         :param dimension: (int) dimension of the domain of the kernel
         :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
                 is to compute priors in a smart way.
         :param default_values: (np.array(k)) The first part are the parameters for length_scale, the
             second part is the parameter for sigma2.
+        :param **parameters_priors: parameters of the pririors.
+            - 'sigma2_mean_matern52' : float
+            - 'ls_mean_matern52': [float]
 
         :return: Matern52
         """
         if default_values is None:
-            default_values = np.ones(get_number_parameters_kernel([MATERN52_NAME], [dimension]))
+            sigma2 = [parameters_priors.get('sigma2_mean_matern52', 1.0)]
+            ls = parameters_priors.get('ls_mean_matern52', dimension * [1.0])
+            default_values = ls + sigma2
 
         kernel = cls.define_kernel_from_array(dimension, default_values)
 
         if bounds is not None:
-            diffs = [float(bound[1] - bound[0]) for bound in bounds]
-            largest_numbers = 10.0 * diffs
+            diffs = [float(bound[1] - bound[0]) / 0.324 for bound in bounds]
+            prior = UniformPrior(dimension, dimension * [SMALLEST_POSITIVE_NUMBER], diffs)
         else:
             largest_numbers = dimension * [LARGEST_NUMBER]
+            prior = UniformPrior(dimension, dimension * [SMALLEST_POSITIVE_NUMBER], largest_numbers)
 
-        kernel.length_scale.prior = UniformPrior(
-            dimension, dimension * [SMALLEST_POSITIVE_NUMBER], largest_numbers)
+        kernel.length_scale.prior = prior
 
-        kernel.sigma2.prior = LogNormalSquare(1, 1.0, 0.0)
+        sigma2_mean = parameters_priors.get('sigma2_mean_matern52', 1.0)
+        kernel.sigma2.prior = LogNormalSquare(1, 1.0, sigma2_mean)
 
         kernel.sigma2.bounds = [(SMALLEST_POSITIVE_NUMBER, None)]
 
@@ -249,6 +258,38 @@ class Matern52(AbstractKernel):
 
         gradient = convert_dictionary_gradient_to_simple_dictionary(gradient, names)
         return gradient
+
+    @staticmethod
+    def define_prior_parameters(data, dimension, var_evaluations=None):
+        """
+        Defines value of the parameters of the prior distributions of the kernel's parameters.
+
+        :param data: {'points': np.array(nxm), 'evaluations': np.array(n),
+            'var_noise': np.array(n) or None}. Each point is the is an index of the task.
+        :param dimension: int
+        :param var_evaluations: float, an estimator for the sigma2 parameter.
+        :return:  {
+            'sigma2_mean_matern52': float,
+            'ls_mean_matern52': [float],
+        }
+        """
+        # Take mean value of |x-y| for all points x,y in the training data. I think that it's a
+        # good starting value for the parameter ls in the kernel.
+
+        diffs_training_data_x = []
+        n = data['points'].shape[0]
+
+        for i in xrange(dimension):
+            diffs_training_data_x.append(np.mean([abs(data['points'][j, i] - data['points'][h, i])
+                                 for j in xrange(n) for h in xrange(n)]) / 0.324)
+
+        if var_evaluations is None:
+            var_evaluations = np.var(data['evaluations'])
+
+        return {
+            'ls_mean_matern52': diffs_training_data_x,
+            'sigma2_mean_matern52': var_evaluations,
+        }
 
     @staticmethod
     def compare_kernels(kernel1, kernel2):

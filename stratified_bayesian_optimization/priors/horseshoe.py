@@ -21,7 +21,7 @@ class HorseShoePrior(AbstractPrior):
     def logprob(self, x):
         """
 
-        :param x: np.array
+        :param x: np.array(nx1)
         :return: float
         """
         if np.any(x == 0.0):
@@ -39,6 +39,6 @@ class HorseShoePrior(AbstractPrior):
         if random_seed is not None:
             np.random.seed(random_seed)
 
-        lambda_ = np.abs(np.random.standard_cauchy(size=samples))
+        lambda_ = np.abs(np.random.standard_cauchy(size=(samples, self.dimension)))
 
-        return np.random.randn() * lambda_ * self.scale
+        return np.random.randn(samples, self.dimension) * lambda_ * self.scale

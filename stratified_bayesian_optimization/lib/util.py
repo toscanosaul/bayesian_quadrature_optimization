@@ -119,25 +119,33 @@ def get_number_parameters_kernel(kernel_name, dim):
 
     raise NameError(kernel_name[0] + " doesn't exist")
 
-def get_default_values_kernel(kernel_name, dim):
+def get_default_values_kernel(kernel_name, dim, **parameters_priors):
     """
     Returns default values for the kernel_name.
 
     :param kernel_name: [str]
     :param dim: [int]
+    :param **parameters_priors:
+        -'sigma2_mean_matern52': float
+        -'ls_mean_matern52': [float]
+        -'tasks_kernel_chol': [float]
     :return: [float]
     """
 
     if kernel_name[0] == MATERN52_NAME:
-        return  list(np.ones(get_number_parameters_kernel(kernel_name, dim)))
+        sigma2 = [parameters_priors.get('sigma2_mean_matern52', 1.0)]
+        ls = parameters_priors.get('ls_mean_matern52', dim[0] * [1.0])
+        return ls + sigma2
 
     if kernel_name[0] == TASKS_KERNEL_NAME:
-        return list(np.zeros(get_number_parameters_kernel(kernel_name, dim)))
+        n_params = get_number_parameters_kernel(kernel_name, dim[0])
+        tasks_kernel_chol = parameters_priors.get('tasks_kernel_chol', n_params * [0.0])
+        return tasks_kernel_chol
 
     if kernel_name[0] == PRODUCT_KERNELS_SEPARABLE:
         values = []
         for name, dimension in zip(kernel_name[1:], dim[1:]):
-            values += get_default_values_kernel([name], [dimension])
+            values += get_default_values_kernel([name], [dimension], **parameters_priors)
         return values
 
 def convert_list_to_dictionary(ls):

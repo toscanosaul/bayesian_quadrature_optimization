@@ -218,7 +218,7 @@ class TestMatern52(unittest.TestCase):
         assert kern1.length_scale.value == np.array([1])
         assert kern1.sigma2.value == np.array([1])
 
-        kern2 = Matern52.define_default_kernel(1, np.array([5, 6]))
+        kern2 = Matern52.define_default_kernel(1, default_values=np.array([5, 6]))
 
         assert kern2.name == MATERN52_NAME
         assert kern2.dimension == 1

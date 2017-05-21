@@ -34,4 +34,4 @@ class GaussianPrior(AbstractPrior):
         :param random_seed: int
         :return: np.array(samples, self.dimension)
         """
-        return self.mu + np.random.randn(samples) * self.sigma
+        return self.mu + np.random.randn(samples, self.dimension) * self.sigma

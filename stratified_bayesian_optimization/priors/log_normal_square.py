@@ -8,17 +8,17 @@ from scipy.stats import lognorm
 
 class LogNormalSquare(AbstractPrior):
 
-    def __init__(self, dimension, scale, mean):
+    def __init__(self, dimension, scale, mu):
         """
         This is the density of Z = Y^2, where Y~log_normal
         :param scale: float
-        :param: mean: float
+        :param: mu: float
         """
 
         super(LogNormalSquare, self).__init__(dimension)
 
         self.scale = scale
-        self.mean = mean
+        self.mu = mu
 
     def logprob(self, x):
         """
@@ -26,13 +26,13 @@ class LogNormalSquare(AbstractPrior):
         :param x: np.array
         :return: float
         """
-        if np.any(x < 0):
+        if np.any(x <= 0):
             return -np.inf
 
         x = np.sqrt(x)
-        dy_dx = 2*x
+        dy_dx = 2.0 * x
 
-        return np.sum(lognorm.logpdf(x, self.scale, loc=self.mean)) - np.log(dy_dx)
+        return np.sum(lognorm.logpdf(x, s=self.scale, scale=np.exp(self.mu))) - np.log(dy_dx)
 
     def sample(self, samples, random_seed=None):
         """
@@ -44,6 +44,6 @@ class LogNormalSquare(AbstractPrior):
         if random_seed is not None:
             np.random.seed(random_seed)
 
-        points = np.random.lognormal(mean=self.mean, sigma=self.scale, size=samples)
-
+        points = lognorm.rvs(s=self.scale, scale=np.exp(self.mu), size=samples)
+        points = points.reshape([samples, self.dimension])
         return points**2

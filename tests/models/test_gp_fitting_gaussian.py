@@ -31,6 +31,7 @@ class TestGPFittingGaussian(unittest.TestCase):
                 [42.2851784656],[72.3121248508],[1.0113231069],[30.9309246906],[15.5288331909]],
             "var_noise":[]}
         dimensions = [1]
+        bounds = [0.0, 100.0]
 
         self.gp = GPFittingGaussian(type_kernel, self.training_data, dimensions)
 
@@ -90,6 +91,7 @@ class TestGPFittingGaussian(unittest.TestCase):
             "evaluations":list(evaluations),
             "points": points,
             "var_noise":[]}
+
 
         self.gp_gaussian = GPFittingGaussian([MATERN52_NAME], self.training_data_gp, [1])
 
@@ -162,6 +164,7 @@ class TestGPFittingGaussian(unittest.TestCase):
                 [42.2851784656],[72.3121248508],[1.0113231069],[30.9309246906],[15.5288331909],
                 [80.0]],
             "var_noise":[]},
+            "bounds": [],
         }
 
     def test_deserialize(self):
@@ -298,24 +301,29 @@ class TestGPFittingGaussian(unittest.TestCase):
 
     def test_sample_parameters_prior(self):
         sample = self.gp_gaussian.sample_parameters_prior(1, 1)[0]
+
+        assert len(sample) == 4
+
         np.random.seed(1)
-        a =  SMALLEST_POSITIVE_NUMBER + np.random.rand(1, 1) * \
-                                        (LARGEST_NUMBER - SMALLEST_POSITIVE_NUMBER)
-        assert sample[0] == a
-        a =  SMALLEST_NUMBER + np.random.rand(1, 1) * \
-                                        (LARGEST_NUMBER - SMALLEST_NUMBER)
-        assert sample[1] == a
+
+        lambda_ = np.abs(np.random.standard_cauchy(size=(1, 1)))
+        a = np.abs(np.random.randn(1, 1) * lambda_ * 0.1)
+
+        assert sample[0] == a[0][0]
+
+        a = np.random.randn(1, 1)
+        assert sample[1] == a[0][0]
         a =  SMALLEST_POSITIVE_NUMBER + np.random.rand(1, 1) * \
                                         (LARGEST_NUMBER - SMALLEST_POSITIVE_NUMBER)
         assert sample[2] == a
-        a =  SMALLEST_POSITIVE_NUMBER + np.random.rand(1, 1) * \
-                                        (LARGEST_NUMBER - SMALLEST_POSITIVE_NUMBER)
-        assert sample[3] == a
+
+        a = np.random.lognormal(mean=0.0, sigma=1.0, size=1) ** 2
+        assert sample[3] == a[0]
 
     def test_log_prob_parameters(self):
         prob = self.gp_gaussian.log_prob_parameters(np.array([1.0, 3.0, 14.0, 0.9]))
-        lp = self.gp_gaussian.log_likelihood(1.0, 3.0, np.array([14.0, 0.9]))
-        assert prob == lp
+        lp = self.gp_gaussian.log_likelihood(1.0, 3.0, np.array([14.0, 0.9])) - 10.44842504
+        npt.assert_almost_equal(prob, lp)
 
     def test_sample_parameters_posterior(self):
       #  sample = self.gp_gaussian.sample_parameters_posterior(1, 1)

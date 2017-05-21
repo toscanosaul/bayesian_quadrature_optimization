@@ -22,7 +22,7 @@ class TestSliceSampling(unittest.TestCase):
         normal_noise = np.random.normal(0, 1.0, n_points)
         points = np.linspace(0, 10, n_points)
         points = points.reshape([n_points, 1])
-        kernel = Matern52.define_kernel_from_array(1, np.array([10.0, 1.0]))
+        kernel = Matern52.define_kernel_from_array(1, np.array([2.0, 1.0]))
         function = SampleFunctions.sample_from_gp(points, kernel)
         function = function[0, :]
         evaluations = function + normal_noise + 10.0
@@ -31,8 +31,11 @@ class TestSliceSampling(unittest.TestCase):
             "points": points,
             "var_noise":[]}
 
-        self.gp_gaussian = GPFittingGaussian([MATERN52_NAME], self.training_data_gp, [1])
+        bounds = [[0, 11.0]]
+        self.gp_gaussian = GPFittingGaussian([MATERN52_NAME], self.training_data_gp, [1], bounds)
         self.log_prob = self.gp_gaussian.log_prob_parameters
+
+        self.slice_all_params =  SliceSampling(self.log_prob)
 
         def log_prob_2(parameters, a):
             vect = np.array([parameters[0], parameters[1], a , parameters[2]])
@@ -45,7 +48,6 @@ class TestSliceSampling(unittest.TestCase):
             return self.log_prob(vect)
 
         self.slice_ = SliceSampling(log_prob_3)
-
 
         self.norm_density = lambda x: norm.pdf(x)[0]
 
@@ -76,17 +78,22 @@ class TestSliceSampling(unittest.TestCase):
         npt.assert_almost_equal(2.0 * np.std([x[1] for x in z]) /len(z), 0.0, decimal=2)
 
         samples = []
-        point = np.array([0.1, 0.7, 1.9])
+        point = np.array([0.1, 0.7, 0.2])
         point_ = np.array([0.8])
-        for j in range(200):
-            print j
+       # point = np.array([0.1, 0.7, 0.8, 0.5])
+        np.random.seed(1)
+        for j in range(800):
+          #  point = self.slice_all_params.slice_sample(point)
+          #  print point
+          #  samples.append(point)
             point = self.slice.slice_sample(point, *point_)
             point_ = self.slice_.slice_sample(point_, *point)
             sample_p = np.zeros(4)
             sample_p[[0, 1, 3]] = point
             sample_p[2] = point_
             samples.append(sample_p)
-        z = samples[50::5]
+            print sample_p
+        z = samples[300::5]
         print np.mean([x[0] for x in z])
         print np.mean([x[1] for x in z])
         print np.mean([x[2] for x in z])
@@ -101,9 +108,7 @@ class TestSliceSampling(unittest.TestCase):
         npt.assert_almost_equal(np.mean([x[2] for x in z]), 200.0, decimal=0)
         npt.assert_almost_equal(2.0 * np.std([x[2] for x in z]) /len(z), 0.0, decimal=0)
 
-
-
-
+        # TODO: WRITE self.slice_all_params
 
     def test_find_x_interval(self):
         np.random.seed(1)

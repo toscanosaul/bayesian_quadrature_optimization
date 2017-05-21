@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from os import path
 
 from numpy.linalg.linalg import LinAlgError
+from scipy.linalg import solve_triangular
 
 from stratified_bayesian_optimization.lib.constant import (
     MATERN52_NAME,
@@ -17,6 +18,7 @@ from stratified_bayesian_optimization.lib.constant import (
     SMALLEST_POSITIVE_NUMBER,
     LARGEST_NUMBER,
 )
+from stratified_bayesian_optimization.lib.util_kernels import define_prior_parameters_using_data
 from stratified_bayesian_optimization.lib.util_gp_fitting import (
     get_kernel_default,
     get_kernel_class,
@@ -34,7 +36,6 @@ from stratified_bayesian_optimization.lib.constant import LBFGS_NAME
 from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.lib.parallel import Parallel
 from stratified_bayesian_optimization.entities.parameter import ParameterEntity
-from stratified_bayesian_optimization.priors.uniform import UniformPrior
 from stratified_bayesian_optimization.priors.non_negative import NonNegativePrior
 from stratified_bayesian_optimization.priors.horseshoe import HorseShoePrior
 from stratified_bayesian_optimization.priors.gaussian import GaussianPrior
@@ -49,8 +50,8 @@ class GPFittingGaussian(object):
 
     _possible_kernels_ = [MATERN52_NAME, TASKS_KERNEL_NAME, PRODUCT_KERNELS_SEPARABLE]
 
-    def __init__(self, type_kernel, training_data, dimensions, kernel_values=None, mean_value=None,
-                 var_noise_value=None, thinning=0, data=None, bounds=None):
+    def __init__(self, type_kernel, training_data, dimensions=None, bounds=None, kernel_values=None,
+                 mean_value=None, var_noise_value=None, thinning=1, n_burning=100, data=None):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
@@ -59,72 +60,149 @@ class GPFittingGaussian(object):
         :param dimensions: [int]. It has only the n_tasks for the task_kernels, and for the
             PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product, and
             the total dimension of the product_kernels_separable too in the first entry.
+        :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
+            is to compute priors in a smart way.
         :param kernel_values: [float], contains the default values of the parameters of the kernel
         :param mean_value: [float], It contains the value of the mean parameter.
         :param var_noise_value: [float], It contains the variance of the noise of the model
-        :param thinning: (int)
+        :param thinning: (int) Parameters of the MCMC. If it's 1, we take all the samples.
+        :param n_burning: (int) Number of burnings samples for the MCMC.
         :param data: {'points': ([[float]], dim=nxm), 'evaluations': ([float],dim=n),
             'var_noise': ([float],dim=n or [])}, it might contains more points than the points used
             to train the kernel, or different points. If its None, it's replaced by the
             traning_data.
-        :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
-            is to compute priors in a smart way.
         """
 
         self.type_kernel = type_kernel
         self.class_kernel = get_kernel_class(type_kernel[0])
-
         self.bounds = bounds
-
         self.training_data = training_data
+        self.training_data_as_array = self.convert_from_list_to_numpy(training_data)
+        self.dimensions = dimensions
 
         if data is None:
             data = training_data
-
         self.data = self.convert_from_list_to_numpy(data)
-
-        self.dimensions = dimensions
-
-        if mean_value is None:
-            mean_value = [0.0]
-        if var_noise_value is None:
-            var_noise_value = [SMALLEST_POSITIVE_NUMBER]
-        if kernel_values is None:
-            kernel_values = get_default_values_kernel(type_kernel, dimensions)
 
         self.kernel_values = kernel_values
         self.mean_value = mean_value
         self.var_noise_value = var_noise_value
 
-        self.kernel = get_kernel_default(type_kernel, self.dimensions, np.array(kernel_values),
-                                         bounds)
-
-        self.kernel_dimensions = [self.kernel.dimension]
-        if len(type_kernel) > 1:
-            for name in self.kernel.names:
-                self.kernel_dimensions.append(self.kernel.kernels[name].dimension)
-
-        self.number_parameters = [get_number_parameters_kernel(type_kernel, dimensions)]
-        if len(dimensions) > 1:
-            for type_k, dim in zip(type_kernel[1:], dimensions[1:]):
-                self.number_parameters.append(get_number_parameters_kernel([type_k], [dim]))
-
-        self.mean = ParameterEntity(
-            MEAN_NAME, np.array(mean_value), GaussianPrior(1, 0.0, 1.0))
-        self.var_noise = ParameterEntity(
-            VAR_NOISE_NAME, var_noise_value,
-            NonNegativePrior(1, HorseShoePrior(1, 0.1)))
+        self.kernel = None
+        self.mean = None
+        self.var_noise = None
+        self.kernel_dimensions = None
+        self.number_parameters = None
 
         self.thinning = thinning
-        self.slice_sampler = None
+        self.n_burning = n_burning
+        self.samples_parameters = []
+        self.slice_samplers = []
 
         self.cache_chol_cov = {}
         self.cache_sol_chol_y_unbiased = {}
 
-        self.setUp()
+        self.setParametersKernel()
+        self.setSamplers()
 
-    def setUp(self):
-        self.slice_sampler = SliceSampling(self.log_prob_parameters)
+    def setSamplers(self):
+        """
+        Defines the samplers of the parameters of the model.
+        """
+
+        def log_prob_2(parameters, a):
+            vect = np.array([parameters[0], parameters[1], a , parameters[2]])
+            return self.log_prob(vect)
+
+        self.slice_samplers.append(SliceSampling(log_prob_2, **{'component_wise': False}))
+
+        def log_prob_3(parameters, a, b, c):
+            vect = np.array([a, b, parameters[0] , c])
+            return self.log_prob(vect)
+
+        self.slice_samplers.append(SliceSampling(log_prob_3))
+
+    def setParametersKernel(self):
+        """
+        Defines the mean and var_noise parameters. It also defines the kernel.
+        """
+        prior_parameters_values = self.get_values_parameters_from_data(
+            self.kernel_values, self.mean_value, self.var_noise_value, self.type_kernel,
+            self.dimensions)
+
+        parameters_priors = prior_parameters_values['kernel_values']
+        self.kernel_values = get_default_values_kernel(self.type_kernel, self.dimensions,
+                                                       **parameters_priors)
+
+        self.mean_value = prior_parameters_values['mean_value']
+        self.var_noise_value = prior_parameters_values['var_noise_value']
+
+        self.mean = ParameterEntity(
+            MEAN_NAME, np.array(self.mean_value), GaussianPrior(1, self.mean_value[0], 1.0))
+
+        self.var_noise = ParameterEntity(
+            VAR_NOISE_NAME, np.array(self.var_noise_value),
+            NonNegativePrior(1, HorseShoePrior(1, self.var_noise_value[0])))
+
+        self.kernel = get_kernel_default(self.type_kernel, self.dimensions, self.bounds,
+                                         np.array(self.kernel_values), **parameters_priors)
+
+        self.kernel_dimensions = [self.kernel.dimension]
+        if len(self.type_kernel) > 1:
+            for name in self.kernel.names:
+                self.kernel_dimensions.append(self.kernel.kernels[name].dimension)
+
+        self.number_parameters = [get_number_parameters_kernel(self.type_kernel, self.dimensions)]
+        if len(self.dimensions) > 1:
+            for type_k, dim in zip(self.type_kernel[1:], self.dimensions[1:]):
+                self.number_parameters.append(get_number_parameters_kernel([type_k], [dim]))
+
+
+    def get_values_parameters_from_data(self, kernel_values, mean_value, var_noise_value,
+                                         type_kernel, dimensions):
+        """
+        Defines value of the parameters of the prior distributions of the model's parameters.
+
+        :param kernel_values: [float], contains the default values of the parameters of the kernel
+        :param mean_value: [float], It contains the value of the mean parameter.
+        :param var_noise_value: [float], It contains the variance of the noise of the model
+        :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
+            should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
+        :param dimensions: [int]. It has only the n_tasks for the task_kernels, and for the
+            PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product, and
+            the total dimension of the product_kernels_separable too in the first entry.
+        :return: {
+            'kernel_values': [float],
+            'mean_value': [float],
+            'var_noise_value': [float],
+        }
+        """
+
+        if mean_value is None:
+            mu = np.mean(self.training_data_as_array['evaluations'])
+            mean_value = [mu]
+
+        if var_noise_value is None:
+            var_evaluations = np.var(self.training_data_as_array['evaluations'])
+            var_noise_value = [var_evaluations]
+
+        if kernel_values is None:
+            kernel_parameters_values = define_prior_parameters_using_data(
+                self.training_data_as_array,
+                type_kernel,
+                dimensions,
+                sigma2_mean_matern52=var_noise_value[0],
+            )
+
+            kernel_values = get_default_values_kernel(type_kernel, dimensions,
+                                                      **kernel_parameters_values)
+
+        return {
+            'kernel_values': kernel_values,
+            'mean_value': mean_value,
+            'var_noise_value': var_noise_value,
+        }
+
 
     def add_points_evaluations(self, point, evaluation, var_noise_eval=None):
         """
@@ -203,6 +281,10 @@ class GPFittingGaussian(object):
         return data
 
     def serialize(self):
+        bounds = self.bounds
+        if self.bounds is None:
+            bounds = []
+
         return {
             'type_kernel': self.type_kernel,
             'training_data': self.training_data,
@@ -211,7 +293,8 @@ class GPFittingGaussian(object):
             'mean_value': self.mean_value,
             'var_noise_value': self.var_noise_value,
             'thinning': self.thinning,
-            'data': self.convert_from_numpy_to_list(self.data)
+            'data': self.convert_from_numpy_to_list(self.data),
+            'bounds': bounds,
         }
 
     @classmethod
@@ -586,7 +669,7 @@ class GPFittingGaussian(object):
         return self
 
     @classmethod
-    def train(cls, type_kernel, dimensions, mle, training_data, thinning=0):
+    def train(cls, type_kernel, dimensions, mle, training_data, bounds, thinning=0):
         """
         :param type_kernel: [(str)] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
@@ -595,15 +678,17 @@ class GPFittingGaussian(object):
         :param mle: (boolean) If true, fits the GP by MLE.
         :param training_data: {'points': np.array(nxm), 'evaluations': np.array(n),
             'var_noise': np.array(n) or None}.
+        :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
+            is to compute priors in a smart way.
         :param thinning: (int)
         :return: GPFittingGaussian
         """
 
         if mle:
-            gp = cls(type_kernel, training_data, dimensions, thinning)
+            gp = cls(type_kernel, training_data, dimensions, bounds=bounds, thinning=thinning)
             return gp.fit_gp_regression()
 
-        return cls(type_kernel, training_data, dimensions, thinning)
+        return cls(type_kernel, training_data, dimensions, bounds=bounds, thinning=thinning)
 
     def compute_posterior_parameters(self, points):
         """

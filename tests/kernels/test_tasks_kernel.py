@@ -141,7 +141,7 @@ class TestTasksKernel(unittest.TestCase):
         assert kern.base_cov_matrix is None
         assert kern.chol_base_cov_matrix is None
 
-        kern_1 = TasksKernel.define_default_kernel(1, np.array([3]))
+        kern_1 = TasksKernel.define_default_kernel(1, None, np.array([3]))
         assert kern_1.lower_triang.value == np.array([3])
         assert kern.name == TASKS_KERNEL_NAME
         assert kern.dimension == 1

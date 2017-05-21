@@ -39,9 +39,9 @@ class GPFittingService(object):
         )
 
     @classmethod
-    def get_gp(cls, name_model, problem_name, type_kernel, dimensions, n_training=0, noise=False,
-               training_data=None, points=None, training_name=None, mle=True, thinning=0,
-               n_samples=1, random_seed=DEFAULT_RANDOM_SEED):
+    def get_gp(cls, name_model, problem_name, type_kernel, dimensions, bounds, n_training=0,
+               noise=False, training_data=None, points=None, training_name=None, mle=True,
+               thinning=0, n_samples=1, random_seed=DEFAULT_RANDOM_SEED):
         """
         Fetch a GP model from file if it exists, otherwise train a new model and save it locally.
 
@@ -58,6 +58,8 @@ class GPFittingService(object):
         :param noise: (boolean) If true, we get noisy evaluations.
         :param dimensions: [int]. It has only the n_tasks for the task_kernels, and for the
             PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product
+        :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
+            is to compute priors in a smart way.
         :param mle: (boolean) If true, fits the GP by MLE.
         :param thinning: (int)
         :param n_samples: (int) If the objective is noisy, we take n_samples of the function to
@@ -89,7 +91,8 @@ class GPFittingService(object):
 
         logger.info("Training %s" % model_type.__name__)
 
-        gp_model = model_type.train(type_kernel, dimensions, mle, training_data, thinning=thinning)
+        gp_model = model_type.train(type_kernel, dimensions, mle, training_data, bounds,
+                                    thinning=thinning)
 
         JSONFile.write(gp_model.serialize(), gp_path)
 

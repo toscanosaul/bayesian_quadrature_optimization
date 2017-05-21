@@ -7,6 +7,7 @@ from stratified_bayesian_optimization.entities.parameter import ParameterEntity
 from stratified_bayesian_optimization.lib.constant import (
     TASKS_KERNEL_NAME,
     LOWER_TRIANG_NAME,
+    SMALLEST_POSITIVE_NUMBER,
     LARGEST_NUMBER,
     SMALLEST_NUMBER,
 )
@@ -14,7 +15,8 @@ from stratified_bayesian_optimization.lib.util import (
     get_number_parameters_kernel,
     convert_dictionary_gradient_to_simple_dictionary,
 )
-from stratified_bayesian_optimization.priors.uniform import UniformPrior
+from stratified_bayesian_optimization.priors.gaussian import GaussianPrior
+from stratified_bayesian_optimization.priors.multivariate_normal import MultivariateNormalPrior
 
 
 class TasksKernel(AbstractKernel):
@@ -124,21 +126,32 @@ class TasksKernel(AbstractKernel):
         return cls(dimension, lower_triang)
 
     @classmethod
-    def define_default_kernel(cls, dimension, bounds=None, default_values=None):
+    def define_default_kernel(cls, dimension, bounds=None, default_values=None,
+                              **parameters_priors):
         """
-        :param dimension: (int) dimension of the domain of the kernel
+        :param dimension: (int) Number of tasks.
         :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
                 is to compute priors in a smart way.
         :param default_values: np.array(k)
+        :param **parameters_priors:
+                    -'tasks_kernel_chol': [float]
 
         :return: TasksKernel
         """
+        n_params = get_number_parameters_kernel(TASKS_KERNEL_NAME, dimension)
+
         if default_values is None:
-            default_values = np.zeros(get_number_parameters_kernel([TASKS_KERNEL_NAME],
-                                                                   [dimension]))
+            tasks_kernel_chol = parameters_priors.get('tasks_kernel_chol', n_params * [0.0])
+            default_values = np.array(tasks_kernel_chol)
+
         kernel = TasksKernel.define_kernel_from_array(
             dimension, default_values)
-        kernel.lower_triang.prior = UniformPrior(1, [SMALLEST_NUMBER], [LARGEST_NUMBER])
+
+        if dimension == 1:
+            kernel.lower_triang.prior = GaussianPrior(1, default_values[0], 1.0)
+        else:
+            cov = np.eye(n_params)
+            kernel.lower_triang.prior = MultivariateNormalPrior(dimension, default_values, cov)
 
         return kernel
 
@@ -263,6 +276,76 @@ class TasksKernel(AbstractKernel):
         gradient = convert_dictionary_gradient_to_simple_dictionary(gradient, names)
 
         return gradient
+
+    @staticmethod
+    def define_prior_parameters(data, dimension):
+        """
+        Defines value of the parameters of the prior distributions of the kernel's parameters.
+
+        :param data: {'points': np.array(nx1), 'evaluations': np.array(n),
+            'var_noise': np.array(n) or None}. Each point is the is an index of the task.
+        :param dimension: int, number of tasks
+        :return:  {
+            'tasks_kernel_chol': [float],
+        }
+        """
+
+        # Can we include the variance of noisy evaluations in a smart way to get better estimators?
+
+        tasks_index = data['points'][:, 0]
+        data_by_tasks = {}
+        for i in xrange(dimension):
+            index_task = np.where(tasks_index == i)[0]
+            if len(index_task) > 0:
+                data_by_tasks[i] = [data['evaluations'][index_task],
+                                    np.mean(data['evaluations'][index_task])]
+            else:
+                data_by_tasks[i] = [[]]
+
+        cov_estimate = np.zeros((dimension, dimension))
+
+        for i in xrange(dimension):
+            for j in xrange(i + 1):
+                a1 = len(data_by_tasks[i][0])
+                a2 = len(data_by_tasks[j][0])
+                d = min(a1, a2)
+                if d <= 1:
+                    if i == j:
+                        cov_estimate[i, j] = 1.0
+                    else:
+                        cov_estimate[i, j] = 0.0
+                        cov_estimate[j, i] = 0.0
+                else:
+                    mu1 = data_by_tasks[i][1]
+                    mu2 = data_by_tasks[j][1]
+                    a = data_by_tasks[i][0][0:d]
+                    b = data_by_tasks[j][0][0:d]
+                    cov_estimate[i, j] = np.sum((a - mu1) * (b - mu2)) / (d - 1.0)
+                    cov_estimate[j, i] = cov_estimate[i, j]
+
+        l_params = {}
+        for j in range(dimension):
+            for i in range(j, dimension):
+                if i == j:
+                    value = np.sqrt(
+                        max(cov_estimate[i, j] -
+                            np.sum(np.array([l_params[(i, h)] for h in xrange(i)]) ** 2),
+                            SMALLEST_POSITIVE_NUMBER))
+                    l_params[(i, j)] = value
+                    continue
+                ls_val = np.sum(
+                    [l_params[(i, h)] * l_params[(j, h)] for h in xrange(min(i, j))])
+                d = min(i, j)
+                value = (cov_estimate[(i, j)] - ls_val) / l_params[(d, d)]
+                l_params[(i, j)] = value
+
+        task_params = []
+        for i in xrange(dimension):
+            for j in xrange(i + 1):
+                value = l_params[(i, j)]
+                task_params.append(np.log(max(value, 0.0001)))
+
+        return task_params
 
     @staticmethod
     def compare_kernels(kernel1, kernel2):

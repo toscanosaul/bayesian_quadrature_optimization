@@ -139,14 +139,19 @@ class ProductKernels(AbstractKernel):
         return cls(*kernels)
 
     @classmethod
-    def define_default_kernel(cls, dimension, bounds=None, default_values=None, *args):
+    def define_default_kernel(cls, dimension, bounds=None, default_values=None, *args,
+                              **parameters_priors):
         """
-        :param dimension: [(int)] dimension of the domain of the kernels
+        :param dimension: [(int)] dimension of the domain of the kernels. It's the number of tasks
+            for the tasks kernel.
         :param default_values: [np.array(n)] List with the default value for the parameters of each
             of the kernels of the product.
         :param bounds: [[[float], float]] List witht he bounds of the domain of each of the kernels
             of the product.
         :param args: [str] List with the names of the kernels.
+        :param **parameters_priors:
+            -'sigma2_mean_matern52': float
+            -'ls_mean_matern52': [float]
 
         :return: ProductKernels
         """
@@ -168,9 +173,11 @@ class ProductKernels(AbstractKernel):
             index +=1
             constructor = find_kernel_constructor(name)
             if default_values is None:
-                kernels.append(constructor.define_default_kernel(dim, bound))
+                kernels.append(constructor.define_default_kernel(dim, bound, None,
+                                                                 **parameters_priors))
             else:
-                kernels.append(constructor.define_default_kernel(dim, bound, value[2]))
+                kernels.append(constructor.define_default_kernel(dim, bound, value[2],
+                                                                 **parameters_priors))
 
         return cls(*kernels)
 
