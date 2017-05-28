@@ -51,7 +51,7 @@ class GPFittingGaussian(object):
     _possible_kernels_ = [MATERN52_NAME, TASKS_KERNEL_NAME, PRODUCT_KERNELS_SEPARABLE]
 
     def __init__(self, type_kernel, training_data, dimensions=None, bounds=None, kernel_values=None,
-                 mean_value=None, var_noise_value=None, thinning=1, n_burning=100, data=None):
+                 mean_value=None, var_noise_value=None, thinning=1, n_burning=10, data=None):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
