@@ -3,7 +3,6 @@ from __future__ import absolute_import
 from os import path
 
 from numpy.linalg.linalg import LinAlgError
-from scipy.linalg import solve_triangular
 
 from stratified_bayesian_optimization.lib.constant import (
     MATERN52_NAME,
@@ -17,6 +16,7 @@ from stratified_bayesian_optimization.lib.constant import (
     SMALLEST_NUMBER,
     SMALLEST_POSITIVE_NUMBER,
     LARGEST_NUMBER,
+    LENGTH_SCALE_NAME,
 )
 from stratified_bayesian_optimization.lib.util_kernels import define_prior_parameters_using_data
 from stratified_bayesian_optimization.lib.util_gp_fitting import (
@@ -30,6 +30,8 @@ from stratified_bayesian_optimization.lib.util import (
     expand_dimension_vector,
     reduce_dimension_vector,
     get_number_parameters_kernel,
+    combine_vectors,
+    separate_vector,
 )
 from stratified_bayesian_optimization.lib.optimization import Optimization
 from stratified_bayesian_optimization.lib.constant import LBFGS_NAME
@@ -92,37 +94,78 @@ class GPFittingGaussian(object):
         self.mean = None
         self.var_noise = None
         self.kernel_dimensions = None
-        self.number_parameters = None
+        self.number_parameters = None # Number of parameters of only the kernel
+        self.length_scale_indexes = None # Indexes of the length scale parameter
 
         self.thinning = thinning
         self.n_burning = n_burning
         self.samples_parameters = []
         self.slice_samplers = []
+        self.index_samplers = []
 
         self.cache_chol_cov = {}
         self.cache_sol_chol_y_unbiased = {}
 
-        self.setParametersKernel()
-        self.setSamplers()
+        self.set_parameters_kernel()
+        self.set_samplers()
 
-    def setSamplers(self):
+    def set_samplers(self):
         """
         Defines the samplers of the parameters of the model.
+        We assume that we only have one set of length scale parameters.
         """
 
-        def log_prob_2(parameters, a):
-            vect = np.array([parameters[0], parameters[1], a , parameters[2]])
-            return self.log_prob(vect)
+        if len(self.length_scale_indexes) == 0:
+            self.slice_samplers.append(SliceSampling(self.log_prob_parameters))
+        else:
+            def log_prob_1(parameters, length_scale):
+                vector = combine_vectors(length_scale, parameters, self.length_scale_indexes)
+                return self.log_prob_parameters(vector)
 
-        self.slice_samplers.append(SliceSampling(log_prob_2, **{'component_wise': False}))
+            def log_prob_2(length_scale, parameters):
+                vector = combine_vectors(length_scale, parameters, self.length_scale_indexes)
+                return self.log_prob_parameters(vector)
 
-        def log_prob_3(parameters, a, b, c):
-            vect = np.array([a, b, parameters[0] , c])
-            return self.log_prob(vect)
+            self.slice_samplers.append(SliceSampling(log_prob_1))
+            self.slice_samplers.append(SliceSampling(log_prob_2, **{'component_wise': False}))
 
-        self.slice_samplers.append(SliceSampling(log_prob_3))
+        parameters = self.sample_parameters(self.n_burning / self.thinning)
+        self.update_value_parameters(parameters[-1])
 
-    def setParametersKernel(self):
+    def sample_parameters(self, n_samples, start_point=None):
+        """
+        Sample parameters of the model from the posterior without considering burning or thinning.
+
+        :param n_samples: int
+        :param start_point: np.array(n_parameters)
+
+        :return: np.array(n_samples, n_parameters)
+        """
+
+        samples = []
+
+        if start_point is None:
+            start_point = self.get_value_parameters_model
+
+        n_samples *= (self.thinning + 1)
+
+        if len(self.slice_samplers) == 1:
+            for sample in xrange(n_samples):
+                start_point = self.slice_samplers[0].slice_sample(start_point)
+                samples.append(start_point)
+            return samples[::self.thinning + 1]
+
+        for sample in xrange(n_samples):
+            points = separate_vector(start_point, self.length_scale_indexes)
+
+            for index, slice in enumerate(self.slice_samplers):
+                points[1 - index] = slice.slice_sample(points[1 - index], *points[index])
+            start_point = combine_vectors(points[0], points[1], self.length_scale_indexes)
+            samples.append(start_point)
+
+        return samples[::self.thinning + 1]
+
+    def set_parameters_kernel(self):
         """
         Defines the mean and var_noise parameters. It also defines the kernel.
         """
@@ -157,6 +200,23 @@ class GPFittingGaussian(object):
             for type_k, dim in zip(self.type_kernel[1:], self.dimensions[1:]):
                 self.number_parameters.append(get_number_parameters_kernel([type_k], [dim]))
 
+        self.length_scale_indexes = self.get_indexes_length_scale
+
+    def get_indexes_length_scale(self):
+        """
+        Get indexes of the length scale parameters
+
+        :return: [int]
+        """
+        length_scale_indexes = []
+        parameters = self.kernel.hypers_as_list
+        index = 2
+        for parameter in parameters:
+            if parameter.name == LENGTH_SCALE_NAME:
+                length_scale_indexes = list(np.arange(parameter.dimension) + index)
+                continue
+            index += parameter.dimension
+        return length_scale_indexes
 
     def get_values_parameters_from_data(self, kernel_values, mean_value, var_noise_value,
                                          type_kernel, dimensions):
@@ -241,7 +301,6 @@ class GPFittingGaussian(object):
                           data_as_list['var_noise'])
         else:
             iterate = zip(data_as_list['points'], data_as_list['evaluations'])
-
 
         for index, point in enumerate(iterate):
             points[index, :] = point[0]
@@ -528,18 +587,15 @@ class GPFittingGaussian(object):
         """
         Sample parameters of the GP model from their posterior.
 
-        :param n_samples:
+        :param n_samples: int
         :param random_seed: (int)
         :return: np.array(n_samples, n_parameters)
         """
         if random_seed is not None:
             np.random.seed(random_seed)
-        parameters = self.get_value_parameters_model
-        samples = []
-        for j in xrange(n_samples):
-            for i in xrange(self.thinning + 1):
-                parameters =  self.slice_sampler.slice_sample(parameters)
-            samples.append(parameters)
+
+        samples = self.sample_parameters(n_samples)
+
         return np.concatenate(samples, 1)
 
     @property
@@ -606,7 +662,6 @@ class GPFittingGaussian(object):
         bounds = self.get_bounds_parameters
 
         if indexes is not None:
-
             default_values = self.get_value_parameters_model
             for j in indexes:
                 default_values[j] = start[j]
@@ -658,15 +713,23 @@ class GPFittingGaussian(object):
         logger.info("Results of the GP fitting: ")
         logger.info(results)
 
-        self.var_noise.set_value(results['solution'][0])
-        self.mean.set_value(results['solution'][1])
-        self.kernel.update_value_parameters(results['solution'][2:])
-
-        self.kernel_values = results['solution'][2:]
-        self.mean_value = results['solution'][1]
-        self.var_noise_value = results['solution'][0]
+        self.update_value_parameters(results['solution'])
 
         return self
+
+    def update_value_parameters(self, vector):
+        """
+        Update values of the parameters of the model.
+
+        :param vector: np.array(n)
+        """
+        self.var_noise.set_value(vector[0])
+        self.mean.set_value(vector[1])
+        self.kernel.update_value_parameters(vector[2:])
+
+        self.kernel_values = vector[2:]
+        self.mean_value = vector[1]
+        self.var_noise_value = vector[0]
 
     @classmethod
     def train(cls, type_kernel, dimensions, mle, training_data, bounds, thinning=0):

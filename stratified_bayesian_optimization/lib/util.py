@@ -210,3 +210,47 @@ def reduce_dimension_vector(x, change_indexes):
         new_x[index] = x[j]
         index += 1
     return new_x
+
+def combine_vectors(vector1, vector2, indexes1):
+    """
+    Combine vector1 and vector2 into one vector v where
+    v[indexes1[i]] = vector1[i], and
+    v[indexes2[i]] = vector2[i] where indexes2 = np.arange(dimension) - indexes1
+
+    :param vector1: np.array(n1)
+    :param vector2: np.array(n2)
+    :param indexes1: [int]
+
+    :return: np.array(n1+n2)
+    """
+
+    dimension = len(vector1) + len(vector2)
+    vector = np.zeros(dimension)
+
+    for index, index1 in enumerate(indexes1):
+        vector[index1] = vector1[index]
+
+    indexes2 = [i for i in list(np.arange(dimension)) if i not in indexes1]
+    for index, index2 in enumerate(indexes2):
+        vector[index2] = vector2[index]
+
+    return vector
+
+def separate_vector(vector, indexes1):
+    """
+    Separate vector into two vectors vector1, vector2 where
+    vector1 = vector[indexes1],
+    vector2 = vector[indexes1^c]
+
+    :param vector: np.array(n)
+    :param indexes1: [int]
+    :return: [np.array(n1), np.array(n2)] where n = n1 + n2
+    """
+    dimension = len(vector)
+
+    vector1 = vector[indexes1]
+
+    indexes2 = [i for i in list(np.arange(dimension)) if i not in indexes1]
+    vector2 = vector[indexes2]
+
+    return [vector1, vector2]

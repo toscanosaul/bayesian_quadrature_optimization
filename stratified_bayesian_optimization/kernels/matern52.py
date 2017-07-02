@@ -18,8 +18,6 @@ from stratified_bayesian_optimization.lib.constant import (
 )
 from stratified_bayesian_optimization.priors.uniform import UniformPrior
 from stratified_bayesian_optimization.priors.log_normal_square import LogNormalSquare
-from stratified_bayesian_optimization.priors.log_normal import LogNormal
-
 
 
 class Matern52(AbstractKernel):
