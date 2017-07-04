@@ -139,8 +139,8 @@ class ProductKernels(AbstractKernel):
         return cls(*kernels)
 
     @classmethod
-    def define_default_kernel(cls, dimension, bounds=None, default_values=None, *args,
-                              **parameters_priors):
+    def define_default_kernel(cls, dimension, bounds=None, default_values=None,
+                              parameters_priors=None, *args):
         """
         :param dimension: [(int)] dimension of the domain of the kernels. It's the number of tasks
             for the tasks kernel.
@@ -148,10 +148,11 @@ class ProductKernels(AbstractKernel):
             of the kernels of the product.
         :param bounds: [[[float], float]] List witht he bounds of the domain of each of the kernels
             of the product.
+        :param parameters_priors: {
+                'sigma2_mean_matern52': float
+                'ls_mean_matern52': [float]
+            }
         :param args: [str] List with the names of the kernels.
-        :param **parameters_priors:
-            -'sigma2_mean_matern52': float
-            -'ls_mean_matern52': [float]
 
         :return: ProductKernels
         """
@@ -174,10 +175,10 @@ class ProductKernels(AbstractKernel):
             constructor = find_kernel_constructor(name)
             if default_values is None:
                 kernels.append(constructor.define_default_kernel(dim, bound, None,
-                                                                 **parameters_priors))
+                                                                 parameters_priors))
             else:
                 kernels.append(constructor.define_default_kernel(dim, bound, value[2],
-                                                                 **parameters_priors))
+                                                                 parameters_priors))
 
         return cls(*kernels)
 
@@ -417,3 +418,33 @@ class ProductKernels(AbstractKernel):
                     return False
 
         return True
+
+    @staticmethod
+    def parameters_from_list_to_dict(params, **kwargs):
+        """
+        Converts a list of parameters to dictionary using the order of the kernel.
+
+        :param params: [float]
+        :param kwargs:{
+            'dimensions': [float],
+            'kernels': [float],
+        }
+
+        :return: {
+           PARAM_NAME: [float] or float
+        }
+        """
+
+        parameters = {}
+
+        for dim, kernel in zip(kwargs['dimensions'], kwargs['kernels']):
+            if kernel == MATERN52_NAME:
+                param_dict = Matern52.parameters_from_list_to_dict(params[0 : dim])
+                params = params[dim :]
+                parameters.update(param_dict)
+            elif kernel == TASKS_KERNEL_NAME:
+                param_dict = TasksKernel.parameters_from_list_to_dict(params[0 : dim])
+                params = params[dim :]
+                parameters.update(param_dict)
+
+        return parameters

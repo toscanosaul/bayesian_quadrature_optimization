@@ -101,7 +101,7 @@ class TestAbstractKernel(unittest.TestCase):
 
     @raises(NotImplementedError)
     def test_define_default_kernel(self):
-        self.test.define_default_kernel(1, 1, 1)
+        self.test.define_default_kernel(1, 1, 1, 1)
 
     @raises(NotImplementedError)
     def test_evaluate_cov_defined_by_params(self):
@@ -110,3 +110,7 @@ class TestAbstractKernel(unittest.TestCase):
     @raises(NotImplementedError)
     def test_compare_kernels(self):
         self.test.compare_kernels(1, 2)
+
+    @raises(NotImplementedError)
+    def test_parameters_from_list_to_dict(self):
+        self.test.parameters_from_list_to_dict(1)

@@ -241,7 +241,7 @@ class TestProductKernels(unittest.TestCase):
         assert self.kernel_.get_bounds_parameters() == 6 * [(SMALLEST_NUMBER, LARGEST_NUMBER)]
 
     def test_define_default_kernel(self):
-        kern1 = ProductKernels.define_default_kernel([1, 1], None, None,
+        kern1 = ProductKernels.define_default_kernel([1, 1], None, None, None,
                                                      [MATERN52_NAME, TASKS_KERNEL_NAME])
 
         assert kern1.name == PRODUCT_KERNELS_SEPARABLE + ':' + MATERN52_NAME + '_' + \
@@ -259,7 +259,7 @@ class TestProductKernels(unittest.TestCase):
         assert kern1.parameters[TASKS_KERNEL_NAME][LOWER_TRIANG_NAME].value == np.array([0])
 
         kern2 = ProductKernels.define_default_kernel([1, 1], None,
-                                                     [np.array([3, 2]), np.array([5])],
+                                                     [np.array([3, 2]), np.array([5])], None,
                                                      [MATERN52_NAME, TASKS_KERNEL_NAME])
 
         assert kern2.name == PRODUCT_KERNELS_SEPARABLE + ':' + MATERN52_NAME + '_' + \

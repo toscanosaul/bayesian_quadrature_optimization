@@ -8,6 +8,9 @@ from stratified_bayesian_optimization.lib.constant import(
     MATERN52_NAME,
     TASKS_KERNEL_NAME,
     PRODUCT_KERNELS_SEPARABLE,
+    LENGTH_SCALE_NAME,
+    SIGMA2_NAME,
+    LOWER_TRIANG_NAME,
 )
 
 
@@ -125,21 +128,21 @@ def get_default_values_kernel(kernel_name, dim, **parameters_priors):
 
     :param kernel_name: [str]
     :param dim: [int]
-    :param **parameters_priors:
-        -'sigma2_mean_matern52': float
-        -'ls_mean_matern52': [float]
-        -'tasks_kernel_chol': [float]
+    :param parameters_priors:
+            -SIGMA2_NAME: float,
+            -LENGTH_SCALE_NAME: [float],
+            -LOWER_TRIANG_NAME: [float],
     :return: [float]
     """
 
     if kernel_name[0] == MATERN52_NAME:
-        sigma2 = [parameters_priors.get('sigma2_mean_matern52', 1.0)]
-        ls = parameters_priors.get('ls_mean_matern52', dim[0] * [1.0])
+        sigma2 = [parameters_priors.get(SIGMA2_NAME, 1.0)]
+        ls = parameters_priors.get(LENGTH_SCALE_NAME, dim[0] * [1.0])
         return ls + sigma2
 
     if kernel_name[0] == TASKS_KERNEL_NAME:
-        n_params = get_number_parameters_kernel(kernel_name, dim[0])
-        tasks_kernel_chol = parameters_priors.get('tasks_kernel_chol', n_params * [0.0])
+        n_params = get_number_parameters_kernel(kernel_name, dim)
+        tasks_kernel_chol = parameters_priors.get(LOWER_TRIANG_NAME, n_params * [0.0])
         return tasks_kernel_chol
 
     if kernel_name[0] == PRODUCT_KERNELS_SEPARABLE:
@@ -254,3 +257,4 @@ def separate_vector(vector, indexes1):
     vector2 = vector[indexes2]
 
     return [vector1, vector2]
+

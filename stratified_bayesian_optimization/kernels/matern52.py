@@ -137,19 +137,24 @@ class Matern52(AbstractKernel):
 
     @classmethod
     def define_default_kernel(cls, dimension, bounds=None, default_values=None,
-                              **parameters_priors):
+                              parameters_priors=None):
         """
         :param dimension: (int) dimension of the domain of the kernel
         :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
                 is to compute priors in a smart way.
         :param default_values: (np.array(k)) The first part are the parameters for length_scale, the
             second part is the parameter for sigma2.
-        :param **parameters_priors: parameters of the pririors.
-            - 'sigma2_mean_matern52' : float
-            - 'ls_mean_matern52': [float]
+        :param parameters_priors: {
+                'sigma2_mean_matern52' : float
+                'ls_mean_matern52': [float]
+            }
 
         :return: Matern52
         """
+
+        if parameters_priors is None:
+            parameters_priors = {}
+
         if default_values is None:
             sigma2 = [parameters_priors.get('sigma2_mean_matern52', 1.0)]
             ls = parameters_priors.get('ls_mean_matern52', dimension * [1.0])
@@ -316,6 +321,27 @@ class Matern52(AbstractKernel):
 
         return True
 
+    @staticmethod
+    def parameters_from_list_to_dict(params, **kwargs):
+        """
+        Converts a list of parameters to dictionary using the order of the kernel.
+
+        :param params: [float]
+
+        :return: {
+            LENGTH_SCALE_NAME: [float],
+            SIGMA2_NAME: float,
+        }
+        """
+
+        parameters = {}
+
+        parameters[LENGTH_SCALE_NAME] = params[0 : -1]
+        parameters[SIGMA2_NAME] = params[-1]
+
+        return parameters
+
+
 class GradientLSMatern52(object):
 
     @classmethod
@@ -391,5 +417,3 @@ class GradientLSMatern52(object):
         gradient = grad_distance_point * derivate_respect_to_r.transpose()
 
         return gradient
-
-

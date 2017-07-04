@@ -13,7 +13,7 @@ class TestSampleFunctions(unittest.TestCase):
         x = np.linspace(0, 10, 50)
         x = x.reshape([50,1])
         kernel = Matern52.define_kernel_from_array(1, np.array([3.0, 5.0]))
-        function = SampleFunctions.sample_from_gp(x, kernel, n_samples=10000)
+        function = SampleFunctions.sample_from_gp(x, kernel, n_samples=100000)
 
         mean = np.mean(function, axis=0)
         cov = np.cov(function.transpose())

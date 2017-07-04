@@ -18,10 +18,13 @@ from stratified_bayesian_optimization.lib.constant import (
     LARGEST_NUMBER,
     LENGTH_SCALE_NAME,
 )
-from stratified_bayesian_optimization.lib.util_kernels import define_prior_parameters_using_data
+from stratified_bayesian_optimization.lib.util_kernels import (
+    define_prior_parameters_using_data,
+)
 from stratified_bayesian_optimization.lib.util_gp_fitting import (
     get_kernel_default,
     get_kernel_class,
+    parameters_kernel_from_list_to_dict,
 )
 from stratified_bayesian_optimization.lib.util import (
     separate_numpy_arrays_in_lists,
@@ -53,7 +56,7 @@ class GPFittingGaussian(object):
     _possible_kernels_ = [MATERN52_NAME, TASKS_KERNEL_NAME, PRODUCT_KERNELS_SEPARABLE]
 
     def __init__(self, type_kernel, training_data, dimensions=None, bounds=None, kernel_values=None,
-                 mean_value=None, var_noise_value=None, thinning=1, n_burning=10, data=None):
+                 mean_value=None, var_noise_value=None, thinning=0, n_burning=1, data=None):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
@@ -115,7 +118,7 @@ class GPFittingGaussian(object):
         We assume that we only have one set of length scale parameters.
         """
 
-        if len(self.length_scale_indexes) == 0:
+        if self.length_scale_indexes is None:
             self.slice_samplers.append(SliceSampling(self.log_prob_parameters))
         else:
             def log_prob_1(parameters, length_scale):
@@ -129,7 +132,7 @@ class GPFittingGaussian(object):
             self.slice_samplers.append(SliceSampling(log_prob_1))
             self.slice_samplers.append(SliceSampling(log_prob_2, **{'component_wise': False}))
 
-        parameters = self.sample_parameters(self.n_burning / self.thinning)
+        parameters = self.sample_parameters(self.n_burning / (self.thinning +  1))
         self.update_value_parameters(parameters[-1])
 
     def sample_parameters(self, n_samples, start_point=None):
@@ -159,7 +162,7 @@ class GPFittingGaussian(object):
             points = separate_vector(start_point, self.length_scale_indexes)
 
             for index, slice in enumerate(self.slice_samplers):
-                points[1 - index] = slice.slice_sample(points[1 - index], *points[index])
+                points[1 - index] = slice.slice_sample(points[1 - index], *(points[index], ))
             start_point = combine_vectors(points[0], points[1], self.length_scale_indexes)
             samples.append(start_point)
 
@@ -174,6 +177,8 @@ class GPFittingGaussian(object):
             self.dimensions)
 
         parameters_priors = prior_parameters_values['kernel_values']
+        parameters_priors = parameters_kernel_from_list_to_dict(parameters_priors, self.type_kernel,
+                                                                self.dimensions)
         self.kernel_values = get_default_values_kernel(self.type_kernel, self.dimensions,
                                                        **parameters_priors)
 
@@ -188,7 +193,7 @@ class GPFittingGaussian(object):
             NonNegativePrior(1, HorseShoePrior(1, self.var_noise_value[0])))
 
         self.kernel = get_kernel_default(self.type_kernel, self.dimensions, self.bounds,
-                                         np.array(self.kernel_values), **parameters_priors)
+                                         np.array(self.kernel_values), parameters_priors)
 
         self.kernel_dimensions = [self.kernel.dimension]
         if len(self.type_kernel) > 1:
@@ -200,7 +205,7 @@ class GPFittingGaussian(object):
             for type_k, dim in zip(self.type_kernel[1:], self.dimensions[1:]):
                 self.number_parameters.append(get_number_parameters_kernel([type_k], [dim]))
 
-        self.length_scale_indexes = self.get_indexes_length_scale
+        self.length_scale_indexes = self.get_indexes_length_scale()
 
     def get_indexes_length_scale(self):
         """
@@ -213,7 +218,7 @@ class GPFittingGaussian(object):
         index = 2
         for parameter in parameters:
             if parameter.name == LENGTH_SCALE_NAME:
-                length_scale_indexes = list(np.arange(parameter.dimension) + index)
+                length_scale_indexes += list(np.arange(parameter.dimension) + index)
                 continue
             index += parameter.dimension
         return length_scale_indexes

@@ -49,7 +49,7 @@ class AbstractKernel(object):
 
     @classmethod
     @abstractmethod
-    def define_default_kernel(cls, dimension, bounds, default_values):
+    def define_default_kernel(cls, dimension, bounds, default_values, parameters_priors):
         raise NotImplementedError("Not implemented")
 
     @abstractmethod
@@ -90,4 +90,9 @@ class AbstractKernel(object):
     @staticmethod
     @abstractmethod
     def compare_kernels(kernel1, kernel2):
+        raise NotImplementedError("Not implemented")
+
+    @staticmethod
+    @abstractmethod
+    def parameters_from_list_to_dict(params):
         raise NotImplementedError("Not implemented")

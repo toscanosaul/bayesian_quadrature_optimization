@@ -127,18 +127,22 @@ class TasksKernel(AbstractKernel):
 
     @classmethod
     def define_default_kernel(cls, dimension, bounds=None, default_values=None,
-                              **parameters_priors):
+                              parameters_priors=None):
         """
         :param dimension: (int) Number of tasks.
         :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
                 is to compute priors in a smart way.
         :param default_values: np.array(k)
-        :param **parameters_priors:
-                    -'tasks_kernel_chol': [float]
+        :param parameters_priors: {
+                        'tasks_kernel_chol': [float]
+                    }
 
         :return: TasksKernel
         """
-        n_params = get_number_parameters_kernel(TASKS_KERNEL_NAME, dimension)
+        n_params = get_number_parameters_kernel([TASKS_KERNEL_NAME], [dimension])
+
+        if parameters_priors is None:
+            parameters_priors = {}
 
         if default_values is None:
             tasks_kernel_chol = parameters_priors.get('tasks_kernel_chol', n_params * [0.0])
@@ -379,6 +383,23 @@ class TasksKernel(AbstractKernel):
             return False
 
         return True
+
+    @staticmethod
+    def parameters_from_list_to_dict(params, **kwargs):
+        """
+        Converts a list of parameters to dictionary using the order of the kernel.
+
+        :param params: [float]
+
+        :return: {
+            LOWER_TRIANG_NAME: [float],
+        }
+        """
+
+        parameters = {}
+        parameters[LOWER_TRIANG_NAME] = params
+
+        return parameters
 
 
 class GradientTasksKernel(object):

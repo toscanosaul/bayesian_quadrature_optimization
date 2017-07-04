@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from stratified_bayesian_optimization.lib.constant import(
     MATERN52_NAME,
     TASKS_KERNEL_NAME,
+    PRODUCT_KERNELS_SEPARABLE,
 )
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
 from stratified_bayesian_optimization.kernels.tasks_kernel import TasksKernel
@@ -94,3 +95,4 @@ def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2_mea
         parameters_priors['ls_mean_matern52'] = matern52_parameters['ls_mean_matern52']
 
     return parameters_priors
+

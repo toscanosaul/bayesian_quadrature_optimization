@@ -101,7 +101,6 @@ class TestGPFittingGaussian(unittest.TestCase):
             "var_noise":[]}
         self.gp_gaussian_central = GPFittingGaussian([MATERN52_NAME], self.training_data_gp_2, [1])
 
-
     def test_add_points_evaluations(self):
 
         self.gp.add_points_evaluations(self.new_point, self.evaluation)
