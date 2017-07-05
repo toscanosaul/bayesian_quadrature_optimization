@@ -16,6 +16,7 @@ from stratified_bayesian_optimization.lib.constant import (
     SMALLEST_NUMBER,
     LARGEST_NUMBER,
     TASKS_KERNEL_NAME,
+    LOWER_TRIANG_NAME,
 )
 
 
@@ -180,3 +181,18 @@ class TestTasksKernel(unittest.TestCase):
         kernel_ = copy.deepcopy(kernel)
         kernel_.chol_base_cov_matrix = np.array([[1]])
         assert TasksKernel.compare_kernels(kernel, kernel_) is False
+
+    def test_define_prior_parameters(self):
+        data = {
+            'points': np.array([[0]]),
+            'evaluations': np.array([1]),
+            'var_noise': None,
+        }
+
+        dimension = 2
+
+        result = TasksKernel.define_prior_parameters(data, dimension)
+
+        assert result == {
+            LOWER_TRIANG_NAME: [0.0, -9.2103403719761818, 0.0],
+        }

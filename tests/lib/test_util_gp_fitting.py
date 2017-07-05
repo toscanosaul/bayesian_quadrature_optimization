@@ -8,6 +8,11 @@ from stratified_bayesian_optimization.lib.util_gp_fitting import *
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
 from stratified_bayesian_optimization.kernels.tasks_kernel import TasksKernel
 from stratified_bayesian_optimization.kernels.product_kernels import ProductKernels
+from stratified_bayesian_optimization.lib.constant import (
+    LENGTH_SCALE_NAME,
+    SMALLEST_POSITIVE_NUMBER,
+    LARGEST_NUMBER,
+)
 
 
 class TestUtilGPFitting(unittest.TestCase):
@@ -39,9 +44,21 @@ class TestUtilGPFitting(unittest.TestCase):
 
         kernel = get_kernel_default(kernel_name, dimension, default_values=np.array([1, 1, 0]))
         assert ProductKernels.compare_kernels(kernel, kernel_)
+        assert kernel.parameters[MATERN52_NAME][LENGTH_SCALE_NAME].prior.max == [LARGEST_NUMBER]
+        assert kernel.parameters[MATERN52_NAME][LENGTH_SCALE_NAME].prior.min == \
+               SMALLEST_POSITIVE_NUMBER
+
+        kernel = get_kernel_default(kernel_name, dimension, default_values=np.array([1, 1, 0]),
+                                    bounds=[[-1, 2]])
+
+        assert ProductKernels.compare_kernels(kernel, kernel_)
+        assert kernel.parameters[MATERN52_NAME][LENGTH_SCALE_NAME].prior.max == 9.25925925925926
+        assert kernel.parameters[MATERN52_NAME][LENGTH_SCALE_NAME].prior.min == \
+               SMALLEST_POSITIVE_NUMBER
 
     def test_get_kernel_class(self):
         assert get_kernel_class(MATERN52_NAME) == Matern52
         assert get_kernel_class(TASKS_KERNEL_NAME) == TasksKernel
         assert get_kernel_class(PRODUCT_KERNELS_SEPARABLE) == ProductKernels
+
 

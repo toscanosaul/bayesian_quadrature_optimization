@@ -18,6 +18,9 @@ from stratified_bayesian_optimization.lib.util_kernels import (
     find_define_kernel_from_array,
     find_kernel_constructor,
 )
+from stratified_bayesian_optimization.lib.util import (
+    get_number_parameters_kernel,
+)
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
 from stratified_bayesian_optimization.kernels.tasks_kernel import TasksKernel
 
@@ -149,8 +152,9 @@ class ProductKernels(AbstractKernel):
         :param bounds: [[[float], float]] List witht he bounds of the domain of each of the kernels
             of the product.
         :param parameters_priors: {
-                'sigma2_mean_matern52': float
-                'ls_mean_matern52': [float]
+                SIGMA2_NAME: float
+                LENGTH_SCALE_NAME: [float]
+                LOWER_TRIANG_NAME: [float]
             }
         :param args: [str] List with the names of the kernels.
 
@@ -439,12 +443,14 @@ class ProductKernels(AbstractKernel):
 
         for dim, kernel in zip(kwargs['dimensions'], kwargs['kernels']):
             if kernel == MATERN52_NAME:
-                param_dict = Matern52.parameters_from_list_to_dict(params[0 : dim])
-                params = params[dim :]
+                n_params = get_number_parameters_kernel([kernel], [dim])
+                param_dict = Matern52.parameters_from_list_to_dict(params[0 : n_params])
+                params = params[n_params :]
                 parameters.update(param_dict)
             elif kernel == TASKS_KERNEL_NAME:
-                param_dict = TasksKernel.parameters_from_list_to_dict(params[0 : dim])
-                params = params[dim :]
+                n_params = get_number_parameters_kernel([kernel], [dim])
+                param_dict = TasksKernel.parameters_from_list_to_dict(params[0 : n_params])
+                params = params[n_params :]
                 parameters.update(param_dict)
 
         return parameters

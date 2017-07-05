@@ -49,7 +49,7 @@ class LogNormal(AbstractPrior):
         if random_seed is not None:
             np.random.seed(random_seed)
 
-        points = np.zerps(samples, self.dimension)
+        points = np.zeros((samples, self.dimension))
 
         for dim in xrange(self.dimension):
             points[:, dim] = lognorm.rvs(s=self.scale[dim], scale=np.exp(self.mu[dim]),

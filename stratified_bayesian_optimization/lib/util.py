@@ -147,8 +147,10 @@ def get_default_values_kernel(kernel_name, dim, **parameters_priors):
 
     if kernel_name[0] == PRODUCT_KERNELS_SEPARABLE:
         values = []
+
         for name, dimension in zip(kernel_name[1:], dim[1:]):
             values += get_default_values_kernel([name], [dimension], **parameters_priors)
+
         return values
 
 def convert_list_to_dictionary(ls):

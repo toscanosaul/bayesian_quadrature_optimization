@@ -21,3 +21,11 @@ class TestSampleFunctions(unittest.TestCase):
 
         npt.assert_almost_equal(mean, np.zeros(len(mean)), decimal=1)
         npt.assert_almost_equal(cov, cov_, decimal=1)
+
+        function_2 = SampleFunctions.sample_from_gp(x, kernel, n_samples=100000, random_seed=10)
+        mean = np.mean(function_2, axis=0)
+        cov = np.cov(function_2.transpose())
+        cov_ = kernel.cov(x)
+
+        npt.assert_almost_equal(mean, np.zeros(len(mean)), decimal=1)
+        npt.assert_almost_equal(cov, cov_, decimal=1)

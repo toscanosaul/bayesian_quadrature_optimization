@@ -134,7 +134,7 @@ class TasksKernel(AbstractKernel):
                 is to compute priors in a smart way.
         :param default_values: np.array(k)
         :param parameters_priors: {
-                        'tasks_kernel_chol': [float]
+                        LOWER_TRIANG_NAME: [float]
                     }
 
         :return: TasksKernel
@@ -145,7 +145,7 @@ class TasksKernel(AbstractKernel):
             parameters_priors = {}
 
         if default_values is None:
-            tasks_kernel_chol = parameters_priors.get('tasks_kernel_chol', n_params * [0.0])
+            tasks_kernel_chol = parameters_priors.get(LOWER_TRIANG_NAME, n_params * [0.0])
             default_values = np.array(tasks_kernel_chol)
 
         kernel = TasksKernel.define_kernel_from_array(
@@ -290,7 +290,7 @@ class TasksKernel(AbstractKernel):
             'var_noise': np.array(n) or None}. Each point is the is an index of the task.
         :param dimension: int, number of tasks
         :return:  {
-            'tasks_kernel_chol': [float],
+            LOWER_TRIANG_NAME: [float],
         }
         """
 
@@ -349,7 +349,7 @@ class TasksKernel(AbstractKernel):
                 value = l_params[(i, j)]
                 task_params.append(np.log(max(value, 0.0001)))
 
-        return task_params
+        return {LOWER_TRIANG_NAME: task_params}
 
     @staticmethod
     def compare_kernels(kernel1, kernel2):

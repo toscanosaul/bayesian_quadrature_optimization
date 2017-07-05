@@ -78,3 +78,23 @@ class TestUtil(unittest.TestCase):
         change_indexes = [1, 3, 5]
 
         assert np.all(reduce_dimension_vector(x, change_indexes) == np.array([9, 7, 11]))
+
+    def test_combine_vectors(self):
+        a = np.array([1, 5])
+        b = np.array([2])
+        indexes = [0, 2]
+
+        assert np.all(combine_vectors(a, b, indexes) == np.array([1, 2, 5]))
+
+    def test_separate_vector(self):
+        a = np.array([1, 2, 5])
+        indexes = [0, 2]
+
+        a1 = np.array([1, 5])
+        a2 = np.array([2])
+
+        result = separate_vector(a, indexes)
+
+        assert np.all(result[0] == a1)
+        assert np.all(result[1] == a2)
+        assert len(result) == 2

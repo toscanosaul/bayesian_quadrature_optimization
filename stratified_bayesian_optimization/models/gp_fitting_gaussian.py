@@ -56,7 +56,8 @@ class GPFittingGaussian(object):
     _possible_kernels_ = [MATERN52_NAME, TASKS_KERNEL_NAME, PRODUCT_KERNELS_SEPARABLE]
 
     def __init__(self, type_kernel, training_data, dimensions=None, bounds=None, kernel_values=None,
-                 mean_value=None, var_noise_value=None, thinning=0, n_burning=1, data=None):
+                 mean_value=None, var_noise_value=None, thinning=0, n_burning=0, max_steps_out=1,
+                 data=None):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
@@ -72,6 +73,8 @@ class GPFittingGaussian(object):
         :param var_noise_value: [float], It contains the variance of the noise of the model
         :param thinning: (int) Parameters of the MCMC. If it's 1, we take all the samples.
         :param n_burning: (int) Number of burnings samples for the MCMC.
+        :param max_steps_out: (int) Maximum number of steps out for the stepping out  or
+                doubling procedure in slice sampling.
         :param data: {'points': ([[float]], dim=nxm), 'evaluations': ([float],dim=n),
             'var_noise': ([float],dim=n or [])}, it might contains more points than the points used
             to train the kernel, or different points. If its None, it's replaced by the
@@ -101,6 +104,7 @@ class GPFittingGaussian(object):
         self.length_scale_indexes = None # Indexes of the length scale parameter
 
         self.thinning = thinning
+        self.max_steps_out = max_steps_out
         self.n_burning = n_burning
         self.samples_parameters = []
         self.slice_samplers = []
@@ -129,11 +133,15 @@ class GPFittingGaussian(object):
                 vector = combine_vectors(length_scale, parameters, self.length_scale_indexes)
                 return self.log_prob_parameters(vector)
 
-            self.slice_samplers.append(SliceSampling(log_prob_1))
-            self.slice_samplers.append(SliceSampling(log_prob_2, **{'component_wise': False}))
+            slice_parameters = {'max_steps_out': self.max_steps_out}
+            self.slice_samplers.append(SliceSampling(log_prob_1, **slice_parameters))
 
-        parameters = self.sample_parameters(self.n_burning / (self.thinning +  1))
-        self.update_value_parameters(parameters[-1])
+            slice_parameters['component_wise'] = False
+            self.slice_samplers.append(SliceSampling(log_prob_2, **slice_parameters))
+
+        if self.n_burning > 0:
+            parameters = self.sample_parameters(self.n_burning / (self.thinning +  1))
+            self.update_value_parameters(parameters[-1])
 
     def sample_parameters(self, n_samples, start_point=None):
         """
@@ -177,13 +185,17 @@ class GPFittingGaussian(object):
             self.dimensions)
 
         parameters_priors = prior_parameters_values['kernel_values']
+
         parameters_priors = parameters_kernel_from_list_to_dict(parameters_priors, self.type_kernel,
                                                                 self.dimensions)
-        self.kernel_values = get_default_values_kernel(self.type_kernel, self.dimensions,
-                                                       **parameters_priors)
+        if self.kernel_values is None:
+            self.kernel_values = list(get_default_values_kernel(self.type_kernel, self.dimensions,
+                                                           **parameters_priors))
+        if self.mean_value is None:
+            self.mean_value = list(prior_parameters_values['mean_value'])
 
-        self.mean_value = prior_parameters_values['mean_value']
-        self.var_noise_value = prior_parameters_values['var_noise_value']
+        if self.var_noise_value is None:
+            self.var_noise_value = list(prior_parameters_values['var_noise_value'])
 
         self.mean = ParameterEntity(
             MEAN_NAME, np.array(self.mean_value), GaussianPrior(1, self.mean_value[0], 1.0))
@@ -478,6 +490,7 @@ class GPFittingGaussian(object):
 
         """
         chol, cov = self._chol_cov_including_noise(var_noise, parameters_kernel)
+
         y_unbiased = self.data['evaluations'] - mean
 
         cached_solve = self._get_cached_data((var_noise, tuple(parameters_kernel), mean),

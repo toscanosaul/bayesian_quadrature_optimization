@@ -145,9 +145,9 @@ class Matern52(AbstractKernel):
         :param default_values: (np.array(k)) The first part are the parameters for length_scale, the
             second part is the parameter for sigma2.
         :param parameters_priors: {
-                'sigma2_mean_matern52' : float
-                'ls_mean_matern52': [float]
-            }
+            LENGTH_SCALE_NAME: [float],
+            SIGMA2_NAME: float,
+        }
 
         :return: Matern52
         """
@@ -156,8 +156,8 @@ class Matern52(AbstractKernel):
             parameters_priors = {}
 
         if default_values is None:
-            sigma2 = [parameters_priors.get('sigma2_mean_matern52', 1.0)]
-            ls = parameters_priors.get('ls_mean_matern52', dimension * [1.0])
+            sigma2 = [parameters_priors.get(SIGMA2_NAME, 1.0)]
+            ls = parameters_priors.get(LENGTH_SCALE_NAME, dimension * [1.0])
             default_values = ls + sigma2
 
         kernel = cls.define_kernel_from_array(dimension, default_values)
@@ -166,13 +166,13 @@ class Matern52(AbstractKernel):
             diffs = [float(bound[1] - bound[0]) / 0.324 for bound in bounds]
             prior = UniformPrior(dimension, dimension * [SMALLEST_POSITIVE_NUMBER], diffs)
         else:
-            largest_numbers = dimension * [LARGEST_NUMBER]
-            prior = UniformPrior(dimension, dimension * [SMALLEST_POSITIVE_NUMBER], largest_numbers)
+            diffs = parameters_priors.get(LENGTH_SCALE_NAME, dimension * [LARGEST_NUMBER])
+            prior = UniformPrior(dimension, dimension * [SMALLEST_POSITIVE_NUMBER], diffs)
 
         kernel.length_scale.prior = prior
 
-        sigma2_mean = parameters_priors.get('sigma2_mean_matern52', 1.0)
-        kernel.sigma2.prior = LogNormalSquare(1, 1.0, sigma2_mean)
+        sigma2_mean = parameters_priors.get(SIGMA2_NAME, 1.0)
+        kernel.sigma2.prior = LogNormalSquare(1, 1.0, np.sqrt(sigma2_mean))
 
         kernel.sigma2.bounds = [(SMALLEST_POSITIVE_NUMBER, None)]
 
@@ -270,10 +270,10 @@ class Matern52(AbstractKernel):
         :param data: {'points': np.array(nxm), 'evaluations': np.array(n),
             'var_noise': np.array(n) or None}. Each point is the is an index of the task.
         :param dimension: int
-        :param var_evaluations: float, an estimator for the sigma2 parameter.
+        :param var_evaluations: (float), an estimator for the sigma2 parameter.
         :return:  {
-            'sigma2_mean_matern52': float,
-            'ls_mean_matern52': [float],
+            SIGMA2_NAME: float,
+            LENGTH_SCALE_NAME: [float],
         }
         """
         # Take mean value of |x-y| for all points x,y in the training data. I think that it's a
@@ -290,8 +290,8 @@ class Matern52(AbstractKernel):
             var_evaluations = np.var(data['evaluations'])
 
         return {
-            'ls_mean_matern52': diffs_training_data_x,
-            'sigma2_mean_matern52': var_evaluations,
+            LENGTH_SCALE_NAME: diffs_training_data_x,
+            SIGMA2_NAME: var_evaluations,
         }
 
     @staticmethod

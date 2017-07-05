@@ -34,4 +34,7 @@ class MultivariateNormalPrior(AbstractPrior):
         :param random_seed: int
         :return: np.array(samples, self.dimension)
         """
+        if random_seed is not None:
+            np.random.seed(random_seed)
+
         return np.random.multivariate_normal(self.mu, self.cov, size=samples).T.squeeze()

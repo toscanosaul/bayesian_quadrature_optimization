@@ -23,9 +23,9 @@ def get_kernel_default(kernel_name, dimension, bounds=None, default_values=None,
             is to compute priors in a smart way.
     :param default_values: np.array(k), default values for the parameters of the kernel
     :param parameters_priors: {
-            'sigma2_mean_matern52': float,
-            'ls_mean_matern52': [float],
-            'tasks_kernel_chol': [float],
+            SIGMA2_NAME: float,
+            LENGTH_SCALE_NAME: [float],
+            LOWER_TRIANG_NAME: [float],
         }
 
     :return: kernel object
@@ -99,5 +99,5 @@ def parameters_kernel_from_list_to_dict(params, type_kernels, dimensions):
     if type_kernels[0] == PRODUCT_KERNELS_SEPARABLE:
         kwargs['dimensions'] = dimensions[1:]
         kwargs['kernels'] = type_kernels[1:]
-    print kernel
+
     return kernel.parameters_from_list_to_dict(params, **kwargs)

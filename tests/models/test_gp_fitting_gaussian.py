@@ -86,7 +86,9 @@ class TestGPFittingGaussian(unittest.TestCase):
         kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
         function = SampleFunctions.sample_from_gp(points, kernel)
         function = function[0, :]
+
         evaluations = function + normal_noise
+
         self.training_data_gp = {
             "evaluations":list(evaluations),
             "points": points,
@@ -148,13 +150,17 @@ class TestGPFittingGaussian(unittest.TestCase):
     def test_serialize(self):
         self.gp.add_points_evaluations(self.new_point, self.evaluation)
         dict = self.gp.serialize()
+
+        n = len(self.training_data['points'])
+        ls = np.mean([abs(self.training_data['points'][j][0] - self.training_data['points'][h][0])
+                      for j in xrange(n) for h in xrange(n)]) / 0.324
         assert dict == {
             'type_kernel': [MATERN52_NAME],
             'training_data': self.training_data,
             'dimensions': [1],
-            'kernel_values': [1, 1],
-            'mean_value': [0],
-            'var_noise_value': [SMALLEST_POSITIVE_NUMBER],
+            'kernel_values': [ls, np.var(self.training_data['evaluations'])],
+            'mean_value': [np.mean(self.training_data['evaluations'])],
+            'var_noise_value': [np.var(self.training_data['evaluations'])],
             'thinning': 0,
             'data': {
             "evaluations":[42.2851784656,72.3121248508,1.0113231069,30.9309246906,15.5288331909,
@@ -181,19 +187,33 @@ class TestGPFittingGaussian(unittest.TestCase):
     def test_get_parameters_model(self):
         parameters = self.gp.get_parameters_model
         parameters_values = [parameter.value for parameter in parameters]
-        assert parameters_values[0] == np.array([SMALLEST_POSITIVE_NUMBER])
-        assert parameters_values[1] == np.array([0.0])
-        assert np.all(parameters_values[2] == np.array([1, 1]))
+
+        var = np.var(self.training_data['evaluations'])
+        n = len(self.training_data['evaluations'])
+        ls = np.mean([abs(self.training_data['points'][j][0] -
+                          self.training_data['points'][h][0]) for j in xrange(n) for h in
+                      xrange(n)]) / 0.324
+        assert parameters_values[0] == var
+        assert parameters_values[1] == np.mean(self.training_data['evaluations'])
+
+        assert np.all(parameters_values[2] == ls)
+        assert parameters_values[3] == var
 
     def test_get_value_parameters_model(self):
+        var = np.var(self.training_data['evaluations'])
+        mean = np.mean(self.training_data['evaluations'])
+
+        n = len(self.training_data['evaluations'])
+        ls = np.mean([abs(self.training_data['points'][j][0] -
+                          self.training_data['points'][h][0]) for j in xrange(n) for h in
+                      xrange(n)]) / 0.324
         parameters = self.gp.get_value_parameters_model
-        assert np.all(parameters == np.array([SMALLEST_POSITIVE_NUMBER, 0.0, 1, 1]))
+        assert np.all(parameters == np.array([var, mean, ls, var]))
 
     def test_cached_data(self):
         self.gp._updated_cached_data((3, 5, 1), -1, SOL_CHOL_Y_UNBIASED)
         assert self.gp.cache_sol_chol_y_unbiased[(3, 5, 1)] == -1
         assert self.gp.cache_sol_chol_y_unbiased.keys() == [(3, 5, 1)]
-        assert self.gp.cache_chol_cov == {}
         assert self.gp._get_cached_data((3, 5, 1), SOL_CHOL_Y_UNBIASED) == -1
 
         self.gp._updated_cached_data((3, 5), 0, CHOL_COV)
@@ -272,10 +292,13 @@ class TestGPFittingGaussian(unittest.TestCase):
         assert np.all(grad_2[2:] == grad['kernel_params'])
 
     def test_mle_parameters(self):
+        # Results compared with the ones given by GPy
+
         np.random.seed(1)
         add = -45.946926660233636
+
         llh = self.gp_gaussian.log_likelihood(1.0, 0.0, np.array([100.0, 1.0]))
-        npt.assert_almost_equal(llh + add, -62.8164403121)
+        npt.assert_almost_equal(llh + add, -59.8285565516, decimal=6)
 
         opt = self.gp_gaussian.mle_parameters(start=np.array([1.0, 3.0, 14.0, 0.9]))
         indexes = [1]
@@ -284,10 +307,10 @@ class TestGPFittingGaussian(unittest.TestCase):
 
         assert opt['optimal_value'] >= opt_2['optimal_value']
 
-        npt.assert_almost_equal(opt_2['optimal_value'] + add, -5.238E+01, decimal=2)
+        npt.assert_almost_equal(opt_2['optimal_value'] + add, -47.4988608127, decimal=2)
         npt.assert_almost_equal(opt_2['solution'],
-                                       np.array([0.299176213422, 97.246305699, 1.42154939935]),
-                                decimal=4)
+                                       np.array([0.31250026677, 147.626370606, 0.398740717821]),
+                                decimal=3)
         assert self.gp_gaussian_central.log_likelihood(9, 0.0, np.array([100.2, 1.1])) == \
                self.gp_gaussian.log_likelihood(9, 10.0, np.array([100.2, 1.1]))
 
@@ -306,22 +329,29 @@ class TestGPFittingGaussian(unittest.TestCase):
         np.random.seed(1)
 
         lambda_ = np.abs(np.random.standard_cauchy(size=(1, 1)))
-        a = np.abs(np.random.randn(1, 1) * lambda_ * 0.1)
+        a = np.abs(np.random.randn(1, 1) * lambda_ * np.var(self.training_data_gp['evaluations']))
 
         assert sample[0] == a[0][0]
 
-        a = np.random.randn(1, 1)
+        a = np.random.randn(1, 1) + np.mean(self.training_data_gp['evaluations'])
         assert sample[1] == a[0][0]
+
+        n = self.training_data_gp['points'].shape[0]
+        mean_ls = np.mean([abs(self.training_data_gp['points'][j, 0] -
+                               self.training_data_gp['points'][h, 0]) for j in xrange(n) for h in
+                           xrange(n)]) / 0.324
         a =  SMALLEST_POSITIVE_NUMBER + np.random.rand(1, 1) * \
-                                        (LARGEST_NUMBER - SMALLEST_POSITIVE_NUMBER)
+                                        (mean_ls - SMALLEST_POSITIVE_NUMBER)
         assert sample[2] == a
 
-        a = np.random.lognormal(mean=0.0, sigma=1.0, size=1) ** 2
+
+        mean_var = np.var(self.training_data_gp['evaluations'])
+        a = np.random.lognormal(mean=np.sqrt(mean_var), sigma=1.0, size=1) ** 2
         assert sample[3] == a[0]
 
     def test_log_prob_parameters(self):
         prob = self.gp_gaussian.log_prob_parameters(np.array([1.0, 3.0, 14.0, 0.9]))
-        lp = self.gp_gaussian.log_likelihood(1.0, 3.0, np.array([14.0, 0.9])) - 10.44842504
+        lp = self.gp_gaussian.log_likelihood(1.0, 3.0, np.array([14.0, 0.9])) - 10.13680717
         npt.assert_almost_equal(prob, lp)
 
     def test_sample_parameters_posterior(self):

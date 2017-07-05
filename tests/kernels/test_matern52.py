@@ -17,6 +17,9 @@ from stratified_bayesian_optimization.lib.constant import (
     SMALLEST_NUMBER,
     LARGEST_NUMBER,
     MATERN52_NAME,
+    SMALLEST_POSITIVE_NUMBER,
+    SIGMA2_NAME,
+    LENGTH_SCALE_NAME,
 )
 
 
@@ -217,6 +220,10 @@ class TestMatern52(unittest.TestCase):
         assert kern1.dimension_parameters == 2
         assert kern1.length_scale.value == np.array([1])
         assert kern1.sigma2.value == np.array([1])
+        assert kern1.length_scale.prior.max == [LARGEST_NUMBER]
+        assert kern1.length_scale.prior.min == [SMALLEST_POSITIVE_NUMBER]
+        assert kern1.sigma2.prior.scale == 1.0
+        assert kern1.sigma2.prior.mu == 1.0
 
         kern2 = Matern52.define_default_kernel(1, default_values=np.array([5, 6]))
 
@@ -225,6 +232,21 @@ class TestMatern52(unittest.TestCase):
         assert kern2.dimension_parameters == 2
         assert kern2.length_scale.value == np.array([5])
         assert kern2.sigma2.value == np.array([6])
+        assert kern2.length_scale.prior.max == [LARGEST_NUMBER]
+        assert kern2.length_scale.prior.min == [SMALLEST_POSITIVE_NUMBER]
+        assert kern2.sigma2.prior.scale == 1.0
+        assert kern2.sigma2.prior.mu == 1.0
+
+        kern3 = Matern52.define_default_kernel(1, bounds=[[5, 6]])
+        assert kern3.name == MATERN52_NAME
+        assert kern3.dimension == 1
+        assert kern3.dimension_parameters == 2
+        assert kern3.length_scale.value == np.array([1])
+        assert kern3.sigma2.value == np.array([1])
+        assert kern3.length_scale.prior.max == [3.0864197530864197]
+        assert kern3.length_scale.prior.min == [SMALLEST_POSITIVE_NUMBER]
+        assert kern3.sigma2.prior.scale == 1.0
+        assert kern3.sigma2.prior.mu == 1.0
 
     def test_compare_kernels(self):
         kernel = Matern52.define_kernel_from_array(1, np.ones(2))
@@ -248,3 +270,34 @@ class TestMatern52(unittest.TestCase):
         kernel_ = copy.deepcopy(kernel)
         kernel_.sigma2.value = np.array([-1])
         assert Matern52.compare_kernels(kernel, kernel_) is False
+
+    def test_define_prior_parameters(self):
+        data = {
+            'points': np.array([[1]]),
+            'evaluations': np.array([1]),
+            'var_noise': None,
+        }
+
+        dimension = 1
+
+        result = Matern52.define_prior_parameters(data, dimension, 2.5)
+
+        assert result == {
+            LENGTH_SCALE_NAME: [0.0],
+            SIGMA2_NAME: 2.5,
+        }
+
+        data2 = {
+            'points': np.array([[1], [2]]),
+            'evaluations': np.array([1, 2]),
+            'var_noise': None,
+        }
+
+        dimension2 = 1
+
+        result2 = Matern52.define_prior_parameters(data2, dimension2)
+
+        assert result2 == {
+            LENGTH_SCALE_NAME: [1.5432098765432098],
+            SIGMA2_NAME: 0.25,
+        }
