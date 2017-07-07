@@ -165,11 +165,14 @@ class Matern52(AbstractKernel):
         if bounds is not None:
             diffs = [float(bound[1] - bound[0]) / 0.324 for bound in bounds]
             prior = UniformPrior(dimension, dimension * [SMALLEST_POSITIVE_NUMBER], diffs)
+            bounds = [(SMALLEST_POSITIVE_NUMBER, diff) for diff in diffs]
         else:
             diffs = parameters_priors.get(LENGTH_SCALE_NAME, dimension * [LARGEST_NUMBER])
             prior = UniformPrior(dimension, dimension * [SMALLEST_POSITIVE_NUMBER], diffs)
+            bounds = [(SMALLEST_POSITIVE_NUMBER, diff) for diff in diffs]
 
         kernel.length_scale.prior = prior
+        kernel.length_scale.bounds = bounds
 
         sigma2_mean = parameters_priors.get(SIGMA2_NAME, 1.0)
         kernel.sigma2.prior = LogNormalSquare(1, 1.0, np.sqrt(sigma2_mean))
