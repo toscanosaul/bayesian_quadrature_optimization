@@ -4,8 +4,6 @@ import numpy as np
 import numpy.testing as npt
 
 from copy import deepcopy
-from doubles import expect
-from mock import mock_open, patch, MagicMock
 
 from stratified_bayesian_optimization.models.gp_fitting_gaussian import (
     GPFittingGaussian,
@@ -18,9 +16,6 @@ from stratified_bayesian_optimization.lib.constant import (
     SOL_CHOL_Y_UNBIASED,
     TASKS_KERNEL_NAME,
     PRODUCT_KERNELS_SEPARABLE,
-)
-from stratified_bayesian_optimization.lib.util import (
-    wrapper_fit_gp_regression,
 )
 from stratified_bayesian_optimization.lib.finite_differences import FiniteDifferences
 from stratified_bayesian_optimization.lib.sample_functions import SampleFunctions
@@ -592,7 +587,6 @@ class TestGPFittingGaussian(unittest.TestCase):
         assert result_2['success_proportion'] >= 0.8
 
     def test_cross_validation_mle_parameters_2(self):
-      #  expect(wrapper_fit_gp_regression).and_return(np.inf)
         type_kernel = [MATERN52_NAME]
 
         np.random.seed(5)

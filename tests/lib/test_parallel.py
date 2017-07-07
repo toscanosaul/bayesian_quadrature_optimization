@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 import unittest
 
+from mock import Mock
+
 from stratified_bayesian_optimization.lib.parallel import Parallel
 
 def f(x):
@@ -23,3 +25,8 @@ class TestParallel(unittest.TestCase):
             Parallel.run_function_different_arguments_parallel(g, arguments, all_success=True)
 
         Parallel.run_function_different_arguments_parallel(g, arguments)
+
+        mock = Mock(side_effect=KeyboardInterrupt)
+
+        assert -1 == Parallel.run_function_different_arguments_parallel(
+            mock, arguments, all_success=False, signal=mock)
