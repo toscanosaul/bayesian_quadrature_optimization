@@ -73,14 +73,20 @@ def separate_numpy_arrays_in_lists(array, division):
     else:
         return [array[0: division], array[division: len(array)]]
 
-def wrapper_fit_gp_regression(self):
+def wrapper_fit_gp_regression(self, **kwargs):
     """
     Wrapper of fit_gp_regression
     :param self: instance of class GPFittingGaussian
+    :param kwargs:
+        - 'start': (np.array(n)) starting point of the optimization of the llh.
+        - 'indexes': [int],  we optimize the MLE only over all the parameters, but the
+                parameters of the indexes. If it's None, we optimize over all the parameters.
+        - 'random_seed': int
     :return: updated self
     """
 
-    return self.fit_gp_regression()
+    return self.fit_gp_regression(**kwargs)
+   # return 0
 
 def wrapper_evaluate_objective_function(point, cls, name_module, n_samples):
     """

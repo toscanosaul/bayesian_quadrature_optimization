@@ -10,6 +10,7 @@ from stratified_bayesian_optimization.kernels.tasks_kernel import TasksKernel
 from stratified_bayesian_optimization.kernels.product_kernels import ProductKernels
 from stratified_bayesian_optimization.lib.util import (
     get_number_parameters_kernel,
+    combine_vectors,
 )
 
 
@@ -101,3 +102,44 @@ def parameters_kernel_from_list_to_dict(params, type_kernels, dimensions):
         kwargs['kernels'] = type_kernels[1:]
 
     return kernel.parameters_from_list_to_dict(params, **kwargs)
+
+def wrapper_log_prob(vector, self):
+    """
+    Wrapper of log_prob
+
+    :param vector: (np.array(n)) The order is defined in the function get_parameters_model
+            of the class model.
+    :param self: instance of class GPFittingGaussian
+
+    :return: float
+    """
+
+    return self.log_prob_parameters(vector)
+
+def wrapper_log_prob_1(parameters, length_scale, self):
+    """
+    Wrapper of log_prob
+
+    :param parameters: (np.array(l)) all parameters of the model, but the length scale parameters
+    :param length_scale: (np.array(k)) length scale parameters of the kernel
+    :param self: instance of class GPFittingGaussian
+
+    :return: float
+    """
+
+    vector = combine_vectors(length_scale, parameters, self.length_scale_indexes)
+    return self.log_prob_parameters(vector)
+
+def wrapper_log_prob_2(length_scale, parameters, self):
+    """
+    Wrapper of log_prob
+
+    :param length_scale: (np.array(k)) length scale parameters of the kernel
+    :param parameters: (np.array(l)) all parameters of the model, but the length scale parameters
+    :param self: instance of class GPFittingGaussian
+
+    :return: float
+    """
+
+    vector = combine_vectors(length_scale, parameters, self.length_scale_indexes)
+    return self.log_prob_parameters(vector)

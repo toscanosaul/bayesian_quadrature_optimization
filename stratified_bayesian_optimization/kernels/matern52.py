@@ -140,8 +140,8 @@ class Matern52(AbstractKernel):
                               parameters_priors=None):
         """
         :param dimension: (int) dimension of the domain of the kernel
-        :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
-                is to compute priors in a smart way.
+        :param bounds: [[float, float]], lower bound and upper bound for each entry of the domain.
+            This parameter is used to compute priors in a smart way.
         :param default_values: (np.array(k)) The first part are the parameters for length_scale, the
             second part is the parameter for sigma2.
         :param parameters_priors: {
@@ -173,7 +173,6 @@ class Matern52(AbstractKernel):
 
         sigma2_mean = parameters_priors.get(SIGMA2_NAME, 1.0)
         kernel.sigma2.prior = LogNormalSquare(1, 1.0, np.sqrt(sigma2_mean))
-
         kernel.sigma2.bounds = [(SMALLEST_POSITIVE_NUMBER, None)]
 
         return kernel

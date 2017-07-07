@@ -38,5 +38,5 @@ class TestParameterEntity(unittest.TestCase):
 
     def test_process_bounds(self):
         assert self.parameter.process_bounds(2, None) == 2 *  [(SMALLEST_NUMBER, LARGEST_NUMBER)]
-        assert self.parameter.process_bounds(2, [[None, 2],[1, None]]) == \
-               [[SMALLEST_NUMBER, 2], [1, LARGEST_NUMBER]]
+        assert self.parameter.process_bounds(2, [(None, 2),(1, None)]) == \
+               [(SMALLEST_NUMBER, 2), (1, LARGEST_NUMBER)]

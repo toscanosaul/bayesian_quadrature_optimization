@@ -50,20 +50,26 @@ class ParameterEntity(object):
         _lower_bound. If a upper bound is None, then it's replaced by _upper_bound.
 
         :param dimension: (int) Dimension of the domain space.
-        :param bounds: [[float/None, float/None]]
+        :param bounds: [(float/None, float/None)]
         :return: [[float, float]]
         """
 
         if bounds is None:
             return dimension *  [(SMALLEST_NUMBER, LARGEST_NUMBER)]
 
-        new_bounds = deepcopy(bounds)
-
+        new_bounds = []
 
         for index, bound in enumerate(bounds):
             if bound[0] is None:
-                new_bounds[index][0] = SMALLEST_NUMBER
+                l = SMALLEST_NUMBER
+            else:
+                l = bound[0]
+
             if bound[1] is None:
-                new_bounds[index][1] = LARGEST_NUMBER
+                u = LARGEST_NUMBER
+            else:
+                u = bound[1]
+
+            new_bounds.append((l, u))
 
         return new_bounds

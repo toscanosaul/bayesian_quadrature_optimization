@@ -4,8 +4,13 @@ import numpy as np
 import numpy.testing as npt
 
 from copy import deepcopy
+from doubles import expect
+from mock import mock_open, patch, MagicMock
 
-from stratified_bayesian_optimization.models.gp_fitting_gaussian import GPFittingGaussian
+from stratified_bayesian_optimization.models.gp_fitting_gaussian import (
+    GPFittingGaussian,
+    ValidationGPModel,
+)
 from stratified_bayesian_optimization.lib.constant import (
     MATERN52_NAME,
     SMALLEST_POSITIVE_NUMBER,
@@ -13,8 +18,9 @@ from stratified_bayesian_optimization.lib.constant import (
     SOL_CHOL_Y_UNBIASED,
     TASKS_KERNEL_NAME,
     PRODUCT_KERNELS_SEPARABLE,
-    SMALLEST_NUMBER,
-    LARGEST_NUMBER,
+)
+from stratified_bayesian_optimization.lib.util import (
+    wrapper_fit_gp_regression,
 )
 from stratified_bayesian_optimization.lib.finite_differences import FiniteDifferences
 from stratified_bayesian_optimization.lib.sample_functions import SampleFunctions
@@ -300,9 +306,9 @@ class TestGPFittingGaussian(unittest.TestCase):
         llh = self.gp_gaussian.log_likelihood(1.0, 0.0, np.array([100.0, 1.0]))
         npt.assert_almost_equal(llh + add, -59.8285565516, decimal=6)
 
-        opt = self.gp_gaussian.mle_parameters(start=np.array([1.0, 3.0, 14.0, 0.9]))
+        opt = self.gp_gaussian.mle_parameters(start=np.array([1.0, 0.0, 14.0, 0.9]))
         indexes = [1]
-        opt_2 = self.gp_gaussian.mle_parameters(start=np.array([0.9, 0.0, 14.0, 1.0]),
+        opt_2 = self.gp_gaussian.mle_parameters(start=np.array([1.0, 0.0, 14.0, 0.9]),
                                                 indexes=indexes)
 
         assert opt['optimal_value'] >= opt_2['optimal_value']
@@ -313,6 +319,33 @@ class TestGPFittingGaussian(unittest.TestCase):
                                 decimal=3)
         assert self.gp_gaussian_central.log_likelihood(9, 0.0, np.array([100.2, 1.1])) == \
                self.gp_gaussian.log_likelihood(9, 10.0, np.array([100.2, 1.1]))
+
+        np.random.seed(5)
+        n_points = 10
+        normal_noise = np.random.normal(0, 0.5, n_points)
+        points = np.linspace(0, 500, n_points)
+        points = points.reshape([n_points, 1])
+        kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
+        function = SampleFunctions.sample_from_gp(points, kernel)
+        function = function[0, :]
+
+        evaluations = function + normal_noise
+
+        training_data_gp = {
+            "evaluations":list(evaluations),
+            "points": points,
+            "var_noise":[]}
+
+
+        gp_gaussian = GPFittingGaussian([MATERN52_NAME], training_data_gp, [1])
+
+        opt_3 = gp_gaussian.mle_parameters(random_seed=1314938)
+        np.random.seed(1314938)
+        start = gp_gaussian.sample_parameters_posterior(1)[0, :]
+        opt_4 = gp_gaussian.mle_parameters(start)
+
+        npt.assert_almost_equal(opt_3['optimal_value'], opt_4['optimal_value'])
+        npt.assert_almost_equal(opt_3['solution'], opt_4['solution'])
 
     def test_objective_llh(self):
         funct = deepcopy(self.gp_gaussian.log_likelihood)
@@ -358,3 +391,232 @@ class TestGPFittingGaussian(unittest.TestCase):
       #  sample = self.gp_gaussian.sample_parameters_posterior(1, 1)
        # print sample
         assert True
+
+    def test_set_samplers(self):
+        type_kernel = [TASKS_KERNEL_NAME]
+        training_data = {
+            "evaluations":[42.2851784656,72.3121248508],
+            "points":[
+                [0],[1]],
+            "var_noise":[]}
+        dimensions = [2]
+
+        gp_tk = GPFittingGaussian(type_kernel, training_data, dimensions)
+
+        assert gp_tk.length_scale_indexes is None
+        assert len(gp_tk.slice_samplers) == 1
+
+        value = gp_tk.sample_parameters(1, random_seed=1)[-1]
+        gp_tk_ = GPFittingGaussian(type_kernel, training_data, dimensions, n_burning=1,
+                                   random_seed=1)
+        assert np.all(gp_tk_.get_value_parameters_model == value)
+
+
+        type_kernel = [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]
+        training_data = {
+            "evaluations":[42.2851784656,72.3121248508],
+            "points":[
+                [0, 0],[1, 0]],
+            "var_noise":[]}
+        dimensions = [2, 1, 1]
+        gp = GPFittingGaussian(type_kernel, training_data, dimensions, n_burning=1,
+                                   random_seed=1)
+
+        gp2 = GPFittingGaussian(type_kernel, training_data, dimensions)
+        value2 = gp2.sample_parameters(1, random_seed=1)[-1]
+        assert np.all(gp.get_value_parameters_model == value2)
+
+    def test_sample_parameters_posterior(self):
+        sample = self.gp.sample_parameters_posterior(1, 1)
+
+        np.random.seed(1)
+        sample2 = self.gp.sample_parameters_posterior(1)
+        assert np.all(sample == sample2)
+        assert sample.shape == (1, 4)
+
+        sample3 = self.gp.sample_parameters_posterior(2, 1)
+        sample4 = self.gp.sample_parameters(2, random_seed=1)
+
+        assert np.all(sample4[0] == sample3[0, :])
+        assert np.all(sample4[1] == sample3[1, :])
+
+    def test_fit_gp_regression(self):
+        np.random.seed(5)
+        n_points = 10
+        normal_noise = np.random.normal(0, 0.5, n_points)
+        points = np.linspace(0, 500, n_points)
+        points = points.reshape([n_points, 1])
+        kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
+        function = SampleFunctions.sample_from_gp(points, kernel)
+        function = function[0, :]
+
+        evaluations = function + normal_noise
+
+        training_data_gp = {
+            "evaluations":list(evaluations),
+            "points": points,
+            "var_noise":[]}
+
+
+        gp_gaussian = GPFittingGaussian([MATERN52_NAME], training_data_gp, [1])
+
+        new_gp = gp_gaussian.fit_gp_regression(random_seed=1314938)
+
+        results = gp_gaussian.mle_parameters(random_seed=1314938)
+        results = results['solution']
+
+        npt.assert_almost_equal(new_gp.var_noise.value[0], results[0], decimal=6)
+        npt.assert_almost_equal(new_gp.mean.value[0], results[1], decimal=6)
+        npt.assert_almost_equal(new_gp.kernel_values, results[2:], decimal=1)
+
+    def test_train(self):
+        np.random.seed(5)
+        n_points = 10
+        normal_noise = np.random.normal(0, 0.5, n_points)
+        points = np.linspace(0, 500, n_points)
+        points = points.reshape([n_points, 1])
+        kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
+        function = SampleFunctions.sample_from_gp(points, kernel)
+        function = function[0, :]
+
+        evaluations = function + normal_noise
+
+        training_data_gp = {
+            "evaluations":list(evaluations),
+            "points": points,
+            "var_noise":[]}
+        new_gp = GPFittingGaussian.train([MATERN52_NAME], [1], True, training_data_gp, None,
+                                         random_seed=1314938)
+
+        gp_gaussian = GPFittingGaussian([MATERN52_NAME], training_data_gp, [1])
+        gp_2 = gp_gaussian.fit_gp_regression(random_seed=1314938)
+
+        npt.assert_almost_equal(new_gp.var_noise.value[0], gp_2.var_noise.value[0], decimal=6)
+        npt.assert_almost_equal(new_gp.mean.value[0], gp_2.mean.value[0], decimal=6)
+        npt.assert_almost_equal(new_gp.kernel_values, gp_2.kernel_values)
+
+        gp_gaussian = GPFittingGaussian([MATERN52_NAME], training_data_gp, [1])
+        new_gp_2 = GPFittingGaussian.train([MATERN52_NAME], [1], False, training_data_gp, None)
+
+        npt.assert_almost_equal(new_gp_2.var_noise.value[0], gp_gaussian.var_noise.value[0])
+        npt.assert_almost_equal(new_gp_2.mean.value[0], gp_gaussian.mean.value[0], decimal=6)
+        npt.assert_almost_equal(new_gp_2.kernel_values, gp_gaussian.kernel_values)
+
+    def test_compute_posterior_parameters(self):
+        np.random.seed(5)
+        n_points = 10
+        normal_noise = np.random.normal(0, 0.5, n_points)
+        points = np.linspace(0, 500, n_points)
+        points = points.reshape([n_points, 1])
+        kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
+        function = SampleFunctions.sample_from_gp(points, kernel)
+        function = function[0, :]
+        evaluations = function + normal_noise
+
+        training_data_gp = {
+            "evaluations":list(evaluations[1:]),
+            "points": points[1:,:],
+            "var_noise":[]}
+        gp = GPFittingGaussian([MATERN52_NAME], training_data_gp, [1], kernel_values=[100.0, 1.0],
+                               mean_value=[0.0], var_noise_value=[0.5**2])
+
+        new_point = np.array([points[0], points[1]])
+        z = gp.compute_posterior_parameters(new_point)
+        mean = z['mean']
+        cov = z['cov']
+
+        assert mean[1] - 2.0 * np.sqrt(cov[1,1]) <= function[1] <= mean[1] + 2.0 * np.sqrt(cov[1,1])
+        assert mean[0] - 2.0 * np.sqrt(cov[0, 0]) <= function[0] <= \
+               mean[0] + 2.0 * np.sqrt(cov[0, 0])
+
+        # Values obtained from GPy
+        npt.assert_almost_equal(mean, np.array([0.30891226, 0.60256237]))
+        npt.assert_almost_equal(cov, np.array([[0.48844879, 0.16799927], [0.16799927, 0.16536313]]))
+
+    def test_cross_validation_mle_parameters(self):
+        type_kernel = [MATERN52_NAME]
+
+        np.random.seed(5)
+        n_points = 10
+        normal_noise = np.random.normal(0, 0.01, n_points)
+        points = np.linspace(0, 100, n_points)
+        points = points.reshape([n_points, 1])
+
+        kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
+        function = SampleFunctions.sample_from_gp(points, kernel)
+        function = function[0, :]
+        evaluations = function + normal_noise
+
+        training_data = {
+            "evaluations":evaluations,
+            "points": points,
+            "var_noise":None}
+
+        dimensions = [1]
+        problem_name = 'a'
+
+        result = \
+            ValidationGPModel.cross_validation_mle_parameters(type_kernel, training_data,
+                                                              dimensions, problem_name,
+                                                              start=
+                                                              np.array([0.01**2, 0.0, 100.0, 1.0]))
+
+        assert result['filename_histogram'] == \
+               'results/diagnostic_kernel/validation_kernel_histogram_a.png'
+        assert np.all(result['y_eval'] == evaluations)
+        assert result['n_data'] == n_points
+        assert result['filename_plot'] == 'results/diagnostic_kernel/' \
+                                          'validation_kernel_mean_vs_observations_a.png'
+        assert result['success_proportion'] >= 0.9
+
+        noise = np.random.normal(0, 0.000001, n_points)
+        evaluations_noisy = evaluations + noise
+
+        training_data_2 = {
+            "evaluations":evaluations_noisy,
+            "points": points,
+            "var_noise":np.array(n_points * [0.000001**2])}
+
+        result_2 = \
+            ValidationGPModel.cross_validation_mle_parameters(type_kernel, training_data_2,
+                                                              dimensions, problem_name,
+                                                              start=
+                                                              np.array([0.01**2, 0.0, 100.0, 1.0]))
+
+        assert result_2['filename_histogram'] == \
+               'results/diagnostic_kernel/validation_kernel_histogram_a.png'
+        assert np.all(result_2['y_eval'] == evaluations_noisy)
+        assert result_2['n_data'] == n_points
+        assert result_2['filename_plot'] == 'results/diagnostic_kernel/' \
+                                          'validation_kernel_mean_vs_observations_a.png'
+        assert result_2['success_proportion'] >= 0.8
+
+    def test_cross_validation_mle_parameters_2(self):
+      #  expect(wrapper_fit_gp_regression).and_return(np.inf)
+        type_kernel = [MATERN52_NAME]
+
+        np.random.seed(5)
+        n_points = 10
+        normal_noise = np.random.normal(0, 0.01, n_points)
+        points = np.linspace(0, 100, n_points)
+        points = points.reshape([n_points, 1])
+
+        kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
+        function = SampleFunctions.sample_from_gp(points, kernel)
+        function = function[0, :]
+        evaluations = function + normal_noise
+
+        training_data = {
+            "evaluations":evaluations,
+            "points": points,
+            "var_noise":None}
+
+        dimensions = [1]
+        problem_name = 'a'
+
+        result = \
+            ValidationGPModel.cross_validation_mle_parameters(type_kernel, training_data,
+                                                              dimensions, problem_name,
+                                                              start=
+                                                              np.array([-1]))
+        assert result['success_proportion'] == -1

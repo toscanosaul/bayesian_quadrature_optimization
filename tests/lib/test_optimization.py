@@ -35,4 +35,4 @@ class TestOptimization(unittest.TestCase):
         opt_2 = self.opt_2.optimize(np.array([0.9]))
         assert opt_2['solution'] == 1
         assert opt_2['optimal_value'] == 1
-        assert opt_2['gradient'] == 1
+        assert opt_2['gradient'] == 2

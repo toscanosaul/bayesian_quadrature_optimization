@@ -6,6 +6,7 @@ from stratified_bayesian_optimization.initializers.log import SBOLog
 
 logger = SBOLog(__name__)
 
+
 class Parallel(object):
 
     @staticmethod
@@ -16,7 +17,7 @@ class Parallel(object):
         :param arguments: {i: argument}
         :param all_success: (boolean) the function will raise an exception if one of the runs
             fail and all_success is True
-        :param **kwargs
+        :param kwargs: additional arguments of function
         :return: {int: output of f(arguments[i])}
         """
         jobs = {}
