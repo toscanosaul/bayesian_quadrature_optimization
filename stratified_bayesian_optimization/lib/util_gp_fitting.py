@@ -115,31 +115,3 @@ def wrapper_log_prob(vector, self):
     """
 
     return self.log_prob_parameters(vector)
-
-def wrapper_log_prob_1(parameters, length_scale, self):
-    """
-    Wrapper of log_prob
-
-    :param parameters: (np.array(l)) all parameters of the model, but the length scale parameters
-    :param length_scale: (np.array(k)) length scale parameters of the kernel
-    :param self: instance of class GPFittingGaussian
-
-    :return: float
-    """
-
-    vector = combine_vectors(length_scale, parameters, self.length_scale_indexes)
-    return self.log_prob_parameters(vector)
-
-def wrapper_log_prob_2(length_scale, parameters, self):
-    """
-    Wrapper of log_prob
-
-    :param length_scale: (np.array(k)) length scale parameters of the kernel
-    :param parameters: (np.array(l)) all parameters of the model, but the length scale parameters
-    :param self: instance of class GPFittingGaussian
-
-    :return: float
-    """
-
-    vector = combine_vectors(length_scale, parameters, self.length_scale_indexes)
-    return self.log_prob_parameters(vector)

@@ -2,17 +2,21 @@ from __future__ import absolute_import
 
 import numpy as np
 import numpy.random as npr
+from stratified_bayesian_optimization.lib.util import (
+    combine_vectors,
+)
 
 
 class SliceSampling(object):
 
-    def __init__(self, log_prob, **slice_sampling_params):
+    def __init__(self, log_prob, indexes, **slice_sampling_params):
         """
         For details of the procedure see  Slice Sampling by Radford Neal (2003).
 
         :param log_prob: function that computes the logarithm of the probability density,
-            log_prob(point, *args_log_prob)
-        :param thinning
+            log_prob(point, *args_log_prob) (the point is the full vector. It doesn't matter
+            if we're sampling only a subset of the full vector).
+        :param indexes: ([int]) indexes of the parameters to be sampled.
         :param slice_sampling_params:
             - sigma: (float) Parameter to randomly choose the x interval:
                 upper ~ U(0, sigma), lower = upper - sigma.
@@ -29,17 +33,21 @@ class SliceSampling(object):
                 stepping out procedure is used if ste_out is true.
         """
         self.log_prob = log_prob
+        self.indexes = indexes
         self.sigma = slice_sampling_params.get('sigma', 1.0)
         self.step_out = slice_sampling_params.get('step_out', True)
         self.max_steps_out = slice_sampling_params.get('max_steps_out', 1000)
         self.component_wise = slice_sampling_params.get('component_wise', True)
         self.doubling_step = slice_sampling_params.get('doubling_step', True)
 
-    def slice_sample(self, point, *args_log_prob):
+    def slice_sample(self, point, fixed_parameters, *args_log_prob):
         """
         Same a point from self.log_prob using slice sampling.
 
         :param point: (np.array(n)) starting point
+        :param fixed_parameters: (np.array(l)) values of the parameters that are fixed in the order
+            of the model (i.e. variance of noise, mean, parameters of the kernel)
+        :param args_log_prob: additional arguments of the log_prob function.
         :return: np.array(n)
         """
 
@@ -52,26 +60,33 @@ class SliceSampling(object):
             for d in dims:
                 direction = np.zeros(dimensions)
                 direction[d] = 1.0
-                new_point = self.direction_slice(direction, new_point, *args_log_prob)
+                new_point = self.direction_slice(direction, new_point, fixed_parameters,
+                                                 *args_log_prob)
         else:
             direction = npr.randn(dimensions)
             direction = direction / np.sqrt(np.sum(direction ** 2))
-            new_point = self.direction_slice(direction, point, *args_log_prob)
+            new_point = self.direction_slice(direction, point, fixed_parameters, *args_log_prob)
 
         return new_point
 
-    def directional_log_prob(self, x, direction, point, *args_log_prob):
+    def directional_log_prob(self, x, direction, point, fixed_parameters=None, *args_log_prob):
         """
         Computes log_prob(direction * x + point)
         :param x: (float) magnitude of the movement towards the direction
         :param direction: np.array(n), unitary vector
         :param point: np.array(n)
+        :param fixed_parameters: (np.array(l)) values of the parameters that are fixed in the order
+            of the model (i.e. variance of noise, mean, parameters of the kernel)
         :return: float
         """
+        new_point = point + x * direction
 
-        return self.log_prob(point + x * direction, *args_log_prob)
+        if fixed_parameters is not None:
+            new_point = combine_vectors(new_point, fixed_parameters, self.indexes)
 
-    def acceptable(self, z, llh, L, U, direction, point, *args_log_prob):
+        return self.log_prob(new_point, *args_log_prob)
+
+    def acceptable(self, z, llh, L, U, direction, point, fixed_parameters, *args_log_prob):
         """
         Accepts whether z * direction + point is an acceptable next point, where
         z is in [L, U] and {z: llh < log_prob(direction * z + point)}.
@@ -82,6 +97,9 @@ class SliceSampling(object):
         :param U: (float)
         :param direction: (np.array(n)), unitary vector
         :param point: (np.array(n))
+        :param fixed_parameters: (np.array(l)) values of the parameters that are fixed in the order
+            of the model (i.e. variance of noise, mean, parameters of the kernel)
+        :param args_log_prob: additional arguments of the log_prob function.
 
         :return: boolean
         """
@@ -99,12 +117,15 @@ class SliceSampling(object):
 
             D = (middle > 0 and z >= middle) or (middle <= 0 and z < middle)
 
-            if D and llh >= self.directional_log_prob(U, direction, point, *args_log_prob) and \
-                            llh >= self.directional_log_prob(L, direction, point, *args_log_prob):
+            if D and llh >= self.directional_log_prob(U, direction, point, fixed_parameters,
+                                                      *args_log_prob) and \
+                            llh >= self.directional_log_prob(L, direction, point, fixed_parameters,
+                                                             *args_log_prob):
                 return False
         return True
 
-    def find_x_interval(self, llh, lower, upper, direction, point, *args_log_prob):
+    def find_x_interval(self, llh, lower, upper, direction, point, fixed_parameters,
+                        *args_log_prob):
         """
         Finds the magnitude of the lower bound and upper bound of a x-interval in slice sampling
         such that:
@@ -122,6 +143,9 @@ class SliceSampling(object):
             upper * direction + point
         :param direction: (np.array(n))
         :param point: (np.array(n))
+        :param fixed_parameters: (np.array(l)) values of the parameters that are fixed in the order
+            of the model (i.e. variance of noise, mean, parameters of the kernel)
+        :param args_log_prob: additional arguments of the log_prob function.
 
         :return: (float, float) upper, lower
         """
@@ -129,8 +153,10 @@ class SliceSampling(object):
         u_steps_out = 0
 
         if self.doubling_step:
-            while (self.directional_log_prob(lower, direction, point, *args_log_prob) > llh or
-                           self.directional_log_prob(upper, direction, point, *args_log_prob) > llh) \
+            while (self.directional_log_prob(lower, direction, point, fixed_parameters,
+                                             *args_log_prob) > llh or
+                           self.directional_log_prob(upper, direction, point, fixed_parameters,
+                                                     *args_log_prob) > llh) \
                     and (l_steps_out + u_steps_out < self.max_steps_out):
                 if npr.rand() < 0.5:
                     l_steps_out += 1
@@ -139,18 +165,20 @@ class SliceSampling(object):
                     u_steps_out += 1
                     upper += (upper - lower)
         else:
-            while self.directional_log_prob(lower, direction, point, *args_log_prob) > llh and \
+            while self.directional_log_prob(lower, direction, point, fixed_parameters,
+                                            *args_log_prob) > llh and \
                             l_steps_out < self.max_steps_out:
                 l_steps_out += 1
                 lower -= self.sigma
-            while self.directional_log_prob(upper, direction, point, *args_log_prob) > llh and \
+            while self.directional_log_prob(upper, direction, point, fixed_parameters,
+                                            *args_log_prob) > llh and \
                             u_steps_out < self.max_steps_out:
                 u_steps_out += 1
                 upper += self.sigma
 
         return upper, lower
 
-    def find_sample(self, lower, upper, llh, direction, point, *args_log_prob):
+    def find_sample(self, lower, upper, llh, direction, point, fixed_parameters, *args_log_prob):
         """
         Sample magnitude z to define new sample towards the direction: z * direction + point.
         z is sampled from {x: llh < log_prob(x * direction + point)} intersected with [lower, upper]
@@ -162,6 +190,10 @@ class SliceSampling(object):
         :param llh: (float) llh ~ uniform(0, log_prob(point))
         :param direction: np.array(n)
         :param point: np.array(n)
+        :param fixed_parameters: (np.array(l)) values of the parameters that are fixed in the order
+            of the model (i.e. variance of noise, mean, parameters of the kernel)
+        :param args_log_prob: additional arguments of the log_prob function.
+
         :return: float
         """
         start_upper = upper
@@ -171,13 +203,14 @@ class SliceSampling(object):
         while True:
             steps_in += 1
             new_z = (upper - lower) * npr.rand() + lower
-            new_llh = self.directional_log_prob(new_z, direction, point, *args_log_prob)
+            new_llh = self.directional_log_prob(new_z, direction, point, fixed_parameters,
+                                                *args_log_prob)
 
             if np.isnan(new_llh):
                 raise Exception("Slice sampler got a NaN")
 
             if new_llh > llh and self.acceptable(new_z, llh, start_lower, start_upper, direction,
-                                                 point, *args_log_prob):
+                                                 point, fixed_parameters, *args_log_prob):
                 break
             elif new_z < 0:
                 lower = new_z
@@ -189,7 +222,7 @@ class SliceSampling(object):
         return new_z
 
 
-    def direction_slice(self, direction, point, *args_log_prob):
+    def direction_slice(self, direction, point, fixed_parameters, *args_log_prob):
         """
 
         Sample a new point by doing slice sampling, and only moving the point towards the
@@ -197,17 +230,22 @@ class SliceSampling(object):
 
         :param direction: (np.array(n)) Unitary vector
         :param point: (np.array(n)) starting point
+        :param fixed_parameters: (np.array(l)) values of the parameters that are fixed in the order
+            of the model (i.e. variance of noise, mean, parameters of the kernel)
+        :param args_log_prob: additional arguments of the log_prob function.
 
         :return: (np.array(n)) Sample a new point
         """
 
         upper = self.sigma * npr.rand()
         lower = upper - self.sigma
-        llh = np.log(npr.rand()) + self.directional_log_prob(0.0, direction, point, *args_log_prob)
-
+        llh = np.log(npr.rand()) + self.directional_log_prob(0.0, direction, point,
+                                                             fixed_parameters, *args_log_prob)
         if self.step_out:
-            upper, lower = self.find_x_interval(llh, lower, upper, direction, point, *args_log_prob)
+            upper, lower = self.find_x_interval(llh, lower, upper, direction, point,
+                                                fixed_parameters, *args_log_prob)
 
-        new_z = self.find_sample(lower, upper, llh, direction, point, *args_log_prob)
+        new_z = self.find_sample(lower, upper, llh, direction, point,
+                                 fixed_parameters, *args_log_prob)
 
         return new_z * direction + point

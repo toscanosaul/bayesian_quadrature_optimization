@@ -25,8 +25,6 @@ from stratified_bayesian_optimization.lib.util_gp_fitting import (
     get_kernel_default,
     get_kernel_class,
     parameters_kernel_from_list_to_dict,
-    wrapper_log_prob_1,
-    wrapper_log_prob_2,
     wrapper_log_prob,
 )
 from stratified_bayesian_optimization.lib.util import (
@@ -110,6 +108,8 @@ class GPFittingGaussian(object):
         self.number_parameters = None # Number of parameters of only the kernel
         self.length_scale_indexes = None # Indexes of the length scale parameter
 
+        self.dimension_parameters = None # Total number of parameters
+
         self.thinning = thinning
         self.max_steps_out = max_steps_out
         self.n_burning = n_burning
@@ -130,13 +130,19 @@ class GPFittingGaussian(object):
         """
 
         if self.length_scale_indexes is None:
-            self.slice_samplers.append(SliceSampling(wrapper_log_prob))
+            self.slice_samplers.append(SliceSampling(wrapper_log_prob,
+                                                     range(self.dimension_parameters)))
         else:
-            slice_parameters = {'max_steps_out': self.max_steps_out}
-            self.slice_samplers.append(SliceSampling(wrapper_log_prob_1, **slice_parameters))
-
-            slice_parameters['component_wise'] = False
-            self.slice_samplers.append(SliceSampling(wrapper_log_prob_2, **slice_parameters))
+            slice_parameters = {
+                'max_steps_out': self.max_steps_out,
+                'component_wise': False,
+            }
+            indexes = [i for i in range(self.dimension_parameters) if i not in
+                       self.length_scale_indexes]
+            self.slice_samplers.append(SliceSampling(wrapper_log_prob, indexes, **slice_parameters))
+            slice_parameters['component_wise'] = True
+            self.slice_samplers.append(SliceSampling(wrapper_log_prob, self.length_scale_indexes,
+                                                     **slice_parameters))
 
         if self.n_burning > 0:
             parameters = self.sample_parameters(float(self.n_burning) / (self.thinning +  1))
@@ -166,18 +172,16 @@ class GPFittingGaussian(object):
 
         if len(self.slice_samplers) == 1:
             for sample in xrange(n_samples):
-                start_point = self.slice_samplers[0].slice_sample(start_point, *(self, ))
+                start_point = self.slice_samplers[0].slice_sample(start_point, None, *(self, ))
                 samples.append(start_point)
             return samples[::self.thinning + 1]
 
         for sample in xrange(n_samples):
             points = separate_vector(start_point, self.length_scale_indexes)
-
             for index, slice in enumerate(self.slice_samplers):
-                points[1 - index] = slice.slice_sample(points[1 - index], *(points[index], self, ))
+                points[1 - index] = slice.slice_sample(points[1 - index], points[index], *(self, ))
             start_point = combine_vectors(points[0], points[1], self.length_scale_indexes)
             samples.append(start_point)
-
         return samples[::self.thinning + 1]
 
     def set_parameters_kernel(self):
@@ -211,6 +215,8 @@ class GPFittingGaussian(object):
 
         self.kernel = get_kernel_default(self.type_kernel, self.dimensions, self.bounds,
                                          np.array(self.kernel_values), parameters_priors)
+
+        self.dimension_parameters = self.kernel.dimension_parameters + 2
 
         self.kernel_dimensions = [self.kernel.dimension]
         if len(self.type_kernel) > 1:
@@ -607,18 +613,19 @@ class GPFittingGaussian(object):
 
         return np.concatenate(samples, 1)
 
-    def sample_parameters_posterior(self, n_samples, random_seed=None):
+    def sample_parameters_posterior(self, n_samples, random_seed=None, start_point=None):
         """
         Sample parameters of the GP model from their posterior.
 
         :param n_samples: int
         :param random_seed: (int)
+        :param start_point: np.array(n_parameters)
         :return: np.array(n_samples, n_parameters)
         """
         if random_seed is not None:
             np.random.seed(random_seed)
 
-        samples = self.sample_parameters(n_samples)
+        samples = self.sample_parameters(n_samples, start_point=start_point)
 
         return np.concatenate(samples).reshape(len(samples),len(samples[0]))
 
@@ -669,9 +676,9 @@ class GPFittingGaussian(object):
         noise of the Gaussian regression.
 
         :param start: (np.array(n)) starting point of the optimization of the llh.
-        :parameter indexes: [int], we optimize the MLE only over all the parameters, but the
+        :param indexes: [int], we optimize the MLE only over all the parameters, but the
             parameters of the indexes. If it's None, we optimize over all the parameters.
-        :parameter random_seed: int
+        :param random_seed: int
 
         :return: {
             'solution': (np.array(n)) mle parameters,
@@ -815,11 +822,6 @@ class GPFittingGaussian(object):
         solve = cho_solve(chol, y_unbiased)
 
         vec_cov = self.kernel.cross_cov(points, self.data['points'])
-
-        cov = self.class_kernel.evaluate_cov_defined_by_params(
-            np.array([1.01278086e+002,
-                      7.29787075935e-08]), self.data['points'], self.dimensions[0]
-        )
 
         mu_n = self.mean.value[0] + np.dot(vec_cov, solve)
 

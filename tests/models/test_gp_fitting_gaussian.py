@@ -454,10 +454,11 @@ class TestGPFittingGaussian(unittest.TestCase):
 
 
         gp_gaussian = GPFittingGaussian([MATERN52_NAME], training_data_gp, [1])
+        gp_gaussian_2 = GPFittingGaussian([MATERN52_NAME], training_data_gp, [1])
 
         new_gp = gp_gaussian.fit_gp_regression(random_seed=1314938)
 
-        results = gp_gaussian.mle_parameters(random_seed=1314938)
+        results = gp_gaussian_2.mle_parameters(random_seed=1314938)
         results = results['solution']
 
         npt.assert_almost_equal(new_gp.var_noise.value[0], results[0], decimal=6)
@@ -614,3 +615,10 @@ class TestGPFittingGaussian(unittest.TestCase):
                                                               start=
                                                               np.array([-1]))
         assert result['success_proportion'] == -1
+
+    def test_check_value_within_ci(self):
+        assert ValidationGPModel.check_value_within_ci(0, 1.0, 1.0) == True
+        assert ValidationGPModel.check_value_within_ci(3.1, 1.0, 1.0) == False
+        assert ValidationGPModel.check_value_within_ci(-1.1, 1.0, 1.0) == False
+        assert ValidationGPModel.check_value_within_ci(0, 1.0, 1.0, var_noise=0.00001) == True
+
