@@ -117,10 +117,9 @@ class SliceSampling(object):
 
             D = (middle > 0 and z >= middle) or (middle <= 0 and z < middle)
 
-            if D and llh >= self.directional_log_prob(U, direction, point, fixed_parameters,
-                                                      *args_log_prob) and \
-                            llh >= self.directional_log_prob(L, direction, point, fixed_parameters,
-                                                             *args_log_prob):
+            lp0 = self.directional_log_prob(U, direction, point, fixed_parameters, *args_log_prob)
+            lp1 = self.directional_log_prob(L, direction, point, fixed_parameters, *args_log_prob)
+            if D and llh >= lp0 and llh >= lp1:
                 return False
         return True
 
@@ -153,28 +152,37 @@ class SliceSampling(object):
         u_steps_out = 0
 
         if self.doubling_step:
-            while (self.directional_log_prob(lower, direction, point, fixed_parameters,
-                                             *args_log_prob) > llh or
-                           self.directional_log_prob(upper, direction, point, fixed_parameters,
-                                                     *args_log_prob) > llh) \
-                    and (l_steps_out + u_steps_out < self.max_steps_out):
+            lp0 = self.directional_log_prob(
+                lower, direction, point, fixed_parameters, *args_log_prob)
+            lp1 = self.directional_log_prob(
+                upper, direction, point, fixed_parameters, *args_log_prob)
+            while (lp0 > llh or lp1 > llh) and (l_steps_out + u_steps_out < self.max_steps_out):
                 if npr.rand() < 0.5:
                     l_steps_out += 1
                     lower -= (upper - lower)
+                    lp0 = self.directional_log_prob(
+                        lower, direction, point, fixed_parameters, *args_log_prob)
                 else:
                     u_steps_out += 1
                     upper += (upper - lower)
+                    lp1 = self.directional_log_prob(
+                        upper, direction, point, fixed_parameters, *args_log_prob)
         else:
-            while self.directional_log_prob(lower, direction, point, fixed_parameters,
-                                            *args_log_prob) > llh and \
-                            l_steps_out < self.max_steps_out:
+            lp1 = self.directional_log_prob(
+                lower, direction, point, fixed_parameters, *args_log_prob)
+            while lp1 > llh and l_steps_out < self.max_steps_out:
                 l_steps_out += 1
                 lower -= self.sigma
-            while self.directional_log_prob(upper, direction, point, fixed_parameters,
-                                            *args_log_prob) > llh and \
-                            u_steps_out < self.max_steps_out:
+                lp1 = self.directional_log_prob(
+                    lower, direction, point, fixed_parameters, *args_log_prob)
+
+            lp2 = self.directional_log_prob(
+                upper, direction, point, fixed_parameters, *args_log_prob)
+            while lp2 > llh and u_steps_out < self.max_steps_out:
                 u_steps_out += 1
                 upper += self.sigma
+                lp2 = self.directional_log_prob(
+                    upper, direction, point, fixed_parameters, *args_log_prob)
 
         return upper, lower
 
@@ -220,7 +228,6 @@ class SliceSampling(object):
                 raise Exception("Slice sampler shrank to zero!")
 
         return new_z
-
 
     def direction_slice(self, direction, point, fixed_parameters, *args_log_prob):
         """

@@ -23,6 +23,7 @@ class BGO(object):
         logger.info("Training GP model")
 
         training_data = TrainingDataService.from_dict(spec)
+        assert training_data
         # method_optimization = spec.method_optimization
 
         gp_model = None

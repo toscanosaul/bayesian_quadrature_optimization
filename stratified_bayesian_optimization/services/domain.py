@@ -16,6 +16,7 @@ from stratified_bayesian_optimization.util.json_file import JSONFile
 
 logger = SBOLog(__name__)
 
+
 class DomainService(object):
     _disc_x_filename = 'discretization_domain_x_bounds_{bounds}_number_points_' \
                        '{number_points_each_dimension}.json'.format
@@ -109,7 +110,7 @@ class DomainService(object):
 
         for j in xrange(len(bounds_domain)):
             entry = cls.get_point_one_dimension_domain(n_samples, bounds_domain[j],
-                                                        type_bounds=type_bounds[j])
+                                                       type_bounds=type_bounds[j])
             points.append(entry)
 
         return [[point[j] for point in points] for j in xrange(n_samples)]

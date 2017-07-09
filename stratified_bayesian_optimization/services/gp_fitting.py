@@ -2,8 +2,6 @@ from __future__ import absolute_import
 
 from os import path
 
-import numpy as np
-
 from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.lib.constant import GP_DIR
 from stratified_bayesian_optimization.util.json_file import JSONFile
@@ -35,7 +33,7 @@ class GPFittingService(object):
         kernel_name = ''
         for kernel in type_kernel:
             kernel_name += kernel + '_'
-        kernel_name = kernel_name[0 : -1]
+        kernel_name = kernel_name[0: -1]
 
         return cls._filename(
             model_type=model_type.__name__,

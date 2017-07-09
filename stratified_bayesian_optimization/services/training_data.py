@@ -22,6 +22,7 @@ from stratified_bayesian_optimization.lib.util import (
 
 logger = SBOLog(__name__)
 
+
 class TrainingDataService(object):
     _filename = 'training_data_{problem_name}_{training_name}_{n_points}_{random_seed}.json'.format
     _filename_domain = 'training_points_{problem_name}_{training_name}_{n_points}_' \
@@ -105,7 +106,7 @@ class TrainingDataService(object):
                                            problem_name, type_bounds)
 
         name_module = cls.get_name_module(problem_name)
-        module = __import__(name_module , globals(), locals(), -1)
+        module = __import__(name_module, globals(), locals(), -1)
 
         training_data = {}
         training_data['points'] = points

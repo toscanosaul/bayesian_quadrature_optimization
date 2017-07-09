@@ -34,8 +34,8 @@ class SpecService(object):
         :param points: [[float]], the objective function is evaluated on these points to generate
             the training data.
         :param noise: boolean, true if the evaluations are noisy
-        :param n_samples: (int),  If noise is true, we take n_samples of the function to estimate its
-            value.
+        :param n_samples: (int),  If noise is true, we take n_samples of the function to estimate
+            its value.
         :param random_seed: (int)
         :param parallel: (boolean) Train in parallel if it's True.
         :return: dict
@@ -75,10 +75,10 @@ class SpecService(object):
 
     @classmethod
     def generate_dict_multiple_spec(cls, problem_names, dim_xs, bounds_domain_xs, training_names,
-                           bounds_domains=None, number_points_each_dimensions=None,
-                           choose_noises=[True], method_optimizations=['SBO'], type_boundss=None,
-                           n_trainings=[10], pointss=None, noises=[False], n_sampless=[0],
-                           random_seeds=[DEFAULT_RANDOM_SEED], parallels=[True]):
+                                    bounds_domains=None, number_points_each_dimensions=None,
+                                    choose_noises=None, method_optimizations=None,
+                                    type_boundss=None, n_trainings=None, pointss=None, noises=None,
+                                    n_sampless=None, random_seeds=None, parallels=None):
         """
         Generate dict that represents multiple run specs
 
@@ -86,9 +86,9 @@ class SpecService(object):
         :param dim_xs: [int]
         :param bounds_domain_xs: [[(float, float)]]
         :param training_names: ([str]) Prefix for the file of the training data
-        :param bounds_domains: [[([float, float] or [float])]], the first case is when the bounds are
-            lower or upper bound of the respective entry; in the second case, it's list of finite
-            points representing the domain of that entry.
+        :param bounds_domains: [[([float, float] or [float])]], the first case is when the bounds
+            are lower or upper bound of the respective entry; in the second case, it's list of
+            finite points representing the domain of that entry.
         :param number_points_each_dimensions: [[int]] number of points in each dimension for the
             discretization of the domain of x.
         :param choose_noises: [boolean]
@@ -99,12 +99,34 @@ class SpecService(object):
         :param pointss: [[[float]]], the objective function is evaluated on these points to generate
             the training data.
         :param noises: [boolean], true if the evaluations are noisy
-        :param n_sampless: ([int]),  If noise is true, we take n_samples of the function to estimate its
-            value.
+        :param n_sampless: ([int]),  If noise is true, we take n_samples of the function to estimate
+            its value.
         :param random_seeds: ([int])
         :param parallels: ([boolean]) Train in parallel if it's True.
         :return: dict
         """
+
+        if choose_noises is None:
+            choose_noises = [True]
+
+        if method_optimizations is None:
+            method_optimizations = ['SBO']
+
+        if n_trainings is None:
+            n_trainings = [10]
+
+        if noises is None:
+            noises = [False]
+
+        if n_sampless is None:
+            n_sampless = [0]
+
+        if parallels is None:
+            parallels = [True]
+
+        if random_seeds is None:
+            random_seeds = [DEFAULT_RANDOM_SEED]
+
         if bounds_domains is None:
             bounds_domains = []
             for bounds_domain_x in bounds_domain_xs:
@@ -206,7 +228,7 @@ class SpecService(object):
 
         parallels = multiple_spec.parallels
         if parallels is None:
-            parallels =  n_specs * [True]
+            parallels = n_specs * [True]
 
         run_spec = []
 
