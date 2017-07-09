@@ -4,11 +4,14 @@ import numpy as np
 import numpy.testing as npt
 from doubles import expect
 
+from stratified_bayesian_optimization.entities.parameter import ParameterEntity
 from stratified_bayesian_optimization.lib.sample_functions import SampleFunctions
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
+from stratified_bayesian_optimization.kernels.scaled_kernel import ScaledKernel
 from stratified_bayesian_optimization.models.gp_fitting_gaussian import GPFittingGaussian
 from stratified_bayesian_optimization.lib.constant import (
     MATERN52_NAME,
+    SIGMA2_NAME,
 )
 
 
@@ -20,7 +23,10 @@ class TestSliceSampling(unittest.TestCase):
         normal_noise = np.random.normal(0, 1.0, n_points)
         points = np.linspace(0, 10, n_points)
         points = points.reshape([n_points, 1])
-        kernel = Matern52.define_kernel_from_array(1, np.array([2.0, 1.0]))
+        kernel = Matern52.define_kernel_from_array(1, np.array([2.0]))
+        self.sigma2 = ParameterEntity(SIGMA2_NAME, np.array([1.0]), None)
+        kernel = ScaledKernel(1, kernel, self.sigma2)
+
         function = SampleFunctions.sample_from_gp(points, kernel)
         function = function[0, :]
         evaluations = function + normal_noise + 10.0

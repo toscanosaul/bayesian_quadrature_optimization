@@ -8,6 +8,7 @@ import copy
 import numpy as np
 import numpy.testing as npt
 
+from stratified_bayesian_optimization.kernels.scaled_kernel import ScaledKernel
 from stratified_bayesian_optimization.kernels.matern52 import Matern52, GradientLSMatern52
 from stratified_bayesian_optimization.entities.parameter import ParameterEntity
 from stratified_bayesian_optimization.lib.distances import Distances
@@ -29,14 +30,17 @@ class TestMatern52(unittest.TestCase):
         self.dimension = 2
         self.length_scale = ParameterEntity('scale', np.array([1.0, 2.0]), None)
         self.sigma2 = ParameterEntity('sigma2', np.array([3]), None)
-        self.matern52 = Matern52(self.dimension, self.length_scale, self.sigma2)
+        self.matern52 = Matern52(self.dimension, self.length_scale)
+        self.matern52 = ScaledKernel(self.dimension, self.matern52, self.sigma2)
 
         self.inputs = np.array([[1, 0], [0, 1]])
 
         self.prior = UniformPrior(2, [1, 1], [100, 100])
         self.prior_2 = UniformPrior(1, [1], [100])
-        self.matern52_ = Matern52(2, ParameterEntity('scale', np.array([2.0, 3.0]), self.prior),
-                                  ParameterEntity('sigma2', np.array([4.0]), self.prior_2))
+        self.matern52_ = Matern52(2, ParameterEntity(LENGTH_SCALE_NAME,
+                                                     np.array([2.0, 3.0]), self.prior))
+        self.matern52_ = ScaledKernel(self.dimension, self.matern52_,
+                                     ParameterEntity('sigma2', np.array([4.0]), self.prior_2))
 
     def test_hypers(self):
         assert {'scale': self.length_scale, 'sigma2': self.sigma2} == self.matern52.hypers
@@ -45,7 +49,7 @@ class TestMatern52(unittest.TestCase):
         length = ParameterEntity('scale_', np.array([1, 2]), None)
         sigma2 = ParameterEntity('sigma2', np.array([3]), None)
 
-        self.matern52.set_parameters(length, sigma2)
+        self.matern52.set_parameters([length], sigma2=sigma2)
 
         assert self.matern52.hypers == {'scale_': length, 'sigma2': sigma2}
 
@@ -65,8 +69,8 @@ class TestMatern52(unittest.TestCase):
         point_1 = np.array([[2.0, 4.0]])
         point_2 = np.array([[3.0, 5.0]])
 
-        matern52 = Matern52(2, ParameterEntity('scale', np.array([2.0, 3.0]), None),
-                            ParameterEntity('sigma2', np.array([4.0]), None))
+        matern52 = Matern52(2, ParameterEntity('scale', np.array([2.0, 3.0]), None))
+        matern52 = ScaledKernel(2, matern52, ParameterEntity('sigma2', np.array([4.0]), None))
 
         assert np.all(matern52.cross_cov(point_1, point_2) == np.array([[3.0737065834936015]]))
 
@@ -99,11 +103,12 @@ class TestMatern52(unittest.TestCase):
         inputs_1 = np.array([[2.0, 4.0], [3.0, 5.0]])
         dh = 0.00000001
         finite_diff = FiniteDifferences.forward_difference(
-            lambda params: Matern52.evaluate_cov_defined_by_params(params, inputs_1, 2),
+            lambda params: ScaledKernel.evaluate_cov_defined_by_params(
+            params, inputs_1, 2, *([MATERN52_NAME],)),
             np.array([2.0, 3.0, 4.0]), np.array([dh]))
 
-        gradient = Matern52.evaluate_grad_defined_by_params_respect_params(
-            np.array([2.0, 3.0, 4.0]), inputs_1, 2)
+        gradient = ScaledKernel.evaluate_grad_defined_by_params_respect_params(
+            np.array([2.0, 3.0, 4.0]), inputs_1, 2, *([MATERN52_NAME],))
 
         for i in range(3):
             npt.assert_almost_equal(finite_diff[i], gradient[i])
@@ -132,19 +137,19 @@ class TestMatern52(unittest.TestCase):
         )
 
         assert GradientLSMatern52.gradient_respect_parameters_ls(
-            self.inputs, self.length_scale, self.sigma2) == {'scale': {0: 12, 1: 8}}
+            self.inputs, self.length_scale) == {'scale': {0: 12, 1: 8}}
 
     def test_gradient_respect_distance(self):
         expect(GradientLSMatern52).gradient_respect_distance_cross.once().and_return(0)
 
         assert GradientLSMatern52.gradient_respect_distance(
-            self.length_scale, self.sigma2, self.inputs) == 0
+            self.length_scale, self.inputs) == 0
 
     def test_gradient_respect_distance_cross(self):
         expect(Distances).dist_square_length_scale.once().and_return(np.array([0.0]))
 
         assert GradientLSMatern52.gradient_respect_distance_cross(
-            self.length_scale, self.sigma2, self.inputs, self.inputs) == np.array([0.0])
+            self.length_scale, self.inputs, self.inputs) == np.array([0.0])
 
     def test_grad_respect_point_2(self):
         expect(GradientLSMatern52).gradient_respect_distance_cross.once().and_return(
@@ -152,7 +157,7 @@ class TestMatern52(unittest.TestCase):
         expect(Distances).gradient_distance_length_scale_respect_point.once().and_return(
             1.0
         )
-        comparisons = GradientLSMatern52.grad_respect_point(self.length_scale, self.sigma2,
+        comparisons = GradientLSMatern52.grad_respect_point(self.length_scale,
                                                             self.inputs, self.inputs) == \
             np.array([[1, 0], [0, 1]])
         assert np.all(comparisons)
@@ -167,9 +172,8 @@ class TestMatern52(unittest.TestCase):
                [('scale', [(0, None), (1, None)]), ('sigma2', None)]
 
     def test_define_kernel_from_array(self):
-        kernel = Matern52.define_kernel_from_array(2, np.array([1, 3, 5]))
+        kernel = Matern52.define_kernel_from_array(2, np.array([1, 3]))
         assert np.all(kernel.length_scale.value == np.array([1, 3]))
-        assert kernel.sigma2.value == np.array([5])
 
     def test_evaluate_cov_defined_by_params(self):
         result = Matern52.evaluate_cov_defined_by_params(np.array([1, 3, 5]),
@@ -180,21 +184,22 @@ class TestMatern52(unittest.TestCase):
 
     def test_evaluate_grad_defined_by_params_respect_params(self):
         result = Matern52.evaluate_grad_defined_by_params_respect_params(
-            np.array([1, 3, 5]), np.array([[4, 5]]), 2)
-        kernel = Matern52.define_kernel_from_array(2, np.array([1, 3, 5]))
+            np.array([1, 3]), np.array([[4, 5]]), 2)
+        kernel = Matern52.define_kernel_from_array(2, np.array([1, 3]))
 
         grad_kernel = kernel.gradient_respect_parameters(np.array([[4, 5]]))
-        assert result == {0: grad_kernel['length_scale'][0], 1: grad_kernel['length_scale'][1],
-                          2: grad_kernel['sigma2']}
+        assert result == {0: grad_kernel['length_scale'][0], 1: grad_kernel['length_scale'][1]}
 
     def test_hypers_as_list(self):
-        assert self.matern52_.hypers_as_list == [self.matern52_.length_scale, self.matern52_.sigma2]
+
+        assert self.matern52_.hypers_as_list == [self.matern52_.kernel.length_scale,
+                                                 self.matern52_.sigma2]
 
     def test_hypers_values_as_array(self):
         assert np.all(self.matern52_.hypers_values_as_array == np.array([2.0, 3.0, 4.0]))
 
     def test_sample_parameters(self):
-        parameters = [self.matern52_.length_scale, self.matern52_.sigma2]
+        parameters = self.matern52_.hypers_as_list
         samples = []
         np.random.seed(1)
         for parameter in parameters:
@@ -210,46 +215,38 @@ class TestMatern52(unittest.TestCase):
         self.matern52_.update_value_parameters(np.array([1, 5, 10]))
 
         assert self.matern52_.sigma2.value == np.array([10])
-        assert np.all(self.matern52_.length_scale.value == np.array([1, 5]))
+        parameters = self.matern52_.hypers
+        assert np.all(parameters[LENGTH_SCALE_NAME].value == np.array([1, 5]))
 
     def test_define_default_kernel(self):
         kern1 = Matern52.define_default_kernel(1)
 
         assert kern1.name == MATERN52_NAME
         assert kern1.dimension == 1
-        assert kern1.dimension_parameters == 2
+        assert kern1.dimension_parameters == 1
         assert kern1.length_scale.value == np.array([1])
-        assert kern1.sigma2.value == np.array([1])
         assert kern1.length_scale.prior.max == [LARGEST_NUMBER]
         assert kern1.length_scale.prior.min == [SMALLEST_POSITIVE_NUMBER]
-        assert kern1.sigma2.prior.scale == 1.0
-        assert kern1.sigma2.prior.mu == 1.0
 
-        kern2 = Matern52.define_default_kernel(1, default_values=np.array([5, 6]))
+        kern2 = Matern52.define_default_kernel(1, default_values=np.array([5]))
 
         assert kern2.name == MATERN52_NAME
         assert kern2.dimension == 1
-        assert kern2.dimension_parameters == 2
+        assert kern2.dimension_parameters == 1
         assert kern2.length_scale.value == np.array([5])
-        assert kern2.sigma2.value == np.array([6])
         assert kern2.length_scale.prior.max == [LARGEST_NUMBER]
         assert kern2.length_scale.prior.min == [SMALLEST_POSITIVE_NUMBER]
-        assert kern2.sigma2.prior.scale == 1.0
-        assert kern2.sigma2.prior.mu == 1.0
 
         kern3 = Matern52.define_default_kernel(1, bounds=[[5, 6]])
         assert kern3.name == MATERN52_NAME
         assert kern3.dimension == 1
-        assert kern3.dimension_parameters == 2
+        assert kern3.dimension_parameters == 1
         assert kern3.length_scale.value == np.array([1])
-        assert kern3.sigma2.value == np.array([1])
         assert kern3.length_scale.prior.max == [3.0864197530864197]
         assert kern3.length_scale.prior.min == [SMALLEST_POSITIVE_NUMBER]
-        assert kern3.sigma2.prior.scale == 1.0
-        assert kern3.sigma2.prior.mu == 1.0
 
     def test_compare_kernels(self):
-        kernel = Matern52.define_kernel_from_array(1, np.ones(2))
+        kernel = Matern52.define_kernel_from_array(1, np.ones(1))
 
         kernel_ = copy.deepcopy(kernel)
         kernel_.name = 'a'
@@ -267,10 +264,6 @@ class TestMatern52(unittest.TestCase):
         kernel_.length_scale.value = np.array([-1])
         assert Matern52.compare_kernels(kernel, kernel_) is False
 
-        kernel_ = copy.deepcopy(kernel)
-        kernel_.sigma2.value = np.array([-1])
-        assert Matern52.compare_kernels(kernel, kernel_) is False
-
     def test_define_prior_parameters(self):
         data = {
             'points': np.array([[1]]),
@@ -280,11 +273,10 @@ class TestMatern52(unittest.TestCase):
 
         dimension = 1
 
-        result = Matern52.define_prior_parameters(data, dimension, 2.5)
+        result = Matern52.define_prior_parameters(data, dimension)
 
         assert result == {
             LENGTH_SCALE_NAME: [0.0],
-            SIGMA2_NAME: 2.5,
         }
 
         data2 = {
@@ -299,5 +291,4 @@ class TestMatern52(unittest.TestCase):
 
         assert result2 == {
             LENGTH_SCALE_NAME: [1.5432098765432098],
-            SIGMA2_NAME: 0.25,
         }

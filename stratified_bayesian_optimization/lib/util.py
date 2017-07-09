@@ -11,6 +11,7 @@ from stratified_bayesian_optimization.lib.constant import(
     LENGTH_SCALE_NAME,
     SIGMA2_NAME,
     LOWER_TRIANG_NAME,
+    SCALED_KERNEL,
 )
 
 
@@ -79,14 +80,11 @@ def wrapper_fit_gp_regression(self, **kwargs):
     :param self: instance of class GPFittingGaussian
     :param kwargs:
         - 'start': (np.array(n)) starting point of the optimization of the llh.
-        - 'indexes': [int],  we optimize the MLE only over all the parameters, but the
-                parameters of the indexes. If it's None, we optimize over all the parameters.
         - 'random_seed': int
     :return: updated self
     """
 
     return self.fit_gp_regression(**kwargs)
-   # return 0
 
 def wrapper_evaluate_objective_function(point, cls, name_module, n_samples):
     """
@@ -115,7 +113,7 @@ def get_number_parameters_kernel(kernel_name, dim):
     """
 
     if kernel_name[0] == MATERN52_NAME:
-        return dim[0] + 1
+        return dim[0]
 
     if kernel_name[0] == TASKS_KERNEL_NAME:
         return np.cumsum(xrange(dim[0] + 1))[dim[0]]
@@ -141,10 +139,16 @@ def get_default_values_kernel(kernel_name, dim, **parameters_priors):
     :return: [float]
     """
 
-    if kernel_name[0] == MATERN52_NAME:
+    if kernel_name[0] == SCALED_KERNEL:
         sigma2 = [parameters_priors.get(SIGMA2_NAME, 1.0)]
+        if kernel_name[1] == MATERN52_NAME:
+            ls = parameters_priors.get(LENGTH_SCALE_NAME, dim[0] * [1.0])
+            return ls + sigma2
+
+
+    if kernel_name[0] == MATERN52_NAME:
         ls = parameters_priors.get(LENGTH_SCALE_NAME, dim[0] * [1.0])
-        return ls + sigma2
+        return ls
 
     if kernel_name[0] == TASKS_KERNEL_NAME:
         n_params = get_number_parameters_kernel(kernel_name, dim)

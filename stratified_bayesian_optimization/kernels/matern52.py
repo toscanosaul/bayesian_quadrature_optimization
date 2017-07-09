@@ -22,11 +22,10 @@ from stratified_bayesian_optimization.priors.log_normal_square import LogNormalS
 
 class Matern52(AbstractKernel):
 
-    def __init__(self, dimension, length_scale, sigma2):
+    def __init__(self, dimension, length_scale):
         """
-
+        :param dimension: int
         :param length_scale: ParameterEntity
-        :param sigma2: ParameterEntity
         """
 
         name = MATERN52_NAME
@@ -35,13 +34,11 @@ class Matern52(AbstractKernel):
         super(Matern52, self).__init__(name, dimension, dimension_parameters)
 
         self.length_scale = length_scale
-        self.sigma2 = sigma2
 
     @property
     def hypers(self):
         return {
             self.length_scale.name: self.length_scale,
-            self.sigma2.name: self.sigma2,
         }
 
     @property
@@ -50,7 +47,7 @@ class Matern52(AbstractKernel):
         This function defines the default order of the parameters.
         :return: [ParameterEntity]
         """
-        return [self.length_scale, self.sigma2]
+        return [self.length_scale]
 
     @property
     def hypers_values_as_array(self):
@@ -60,7 +57,6 @@ class Matern52(AbstractKernel):
         """
         parameters = []
         parameters.append(self.length_scale.value)
-        parameters.append(self.sigma2.value)
 
         return np.concatenate(parameters)
 
@@ -74,7 +70,7 @@ class Matern52(AbstractKernel):
         if random_seed is not None:
             np.random.seed(random_seed)
         samples = []
-        parameters = [self.length_scale, self.sigma2]
+        parameters = [self.length_scale]
         for parameter in parameters:
             samples.append(parameter.sample_from_prior(number_samples))
         return np.concatenate(samples, 1)
@@ -85,7 +81,7 @@ class Matern52(AbstractKernel):
         :return: [(float, float)]
         """
         bounds = []
-        parameters = [self.length_scale, self.sigma2]
+        parameters = [self.length_scale]
         for parameter in parameters:
             bounds += parameter.bounds
         return bounds
@@ -97,20 +93,15 @@ class Matern52(AbstractKernel):
         :return: ([(name_param, name_params)]) name_params can be other list if name_param
             represents several parameters (like an array), otherwise name_params=None.
         """
-        return [(self.length_scale.name, [(i, None) for i in xrange(self.dimension)]),
-                (self.sigma2.name, None)]
+        return [(self.length_scale.name, [(i, None) for i in xrange(self.dimension)])]
 
-    def set_parameters(self, length_scale=None, sigma2=None):
+    def set_parameters(self, length_scale=None):
         """
 
         :param length_scale: ParameterEntity
-        :param sigma: ParameterEntity
         """
         if length_scale is not None:
             self.length_scale = length_scale
-
-        if sigma2 is not None:
-            self.sigma2 = sigma2
 
     def update_value_parameters(self, params):
         """
@@ -118,22 +109,19 @@ class Matern52(AbstractKernel):
         :param params: np.array(n)
         """
         self.length_scale.set_value(params[0:self.dimension])
-        self.sigma2.set_value(params[self.dimension:self.dimension+1])
 
     @classmethod
     def define_kernel_from_array(cls, dimension, params):
         """
         :param dimension: (int) dimension of the domain of the kernel
-        :param params: (np.array(k)) The first part are the parameters for length_scale, the
-            second part is the parameter for sigma2.
+        :param params: (np.array(k)) The first part are the parameters for length_scale.
 
         :return: Matern52
         """
 
         length_scale = ParameterEntity(LENGTH_SCALE_NAME, params[0:dimension], None)
-        sigma2 = ParameterEntity(SIGMA2_NAME, params[dimension:dimension+1], None)
 
-        return cls(dimension, length_scale, sigma2)
+        return cls(dimension, length_scale)
 
     @classmethod
     def define_default_kernel(cls, dimension, bounds=None, default_values=None,
@@ -142,11 +130,9 @@ class Matern52(AbstractKernel):
         :param dimension: (int) dimension of the domain of the kernel
         :param bounds: [[float, float]], lower bound and upper bound for each entry of the domain.
             This parameter is used to compute priors in a smart way.
-        :param default_values: (np.array(k)) The first part are the parameters for length_scale, the
-            second part is the parameter for sigma2.
+        :param default_values: (np.array(k)) The first part are the parameters for length_scale
         :param parameters_priors: {
             LENGTH_SCALE_NAME: [float],
-            SIGMA2_NAME: float,
         }
 
         :return: Matern52
@@ -156,9 +142,8 @@ class Matern52(AbstractKernel):
             parameters_priors = {}
 
         if default_values is None:
-            sigma2 = [parameters_priors.get(SIGMA2_NAME, 1.0)]
             ls = parameters_priors.get(LENGTH_SCALE_NAME, dimension * [1.0])
-            default_values = ls + sigma2
+            default_values = ls
 
         kernel = cls.define_kernel_from_array(dimension, default_values)
 
@@ -173,10 +158,6 @@ class Matern52(AbstractKernel):
 
         kernel.length_scale.prior = prior
         kernel.length_scale.bounds = bounds
-
-        sigma2_mean = parameters_priors.get(SIGMA2_NAME, 1.0)
-        kernel.sigma2.prior = LogNormalSquare(1, 1.0, np.sqrt(sigma2_mean))
-        kernel.sigma2.bounds = [(SMALLEST_POSITIVE_NUMBER, None)]
 
         return kernel
 
@@ -198,7 +179,7 @@ class Matern52(AbstractKernel):
         r2 = np.abs(Distances.dist_square_length_scale(self.length_scale.value, inputs_1, inputs_2))
         r = np.sqrt(r2)
         cov = (1.0 + np.sqrt(5)*r + (5.0/3.0)*r2) * np.exp(-np.sqrt(5)*r)
-        return cov * self.sigma2.value
+        return cov
 
     def gradient_respect_parameters(self, inputs):
         """
@@ -206,13 +187,9 @@ class Matern52(AbstractKernel):
         :param inputs: np.array(nxd)
         :return: {
             'length_scale': {'entry (int)': nxn},
-            'sigma_square': nxn,
         }
         """
-        grad = GradientLSMatern52.gradient_respect_parameters_ls(inputs, self.length_scale,
-                                                                 self.sigma2)
-
-        grad[self.sigma2.name] = self.cov(inputs) / self.sigma2.value
+        grad = GradientLSMatern52.gradient_respect_parameters_ls(inputs, self.length_scale)
 
         return grad
 
@@ -225,7 +202,7 @@ class Matern52(AbstractKernel):
 
         :return: np.array(nxd)
         """
-        grad = GradientLSMatern52.grad_respect_point(self.length_scale, self.sigma2, point, inputs)
+        grad = GradientLSMatern52.grad_respect_point(self.length_scale, point, inputs)
 
         return grad
 
@@ -234,8 +211,7 @@ class Matern52(AbstractKernel):
         """
         Evaluate the covariance of the kernel defined by params.
 
-        :param params: (np.array(k)) The first part are the parameters for length_scale, the
-            second part is the parameter for sigma2.
+        :param params: (np.array(k)) The first part are the parameters for length_scale.
         :param inputs: np.array(nxm)
         :param dimension: (int) dimension of the domain of the kernel
         :return: cov(inputs) where the kernel is defined with params
@@ -248,8 +224,7 @@ class Matern52(AbstractKernel):
         """
         Evaluate the gradient respect the parameters of the kernel defined by params.
 
-        :param params: (np.array(k)) The first part are the parameters for length_scale, the
-            second part is the parameter for sigma2.
+        :param params: (np.array(k)) The first part are the parameters for length_scale.
         :param inputs: np.array(nxm)
         :param dimension: (int) dimension of the domain of the kernel
         :return: {
@@ -265,16 +240,14 @@ class Matern52(AbstractKernel):
         return gradient
 
     @staticmethod
-    def define_prior_parameters(data, dimension, var_evaluations=None):
+    def define_prior_parameters(data, dimension):
         """
         Defines value of the parameters of the prior distributions of the kernel's parameters.
 
         :param data: {'points': np.array(nxm), 'evaluations': np.array(n),
             'var_noise': np.array(n) or None}. Each point is the is an index of the task.
         :param dimension: int
-        :param var_evaluations: (float), an estimator for the sigma2 parameter.
         :return:  {
-            SIGMA2_NAME: float,
             LENGTH_SCALE_NAME: [float],
         }
         """
@@ -288,12 +261,8 @@ class Matern52(AbstractKernel):
             diffs_training_data_x.append(np.mean([abs(data['points'][j, i] - data['points'][h, i])
                                  for j in xrange(n) for h in xrange(n)]) / 0.324)
 
-        if var_evaluations is None:
-            var_evaluations = np.var(data['evaluations'])
-
         return {
             LENGTH_SCALE_NAME: diffs_training_data_x,
-            SIGMA2_NAME: var_evaluations,
         }
 
     @staticmethod
@@ -318,9 +287,6 @@ class Matern52(AbstractKernel):
         if np.any(kernel1.length_scale.value != kernel2.length_scale.value):
             return False
 
-        if kernel1.sigma2.value != kernel2.sigma2.value:
-            return False
-
         return True
 
     @staticmethod
@@ -332,14 +298,12 @@ class Matern52(AbstractKernel):
 
         :return: {
             LENGTH_SCALE_NAME: [float],
-            SIGMA2_NAME: float,
         }
         """
 
         parameters = {}
 
-        parameters[LENGTH_SCALE_NAME] = params[0 : -1]
-        parameters[SIGMA2_NAME] = params[-1]
+        parameters[LENGTH_SCALE_NAME] = params
 
         return parameters
 
@@ -347,18 +311,17 @@ class Matern52(AbstractKernel):
 class GradientLSMatern52(object):
 
     @classmethod
-    def gradient_respect_parameters_ls(cls, inputs, ls, sigma2):
+    def gradient_respect_parameters_ls(cls, inputs, ls):
         """
 
         :param inputs: np.array(nxd)
         :param ls: (ParameterEntity) length_scale
-        :param sigma2: (ParameterEntity)
         :return: {
             'length_scale': {'entry (int)': nxn}
         }
         """
 
-        derivate_respect_to_r = cls.gradient_respect_distance(ls, sigma2, inputs)
+        derivate_respect_to_r = cls.gradient_respect_distance(ls, inputs)
 
         grad = {}
         grad[ls.name] = {}
@@ -371,22 +334,20 @@ class GradientLSMatern52(object):
         return grad
 
     @classmethod
-    def gradient_respect_distance(cls, ls, sigma2, inputs):
+    def gradient_respect_distance(cls, ls, inputs):
         """
         :param ls: (ParameterEntity) length_scale
-        :param sigma2: (ParameterEntity)
         :param inputs: np.array(nxd)
         :return: np.array(nxn)
         """
 
-        return cls.gradient_respect_distance_cross(ls, sigma2, inputs, inputs)
+        return cls.gradient_respect_distance_cross(ls, inputs, inputs)
 
     @classmethod
-    def gradient_respect_distance_cross(cls, ls, sigma2, inputs_1, inputs_2):
+    def gradient_respect_distance_cross(cls, ls, inputs_1, inputs_2):
         """
 
         :param ls: (ParameterEntity) length_scale
-        :param sigma2: (ParameterEntity)
         :param inputs_1: np.array(nxd)
         :param inputs_2: np.array(mxd)
         :return: np.array(nxm)
@@ -397,22 +358,21 @@ class GradientLSMatern52(object):
         part_1 = (1.0 + np.sqrt(5) * r + (5.0/3.0) * r2) * np.exp(-np.sqrt(5) * r) * (-np.sqrt(5))
         part_2 = (np.exp(-np.sqrt(5) * r) * (np.sqrt(5) + (10.0/3.0) * r))
         derivate_respect_to_r = part_1 + part_2
-        return derivate_respect_to_r * sigma2.value
+        return derivate_respect_to_r
 
     @classmethod
-    def grad_respect_point(cls, ls, sigma2, point, inputs):
+    def grad_respect_point(cls, ls, point, inputs):
         """
         Computes the vector of the gradients of cov(point, inputs) respect point.
 
         :param ls: (ParameterEntity) length_scale
-        :param sigma2: (ParameterEntity)
         :param point: np.array(1xd)
         :param inputs: np.array(nxd)
 
         :return: np.array(nxd)
         """
 
-        derivate_respect_to_r = cls.gradient_respect_distance_cross(ls, sigma2, point, inputs)
+        derivate_respect_to_r = cls.gradient_respect_distance_cross(ls, point, inputs)
         grad_distance_point = \
             Distances.gradient_distance_length_scale_respect_point(ls.value, point, inputs)
 

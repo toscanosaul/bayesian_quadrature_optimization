@@ -16,6 +16,7 @@ from stratified_bayesian_optimization.lib.constant import (
     SOL_CHOL_Y_UNBIASED,
     TASKS_KERNEL_NAME,
     PRODUCT_KERNELS_SEPARABLE,
+    SCALED_KERNEL,
 )
 from stratified_bayesian_optimization.lib.finite_differences import FiniteDifferences
 from stratified_bayesian_optimization.lib.sample_functions import SampleFunctions
@@ -25,7 +26,7 @@ from stratified_bayesian_optimization.kernels.matern52 import Matern52
 class TestGPFittingGaussian(unittest.TestCase):
 
     def setUp(self):
-        type_kernel = [MATERN52_NAME]
+        type_kernel = [SCALED_KERNEL, MATERN52_NAME]
         self.training_data = {
             "evaluations":[42.2851784656,72.3121248508,1.0113231069,30.9309246906,15.5288331909],
             "points":[
@@ -96,13 +97,18 @@ class TestGPFittingGaussian(unittest.TestCase):
             "var_noise":[]}
 
 
-        self.gp_gaussian = GPFittingGaussian([MATERN52_NAME], self.training_data_gp, [1])
+        self.gp_gaussian = GPFittingGaussian([SCALED_KERNEL, MATERN52_NAME], self.training_data_gp,
+                                             [1])
+
+        self.gp_gaussian_2 = GPFittingGaussian([MATERN52_NAME], self.training_data_gp,
+                                             [1])
 
         self.training_data_gp_2 = {
             "evaluations":list(evaluations- 10.0),
             "points": points,
             "var_noise":[]}
-        self.gp_gaussian_central = GPFittingGaussian([MATERN52_NAME], self.training_data_gp_2, [1])
+        self.gp_gaussian_central = GPFittingGaussian([SCALED_KERNEL, MATERN52_NAME],
+                                                     self.training_data_gp_2, [1])
 
     def test_add_points_evaluations(self):
 
@@ -156,7 +162,7 @@ class TestGPFittingGaussian(unittest.TestCase):
         ls = np.mean([abs(self.training_data['points'][j][0] - self.training_data['points'][h][0])
                       for j in xrange(n) for h in xrange(n)]) / 0.324
         assert dict == {
-            'type_kernel': [MATERN52_NAME],
+            'type_kernel': [SCALED_KERNEL, MATERN52_NAME],
             'training_data': self.training_data,
             'dimensions': [1],
             'kernel_values': [ls, np.var(self.training_data['evaluations'])],
@@ -239,38 +245,34 @@ class TestGPFittingGaussian(unittest.TestCase):
         assert chol == np.array([[np.sqrt(2.5)]])
 
     def test_log_likelihood(self):
-        llh = self.complex_gp.log_likelihood(1.0, 1.0, np.array([1.0, 1.0, 0.0]))
+        llh = self.complex_gp.log_likelihood(1.0, 1.0, np.array([1.0, 0.0]))
         assert llh == -0.45814536593707761
-
-        llh = self.complex_gp.log_likelihood(1.0, 1.0, np.array([1.0, 1.0, 0.0]))
-        assert llh == -0.45814536593707761
-
 
     def test_grad_log_likelihood(self):
-        grad = self.complex_gp_2.grad_log_likelihood(1.0, 1.0, np.array([1.0, 1.0, 0.0, 0.0, 0.0]))
+        grad = self.complex_gp_2.grad_log_likelihood(1.0, 1.0, np.array([1.0, 0.0, 0.0, 0.0]))
 
         dh = 0.0000001
         finite_diff = FiniteDifferences.forward_difference(
             lambda params: self.complex_gp_2.log_likelihood(
                 params[0], params[1], params[2:]
             ),
-            np.array([1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0]), np.array([dh]))
+            np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0]), np.array([dh]))
 
-        for i in range(7):
+        for i in range(6):
             npt.assert_almost_equal(finite_diff[i], grad[i])
 
         grad_2 = self.complex_gp_2.grad_log_likelihood(1.82, 123.1,
-                                                       np.array([5.0, 7.3, 1.0, -5.5, 10.0]))
+                                                       np.array([5.0, 1.0, -5.5, 10.0]))
 
         dh = 0.00000001
         finite_diff_2 = FiniteDifferences.forward_difference(
             lambda params: self.complex_gp_2.log_likelihood(
                 params[0], params[1], params[2:]
             ),
-            np.array([1.82, 123.1, 5.0, 7.3, 1.0, -5.5, 10.0]), np.array([dh]))
+            np.array([1.82, 123.1, 5.0, 1.0, -5.5, 10.0]), np.array([dh]))
 
-        for i in range(7):
-            npt.assert_almost_equal(finite_diff_2[i], grad_2[i], decimal=5)
+        for i in range(6):
+            npt.assert_almost_equal(finite_diff_2[i], grad_2[i], decimal=3)
 
         grad_3 = self.gp_3.grad_log_likelihood(1.82, 123.1, np.array([5.0, 7.3]))
         dh = 0.0000001
@@ -282,11 +284,22 @@ class TestGPFittingGaussian(unittest.TestCase):
         for i in range(4):
             npt.assert_almost_equal(finite_diff_3[i], grad_3[i], decimal=5)
 
+        grad_4 = self.gp_gaussian.grad_log_likelihood(1.0, 0.0, np.array([14.0, 0.9]))
+        dh = 0.0000001
+        finite_diff_4 = FiniteDifferences.forward_difference(
+            lambda params: self.gp_gaussian.log_likelihood(
+                params[0], params[1], params[2:]
+            ),
+            np.array([1.0, 0.0, 14.0, 0.9]), np.array([dh]))
+        for i in range(4):
+            npt.assert_almost_equal(finite_diff_4[i], grad_4[i], decimal=5)
+
+
     def test_grad_log_likelihood_dict(self):
         grad = self.complex_gp_2.grad_log_likelihood_dict(1.82, 123.1,
-                                                       np.array([5.0, 7.3, 1.0, -5.5, 10.0]))
+                                                       np.array([5.0, 1.0, -5.5, 10.0]))
         grad_2 = self.complex_gp_2.grad_log_likelihood(1.82, 123.1,
-                                                       np.array([5.0, 7.3, 1.0, -5.5, 10.0]))
+                                                       np.array([5.0, 1.0, -5.5, 10.0]))
 
         assert grad_2[0] == grad['var_noise']
         assert grad_2[1] == grad['mean']
@@ -302,16 +315,12 @@ class TestGPFittingGaussian(unittest.TestCase):
         npt.assert_almost_equal(llh + add, -59.8285565516, decimal=6)
 
         opt = self.gp_gaussian.mle_parameters(start=np.array([1.0, 0.0, 14.0, 0.9]))
-        indexes = [1]
-        opt_2 = self.gp_gaussian.mle_parameters(start=np.array([1.0, 0.0, 14.0, 0.9]),
-                                                indexes=indexes)
 
-        assert opt['optimal_value'] >= opt_2['optimal_value']
+        print "veamos"
+        print opt
+        print opt['optimal_value'] + add
+        assert opt['optimal_value'] + add >= -67.1494227694
 
-        npt.assert_almost_equal(opt_2['optimal_value'] + add, -47.4988608127, decimal=2)
-        npt.assert_almost_equal(opt_2['solution'],
-                                       np.array([0.31250026677, 147.626370606, 0.398740717821]),
-                                decimal=3)
         assert self.gp_gaussian_central.log_likelihood(9, 0.0, np.array([100.2, 1.1])) == \
                self.gp_gaussian.log_likelihood(9, 10.0, np.array([100.2, 1.1]))
 

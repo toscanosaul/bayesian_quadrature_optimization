@@ -10,6 +10,7 @@ from stratified_bayesian_optimization.lib.constant import (
     PRODUCT_KERNELS_SEPARABLE,
     MEAN_NAME,
     VAR_NOISE_NAME,
+    SIGMA2_NAME,
     CHOL_COV,
     SOL_CHOL_Y_UNBIASED,
     DIAGNOSTIC_KERNEL_DIR,
@@ -17,15 +18,14 @@ from stratified_bayesian_optimization.lib.constant import (
     LARGEST_NUMBER,
     LENGTH_SCALE_NAME,
     SMALLEST_POSITIVE_NUMBER,
-)
-from stratified_bayesian_optimization.lib.util_kernels import (
-    define_prior_parameters_using_data,
+    SCALED_KERNEL,
 )
 from stratified_bayesian_optimization.lib.util_gp_fitting import (
     get_kernel_default,
     get_kernel_class,
     parameters_kernel_from_list_to_dict,
     wrapper_log_prob,
+    define_prior_parameters_using_data,
 )
 from stratified_bayesian_optimization.lib.util import (
     separate_numpy_arrays_in_lists,
@@ -61,7 +61,9 @@ class GPFittingGaussian(object):
                  data=None, random_seed=None):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
-            should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
+            should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL].
+            If we want to use a scaled NAME_1_KERNEL, the parameter must be
+            [SCALED_KERNEL, NAME_1_KERNEL].
         :param training_data: {'points': ([[float]], dim=nxm), 'evaluations': ([float],dim=n),
             'var_noise': ([float],dim=n or [])}
         :param dimensions: [int]. It has only the n_tasks for the task_kernels, and for the
@@ -104,8 +106,9 @@ class GPFittingGaussian(object):
         self.kernel = None
         self.mean = None
         self.var_noise = None
-        self.kernel_dimensions = None
-        self.number_parameters = None # Number of parameters of only the kernel
+        self.kernel_dimensions = None # Only used for the PRODUCT_KERNELS_SEPARABLE.
+        self.number_parameters = None # Number of parameters of only the kernel. Only used for the
+                                      # PRODUCT_KERNELS_SEPARABLE.
         self.length_scale_indexes = None # Indexes of the length scale parameter
 
         self.dimension_parameters = None # Total number of parameters
@@ -218,15 +221,18 @@ class GPFittingGaussian(object):
 
         self.dimension_parameters = self.kernel.dimension_parameters + 2
 
-        self.kernel_dimensions = [self.kernel.dimension]
-        if len(self.type_kernel) > 1:
-            for name in self.kernel.names:
-                self.kernel_dimensions.append(self.kernel.kernels[name].dimension)
 
-        self.number_parameters = [get_number_parameters_kernel(self.type_kernel, self.dimensions)]
-        if len(self.dimensions) > 1:
-            for type_k, dim in zip(self.type_kernel[1:], self.dimensions[1:]):
-                self.number_parameters.append(get_number_parameters_kernel([type_k], [dim]))
+        if self.type_kernel[0] == PRODUCT_KERNELS_SEPARABLE:
+            self.kernel_dimensions = [self.kernel.dimension]
+            if len(self.type_kernel) > 1:
+                for name in self.kernel.names:
+                    self.kernel_dimensions.append(self.kernel.kernels[name].dimension)
+
+            # I think that this is only useful for the product of kernels.
+            self.number_parameters = [get_number_parameters_kernel(self.type_kernel, self.dimensions)]
+            if len(self.dimensions) > 1:
+                for type_k, dim in zip(self.type_kernel[1:], self.dimensions[1:]):
+                    self.number_parameters.append(get_number_parameters_kernel([type_k], [dim]))
 
         self.length_scale_indexes = self.get_indexes_length_scale()
 
@@ -281,7 +287,7 @@ class GPFittingGaussian(object):
                 self.training_data_as_array,
                 type_kernel,
                 dimensions,
-                sigma2_mean_matern52=var_noise_value[0],
+                sigma2=var_noise_value[0],
             )
 
             kernel_values = get_default_values_kernel(type_kernel, dimensions,
@@ -473,6 +479,11 @@ class GPFittingGaussian(object):
                 separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
                 inputs_dict,
                 self.dimensions[1:], self.type_kernel[1: ])
+        elif self.type_kernel[0] == SCALED_KERNEL:
+            cov = self.class_kernel.evaluate_cov_defined_by_params(
+                parameters_kernel, self.data['points'], self.dimensions[0],
+                *([self.type_kernel[1]],)
+            )
         else:
             cov = self.class_kernel.evaluate_cov_defined_by_params(
                 parameters_kernel, self.data['points'], self.dimensions[0]
@@ -537,9 +548,14 @@ class GPFittingGaussian(object):
                 separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
                 inputs_dict,
                 self.dimensions[1:], self.type_kernel[1: ])
+        elif self.type_kernel[0] == SCALED_KERNEL:
+            grad_cov = self.class_kernel.evaluate_grad_defined_by_params_respect_params(
+                parameters_kernel, self.data['points'], self.dimensions[0],
+                *([self.type_kernel[1]],))
         else:
             grad_cov = self.class_kernel.evaluate_grad_defined_by_params_respect_params(
                 parameters_kernel, self.data['points'], self.dimensions[0])
+
 
         chol, cov = self._chol_cov_including_noise(var_noise, parameters_kernel)
 
@@ -668,16 +684,18 @@ class GPFittingGaussian(object):
         """
         grad = np.clip(self.grad_log_likelihood(params[0], params[1], params[2:]), SMALLEST_NUMBER,
                        LARGEST_NUMBER)
+        print "grad"
+        print params
+        print grad
         return grad
 
-    def mle_parameters(self, start=None, indexes=None, random_seed=None):
+    def mle_parameters(self, start=None, random_seed=None):
         """
         Computes the mle parameters of the kernel of a GP process, and mean and variance of the
         noise of the Gaussian regression.
 
-        :param start: (np.array(n)) starting point of the optimization of the llh.
-        :param indexes: [int], we optimize the MLE only over all the parameters, but the
-            parameters of the indexes. If it's None, we optimize over all the parameters.
+        :param start: (np.array(n)) starting point of the optimization of the llh. If indexes
+            is not none, start shouldn't contain the values of the entries in those indexes.
         :param random_seed: int
 
         :return: {
@@ -697,34 +715,8 @@ class GPFittingGaussian(object):
 
         bounds = self.get_bounds_parameters
 
-        if indexes is not None:
-            default_values = self.get_value_parameters_model
-            for j in indexes:
-                default_values[j] = start[j]
-
-            change_indexes_ = [i for i in xrange(len(default_values)) if i not in indexes]
-
-            start = start[change_indexes_]
-
-            default_bounds = list(self.get_bounds_parameters)
-            bounds = []
-            for j in change_indexes_:
-                bounds.append(default_bounds[j])
-
-            def objective_function(params):
-                new_params = expand_dimension_vector(
-                    params, change_indexes_, default_values)
-                return self.objective_llh(new_params)
-
-            def grad_function(params):
-                new_params = expand_dimension_vector(
-                    params, change_indexes_, default_values)
-                grad = self.grad_llh(new_params)
-                new_grad = reduce_dimension_vector(grad, change_indexes_)
-                return new_grad
-        else:
-            objective_function = self.objective_llh
-            grad_function = self.grad_llh
+        objective_function = self.objective_llh
+        grad_function = self.grad_llh
 
         optimization = Optimization(
             LBFGS_NAME,
@@ -735,12 +727,10 @@ class GPFittingGaussian(object):
 
         return optimization.optimize(start)
 
-    def fit_gp_regression(self, indexes=None, start=None, random_seed=None):
+    def fit_gp_regression(self, start=None, random_seed=None):
         """
         Fit a GP regression model
 
-        :parameter indexes: [int],  we optimize the MLE only over all the parameters, but the
-            parameters of the indexes. If it's None, we optimize over all the parameters.
         :parameter start: (np.array(n)) starting point of the optimization of the llh.
         :parameter random_seed: int
 
@@ -750,12 +740,14 @@ class GPFittingGaussian(object):
         if random_seed is not None:
             np.random.seed(random_seed)
 
-        results = self.mle_parameters(indexes=indexes, start=start)
+        results = self.mle_parameters(start=start)
 
         logger.info("Results of the GP fitting: ")
         logger.info(results)
 
-        self.update_value_parameters(results['solution'])
+        sol = results['solution']
+
+        self.update_value_parameters(sol)
 
         return self
 
@@ -765,6 +757,7 @@ class GPFittingGaussian(object):
 
         :param vector: np.array(n)
         """
+
         self.var_noise.set_value(np.array([vector[0]]))
         self.mean.set_value(np.array([vector[1]]))
         self.kernel.update_value_parameters(vector[2:])
@@ -797,6 +790,7 @@ class GPFittingGaussian(object):
                 np.random.seed(random_seed)
 
             gp = cls(type_kernel, training_data, dimensions, bounds=bounds, thinning=thinning)
+
             return gp.fit_gp_regression()
 
         return cls(type_kernel, training_data, dimensions, bounds=bounds, thinning=thinning)
@@ -853,6 +847,7 @@ class GPFittingGaussian(object):
             dimension = parameter.dimension
             lp += parameter.log_prior(parameters[index: index + dimension])
             index += dimension
+
 
         if not np.isinf(lp):
             lp += self.log_likelihood(parameters[0], parameters[1], parameters[2:])
@@ -913,7 +908,7 @@ class ValidationGPModel(object):
 
     @classmethod
     def cross_validation_mle_parameters(cls, type_kernel, training_data, dimensions, problem_name,
-                                        start=None, indexes=None, random_seed=None):
+                                        start=None, random_seed=None):
         """
         A json file with the percentage of success is generated. The output can be used to create
         a histogram and a diagnostic plot.
@@ -933,8 +928,6 @@ class ValidationGPModel(object):
             PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product
         :param problem_name: (str)
         :param start: (np.array(n)) starting point of the optimization of the llh.
-        :param indexes: [int],  we optimize the MLE only over all the parameters, but the
-            parameters of the indexes. If it's None, we optimize over all the parameters.
         :param random_seed: int
 
         :return: {
@@ -982,7 +975,6 @@ class ValidationGPModel(object):
 
         kwargs = {
             'start': start,
-            'indexes': indexes,
             'random_seed': random_seed,
         }
 
