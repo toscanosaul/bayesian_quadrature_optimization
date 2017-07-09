@@ -245,8 +245,9 @@ class TestProductKernels(unittest.TestCase):
         kern1 = ProductKernels.define_default_kernel([1, 1], None, None, None,
                                                      [MATERN52_NAME, TASKS_KERNEL_NAME])
 
-        assert kern1.name == PRODUCT_KERNELS_SEPARABLE + ':' + MATERN52_NAME + '_' + \
-                             TASKS_KERNEL_NAME + '_'
+        compare = PRODUCT_KERNELS_SEPARABLE + ':' + MATERN52_NAME + '_' + TASKS_KERNEL_NAME + '_'
+        assert kern1.name == compare
+
         assert kern1.dimension == 2
         assert kern1.dimension_parameters == 2
         assert kern1.names == [MATERN52_NAME, TASKS_KERNEL_NAME]
@@ -261,8 +262,9 @@ class TestProductKernels(unittest.TestCase):
                                                      [np.array([3]), np.array([5])], None,
                                                      [MATERN52_NAME, TASKS_KERNEL_NAME])
 
-        assert kern2.name == PRODUCT_KERNELS_SEPARABLE + ':' + MATERN52_NAME + '_' + \
-                             TASKS_KERNEL_NAME + '_'
+        compare = PRODUCT_KERNELS_SEPARABLE + ':' + MATERN52_NAME + '_' + TASKS_KERNEL_NAME + '_'
+        assert kern2.name == compare
+
         assert kern2.dimension == 2
         assert kern2.dimension_parameters == 2
         assert kern2.names == [MATERN52_NAME, TASKS_KERNEL_NAME]
@@ -279,14 +281,16 @@ class TestProductKernels(unittest.TestCase):
         assert np.all(self.kernel_.kernels[MATERN52_NAME].kernel.length_scale.value ==
                       np.array([5, 8]))
         assert self.kernel_.kernels[MATERN52_NAME].sigma2.value == np.array([7])
-        assert np.all(self.kernel_.kernels[TASKS_KERNEL_NAME].lower_triang.value
-                      == np.array([15, 16, 17]))
 
-        assert np.all(self.kernel_.parameters[MATERN52_NAME][LENGTH_SCALE_NAME].value
-                      == np.array([5, 8]))
+        compare = self.kernel_.kernels[TASKS_KERNEL_NAME].lower_triang.value
+        assert np.all(compare == np.array([15, 16, 17]))
+
+        compare = self.kernel_.parameters[MATERN52_NAME][LENGTH_SCALE_NAME].value
+        assert np.all(compare == np.array([5, 8]))
         assert self.kernel_.parameters[MATERN52_NAME][SIGMA2_NAME].value == np.array([7])
-        assert np.all(self.kernel_.parameters[TASKS_KERNEL_NAME][LOWER_TRIANG_NAME].value ==
-                      np.array([15, 16, 17]))
+
+        compare = self.kernel_.parameters[TASKS_KERNEL_NAME][LOWER_TRIANG_NAME].value
+        assert np.all(compare == np.array([15, 16, 17]))
 
     def test_compare_kernels(self):
         kernel = ProductKernels.define_kernel_from_array([1, 1], [np.array([1]), np.array([0])],
@@ -323,5 +327,3 @@ class TestProductKernels(unittest.TestCase):
         kernel_ = copy.deepcopy(kernel)
         kernel_.parameters[TASKS_KERNEL_NAME][LOWER_TRIANG_NAME].value = [3]
         assert ProductKernels.compare_kernels(kernel, kernel_) is False
-
-

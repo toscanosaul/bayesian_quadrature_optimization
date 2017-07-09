@@ -28,43 +28,44 @@ class TestGPFittingGaussian(unittest.TestCase):
     def setUp(self):
         type_kernel = [SCALED_KERNEL, MATERN52_NAME]
         self.training_data = {
-            "evaluations":[42.2851784656,72.3121248508,1.0113231069,30.9309246906,15.5288331909],
-            "points":[
-                [42.2851784656],[72.3121248508],[1.0113231069],[30.9309246906],[15.5288331909]],
-            "var_noise":[]}
+            "evaluations":
+                [42.2851784656, 72.3121248508, 1.0113231069, 30.9309246906, 15.5288331909],
+            "points": [
+                [42.2851784656], [72.3121248508], [1.0113231069], [30.9309246906], [15.5288331909]],
+            "var_noise": []}
         dimensions = [1]
-        bounds = [0.0, 100.0]
 
         self.gp = GPFittingGaussian(type_kernel, self.training_data, dimensions)
 
         self.training_data_3 = {
-            "evaluations":[42.2851784656,72.3121248508,1.0113231069,30.9309246906,15.5288331909],
-            "points":[
-                [42.2851784656],[72.3121248508],[1.0113231069],[30.9309246906],[15.5288331909]],
-            "var_noise":[0.5, 0.8, 0.7, 0.9, 1.0]}
+            "evaluations": [42.2851784656, 72.3121248508, 1.0113231069, 30.9309246906,
+                            15.5288331909],
+            "points": [
+                [42.2851784656], [72.3121248508], [1.0113231069], [30.9309246906], [15.5288331909]],
+            "var_noise": [0.5, 0.8, 0.7, 0.9, 1.0]}
 
         self.gp_3 = GPFittingGaussian(type_kernel, self.training_data_3, dimensions)
         self.training_data_simple = {
-            "evaluations":[5],
-            "points":[[5]],
-            "var_noise":[]}
+            "evaluations": [5],
+            "points": [[5]],
+            "var_noise": []}
         dimensions = [1]
 
         self.simple_gp = GPFittingGaussian(type_kernel, self.training_data_simple, dimensions)
 
         self.training_data_complex = {
-            "evaluations":[1.0],
-            "points":[[42.2851784656, 0]],
-            "var_noise":[0.5]}
+            "evaluations": [1.0],
+            "points": [[42.2851784656, 0]],
+            "var_noise": [0.5]}
 
         self.complex_gp = GPFittingGaussian(
             [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
             self.training_data_complex, [2, 1, 1])
 
         self.training_data_complex_2 = {
-            "evaluations":[1.0, 2.0, 3.0],
-            "points":[[42.2851784656, 0], [10.532, 0], [9.123123, 1]],
-            "var_noise":[0.5, 0.2, 0.1]}
+            "evaluations": [1.0, 2.0, 3.0],
+            "points": [[42.2851784656, 0], [10.532, 0], [9.123123, 1]],
+            "var_noise": [0.5, 0.2, 0.1]}
 
         self.complex_gp_2 = GPFittingGaussian(
             [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
@@ -74,9 +75,9 @@ class TestGPFittingGaussian(unittest.TestCase):
         self.evaluation = np.array([80.0])
 
         self.training_data_noisy = {
-            "evaluations":[41.0101845096],
-            "points":[[42.2851784656]],
-            "var_noise":[0.0181073779]}
+            "evaluations": [41.0101845096],
+            "points": [[42.2851784656]],
+            "var_noise": [0.0181073779]}
 
         self.gp_noisy = GPFittingGaussian(type_kernel, self.training_data_noisy, dimensions)
 
@@ -92,21 +93,19 @@ class TestGPFittingGaussian(unittest.TestCase):
         evaluations = function + normal_noise
 
         self.training_data_gp = {
-            "evaluations":list(evaluations),
+            "evaluations": list(evaluations),
             "points": points,
-            "var_noise":[]}
-
+            "var_noise": []}
 
         self.gp_gaussian = GPFittingGaussian([SCALED_KERNEL, MATERN52_NAME], self.training_data_gp,
                                              [1])
 
-        self.gp_gaussian_2 = GPFittingGaussian([MATERN52_NAME], self.training_data_gp,
-                                             [1])
+        self.gp_gaussian_2 = GPFittingGaussian([MATERN52_NAME], self.training_data_gp, [1])
 
         self.training_data_gp_2 = {
-            "evaluations":list(evaluations- 10.0),
+            "evaluations": list(evaluations - 10.0),
             "points": points,
-            "var_noise":[]}
+            "var_noise": []}
         self.gp_gaussian_central = GPFittingGaussian([SCALED_KERNEL, MATERN52_NAME],
                                                      self.training_data_gp_2, [1])
 
@@ -115,8 +114,8 @@ class TestGPFittingGaussian(unittest.TestCase):
         self.gp.add_points_evaluations(self.new_point, self.evaluation)
         assert np.all(self.gp.data['evaluations'] == np.concatenate(
             (self.training_data['evaluations'], [80.0])))
-        assert np.all(self.gp.data['points'] == np.concatenate((self.training_data['points'],
-                                                              [[80.0]])))
+        assert np.all(self.gp.data['points'] == np.concatenate(
+            (self.training_data['points'], [[80.0]])))
         assert self.gp.data['var_noise'] is None
 
         assert self.gp.training_data == self.training_data
@@ -139,10 +138,10 @@ class TestGPFittingGaussian(unittest.TestCase):
         assert data['var_noise'] == np.array([0.0181073779])
 
         data_ = GPFittingGaussian.convert_from_list_to_numpy(self.training_data)
-        assert np.all(data_['points'] == np.array([
-                [42.2851784656],[72.3121248508],[1.0113231069],[30.9309246906],[15.5288331909]]))
-        assert np.all(data_['evaluations'] == np.array([42.2851784656,72.3121248508,1.0113231069,
-                                                        30.9309246906,15.5288331909]))
+        assert np.all(data_['points'] == np.array(
+            [[42.2851784656], [72.3121248508], [1.0113231069], [30.9309246906], [15.5288331909]]))
+        assert np.all(data_['evaluations'] == np.array([42.2851784656, 72.3121248508, 1.0113231069,
+                                                        30.9309246906, 15.5288331909]))
         assert data_['var_noise'] is None
 
     def test_convert_from_numpy_to_list(self):
@@ -161,6 +160,16 @@ class TestGPFittingGaussian(unittest.TestCase):
         n = len(self.training_data['points'])
         ls = np.mean([abs(self.training_data['points'][j][0] - self.training_data['points'][h][0])
                       for j in xrange(n) for h in xrange(n)]) / 0.324
+
+        data = {
+            "evaluations": [42.2851784656, 72.3121248508, 1.0113231069, 30.9309246906,
+                            15.5288331909, 80.0],
+            "points": [
+                [42.2851784656], [72.3121248508], [1.0113231069], [30.9309246906], [15.5288331909],
+                [80.0]],
+            "var_noise": []
+        }
+
         assert dict == {
             'type_kernel': [SCALED_KERNEL, MATERN52_NAME],
             'training_data': self.training_data,
@@ -169,13 +178,7 @@ class TestGPFittingGaussian(unittest.TestCase):
             'mean_value': [np.mean(self.training_data['evaluations'])],
             'var_noise_value': [np.var(self.training_data['evaluations'])],
             'thinning': 0,
-            'data': {
-            "evaluations":[42.2851784656,72.3121248508,1.0113231069,30.9309246906,15.5288331909,
-                           80.0],
-            "points":[
-                [42.2851784656],[72.3121248508],[1.0113231069],[30.9309246906],[15.5288331909],
-                [80.0]],
-            "var_noise":[]},
+            'data': data,
             "bounds": [],
         }
 
@@ -294,10 +297,9 @@ class TestGPFittingGaussian(unittest.TestCase):
         for i in range(4):
             npt.assert_almost_equal(finite_diff_4[i], grad_4[i], decimal=5)
 
-
     def test_grad_log_likelihood_dict(self):
-        grad = self.complex_gp_2.grad_log_likelihood_dict(1.82, 123.1,
-                                                       np.array([5.0, 1.0, -5.5, 10.0]))
+        grad = self.complex_gp_2.grad_log_likelihood_dict(
+            1.82, 123.1, np.array([5.0, 1.0, -5.5, 10.0]))
         grad_2 = self.complex_gp_2.grad_log_likelihood(1.82, 123.1,
                                                        np.array([5.0, 1.0, -5.5, 10.0]))
 
@@ -318,8 +320,8 @@ class TestGPFittingGaussian(unittest.TestCase):
 
         assert opt['optimal_value'] + add >= -67.1494227694
 
-        assert self.gp_gaussian_central.log_likelihood(9, 0.0, np.array([100.2, 1.1])) == \
-               self.gp_gaussian.log_likelihood(9, 10.0, np.array([100.2, 1.1]))
+        compare = self.gp_gaussian.log_likelihood(9, 10.0, np.array([100.2, 1.1]))
+        assert self.gp_gaussian_central.log_likelihood(9, 0.0, np.array([100.2, 1.1])) == compare
 
         np.random.seed(5)
         n_points = 10
@@ -333,10 +335,9 @@ class TestGPFittingGaussian(unittest.TestCase):
         evaluations = function + normal_noise
 
         training_data_gp = {
-            "evaluations":list(evaluations),
+            "evaluations": list(evaluations),
             "points": points,
-            "var_noise":[]}
-
+            "var_noise": []}
 
         gp_gaussian = GPFittingGaussian([MATERN52_NAME], training_data_gp, [1])
 
@@ -350,8 +351,10 @@ class TestGPFittingGaussian(unittest.TestCase):
 
     def test_objective_llh(self):
         funct = deepcopy(self.gp_gaussian.log_likelihood)
+
         def llh(a, b, c):
             return float(funct(a, b, c)) / 0.0
+
         self.gp_gaussian.log_likelihood = llh
         assert self.gp_gaussian.objective_llh(np.array([1.0, 3.0, 14.0, 0.9])) == -np.inf
 
@@ -374,10 +377,8 @@ class TestGPFittingGaussian(unittest.TestCase):
         mean_ls = np.mean([abs(self.training_data_gp['points'][j, 0] -
                                self.training_data_gp['points'][h, 0]) for j in xrange(n) for h in
                            xrange(n)]) / 0.324
-        a =  SMALLEST_POSITIVE_NUMBER + np.random.rand(1, 1) * \
-                                        (mean_ls - SMALLEST_POSITIVE_NUMBER)
+        a = SMALLEST_POSITIVE_NUMBER + np.random.rand(1, 1) * (mean_ls - SMALLEST_POSITIVE_NUMBER)
         assert sample[2] == a
-
 
         mean_var = np.var(self.training_data_gp['evaluations'])
         a = np.random.lognormal(mean=np.sqrt(mean_var), sigma=1.0, size=1) ** 2
@@ -388,18 +389,12 @@ class TestGPFittingGaussian(unittest.TestCase):
         lp = self.gp_gaussian.log_likelihood(1.0, 3.0, np.array([14.0, 0.9])) - 10.13680717
         npt.assert_almost_equal(prob, lp)
 
-    def test_sample_parameters_posterior(self):
-      #  sample = self.gp_gaussian.sample_parameters_posterior(1, 1)
-       # print sample
-        assert True
-
     def test_set_samplers(self):
         type_kernel = [TASKS_KERNEL_NAME]
         training_data = {
-            "evaluations":[42.2851784656,72.3121248508],
-            "points":[
-                [0],[1]],
-            "var_noise":[]}
+            "evaluations": [42.2851784656, 72.3121248508],
+            "points": [[0], [1]],
+            "var_noise": []}
         dimensions = [2]
 
         gp_tk = GPFittingGaussian(type_kernel, training_data, dimensions)
@@ -412,16 +407,13 @@ class TestGPFittingGaussian(unittest.TestCase):
                                    random_seed=1)
         assert np.all(gp_tk_.get_value_parameters_model == value)
 
-
         type_kernel = [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]
         training_data = {
-            "evaluations":[42.2851784656,72.3121248508],
-            "points":[
-                [0, 0],[1, 0]],
-            "var_noise":[]}
+            "evaluations": [42.2851784656, 72.3121248508],
+            "points": [[0, 0], [1, 0]],
+            "var_noise": []}
         dimensions = [2, 1, 1]
-        gp = GPFittingGaussian(type_kernel, training_data, dimensions, n_burning=1,
-                                   random_seed=1)
+        gp = GPFittingGaussian(type_kernel, training_data, dimensions, n_burning=1, random_seed=1)
 
         gp2 = GPFittingGaussian(type_kernel, training_data, dimensions)
         value2 = gp2.sample_parameters(1, random_seed=1)[-1]
@@ -454,10 +446,9 @@ class TestGPFittingGaussian(unittest.TestCase):
         evaluations = function + normal_noise
 
         training_data_gp = {
-            "evaluations":list(evaluations),
+            "evaluations": list(evaluations),
             "points": points,
-            "var_noise":[]}
-
+            "var_noise": []}
 
         gp_gaussian = GPFittingGaussian([MATERN52_NAME], training_data_gp, [1])
         gp_gaussian_2 = GPFittingGaussian([MATERN52_NAME], training_data_gp, [1])
@@ -484,9 +475,9 @@ class TestGPFittingGaussian(unittest.TestCase):
         evaluations = function + normal_noise
 
         training_data_gp = {
-            "evaluations":list(evaluations),
+            "evaluations": list(evaluations),
             "points": points,
-            "var_noise":[]}
+            "var_noise": []}
         new_gp = GPFittingGaussian.train([MATERN52_NAME], [1], True, training_data_gp, None,
                                          random_seed=1314938)
 
@@ -516,9 +507,9 @@ class TestGPFittingGaussian(unittest.TestCase):
         evaluations = function + normal_noise
 
         training_data_gp = {
-            "evaluations":list(evaluations[1:]),
-            "points": points[1:,:],
-            "var_noise":[]}
+            "evaluations": list(evaluations[1:]),
+            "points": points[1:, :],
+            "var_noise": []}
         gp = GPFittingGaussian([MATERN52_NAME], training_data_gp, [1], kernel_values=[100.0, 1.0],
                                mean_value=[0.0], var_noise_value=[0.5**2])
 
@@ -527,9 +518,10 @@ class TestGPFittingGaussian(unittest.TestCase):
         mean = z['mean']
         cov = z['cov']
 
-        assert mean[1] - 2.0 * np.sqrt(cov[1,1]) <= function[1] <= mean[1] + 2.0 * np.sqrt(cov[1,1])
-        assert mean[0] - 2.0 * np.sqrt(cov[0, 0]) <= function[0] <= \
-               mean[0] + 2.0 * np.sqrt(cov[0, 0])
+        assert mean[1] - 2.0 * np.sqrt(cov[1, 1]) <= function[1]
+        assert function[1] <= mean[1] + 2.0 * np.sqrt(cov[1, 1])
+        assert mean[0] - 2.0 * np.sqrt(cov[0, 0]) <= function[0]
+        assert function[0] <= mean[0] + 2.0 * np.sqrt(cov[0, 0])
 
         # Values obtained from GPy
         npt.assert_almost_equal(mean, np.array([0.30891226, 0.60256237]))
@@ -550,9 +542,9 @@ class TestGPFittingGaussian(unittest.TestCase):
         evaluations = function + normal_noise
 
         training_data = {
-            "evaluations":evaluations,
+            "evaluations": evaluations,
             "points": points,
-            "var_noise":None}
+            "var_noise": None}
 
         dimensions = [1]
         problem_name = 'a'
@@ -560,11 +552,10 @@ class TestGPFittingGaussian(unittest.TestCase):
         result = \
             ValidationGPModel.cross_validation_mle_parameters(type_kernel, training_data,
                                                               dimensions, problem_name,
-                                                              start=
-                                                              np.array([0.01**2, 0.0, 100.0]))
+                                                              start=np.array([0.01**2, 0.0, 100.0]))
 
-        assert result['filename_histogram'] == \
-               'results/diagnostic_kernel/validation_kernel_histogram_a.png'
+        compare = 'results/diagnostic_kernel/validation_kernel_histogram_a.png'
+        assert result['filename_histogram'] == compare
         assert np.all(result['y_eval'] == evaluations)
         assert result['n_data'] == n_points
         assert result['filename_plot'] == 'results/diagnostic_kernel/' \
@@ -575,22 +566,22 @@ class TestGPFittingGaussian(unittest.TestCase):
         evaluations_noisy = evaluations + noise
 
         training_data_2 = {
-            "evaluations":evaluations_noisy,
+            "evaluations": evaluations_noisy,
             "points": points,
-            "var_noise":np.array(n_points * [0.000001**2])}
+            "var_noise": np.array(n_points * [0.000001**2])}
 
         result_2 = \
             ValidationGPModel.cross_validation_mle_parameters(type_kernel, training_data_2,
                                                               dimensions, problem_name,
-                                                              start=
-                                                              np.array([0.01**2, 0.0, 100.0]))
+                                                              start=np.array([0.01**2, 0.0, 100.0]))
 
-        assert result_2['filename_histogram'] == \
-               'results/diagnostic_kernel/validation_kernel_histogram_a.png'
+        compare = 'results/diagnostic_kernel/validation_kernel_histogram_a.png'
+        assert result_2['filename_histogram'] == compare
         assert np.all(result_2['y_eval'] == evaluations_noisy)
         assert result_2['n_data'] == n_points
-        assert result_2['filename_plot'] == 'results/diagnostic_kernel/' \
-                                          'validation_kernel_mean_vs_observations_a.png'
+
+        compare = 'results/diagnostic_kernel/validation_kernel_mean_vs_observations_a.png'
+        assert result_2['filename_plot'] == compare
         assert result_2['success_proportion'] >= 0.9
 
     def test_cross_validation_mle_parameters_2(self):
@@ -608,9 +599,9 @@ class TestGPFittingGaussian(unittest.TestCase):
         evaluations = function + normal_noise
 
         training_data = {
-            "evaluations":evaluations,
+            "evaluations": evaluations,
             "points": points,
-            "var_noise":None}
+            "var_noise": None}
 
         dimensions = [1]
         problem_name = 'a'
@@ -618,13 +609,11 @@ class TestGPFittingGaussian(unittest.TestCase):
         result = \
             ValidationGPModel.cross_validation_mle_parameters(type_kernel, training_data,
                                                               dimensions, problem_name,
-                                                              start=
-                                                              np.array([-1]))
+                                                              start=np.array([-1]))
         assert result['success_proportion'] == -1
 
     def test_check_value_within_ci(self):
-        assert ValidationGPModel.check_value_within_ci(0, 1.0, 1.0) == True
-        assert ValidationGPModel.check_value_within_ci(3.1, 1.0, 1.0) == False
-        assert ValidationGPModel.check_value_within_ci(-1.1, 1.0, 1.0) == False
-        assert ValidationGPModel.check_value_within_ci(0, 1.0, 1.0, var_noise=0.00001) == True
-
+        assert ValidationGPModel.check_value_within_ci(0, 1.0, 1.0)
+        assert not ValidationGPModel.check_value_within_ci(3.1, 1.0, 1.0)
+        assert not ValidationGPModel.check_value_within_ci(-1.1, 1.0, 1.0)
+        assert ValidationGPModel.check_value_within_ci(0, 1.0, 1.0, var_noise=0.00001)

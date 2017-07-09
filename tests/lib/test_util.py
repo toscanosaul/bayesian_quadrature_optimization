@@ -4,7 +4,22 @@ import unittest
 from mock import create_autospec
 from doubles import expect
 
-from stratified_bayesian_optimization.lib.util import *
+import numpy as np
+
+from stratified_bayesian_optimization.lib.util import (
+    convert_dictionary_gradient_to_simple_dictionary,
+    separate_numpy_arrays_in_lists,
+    wrapper_fit_gp_regression,
+    wrapper_evaluate_objective_function,
+    get_default_values_kernel,
+    get_number_parameters_kernel,
+    convert_list_to_dictionary,
+    expand_dimension_vector,
+    convert_dictionary_to_list,
+    reduce_dimension_vector,
+    separate_vector,
+    combine_vectors,
+)
 from stratified_bayesian_optimization.models.gp_fitting_gaussian import GPFittingGaussian
 from stratified_bayesian_optimization.services.training_data import TrainingDataService
 from stratified_bayesian_optimization.lib.constant import (
@@ -27,13 +42,13 @@ class TestUtil(unittest.TestCase):
         assert result == {0: np.array([3]), 1: np.array([8]), 2: np.array([2])}
 
     def test_separate_numpy_arrays_in_lists(self):
-        separate = separate_numpy_arrays_in_lists(np.array([1,2,3]),2)
+        separate = separate_numpy_arrays_in_lists(np.array([1, 2, 3]), 2)
         assert np.all(separate[0] == np.array([1, 2]))
         assert np.all(separate[1] == np.array([3]))
         assert len(separate) == 2
 
-        separate = separate_numpy_arrays_in_lists(np.array([[1,2,3], [4, 5, 6]]),2)
-        assert np.all(separate[0] == np.array([[1, 2], [4,5]]))
+        separate = separate_numpy_arrays_in_lists(np.array([[1, 2, 3], [4, 5, 6]]), 2)
+        assert np.all(separate[0] == np.array([[1, 2], [4, 5]]))
         assert np.all(separate[1] == np.array([[3], [6]]))
         assert len(separate) == 2
 
@@ -70,8 +85,8 @@ class TestUtil(unittest.TestCase):
         default_x = np.array([1, 9, 8, 7, 10, 11])
         change_indexes = [1, 3, 5]
 
-        assert np.all(expand_dimension_vector(x, change_indexes, default_x) == \
-               np.array([1, 1, 8, 2, 10, 3]))
+        point = np.array([1, 1, 8, 2, 10, 3])
+        assert np.all(expand_dimension_vector(x, change_indexes, default_x) == point)
 
     def test_reduce_dimension_vector(self):
         x = np.array([1, 9, 8, 7, 10, 11])

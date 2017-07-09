@@ -37,4 +37,4 @@ class TestParameterEntity(unittest.TestCase):
         assert 0.0 == self.parameter.sample_from_prior(1, 1)
 
     def test_get_bounds(self):
-        assert self.parameter.get_bounds(2) == 2 *  [(SMALLEST_NUMBER, LARGEST_NUMBER)]
+        assert self.parameter.get_bounds(2) == 2 * [(SMALLEST_NUMBER, LARGEST_NUMBER)]

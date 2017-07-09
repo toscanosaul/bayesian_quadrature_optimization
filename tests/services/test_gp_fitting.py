@@ -83,12 +83,6 @@ class TestGpFitting(unittest.TestCase):
 
         model = gp.serialize()
 
-        data = {
-            'points': points,
-            'var_noise': [],
-            'evaluations': points_,
-        }
-
         assert model == {
             'type_kernel': [SCALED_KERNEL, MATERN52_NAME],
             'training_data': model['training_data'],
@@ -100,4 +94,3 @@ class TestGpFitting(unittest.TestCase):
             'thinning': 0,
             'bounds': bounds,
         }
-

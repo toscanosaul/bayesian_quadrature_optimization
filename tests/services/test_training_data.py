@@ -12,6 +12,7 @@ from stratified_bayesian_optimization.lib.constant import (
     DEFAULT_RANDOM_SEED,
 )
 
+
 class MockMkdir(object):
     def __init__(self):
         self.received_args = None
@@ -31,7 +32,8 @@ class TestTrainingDataService(unittest.TestCase):
             TrainingDataService.get_training_data(problem_name, training_name, bounds_domain)
 
         np.random.seed(DEFAULT_RANDOM_SEED)
-        points = [[42.2851784656],[72.3121248508],[1.0113231069],[30.9309246906],[15.5288331909]]
+        points = \
+            [[42.2851784656], [72.3121248508], [1.0113231069], [30.9309246906], [15.5288331909]]
         evaluations = [i[0] for i in points]
 
         assert training_data['var_noise'] == []
@@ -62,7 +64,8 @@ class TestTrainingDataService(unittest.TestCase):
         training_data = \
             TrainingDataService.get_training_data(problem_name, training_name, bounds_domain)
 
-        points = [[42.2851784656],[72.3121248508],[1.0113231069],[30.9309246906],[15.5288331909]]
+        points = \
+            [[42.2851784656], [72.3121248508], [1.0113231069], [30.9309246906], [15.5288331909]]
         evaluations = [i[0] for i in points]
 
         assert training_data['var_noise'] == []
@@ -98,7 +101,8 @@ class TestTrainingDataService(unittest.TestCase):
         assert np.all(training_data['evaluations'] == training_data_['evaluations'])
 
     def test_get_training_data_given_points(self):
-        points = [[42.2851784656],[72.3121248508],[1.0113231069],[30.9309246906],[15.5288331909]]
+        points = \
+            [[42.2851784656], [72.3121248508], [1.0113231069], [30.9309246906], [15.5288331909]]
         problem_name = 'test_problem'
         training_name = 'test_given_points'
         bounds_domain = [[1, 100]]
@@ -116,5 +120,6 @@ class TestTrainingDataService(unittest.TestCase):
         training_name = 'test'
         points = TrainingDataService.get_points_domain(5, [[1, 100]], DEFAULT_RANDOM_SEED,
                                                        training_name, problem_name)
-        assert points == \
-               [[42.2851784656],[72.3121248508],[1.0113231069],[30.9309246906],[15.5288331909]]
+        compare_point = \
+            [[42.2851784656], [72.3121248508], [1.0113231069], [30.9309246906], [15.5288331909]]
+        assert points == compare_point

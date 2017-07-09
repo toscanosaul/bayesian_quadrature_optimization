@@ -27,4 +27,3 @@ class TestUniformPrior(unittest.TestCase):
 
         assert self.uniform_prior.sample(1) == 0.5
         assert self.uniform_prior.sample(1, 2) == 0.5
-

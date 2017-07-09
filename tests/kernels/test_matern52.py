@@ -19,7 +19,6 @@ from stratified_bayesian_optimization.lib.constant import (
     LARGEST_NUMBER,
     MATERN52_NAME,
     SMALLEST_POSITIVE_NUMBER,
-    SIGMA2_NAME,
     LENGTH_SCALE_NAME,
 )
 
@@ -39,8 +38,9 @@ class TestMatern52(unittest.TestCase):
         self.prior_2 = UniformPrior(1, [1], [100])
         self.matern52_ = Matern52(2, ParameterEntity(LENGTH_SCALE_NAME,
                                                      np.array([2.0, 3.0]), self.prior))
-        self.matern52_ = ScaledKernel(self.dimension, self.matern52_,
-                                     ParameterEntity('sigma2', np.array([4.0]), self.prior_2))
+        self.matern52_ = ScaledKernel(
+            self.dimension, self.matern52_,
+            ParameterEntity('sigma2', np.array([4.0]), self.prior_2))
 
     def test_hypers(self):
         assert {'scale': self.length_scale, 'sigma2': self.sigma2} == self.matern52.hypers
@@ -103,8 +103,8 @@ class TestMatern52(unittest.TestCase):
         inputs_1 = np.array([[2.0, 4.0], [3.0, 5.0]])
         dh = 0.00000001
         finite_diff = FiniteDifferences.forward_difference(
-            lambda params: ScaledKernel.evaluate_cov_defined_by_params(
-            params, inputs_1, 2, *([MATERN52_NAME],)),
+            lambda params:
+            ScaledKernel.evaluate_cov_defined_by_params(params, inputs_1, 2, *([MATERN52_NAME],)),
             np.array([2.0, 3.0, 4.0]), np.array([dh]))
 
         gradient = ScaledKernel.evaluate_grad_defined_by_params_respect_params(
@@ -209,14 +209,12 @@ class TestMatern52(unittest.TestCase):
             [samples[0][1, 0], samples[0][1, 1], samples[1][1]]]))
 
         np.random.seed(1)
-        matern52 = Matern52(2, ParameterEntity(LENGTH_SCALE_NAME,
-                                                     np.array([2.0, 3.0]), self.prior))
+        matern52 = Matern52(2, ParameterEntity(LENGTH_SCALE_NAME, np.array([2.0, 3.0]), self.prior))
         samples = []
         parameters1 = matern52.hypers_as_list
         for parameter in parameters1:
             samples.append(parameter.sample_from_prior(2))
         assert np.all(matern52.sample_parameters(2, random_seed=1) == samples[0])
-
 
     def test_get_bounds_parameters(self):
         assert self.matern52_.get_bounds_parameters() == 3 * [(SMALLEST_NUMBER, LARGEST_NUMBER)]

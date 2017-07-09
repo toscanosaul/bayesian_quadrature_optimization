@@ -2,8 +2,6 @@ from __future__ import absolute_import
 
 import unittest
 
-import mock
-
 import numpy as np
 
 from stratified_bayesian_optimization.priors.horseshoe import HorseShoePrior

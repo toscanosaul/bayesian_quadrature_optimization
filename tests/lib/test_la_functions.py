@@ -1,10 +1,14 @@
 import unittest
 
 import numpy.testing as npt
-import scipy.linalg as spla
-from scipy import linalg
 
-from stratified_bayesian_optimization.lib.la_functions import *
+import numpy as np
+
+from stratified_bayesian_optimization.lib.la_functions import (
+    cholesky,
+    linalg,
+    cho_solve,
+)
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
 
 

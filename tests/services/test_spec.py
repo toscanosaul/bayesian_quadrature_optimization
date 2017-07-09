@@ -91,7 +91,6 @@ class TestSpecService(unittest.TestCase):
             'parallels': [True, True],
         }
 
-
     def test_generate_specs(self):
         multiple_spec = MultipleSpecEntity({
             'problem_names': self.problem_names,

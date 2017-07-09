@@ -6,11 +6,14 @@ from mock import Mock
 
 from stratified_bayesian_optimization.lib.parallel import Parallel
 
+
 def f(x):
     return x
 
+
 def g(x):
     return x[1]
+
 
 class TestParallel(unittest.TestCase):
 

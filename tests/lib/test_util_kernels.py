@@ -1,9 +1,6 @@
 from __future__ import absolute_import
 
 import unittest
-import numpy.testing as npt
-
-import numpy as np
 
 from stratified_bayesian_optimization.lib.util_kernels import (
     find_define_kernel_from_array,
@@ -12,10 +9,6 @@ from stratified_bayesian_optimization.lib.util_kernels import (
 from stratified_bayesian_optimization.lib.constant import (
     MATERN52_NAME,
     TASKS_KERNEL_NAME,
-    LENGTH_SCALE_NAME,
-    PRODUCT_KERNELS_SEPARABLE,
-    SIGMA2_NAME,
-    LOWER_TRIANG_NAME,
 )
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
 from stratified_bayesian_optimization.kernels.tasks_kernel import TasksKernel
