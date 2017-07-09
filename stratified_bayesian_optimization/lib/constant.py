@@ -39,7 +39,7 @@ VAR_NOISE_NAME = 'var_noise'
 LBFGS_NAME = 'lbfgs'
 
 # Constants
-SMALLEST_POSITIVE_NUMBER = sys.float_info.min
+SMALLEST_POSITIVE_NUMBER = 1e-10
 SMALLEST_NUMBER = -sys.float_info.max
 LARGEST_NUMBER = sys.float_info.max
 

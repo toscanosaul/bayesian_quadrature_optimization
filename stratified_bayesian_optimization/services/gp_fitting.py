@@ -31,17 +31,23 @@ class GPFittingService(object):
         :param training_name: (str), prefix used to save the training data
         :return: str
         """
+
+        kernel_name = ''
+        for kernel in type_kernel:
+            kernel_name += kernel + '_'
+        kernel_name = kernel_name[0 : -1]
+
         return cls._filename(
             model_type=model_type.__name__,
             problem_name=problem_name,
-            type_kernel=type_kernel,
+            type_kernel=kernel_name,
             training_name=training_name
         )
 
     @classmethod
-    def get_gp(cls, name_model, problem_name, type_kernel, dimensions, bounds, n_training=0,
-               noise=False, training_data=None, points=None, training_name=None, mle=True,
-               thinning=0, n_samples=1, random_seed=DEFAULT_RANDOM_SEED):
+    def get_gp(cls, name_model, problem_name, type_kernel, dimensions, bounds, type_bounds=None,
+               n_training=0, noise=False, training_data=None, points=None, training_name=None,
+               mle=True, thinning=0, n_samples=None, random_seed=DEFAULT_RANDOM_SEED):
         """
         Fetch a GP model from file if it exists, otherwise train a new model and save it locally.
 
@@ -49,17 +55,20 @@ class GPFittingService(object):
         :param problem_name: str
         :param type_kernel: [(str)] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
+        :param dimensions: [int]. It has only the n_tasks for the task_kernels, and for the
+            PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product
+        :param bounds:  [([float, float] or [float])], the first case is when the bounds are
+            lower or upper bound of the respective entry; in the second case, it's list of finite
+            points representing the domain of that entry.
+        :param type_bounds: [0 or 1], 0 if the bounds are lower or upper bound of the respective
+            entry, 1 if the bounds are all the finite options for that entry.
+        :param n_training: int
+        :param noise: (boolean) If true, we get noisy evaluations.
         :param training_data: {'points': [[float]], 'evaluations': [float],
             'var_noise': [float] or None}
         :param points: [[float]]. If training_data is None, we can evaluate the objective
             function in these points.
         :param training_name: (str), prefix used to save the training data.
-        :param n_training: int
-        :param noise: (boolean) If true, we get noisy evaluations.
-        :param dimensions: [int]. It has only the n_tasks for the task_kernels, and for the
-            PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product
-        :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
-            is to compute priors in a smart way.
         :param mle: (boolean) If true, fits the GP by MLE.
         :param thinning: (int)
         :param n_samples: (int) If the objective is noisy, we take n_samples of the function to
@@ -83,16 +92,18 @@ class GPFittingService(object):
 
         if training_data is None:
             training_data = TrainingDataService.get_training_data(problem_name, training_name,
-                                                                  points=points,
+                                                                  bounds,
                                                                   n_training=n_training,
+                                                                  points=points,
                                                                   noise=noise,
                                                                   n_samples=n_samples,
-                                                                  random_seed=random_seed)
+                                                                  random_seed=random_seed,
+                                                                  type_bounds=type_bounds)
 
         logger.info("Training %s" % model_type.__name__)
 
         gp_model = model_type.train(type_kernel, dimensions, mle, training_data, bounds,
-                                    thinning=thinning)
+                                    thinning=thinning, random_seed=random_seed)
 
         JSONFile.write(gp_model.serialize(), gp_path)
 
