@@ -240,7 +240,7 @@ class TestGPFittingGaussian(unittest.TestCase):
         assert cov == np.array([[2.0]])
         assert chol == np.array([[np.sqrt(2.0)]])
 
-        chol, cov = self.complex_gp._chol_cov_including_noise(1.0, np.array([1.0, 1.0, 0.0]))
+        chol, cov = self.complex_gp._chol_cov_including_noise(1.0, np.array([1.0, 0.0]))
         assert cov == np.array([[2.5]])
         assert chol == np.array([[np.sqrt(2.5)]])
 
@@ -316,9 +316,6 @@ class TestGPFittingGaussian(unittest.TestCase):
 
         opt = self.gp_gaussian.mle_parameters(start=np.array([1.0, 0.0, 14.0, 0.9]))
 
-        print "veamos"
-        print opt
-        print opt['optimal_value'] + add
         assert opt['optimal_value'] + add >= -67.1494227694
 
         assert self.gp_gaussian_central.log_likelihood(9, 0.0, np.array([100.2, 1.1])) == \
@@ -547,7 +544,7 @@ class TestGPFittingGaussian(unittest.TestCase):
         points = np.linspace(0, 100, n_points)
         points = points.reshape([n_points, 1])
 
-        kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
+        kernel = Matern52.define_kernel_from_array(1, np.array([100.0]))
         function = SampleFunctions.sample_from_gp(points, kernel)
         function = function[0, :]
         evaluations = function + normal_noise
@@ -564,7 +561,7 @@ class TestGPFittingGaussian(unittest.TestCase):
             ValidationGPModel.cross_validation_mle_parameters(type_kernel, training_data,
                                                               dimensions, problem_name,
                                                               start=
-                                                              np.array([0.01**2, 0.0, 100.0, 1.0]))
+                                                              np.array([0.01**2, 0.0, 100.0]))
 
         assert result['filename_histogram'] == \
                'results/diagnostic_kernel/validation_kernel_histogram_a.png'
@@ -586,7 +583,7 @@ class TestGPFittingGaussian(unittest.TestCase):
             ValidationGPModel.cross_validation_mle_parameters(type_kernel, training_data_2,
                                                               dimensions, problem_name,
                                                               start=
-                                                              np.array([0.01**2, 0.0, 100.0, 1.0]))
+                                                              np.array([0.01**2, 0.0, 100.0]))
 
         assert result_2['filename_histogram'] == \
                'results/diagnostic_kernel/validation_kernel_histogram_a.png'
@@ -594,7 +591,7 @@ class TestGPFittingGaussian(unittest.TestCase):
         assert result_2['n_data'] == n_points
         assert result_2['filename_plot'] == 'results/diagnostic_kernel/' \
                                           'validation_kernel_mean_vs_observations_a.png'
-        assert result_2['success_proportion'] >= 0.8
+        assert result_2['success_proportion'] >= 0.9
 
     def test_cross_validation_mle_parameters_2(self):
         type_kernel = [MATERN52_NAME]
@@ -605,7 +602,7 @@ class TestGPFittingGaussian(unittest.TestCase):
         points = np.linspace(0, 100, n_points)
         points = points.reshape([n_points, 1])
 
-        kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
+        kernel = Matern52.define_kernel_from_array(1, np.array([100.0]))
         function = SampleFunctions.sample_from_gp(points, kernel)
         function = function[0, :]
         evaluations = function + normal_noise

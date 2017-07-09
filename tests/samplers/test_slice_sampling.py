@@ -12,6 +12,7 @@ from stratified_bayesian_optimization.models.gp_fitting_gaussian import GPFittin
 from stratified_bayesian_optimization.lib.constant import (
     MATERN52_NAME,
     SIGMA2_NAME,
+    SCALED_KERNEL,
 )
 
 
@@ -38,6 +39,10 @@ class TestSliceSampling(unittest.TestCase):
         self.gp_gaussian = GPFittingGaussian([MATERN52_NAME], self.training_data_gp, [1], bounds,
                                              max_steps_out=1000)
 
+        self.gp_gaussian_2 = GPFittingGaussian([SCALED_KERNEL, MATERN52_NAME],
+                                               self.training_data_gp, [1], bounds,
+                                               max_steps_out=1000)
+
 
     def test_slice_sample(self):
         # Benchmark numbers from Ryan's code.
@@ -45,7 +50,7 @@ class TestSliceSampling(unittest.TestCase):
         np.random.seed(1)
         point = np.array([0.1, 0.7, 0.8, 0.2])
 
-        new_point = self.gp_gaussian.sample_parameters(1, point, 1)[0]
+        new_point = self.gp_gaussian_2.sample_parameters(1, point, 1)[0]
         benchmark_point = np.array([0.17721380376549206, 0.67091995290377726, 2.23209165,
                                              0.17489317792506012])
 
@@ -57,22 +62,24 @@ class TestSliceSampling(unittest.TestCase):
         sampler = self.gp_gaussian.slice_samplers[0]
         sampler.doubling_step = False
 
-        new_point = self.gp_gaussian.sample_parameters(1, point, 1)[0]
+        new_point = self.gp_gaussian_2.sample_parameters(1, point, 1)[0]
         npt.assert_almost_equal(new_point, benchmark_point)
 
 
     def test_acceptable(self):
         sampler = self.gp_gaussian.slice_samplers[0]
-        accept = sampler.acceptable(0.75, 1000000, 0, 1.5, np.array([1.0, 0, 0]),
-                                    np.array([0.1, 0.7, 0.2]), np.array([0.8]),
+
+        accept = sampler.acceptable(0.75, 1000000, 0, 1.5, np.array([1.0, 0]),
+                                    np.array([0.1, 0.7]), np.array([0.8]),
                                     *(self.gp_gaussian,))
         assert accept is False
+
 
     def test_find_x_interval(self):
         sampler = self.gp_gaussian.slice_samplers[0]
         sampler.doubling_step = False
-        interval = sampler.find_x_interval(-2000, 0, 1.5, np.array([1.0, 0, 0]),
-                                           np.array([0.1, 0.7, 0.2]), np.array([0.8]),
+        interval = sampler.find_x_interval(-2000, 0, 1.5, np.array([1.0, 0]),
+                                           np.array([0.1, 0.7]), np.array([0.8]),
                                            *(self.gp_gaussian,))
         assert interval == (1001.5, -1.0)
 

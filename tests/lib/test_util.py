@@ -48,16 +48,16 @@ class TestUtil(unittest.TestCase):
 
     def test_get_number_parameters_kernel(self):
         assert get_number_parameters_kernel(
-            [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME], [2, 1, 1]) == 3
+            [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME], [2, 1, 1]) == 2
 
         with self.assertRaises(NameError):
             get_number_parameters_kernel(['a'], [2])
 
     def test_get_default_values_kernel(self):
-        assert get_default_values_kernel([MATERN52_NAME], [1]) == [1, 1]
+        assert get_default_values_kernel([MATERN52_NAME], [1]) == [1]
         assert get_default_values_kernel([TASKS_KERNEL_NAME], [1]) == [0]
         assert get_default_values_kernel(
-            [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME], [2, 1, 1]) == [1, 1, 0]
+            [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME], [2, 1, 1]) == [1, 0]
 
     def test_convert_list_to_dictionary(self):
         assert convert_list_to_dictionary(['a', 'b']) == {0: 'a', 1: 'b'}

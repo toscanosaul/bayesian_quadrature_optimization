@@ -684,9 +684,7 @@ class GPFittingGaussian(object):
         """
         grad = np.clip(self.grad_log_likelihood(params[0], params[1], params[2:]), SMALLEST_NUMBER,
                        LARGEST_NUMBER)
-        print "grad"
-        print params
-        print grad
+
         return grad
 
     def mle_parameters(self, start=None, random_seed=None):

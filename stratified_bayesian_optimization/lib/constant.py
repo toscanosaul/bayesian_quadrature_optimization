@@ -1,3 +1,6 @@
+import sys
+
+
 SPECS_DIR = 'data/specs'
 
 # Directory for multiple specifications
@@ -36,9 +39,9 @@ VAR_NOISE_NAME = 'var_noise'
 LBFGS_NAME = 'lbfgs'
 
 # Constants
-SMALLEST_POSITIVE_NUMBER = 1e-100
-SMALLEST_NUMBER = -1e100
-LARGEST_NUMBER = 1e100
+SMALLEST_POSITIVE_NUMBER = sys.float_info.min
+SMALLEST_NUMBER = -sys.float_info.max
+LARGEST_NUMBER = sys.float_info.max
 
 # Cached
 CHOL_COV = 'chol_cov'

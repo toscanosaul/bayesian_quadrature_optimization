@@ -27,7 +27,11 @@ class ParameterEntity(object):
         self.value = value
         self.prior = prior
         self.dimension = len(self.value)
-        self.bounds = self.process_bounds(self.dimension, bounds)
+
+        if bounds is None:
+            bounds = self.get_bounds(self.dimension)
+
+        self.bounds = bounds
 
     def set_value(self, value):
         self.value = value
@@ -44,32 +48,13 @@ class ParameterEntity(object):
         return self.prior.sample(n_samples)
 
     @staticmethod
-    def process_bounds(dimension, bounds):
+    def get_bounds(dimension):
         """
-        Replace None in bounds by floats. If a lower bound is None, then it's replaced by
-        _lower_bound. If a upper bound is None, then it's replaced by _upper_bound.
+        Get default bounds.
 
         :param dimension: (int) Dimension of the domain space.
-        :param bounds: [(float/None, float/None)]
+
         :return: [[float, float]]
         """
 
-        if bounds is None:
-            return dimension *  [(SMALLEST_NUMBER, LARGEST_NUMBER)]
-
-        new_bounds = []
-
-        for index, bound in enumerate(bounds):
-            if bound[0] is None:
-                l = SMALLEST_NUMBER
-            else:
-                l = bound[0]
-
-            if bound[1] is None:
-                u = LARGEST_NUMBER
-            else:
-                u = bound[1]
-
-            new_bounds.append((l, u))
-
-        return new_bounds
+        return dimension *  [(SMALLEST_NUMBER, LARGEST_NUMBER)]
