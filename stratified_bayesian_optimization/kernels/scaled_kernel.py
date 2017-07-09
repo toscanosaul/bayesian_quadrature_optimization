@@ -156,6 +156,9 @@ class ScaledKernel(AbstractKernel):
         :return: scaled kernel
         """
 
+        if parameters_priors is None:
+            parameters_priors = {}
+
         default_values_kernel = None
 
         if default_values is not None:
@@ -314,9 +317,6 @@ class ScaledKernel(AbstractKernel):
 
         kernel_ = kernel1.kernel
         kernel_2 = kernel2.kernel
-
-        if kernel_.name != kernel_2.name:
-            return False
 
         ct = find_kernel_constructor(kernel_.name)
 
