@@ -62,6 +62,7 @@ def convert_dictionary_from_names_kernels_to_only_parameters(dictionary, order_k
             result[parameter] = dictionary[kernel][parameter]
     return result
 
+
 def separate_numpy_arrays_in_lists(array, division):
     """
     Separate the m-axis of the array in a list such that [array(nxdivision), array(nx(division:))]
@@ -74,6 +75,7 @@ def separate_numpy_arrays_in_lists(array, division):
     else:
         return [array[0: division], array[division: len(array)]]
 
+
 def wrapper_fit_gp_regression(self, **kwargs):
     """
     Wrapper of fit_gp_regression
@@ -85,6 +87,7 @@ def wrapper_fit_gp_regression(self, **kwargs):
     """
 
     return self.fit_gp_regression(**kwargs)
+
 
 def wrapper_evaluate_objective_function(point, cls, name_module, n_samples):
     """
@@ -100,6 +103,7 @@ def wrapper_evaluate_objective_function(point, cls, name_module, n_samples):
     module = __import__(name_module, globals(), locals(), -1)
 
     return cls.evaluate_function(module, point, n_samples)
+
 
 def get_number_parameters_kernel(kernel_name, dim):
     """
@@ -126,6 +130,7 @@ def get_number_parameters_kernel(kernel_name, dim):
 
     raise NameError(kernel_name[0] + " doesn't exist")
 
+
 def get_default_values_kernel(kernel_name, dim, **parameters_priors):
     """
     Returns default values for the kernel_name.
@@ -145,7 +150,6 @@ def get_default_values_kernel(kernel_name, dim, **parameters_priors):
             ls = parameters_priors.get(LENGTH_SCALE_NAME, dim[0] * [1.0])
             return ls + sigma2
 
-
     if kernel_name[0] == MATERN52_NAME:
         ls = parameters_priors.get(LENGTH_SCALE_NAME, dim[0] * [1.0])
         return ls
@@ -163,6 +167,7 @@ def get_default_values_kernel(kernel_name, dim, **parameters_priors):
 
         return values
 
+
 def convert_list_to_dictionary(ls):
     """
 
@@ -175,6 +180,7 @@ def convert_list_to_dictionary(ls):
         d[index] = value
 
     return d
+
 
 def convert_dictionary_to_list(dictionary):
     """
@@ -189,6 +195,7 @@ def convert_dictionary_to_list(dictionary):
         ls[key] = value
 
     return ls
+
 
 def expand_dimension_vector(x, change_indexes, default_x):
     """
@@ -209,6 +216,7 @@ def expand_dimension_vector(x, change_indexes, default_x):
         index += 1
     return new_x
 
+
 def reduce_dimension_vector(x, change_indexes):
     """
     Reduce the dimension of the vector, where the entries in change_indexes are conserved.
@@ -225,6 +233,7 @@ def reduce_dimension_vector(x, change_indexes):
         new_x[index] = x[j]
         index += 1
     return new_x
+
 
 def combine_vectors(vector1, vector2, indexes1):
     """
@@ -251,6 +260,7 @@ def combine_vectors(vector1, vector2, indexes1):
 
     return vector
 
+
 def separate_vector(vector, indexes1):
     """
     Separate vector into two vectors vector1, vector2 where
@@ -269,4 +279,3 @@ def separate_vector(vector, indexes1):
     vector2 = vector[indexes2]
 
     return [vector1, vector2]
-

@@ -12,12 +12,10 @@ from stratified_bayesian_optimization.lib.util import (
 from stratified_bayesian_optimization.lib.constant import (
     MATERN52_NAME,
     LENGTH_SCALE_NAME,
-    SIGMA2_NAME,
     LARGEST_NUMBER,
     SMALLEST_POSITIVE_NUMBER,
 )
 from stratified_bayesian_optimization.priors.uniform import UniformPrior
-from stratified_bayesian_optimization.priors.log_normal_square import LogNormalSquare
 
 
 class Matern52(AbstractKernel):
@@ -258,8 +256,9 @@ class Matern52(AbstractKernel):
         n = data['points'].shape[0]
 
         for i in xrange(dimension):
-            diffs_training_data_x.append(np.mean([abs(data['points'][j, i] - data['points'][h, i])
-                                 for j in xrange(n) for h in xrange(n)]) / 0.324)
+            points = [abs(data['points'][j, i] - data['points'][h, i])
+                      for j in xrange(n) for h in xrange(n)]
+            diffs_training_data_x.append(np.mean(points) / 0.324)
 
         return {
             LENGTH_SCALE_NAME: diffs_training_data_x,

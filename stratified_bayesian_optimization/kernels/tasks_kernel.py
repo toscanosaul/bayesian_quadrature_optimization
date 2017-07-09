@@ -8,8 +8,6 @@ from stratified_bayesian_optimization.lib.constant import (
     TASKS_KERNEL_NAME,
     LOWER_TRIANG_NAME,
     SMALLEST_POSITIVE_NUMBER,
-    LARGEST_NUMBER,
-    SMALLEST_NUMBER,
 )
 from stratified_bayesian_optimization.lib.util import (
     get_number_parameters_kernel,

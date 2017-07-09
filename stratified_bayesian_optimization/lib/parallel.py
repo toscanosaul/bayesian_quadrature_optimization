@@ -51,5 +51,5 @@ class Parallel(object):
                 if all_success:
                     raise e
                 else:
-                    logger.info("job %d failed"%key)
+                    logger.info("job %d failed" % key)
         return results

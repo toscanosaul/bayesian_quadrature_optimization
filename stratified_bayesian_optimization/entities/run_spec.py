@@ -34,7 +34,6 @@ class RunSpecEntity(Model):
     random_seed = IntType(required=False)
     parallel = BooleanType(required=False)
 
-
     @classmethod
     def from_json(cls, specfile):
         """
@@ -97,6 +96,7 @@ class RunSpecEntity(Model):
         })
 
         return cls(entry)
+
 
 # TODO - Modify MultipleSpecEntity to include the new parameters
 class MultipleSpecEntity(Model):
@@ -165,7 +165,6 @@ class MultipleSpecEntity(Model):
             type_boundss = []
             for bounds_domain in bounds_domains:
                 type_boundss.append(len(bounds_domain) * [0])
-
 
         pointss = spec.get('pointss', None)
         noises = spec.get('noises', n_specs * [False])

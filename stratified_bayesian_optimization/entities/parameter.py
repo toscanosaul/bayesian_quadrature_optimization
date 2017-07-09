@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-from copy import deepcopy
-
 import numpy as np
 
 from stratified_bayesian_optimization.lib.constant import (
@@ -57,4 +55,4 @@ class ParameterEntity(object):
         :return: [[float, float]]
         """
 
-        return dimension *  [(SMALLEST_NUMBER, LARGEST_NUMBER)]
+        return dimension * [(SMALLEST_NUMBER, LARGEST_NUMBER)]

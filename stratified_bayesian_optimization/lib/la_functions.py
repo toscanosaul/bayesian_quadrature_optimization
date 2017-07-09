@@ -37,6 +37,7 @@ def cholesky(cov, max_tries=5):
             n_tries += 1
     raise linalg.LinAlgError("not positive definite, even with jitter.")
 
+
 def cho_solve(chol, y):
     """
     Solves the systems chol * chol^T * x = y

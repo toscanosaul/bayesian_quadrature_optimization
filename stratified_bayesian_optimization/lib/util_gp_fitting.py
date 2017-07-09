@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import numpy as np
-
 from stratified_bayesian_optimization.lib.constant import(
     MATERN52_NAME,
     TASKS_KERNEL_NAME,
@@ -17,7 +15,6 @@ from stratified_bayesian_optimization.kernels.tasks_kernel import TasksKernel
 from stratified_bayesian_optimization.kernels.product_kernels import ProductKernels
 from stratified_bayesian_optimization.lib.util import (
     get_number_parameters_kernel,
-    combine_vectors,
 )
 
 
@@ -124,6 +121,7 @@ def parameters_kernel_from_list_to_dict(params, type_kernels, dimensions):
 
     return kernel.parameters_from_list_to_dict(params, **kwargs)
 
+
 def wrapper_log_prob(vector, self):
     """
     Wrapper of log_prob
@@ -136,6 +134,7 @@ def wrapper_log_prob(vector, self):
     """
 
     return self.log_prob_parameters(vector)
+
 
 def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2=None):
     """
@@ -179,7 +178,6 @@ def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2=Non
 
     if MATERN52_NAME in type_kernel:
         m = data['points'].shape[1]
-        n = data['points'].shape[0]
         indexes = [i for i in range(m) if i != index - 1]
         points_matern = data['points'][:, indexes]
         matern_data = data.copy()

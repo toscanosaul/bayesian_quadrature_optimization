@@ -3,22 +3,17 @@ from __future__ import absolute_import
 import numpy as np
 
 from stratified_bayesian_optimization.kernels.abstract_kernel import AbstractKernel
-from stratified_bayesian_optimization.lib.distances import Distances
 from stratified_bayesian_optimization.entities.parameter import ParameterEntity
 from stratified_bayesian_optimization.lib.util import (
     convert_dictionary_gradient_to_simple_dictionary,
 )
 from stratified_bayesian_optimization.lib.constant import (
-    SCALED_KERNEL,
-    LENGTH_SCALE_NAME,
     SIGMA2_NAME,
-    LARGEST_NUMBER,
     SMALLEST_POSITIVE_NUMBER,
 )
 from stratified_bayesian_optimization.lib.util_kernels import (
     find_kernel_constructor,
 )
-from stratified_bayesian_optimization.priors.uniform import UniformPrior
 from stratified_bayesian_optimization.priors.log_normal_square import LogNormalSquare
 
 
@@ -116,8 +111,8 @@ class ScaledKernel(AbstractKernel):
 
         :param params: np.array(n)
         """
-        self.kernel.update_value_parameters(params[0 : -1])
-        self.sigma2.set_value(params[-1 :])
+        self.kernel.update_value_parameters(params[0: -1])
+        self.sigma2.set_value(params[-1:])
 
     @classmethod
     def define_kernel_from_array(cls, dimension, params, *args):
@@ -132,7 +127,7 @@ class ScaledKernel(AbstractKernel):
 
         for name in args[0]:
             kernel_ct = find_kernel_constructor(name)
-            kernel = kernel_ct.define_kernel_from_array(dimension, params[0 : -1])
+            kernel = kernel_ct.define_kernel_from_array(dimension, params[0: -1])
 
         sigma2 = ParameterEntity(SIGMA2_NAME, params[-1:], None)
 
@@ -162,7 +157,7 @@ class ScaledKernel(AbstractKernel):
         default_values_kernel = None
 
         if default_values is not None:
-            default_values_kernel = default_values[0 : -1]
+            default_values_kernel = default_values[0: -1]
             default_value_sigma = default_values[-1:]
         else:
             default_value_sigma = [parameters_priors.get(SIGMA2_NAME, 1.0)]
@@ -174,7 +169,7 @@ class ScaledKernel(AbstractKernel):
 
         sigma2 = ParameterEntity(SIGMA2_NAME, default_value_sigma,
                                  LogNormalSquare(1, 1.0, np.sqrt(default_value_sigma)),
-                                 bounds = [(SMALLEST_POSITIVE_NUMBER, None)])
+                                 bounds=[(SMALLEST_POSITIVE_NUMBER, None)])
 
         kernel_scaled = cls(dimension, kernel, sigma2)
 
@@ -340,7 +335,7 @@ class ScaledKernel(AbstractKernel):
         """
 
         ct = find_kernel_constructor(kwargs['kernels'])
-        parameters = ct.parameters_from_list_to_dict(params[0 : -1])
+        parameters = ct.parameters_from_list_to_dict(params[0: -1])
         parameters[SIGMA2_NAME] = params[-1]
 
         return parameters

@@ -3,11 +3,6 @@ from __future__ import absolute_import
 from stratified_bayesian_optimization.lib.constant import(
     MATERN52_NAME,
     TASKS_KERNEL_NAME,
-    SIGMA2_NAME,
-    LOWER_TRIANG_NAME,
-    LENGTH_SCALE_NAME,
-    SCALED_KERNEL,
-    PRODUCT_KERNELS_SEPARABLE,
 )
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
 from stratified_bayesian_optimization.kernels.tasks_kernel import TasksKernel
@@ -28,6 +23,7 @@ def find_define_kernel_from_array(kernel_name):
 
     raise NameError(kernel_name + " doesn't exist")
 
+
 def find_kernel_constructor(kernel_name):
     """
 
@@ -42,4 +38,3 @@ def find_kernel_constructor(kernel_name):
         return TasksKernel
 
     raise NameError(kernel_name + " doesn't exist")
-

@@ -2,8 +2,6 @@ from __future__ import absolute_import
 
 import numpy as np
 
-from stratified_bayesian_optimization.lib.constant import DEFAULT_RANDOM_SEED
-
 
 class SampleFunctions(object):
 

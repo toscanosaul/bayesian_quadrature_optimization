@@ -9,16 +9,16 @@ MULTIPLESPECS_DIR = 'data/multiple_specs'
 # Directory for domain
 DOMAIN_DIR = 'domain'
 
-#Directory of diagnostics kernel
+# Directory of diagnostics kernel
 DIAGNOSTIC_KERNEL_DIR = 'results/diagnostic_kernel'
 
-#Directory of GP models
+# Directory of GP models
 GP_DIR = 'data/gp_models'
 
-#Directory of problems
+# Directory of problems
 PROBLEM_DIR = 'problems'
 
-#Name of the file to call problems
+# Name of the file to call problems
 FILE_PROBLEM = 'main'
 
 MATERN52_NAME = 'Matern52'
@@ -47,5 +47,5 @@ LARGEST_NUMBER = sys.float_info.max
 CHOL_COV = 'chol_cov'
 SOL_CHOL_Y_UNBIASED = 'sol_chol_y_unbiased'
 
-#Random
+# Random
 DEFAULT_RANDOM_SEED = 1

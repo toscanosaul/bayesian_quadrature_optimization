@@ -175,7 +175,7 @@ class ProductKernels(AbstractKernel):
             name = value[0]
             dim = value[1]
             bound = bounds[index]
-            index +=1
+            index += 1
             constructor = find_kernel_constructor(name)
             if default_values is None:
                 kernels.append(constructor.define_default_kernel(dim, bound, None,
@@ -444,13 +444,13 @@ class ProductKernels(AbstractKernel):
         for dim, kernel in zip(kwargs['dimensions'], kwargs['kernels']):
             if kernel == MATERN52_NAME:
                 n_params = get_number_parameters_kernel([kernel], [dim])
-                param_dict = Matern52.parameters_from_list_to_dict(params[0 : n_params])
-                params = params[n_params :]
+                param_dict = Matern52.parameters_from_list_to_dict(params[0: n_params])
+                params = params[n_params:]
                 parameters.update(param_dict)
             elif kernel == TASKS_KERNEL_NAME:
                 n_params = get_number_parameters_kernel([kernel], [dim])
-                param_dict = TasksKernel.parameters_from_list_to_dict(params[0 : n_params])
-                params = params[n_params :]
+                param_dict = TasksKernel.parameters_from_list_to_dict(params[0: n_params])
+                params = params[n_params:]
                 parameters.update(param_dict)
 
         return parameters
