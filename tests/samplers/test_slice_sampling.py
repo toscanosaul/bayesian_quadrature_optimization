@@ -74,6 +74,13 @@ class TestSliceSampling(unittest.TestCase):
                                     *(self.gp_gaussian,))
         assert accept is False
 
+        sampler.doubling_step = False
+        accept_2 = sampler.acceptable(0.75, 1000000, 0, 1.5, np.array([1.0, 0]),
+                                    np.array([0.1, 0.7]), np.array([0.8]),
+                                    *(self.gp_gaussian,))
+        assert accept_2 is True
+
+
 
     def test_find_x_interval(self):
         sampler = self.gp_gaussian.slice_samplers[0]
@@ -87,7 +94,7 @@ class TestSliceSampling(unittest.TestCase):
         sampler = self.gp_gaussian.slice_samplers[0]
 
         with self.assertRaises(Exception):
-            sampler.find_sample(0, 1.5, -1000, np.array([1.0, 0, 0]), np.array([-1.0, 0.7, 0.2]),
+            sampler.find_sample(0, 1.5, -1000, np.array([1.0, 0]), np.array([-1.0, 0.7]),
                                 np.array([0.8]), *(self.gp_gaussian,))
 
         expect(sampler).directional_log_prob.and_return(np.nan)

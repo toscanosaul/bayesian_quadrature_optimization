@@ -208,6 +208,16 @@ class TestMatern52(unittest.TestCase):
             [samples[0][0, 0], samples[0][0, 1], samples[1][0]],
             [samples[0][1, 0], samples[0][1, 1], samples[1][1]]]))
 
+        np.random.seed(1)
+        matern52 = Matern52(2, ParameterEntity(LENGTH_SCALE_NAME,
+                                                     np.array([2.0, 3.0]), self.prior))
+        samples = []
+        parameters1 = matern52.hypers_as_list
+        for parameter in parameters1:
+            samples.append(parameter.sample_from_prior(2))
+        assert np.all(matern52.sample_parameters(2, random_seed=1) == samples[0])
+
+
     def test_get_bounds_parameters(self):
         assert self.matern52_.get_bounds_parameters() == 3 * [(SMALLEST_NUMBER, LARGEST_NUMBER)]
 
