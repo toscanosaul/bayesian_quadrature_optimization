@@ -20,6 +20,37 @@ class GPFittingService(object):
     }
 
     @classmethod
+    def from_dict(cls, spec):
+        """
+        Create a GP model from dict.
+
+        :param spec: dict
+        :return: GP model instance
+        """
+
+        entry = {
+            'name_model': spec.get('name_model'),
+            'problem_name': spec.get('problem_name'),
+            'type_kernel': spec.get('type_kernel'),
+            'dimensions': spec.get('dimensions'),
+            'bounds_domain': spec.get('bounds_domain'),
+            'type_bounds': spec.get('type_bounds'),
+            'n_training': spec.get('n_training', 0),
+            'noise': spec.get('noise', False),
+            'training_data': spec.get('training_data'),
+            'points': spec.get('points'),
+            'training_name': spec.get('training_name'),
+            'mle': spec.get('mle', True),
+            'thinning': spec.get('thinning', 0),
+            'n_burning': spec.get('n_burning', 0),
+            'max_steps_out': spec.get('max_steps_out', 1),
+            'n_samples': spec.get('n_samples'),
+            'random_seed': spec.get('random_seed', DEFAULT_RANDOM_SEED)
+        }
+
+        return cls.get_gp(**entry)
+
+    @classmethod
     def _get_filename(cls, model_type, problem_name, type_kernel, training_name):
         """
 
@@ -43,9 +74,10 @@ class GPFittingService(object):
         )
 
     @classmethod
-    def get_gp(cls, name_model, problem_name, type_kernel, dimensions, bounds, type_bounds=None,
-               n_training=0, noise=False, training_data=None, points=None, training_name=None,
-               mle=True, thinning=0, n_samples=None, random_seed=DEFAULT_RANDOM_SEED):
+    def get_gp(cls, name_model, problem_name, type_kernel, dimensions, bounds_domain,
+               type_bounds=None, n_training=0, noise=False, training_data=None, points=None,
+               training_name=None, mle=True, thinning=0, n_burning=0, max_steps_out=1,
+               n_samples=None, random_seed=DEFAULT_RANDOM_SEED):
         """
         Fetch a GP model from file if it exists, otherwise train a new model and save it locally.
 
@@ -55,7 +87,7 @@ class GPFittingService(object):
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
         :param dimensions: [int]. It has only the n_tasks for the task_kernels, and for the
             PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product
-        :param bounds:  [([float, float] or [float])], the first case is when the bounds are
+        :param bounds_domain: [([float, float] or [float])], the first case is when the bounds are
             lower or upper bound of the respective entry; in the second case, it's list of finite
             points representing the domain of that entry.
         :param type_bounds: [0 or 1], 0 if the bounds are lower or upper bound of the respective
@@ -69,6 +101,9 @@ class GPFittingService(object):
         :param training_name: (str), prefix used to save the training data.
         :param mle: (boolean) If true, fits the GP by MLE.
         :param thinning: (int)
+        :param n_burning: (int) Number of burnings samples for the MCMC.
+        :param max_steps_out: (int)  Maximum number of steps out for the stepping out  or
+                doubling procedure in slice sampling.
         :param n_samples: (int) If the objective is noisy, we take n_samples of the function to
             estimate its value.
         :param random_seed: (int)
@@ -88,9 +123,9 @@ class GPFittingService(object):
         if data is not None:
             return model_type.deserialize(data)
 
-        if training_data is None:
+        if training_data is None or training_data == []:
             training_data = TrainingDataService.get_training_data(problem_name, training_name,
-                                                                  bounds,
+                                                                  bounds_domain,
                                                                   n_training=n_training,
                                                                   points=points,
                                                                   noise=noise,
@@ -100,8 +135,9 @@ class GPFittingService(object):
 
         logger.info("Training %s" % model_type.__name__)
 
-        gp_model = model_type.train(type_kernel, dimensions, mle, training_data, bounds,
-                                    thinning=thinning, random_seed=random_seed)
+        gp_model = model_type.train(type_kernel, dimensions, mle, training_data, bounds_domain,
+                                    thinning=thinning, n_burning=n_burning,
+                                    max_steps_out=max_steps_out, random_seed=random_seed)
 
         JSONFile.write(gp_model.serialize(), gp_path)
 

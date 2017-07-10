@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from stratified_bayesian_optimization.services.domain import (
     DomainService
 )
-from stratified_bayesian_optimization.services.training_data import TrainingDataService
+from stratified_bayesian_optimization.services.gp_fitting import GPFittingService
 from stratified_bayesian_optimization.initializers.log import SBOLog
 
 logger = SBOLog(__name__)
@@ -22,11 +22,10 @@ class BGO(object):
         """
         logger.info("Training GP model")
 
-        training_data = TrainingDataService.from_dict(spec)
-        assert training_data
+        gp_model = GPFittingService.from_dict(spec)
+
         # method_optimization = spec.method_optimization
 
-        gp_model = None
         acquistion_funciton = None
 
         bgo = cls(acquistion_funciton, gp_model)

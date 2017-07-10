@@ -179,7 +179,9 @@ class TestGPFittingGaussian(unittest.TestCase):
             'var_noise_value': [np.var(self.training_data['evaluations'])],
             'thinning': 0,
             'data': data,
-            "bounds": [],
+            "bounds_domain": [],
+            'n_burning': 0,
+            'max_steps_out': 1,
         }
 
     def test_deserialize(self):

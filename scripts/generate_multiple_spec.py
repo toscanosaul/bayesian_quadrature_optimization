@@ -1,6 +1,10 @@
 import ujson
 
 from stratified_bayesian_optimization.services.spec import SpecService
+from stratified_bayesian_optimization.lib.constant import (
+    SCALED_KERNEL,
+    MATERN52_NAME,
+)
 
 
 if __name__ == '__main__':
@@ -12,8 +16,10 @@ if __name__ == '__main__':
     bounds_domain_xs = [[(1, 100)]]
     problem_names = ['test_problem']
     training_names = ['test_global']
+    type_kernels = [[SCALED_KERNEL, MATERN52_NAME]]
+    dimensionss = [[1]]
 
-    specs = SpecService.generate_dict_multiple_spec(problem_names, dim_xs, bounds_domain_xs,
-                                                    training_names)
+    specs = SpecService.generate_dict_multiple_spec(1, problem_names, dim_xs, bounds_domain_xs,
+                                                    training_names, type_kernels, dimensionss)
 
     print ujson.dumps(specs, indent=4)

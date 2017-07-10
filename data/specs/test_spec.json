@@ -1,14 +1,32 @@
 {
-    "noise":false,
-    "random_seed":1,
-    "number_points_each_dimension":[
-        10
+    "max_steps_out":1,
+    "type_kernel":[
+        "Scaled_kernel",
+        "Matern52"
     ],
     "bounds_domain_x":[
         [
             1,
             100
         ]
+    ],
+    "dimensions":[
+        1
+    ],
+    "type_bounds":[
+        0
+    ],
+    "n_burning":0,
+    "method_optimization":"SBO",
+    "noise":false,
+    "random_seed":1,
+    "n_samples":0,
+    "number_points_each_dimension":[
+        10
+    ],
+    "name_model":"gp_fitting_gaussian",
+    "training_data":[
+
     ],
     "training_name":"test_global",
     "dim_x":1,
@@ -21,13 +39,10 @@
             100
         ]
     ],
+    "mle":true,
+    "thinning":0,
     "points":[
 
     ],
-    "type_bounds":[
-        0
-    ],
-    "n_samples":0,
-    "choose_noise":true,
-    "method_optimization":"SBO"
+    "choose_noise":true
 }

@@ -123,3 +123,32 @@ class TestTrainingDataService(unittest.TestCase):
         compare_point = \
             [[42.2851784656], [72.3121248508], [1.0113231069], [30.9309246906], [15.5288331909]]
         assert points == compare_point
+
+    def test_training_data_from_dict(self):
+        problem_name = 'test_problem'
+        training_name = 'test'
+        bounds_domain = [[1, 100]]
+        expect(JSONFile).read.and_return(None)
+        np.random.seed(DEFAULT_RANDOM_SEED)
+        points = \
+            [[42.2851784656], [72.3121248508], [1.0113231069], [30.9309246906], [15.5288331909]]
+
+        dict = {
+            'problem_name': problem_name,
+            'training_name': training_name,
+            'bounds_domain': bounds_domain,
+            'n_training': 5,
+            'points': points,
+            'noise': False,
+            'n_samples': 0,
+            'random_seed': 1,
+            'parallel': True,
+            'type_bounds': [0],
+        }
+
+        training_data = TrainingDataService.from_dict(dict)
+
+        len(training_data) == 3
+        assert training_data['var_noise'] == []
+        assert np.all(training_data['evaluations'] == [i[0] for i in points])
+        assert np.all(training_data['points'] == points)

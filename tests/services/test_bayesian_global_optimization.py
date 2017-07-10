@@ -8,6 +8,10 @@ from stratified_bayesian_optimization.services.domain import DomainService
 from stratified_bayesian_optimization.entities.run_spec import RunSpecEntity
 from stratified_bayesian_optimization.entities.domain import BoundsEntity, DomainEntity
 from stratified_bayesian_optimization.util.json_file import JSONFile
+from stratified_bayesian_optimization.lib.constant import (
+    SCALED_KERNEL,
+    MATERN52_NAME,
+)
 
 
 class TestBGOService(unittest.TestCase):
@@ -22,6 +26,14 @@ class TestBGOService(unittest.TestCase):
             'number_points_each_dimension': [4],
             'bounds_domain': [[2, 3]],
             'n_training': 5,
+            'type_kernel': [SCALED_KERNEL, MATERN52_NAME],
+            'dimensions': [1],
+            'name_model': 'gp_fitting_gaussian',
+            'mle': True,
+            'random_seed': 1,
+            'thinning': 0,
+            'n_burning': 0,
+            'max_steps_out': 0,
         })
 
         self.acquisition_function = None

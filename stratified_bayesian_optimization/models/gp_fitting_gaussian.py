@@ -57,9 +57,9 @@ class GPFittingGaussian(object):
 
     _possible_kernels_ = [MATERN52_NAME, TASKS_KERNEL_NAME, PRODUCT_KERNELS_SEPARABLE]
 
-    def __init__(self, type_kernel, training_data, dimensions=None, bounds=None, kernel_values=None,
-                 mean_value=None, var_noise_value=None, thinning=0, n_burning=0, max_steps_out=1,
-                 data=None, random_seed=None):
+    def __init__(self, type_kernel, training_data, dimensions=None, bounds_domain=None,
+                 kernel_values=None, mean_value=None, var_noise_value=None, thinning=0, n_burning=0,
+                 max_steps_out=1, data=None, random_seed=None):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL].
@@ -70,8 +70,8 @@ class GPFittingGaussian(object):
         :param dimensions: [int]. It has only the n_tasks for the task_kernels, and for the
             PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product, and
             the total dimension of the product_kernels_separable too in the first entry.
-        :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
-            is to compute priors in a smart way.
+        :param bounds_domain: [[float, float]], lower bound and upper bound for each entry. This
+            parameter is used to compute priors in a smart way.
         :param kernel_values: [float], contains the default values of the parameters of the kernel
         :param mean_value: [float], It contains the value of the mean parameter.
         :param var_noise_value: [float], It contains the variance of the noise of the model
@@ -91,7 +91,7 @@ class GPFittingGaussian(object):
 
         self.type_kernel = type_kernel
         self.class_kernel = get_kernel_class(type_kernel[0])
-        self.bounds = bounds
+        self.bounds = bounds_domain
         self.training_data = training_data
         self.training_data_as_array = self.convert_from_list_to_numpy(training_data)
         self.dimensions = dimensions
@@ -390,8 +390,10 @@ class GPFittingGaussian(object):
             'mean_value': list(self.mean_value),
             'var_noise_value': list(self.var_noise_value),
             'thinning': self.thinning,
+            'n_burning': self.n_burning,
+            'max_steps_out': self.max_steps_out,
             'data': self.convert_from_numpy_to_list(self.data),
-            'bounds': bounds,
+            'bounds_domain': bounds,
         }
 
     @classmethod
@@ -766,8 +768,8 @@ class GPFittingGaussian(object):
         self.var_noise_value = vector[0:1]
 
     @classmethod
-    def train(cls, type_kernel, dimensions, mle, training_data, bounds, thinning=0,
-              random_seed=None):
+    def train(cls, type_kernel, dimensions, mle, training_data, bounds_domain, thinning=0,
+              n_burning=0, max_steps_out=1, random_seed=None):
         """
         :param type_kernel: [(str)] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
@@ -776,9 +778,12 @@ class GPFittingGaussian(object):
         :param mle: (boolean) If true, fits the GP by MLE.
         :param training_data: {'points': np.array(nxm), 'evaluations': np.array(n),
             'var_noise': np.array(n) or None}.
-        :param bounds: [[float, float]], lower bound and upper bound for each entry. This parameter
-            is to compute priors in a smart way.
+        :param bounds_domain: [[float, float]], lower bound and upper bound for each entry. This
+            parameter is to compute priors in a smart way.
         :param thinning: (int)
+        :param n_burning: (int) Number of burnings samples for the MCMC.
+        :param max_steps_out: (int) Maximum number of steps out for the stepping out  or
+                doubling procedure in slice sampling.
         :param random_seed: int
 
         :return: GPFittingGaussian
@@ -788,11 +793,13 @@ class GPFittingGaussian(object):
             if random_seed is not None:
                 np.random.seed(random_seed)
 
-            gp = cls(type_kernel, training_data, dimensions, bounds=bounds, thinning=thinning)
+            gp = cls(type_kernel, training_data, dimensions, bounds_domain=bounds_domain,
+                     thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out)
 
             return gp.fit_gp_regression()
 
-        return cls(type_kernel, training_data, dimensions, bounds=bounds, thinning=thinning)
+        return cls(type_kernel, training_data, dimensions, bounds_domain=bounds_domain,
+                   thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out)
 
     def compute_posterior_parameters(self, points):
         """

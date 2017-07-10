@@ -5,7 +5,7 @@ from os import path
 
 from schematics.models import Model
 from schematics.types import IntType, StringType, BooleanType, FloatType
-from schematics.types.compound import ModelType, ListType
+from schematics.types.compound import ModelType, ListType, DictType
 
 from stratified_bayesian_optimization.lib.constant import (
     SPECS_DIR,
@@ -31,8 +31,17 @@ class RunSpecEntity(Model):
     points = ListType(ListType(FloatType), required=False)
     noise = BooleanType(required=False)
     n_samples = IntType(required=False)
-    random_seed = IntType(required=False)
+    random_seed = IntType(required=True)
     parallel = BooleanType(required=False)
+
+    name_model = StringType(required=False)
+    type_kernel = ListType(StringType, required=True)
+    dimensions = ListType(IntType, required=True)
+    mle = BooleanType(required=False)
+    thinning = IntType(required=False)
+    n_burning = IntType(required=False)
+    max_steps_out = IntType(required=False)
+    training_data = DictType(StringType, required=False)
 
     @classmethod
     def from_json(cls, specfile):
@@ -77,6 +86,15 @@ class RunSpecEntity(Model):
         random_seed = spec.get('random_seed', DEFAULT_RANDOM_SEED)
         parallel = spec.get('parallel', True)
 
+        name_model = spec.get('name_model', 'gp_fitting_gaussian')
+        type_kernel = spec.get('type_kernel')
+        dimensions = spec.get('dimensions')
+        mle = spec.get('mle', True)
+        thinning = spec.get('thinning', 0)
+        n_burning = spec.get('n_burning', 0)
+        max_steps_out = spec.get('max_steps_out', 1)
+        training_data = spec.get('training_data')
+
         entry.update({
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -93,6 +111,14 @@ class RunSpecEntity(Model):
             'random_seed': random_seed,
             'parallel': parallel,
             'type_bounds': type_bounds,
+            'name_model': name_model,
+            'type_kernel': type_kernel,
+            'dimensions': dimensions,
+            'mle': mle,
+            'thinning': thinning,
+            'n_burning': n_burning,
+            'max_steps_out': max_steps_out,
+            'training_data': training_data,
         })
 
         return cls(entry)
@@ -115,8 +141,18 @@ class MultipleSpecEntity(Model):
     pointss = ListType(ListType(ListType(FloatType)), required=False)
     noises = ListType(BooleanType, required=False)
     n_sampless = ListType(IntType, required=False)
-    random_seeds = ListType(IntType, required=False)
+    random_seeds = ListType(IntType, required=True)
     parallels = ListType(BooleanType, required=False)
+
+    # New parameters due to the GP model
+    name_models = ListType(StringType, required=False)
+    type_kernels = ListType(ListType(StringType), required=True, min_size=1)
+    dimensionss = ListType(ListType(IntType), required=True, min_size=1)
+    mles = ListType(BooleanType, required=False)
+    thinnings = ListType(IntType, required=False)
+    n_burnings = ListType(IntType, required=False)
+    max_steps_outs = ListType(IntType, required=False)
+    training_datas = ListType(DictType(StringType, required=False))
 
     # TODO - Complete all the other needed params
 
@@ -160,17 +196,22 @@ class MultipleSpecEntity(Model):
         bounds_domains = spec.get('bounds_domains')
         n_trainings = spec.get('n_trainings', n_specs * [10])
 
-        type_boundss = spec.get('type_bounds')
-        if type_boundss is None:
-            type_boundss = []
-            for bounds_domain in bounds_domains:
-                type_boundss.append(len(bounds_domain) * [0])
+        type_boundss = spec.get('type_boundss', [len(bd) * [0] for bd in bounds_domains])
 
         pointss = spec.get('pointss', None)
-        noises = spec.get('noises', n_specs * [False])
-        n_sampless = spec.get('n_samples',  n_specs * [0])
-        random_seeds = spec.get('random_seed', n_specs * [DEFAULT_RANDOM_SEED])
-        parallels = spec.get('parallel', n_specs * [True])
+        noises = spec.get('noisess', n_specs * [False])
+        n_sampless = spec.get('n_sampless',  n_specs * [0])
+        random_seeds = spec.get('random_seeds', n_specs * [DEFAULT_RANDOM_SEED])
+        parallels = spec.get('parallels', n_specs * [True])
+
+        name_models = spec.get('name_models', n_specs * ['gp_fitting_gaussian'])
+        type_kernels = spec.get('type_kernels')
+        dimensionss = spec.get('dimensionss')
+        mles = spec.get('mles', n_specs * [True])
+        thinnings = spec.get('thinnings', n_specs * [0])
+        n_burnings = spec.get('n_burnings', n_specs * [0])
+        max_steps_outs = spec.get('max_steps_outs', n_specs * [1])
+        training_datas = spec.get('training_datas')
 
         entry.update({
             'problem_names': problem_names,
@@ -188,6 +229,14 @@ class MultipleSpecEntity(Model):
             'random_seeds': random_seeds,
             'parallels': parallels,
             'type_boundss': type_boundss,
+            'name_models': name_models,
+            'type_kernels': type_kernels,
+            'dimensionss': dimensionss,
+            'mles': mles,
+            'thinnings': thinnings,
+            'n_burnings': n_burnings,
+            'max_steps_outs': max_steps_outs,
+            'training_datas': training_datas,
         })
 
         return cls(entry)

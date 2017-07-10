@@ -59,7 +59,9 @@ class TestGpFitting(unittest.TestCase):
             'mean_value': model['mean_value'],
             'var_noise_value': [1e-10],
             'thinning': 0,
-            'bounds': bounds,
+            'bounds_domain': bounds,
+            'n_burning': 0,
+            'max_steps_out': 1,
         }
 
         estimation = gp.compute_posterior_parameters(np.array([[1.4], [2.4], [0], [-9.9], [8.5],
@@ -92,5 +94,41 @@ class TestGpFitting(unittest.TestCase):
             'mean_value': model['mean_value'],
             'var_noise_value': [1e-10],
             'thinning': 0,
-            'bounds': bounds,
+            'bounds_domain': bounds,
+            'n_burning': 0,
+            'max_steps_out': 1,
         }
+
+    def test_from_dict(self):
+        name_model = 'gp_fitting_gaussian'
+        dimensions = [1]
+        bounds = [[-10, 10]]
+        n_training = 30
+        points_ = list(np.linspace(-10, 10, n_training))
+        points = [[point] for point in points_]
+
+        gp = GPFittingService.get_gp(name_model, self.problem_name, [SCALED_KERNEL, MATERN52_NAME],
+                                     dimensions, bounds, type_bounds=[0], n_training=n_training,
+                                     noise=False, points=points, mle=True, random_seed=1)
+
+        model = gp.serialize()
+
+        spec = {
+            'name_model': name_model,
+            'problem_name': self.problem_name,
+            'type_kernel': [SCALED_KERNEL, MATERN52_NAME],
+            'dimensions': dimensions,
+            'bounds_domain': bounds,
+            'type_bounds': [0],
+            'n_training': n_training,
+            'noise': False,
+            'points': points,
+            'mle': True,
+            'random_seed': 1
+        }
+
+        gp_2 = GPFittingService.from_dict(spec)
+
+        model_2 = gp_2.serialize()
+
+        assert model == model_2
