@@ -314,6 +314,13 @@ class GPFittingGaussian(object):
         if var_noise_eval is not None:
             self.data['var_noise'] = np.append(self.data['var_noise'], var_noise_eval)
 
+        # TODO: updated cache in a smart way
+        # https://math.stackexchange.com/questions/955874/cholesky-factor-when-adding-a-row-and-
+        # column-to-already-factorized-matrix
+
+        self.cache_chol_cov = {}
+        self.cache_sol_chol_y_unbiased = {}
+
     @staticmethod
     def convert_from_list_to_numpy(data_as_list):
         """
