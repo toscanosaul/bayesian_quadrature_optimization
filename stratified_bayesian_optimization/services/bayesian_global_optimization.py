@@ -23,6 +23,7 @@ class BGO(object):
         logger.info("Training GP model")
 
         gp_model = GPFittingService.from_dict(spec)
+        gp_model.serialize()
 
         # method_optimization = spec.method_optimization
 

@@ -72,7 +72,7 @@ class SpecService(object):
             points = []
 
         if training_data is None:
-            training_data = []
+            training_data = {}
 
         return {
             'problem_name': problem_name,
@@ -170,7 +170,7 @@ class SpecService(object):
             max_steps_outs = [1]
 
         if training_datas is None:
-            training_datas = [[]]
+            training_datas = [{}]
 
         if choose_noises is None:
             choose_noises = [True]
@@ -330,7 +330,7 @@ class SpecService(object):
 
         training_datas = multiple_spec.training_datas
         if training_datas is None:
-            training_datas = [n_specs * []]
+            training_datas = n_specs * [{}]
 
         pointss = multiple_spec.pointss
         if pointss is None:

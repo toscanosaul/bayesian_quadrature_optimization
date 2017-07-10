@@ -131,4 +131,21 @@ class TestGpFitting(unittest.TestCase):
 
         model_2 = gp_2.serialize()
 
+        npt.assert_almost_equal(model['kernel_values'], model_2['kernel_values'])
+        npt.assert_almost_equal(model['mean_value'], model_2['mean_value'])
+        npt.assert_almost_equal(
+            model['training_data']['evaluations'], model_2['training_data']['evaluations'])
+        npt.assert_almost_equal(
+            model['training_data']['points'], model_2['training_data']['points'])
+        npt.assert_almost_equal(
+            model['training_data']['var_noise'], model_2['training_data']['var_noise'])
+
+        del model['kernel_values']
+        del model['training_data']
+        del model['mean_value']
+        del model['data']
+        del model_2['kernel_values']
+        del model_2['training_data']
+        del model_2['mean_value']
+        del model_2['data']
         assert model == model_2

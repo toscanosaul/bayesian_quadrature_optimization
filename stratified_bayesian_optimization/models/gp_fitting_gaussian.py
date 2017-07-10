@@ -121,7 +121,6 @@ class GPFittingGaussian(object):
         self.n_burning = n_burning
         self.samples_parameters = []
         self.slice_samplers = []
-        self.index_samplers = []
 
         self.cache_chol_cov = {}
         self.cache_sol_chol_y_unbiased = {}

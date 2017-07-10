@@ -123,7 +123,7 @@ class GPFittingService(object):
         if data is not None:
             return model_type.deserialize(data)
 
-        if training_data is None or training_data == []:
+        if training_data is None or training_data == {}:
             training_data = TrainingDataService.get_training_data(problem_name, training_name,
                                                                   bounds_domain,
                                                                   n_training=n_training,

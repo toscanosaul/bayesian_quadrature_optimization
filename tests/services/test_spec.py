@@ -58,7 +58,7 @@ class TestSpecService(unittest.TestCase):
             'thinning': 0,
             'n_burning': 0,
             'max_steps_out': 1,
-            'training_data': [],
+            'training_data': {},
         }
 
     def test_generate_dic_specs(self):
@@ -89,7 +89,7 @@ class TestSpecService(unittest.TestCase):
             'thinnings': [0],
             'n_burnings': [0],
             'max_steps_outs': [1],
-            'training_datas': [[]],
+            'training_datas': [{}],
 
         }
 
@@ -121,7 +121,7 @@ class TestSpecService(unittest.TestCase):
             'thinnings': [0, 0],
             'n_burnings': [0, 0],
             'max_steps_outs': [1, 1],
-            'training_datas': [[], []],
+            'training_datas': [{}, {}],
         }
 
     def test_generate_specs(self):

@@ -61,16 +61,11 @@ class TestTrainingDataService(unittest.TestCase):
         problem_name = 'test_problem'
         training_name = 'test'
         bounds_domain = [[1, 100]]
+
+        expect(JSONFile).read.and_return(0)
         training_data = \
             TrainingDataService.get_training_data(problem_name, training_name, bounds_domain)
-
-        points = \
-            [[42.2851784656], [72.3121248508], [1.0113231069], [30.9309246906], [15.5288331909]]
-        evaluations = [i[0] for i in points]
-
-        assert training_data['var_noise'] == []
-        npt.assert_almost_equal(training_data['evaluations'], evaluations)
-        npt.assert_almost_equal(training_data['points'], points)
+        assert training_data == 0
 
     def test_get_training_data_noise(self):
         problem_name = 'test_problem_noise'
