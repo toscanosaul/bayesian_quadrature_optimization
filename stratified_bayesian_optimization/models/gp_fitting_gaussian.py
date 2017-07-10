@@ -552,6 +552,38 @@ class GPFittingGaussian(object):
 
         return -np.sum(np.log(np.diag(chol))) - 0.5 * np.dot(y_unbiased, solve)
 
+    def evaluate_grad_cov(self, parameters_kernel, points):
+        """
+        Evaluate the gradient of the covariance using kernel of the model on the points.
+
+        :param points: np.array(nxk)
+        :param parameters_kernel: np.array(l)
+
+        :return: {
+            (int) i: (nxn), derivative respect to the ith parameter
+        }
+        """
+
+        if self.type_kernel[0] == PRODUCT_KERNELS_SEPARABLE:
+            inputs = separate_numpy_arrays_in_lists(points, self.kernel_dimensions[1])
+            inputs_dict = {}
+            for index, input in enumerate(inputs):
+                inputs_dict[self.type_kernel[index + 1]] = input
+            grad_cov = self.class_kernel.evaluate_grad_defined_by_params_respect_params(
+                separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
+                inputs_dict,
+                self.dimensions[1:], self.type_kernel[1:])
+        elif self.type_kernel[0] == SCALED_KERNEL:
+            grad_cov = self.class_kernel.evaluate_grad_defined_by_params_respect_params(
+                parameters_kernel, points, self.dimensions[0],
+                *([self.type_kernel[1]],))
+        else:
+            grad_cov = self.class_kernel.evaluate_grad_defined_by_params_respect_params(
+                parameters_kernel, points, self.dimensions[0])
+
+        return grad_cov
+
+
     def grad_log_likelihood_dict(self, var_noise, mean, parameters_kernel):
         """
         Computes the gradient of the log likelihood
@@ -563,22 +595,7 @@ class GPFittingGaussian(object):
         :return: {'var_noise': float, 'mean': float, 'kernel_params': np.array(n)}
         """
 
-        if self.type_kernel[0] == PRODUCT_KERNELS_SEPARABLE:
-            inputs = separate_numpy_arrays_in_lists(self.data['points'], self.kernel_dimensions[1])
-            inputs_dict = {}
-            for index, input in enumerate(inputs):
-                inputs_dict[self.type_kernel[index + 1]] = input
-            grad_cov = self.class_kernel.evaluate_grad_defined_by_params_respect_params(
-                separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
-                inputs_dict,
-                self.dimensions[1:], self.type_kernel[1:])
-        elif self.type_kernel[0] == SCALED_KERNEL:
-            grad_cov = self.class_kernel.evaluate_grad_defined_by_params_respect_params(
-                parameters_kernel, self.data['points'], self.dimensions[0],
-                *([self.type_kernel[1]],))
-        else:
-            grad_cov = self.class_kernel.evaluate_grad_defined_by_params_respect_params(
-                parameters_kernel, self.data['points'], self.dimensions[0])
+        grad_cov = self.evaluate_grad_cov(parameters_kernel, self.data['points'])
 
         chol, cov = self._chol_cov_including_noise(var_noise, parameters_kernel)
 
