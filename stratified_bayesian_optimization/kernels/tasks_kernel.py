@@ -259,6 +259,22 @@ class TasksKernel(AbstractKernel):
         return task_kernels.cov(inputs)
 
     @classmethod
+    def evaluate_cross_cov_defined_by_params(cls, params, inputs_1, inputs_2, dimension):
+        """
+        Evaluate the covariance of the kernel defined by params.
+
+        :param params: (np.array(k))
+        :param inputs_1: np.array(nxm)
+        :param inputs_2: np.array(kxm)
+        :param dimension: (int) dimension of the domain of the kernel
+
+        :return: (np.array(nxk)) cov(inputs_1, inputs_2) where the kernel is defined with params
+        """
+        task_kernels = cls.define_kernel_from_array(dimension, params)
+
+        return task_kernels.cross_cov(inputs_1, inputs_2)
+
+    @classmethod
     def evaluate_grad_defined_by_params_respect_params(cls, params, inputs, dimension):
         """
         Evaluate the gradient respect the parameters of the kernel defined by params.

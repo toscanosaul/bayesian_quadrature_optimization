@@ -114,3 +114,7 @@ class TestAbstractKernel(unittest.TestCase):
     @raises(NotImplementedError)
     def test_parameters_from_list_to_dict(self):
         self.test.parameters_from_list_to_dict(1)
+
+    @raises(NotImplementedError)
+    def test_evaluate_cross_cov_defined_by_params(self):
+        self.test.evaluate_cross_cov_defined_by_params(1, 1, 1, 1)

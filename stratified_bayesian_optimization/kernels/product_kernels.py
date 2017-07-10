@@ -384,6 +384,25 @@ class ProductKernels(AbstractKernel):
         gradient = convert_dictionary_gradient_to_simple_dictionary(gradient, names)
         return gradient
 
+    @classmethod
+    def evaluate_cross_cov_defined_by_params(cls, params, inputs_1, inputs_2, dimension, *args):
+        """
+        Evaluate the covariance of the kernel defined by params.
+
+        :param params: (np.array(k)) The first part are related to the parameters of the first
+            kernel and so on.
+        :param inputs_1: {(str) kernel_name: np.array(nxd)}
+        :param inputs_2: {(str) kernel_name: np.array(kxd)}
+        :param dimension: [int] list with the dimensions of the kernel
+        :param args: [str] List with the names of the kernels.
+
+        :return: (np.array(nxk)) cov(inputs_1, inputs_2) where the kernel is defined with params
+        """
+
+        kernel = cls.define_kernel_from_array(dimension, params, *args)
+
+        return kernel.cross_cov_dict(inputs_1, inputs_2)
+
     @staticmethod
     def compare_kernels(kernel1, kernel2):
         """

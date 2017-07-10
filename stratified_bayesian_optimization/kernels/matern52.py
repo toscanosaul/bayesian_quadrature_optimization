@@ -212,7 +212,7 @@ class Matern52(AbstractKernel):
         :param params: (np.array(k)) The first part are the parameters for length_scale.
         :param inputs: np.array(nxm)
         :param dimension: (int) dimension of the domain of the kernel
-        :return: cov(inputs) where the kernel is defined with params
+        :return: (np.array(nxn)) cov(inputs) where the kernel is defined with params
         """
         matern52 = cls.define_kernel_from_array(dimension, params)
         return matern52.cov(inputs)
@@ -236,6 +236,21 @@ class Matern52(AbstractKernel):
 
         gradient = convert_dictionary_gradient_to_simple_dictionary(gradient, names)
         return gradient
+
+    @classmethod
+    def evaluate_cross_cov_defined_by_params(cls, params, inputs_1, inputs_2, dimension):
+        """
+        Evaluate the covariance of the kernel defined by params.
+
+        :param params: (np.array(k)) The first part are the parameters for length_scale.
+        :param inputs_1: np.array(nxm)
+        :param inputs_2: np.array(kxm)
+        :param dimension: (int) dimension of the domain of the kernel
+
+        :return: (np.array(nxk)) cov(inputs_1, inputs_2) where the kernel is defined with params
+        """
+        matern52 = cls.define_kernel_from_array(dimension, params)
+        return matern52.cross_cov(inputs_1, inputs_2)
 
     @staticmethod
     def define_prior_parameters(data, dimension):

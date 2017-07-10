@@ -196,3 +196,8 @@ class TestTasksKernel(unittest.TestCase):
         assert result == {
             LOWER_TRIANG_NAME: [0.0, -9.2103403719761818, 0.0],
         }
+
+    def test_evaluate_cross_cov_defined_by_params(self):
+        value = TasksKernel.evaluate_cross_cov_defined_by_params(np.array([1.0]), np.array([[0.0]]),
+                                                                 np.array([[0.0]]), 1)
+        npt.assert_almost_equal(value, np.array([[np.exp(2.0)]]))

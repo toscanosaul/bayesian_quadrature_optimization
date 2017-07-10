@@ -623,3 +623,9 @@ class TestGPFittingGaussian(unittest.TestCase):
         assert not ValidationGPModel.check_value_within_ci(3.1, 1.0, 1.0)
         assert not ValidationGPModel.check_value_within_ci(-1.1, 1.0, 1.0)
         assert ValidationGPModel.check_value_within_ci(0, 1.0, 1.0, var_noise=0.00001)
+
+    def test_evaluate_cross_cov(self):
+
+        value = self.complex_gp.evaluate_cross_cov(np.array([[2.0, 0.0]]), np.array([[1.0, 0.0]]),
+                                           np.array([1.0, 0.0]))
+        assert value == np.array([[0.52399410883182029]])

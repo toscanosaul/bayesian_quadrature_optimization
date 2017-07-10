@@ -456,6 +456,38 @@ class GPFittingGaussian(object):
             self.cache_sol_chol_y_unbiased = {}
             self.cache_sol_chol_y_unbiased[index] = value
 
+    def evaluate_cov(self, points, parameters_kernel):
+        """
+        Evaluate the covariance of the kernel of the model on the points.
+
+        :param points: np.array(nxk)
+        :param parameters_kernel: np.array(l)
+
+        :return: np.array(nxn)
+        """
+
+        if self.type_kernel[0] == PRODUCT_KERNELS_SEPARABLE:
+            inputs = separate_numpy_arrays_in_lists(points, self.kernel_dimensions[1])
+            inputs_dict = {}
+            for index, input in enumerate(inputs):
+                inputs_dict[self.type_kernel[index + 1]] = input
+
+            cov = self.class_kernel.evaluate_cov_defined_by_params(
+                separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
+                inputs_dict,
+                self.dimensions[1:], self.type_kernel[1:])
+        elif self.type_kernel[0] == SCALED_KERNEL:
+            cov = self.class_kernel.evaluate_cov_defined_by_params(
+                parameters_kernel, points, self.dimensions[0],
+                *([self.type_kernel[1]],)
+            )
+        else:
+            cov = self.class_kernel.evaluate_cov_defined_by_params(
+                parameters_kernel, points, self.dimensions[0]
+            )
+
+        return cov
+
     def _chol_cov_including_noise(self, var_noise, parameters_kernel):
         """
         Compute the Cholesky decomposition of
@@ -472,25 +504,7 @@ class GPFittingGaussian(object):
 
         n = self.data['points'].shape[0]
 
-        if self.type_kernel[0] == PRODUCT_KERNELS_SEPARABLE:
-            inputs = separate_numpy_arrays_in_lists(self.data['points'], self.kernel_dimensions[1])
-            inputs_dict = {}
-            for index, input in enumerate(inputs):
-                inputs_dict[self.type_kernel[index + 1]] = input
-
-            cov = self.class_kernel.evaluate_cov_defined_by_params(
-                separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
-                inputs_dict,
-                self.dimensions[1:], self.type_kernel[1:])
-        elif self.type_kernel[0] == SCALED_KERNEL:
-            cov = self.class_kernel.evaluate_cov_defined_by_params(
-                parameters_kernel, self.data['points'], self.dimensions[0],
-                *([self.type_kernel[1]],)
-            )
-        else:
-            cov = self.class_kernel.evaluate_cov_defined_by_params(
-                parameters_kernel, self.data['points'], self.dimensions[0]
-            )
+        cov = self.evaluate_cov(self.data['points'], parameters_kernel)
 
         if self.data.get('var_noise') is not None:
             cov += np.diag(self.data['var_noise'])
@@ -800,12 +814,53 @@ class GPFittingGaussian(object):
         return cls(type_kernel, training_data, dimensions, bounds_domain=bounds_domain,
                    thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out)
 
-    def compute_posterior_parameters(self, points):
+    def evaluate_cross_cov(self, points_1, points_2, parameters_kernel):
+        """
+        Evaluate the cross covariance of the kernel of the model.
+
+        :param points_1: np.array(nxk)
+        :param points_2: np.array(mxk)
+        :param parameters_kernel: np.array(l)
+        :return: np.array(nxm)
+        """
+
+        if self.type_kernel[0] == PRODUCT_KERNELS_SEPARABLE:
+            inputs_1 = separate_numpy_arrays_in_lists(points_1, self.kernel_dimensions[1])
+            inputs_dict_1 = {}
+            for index, input in enumerate(inputs_1):
+                inputs_dict_1[self.type_kernel[index + 1]] = input
+
+            inputs_2 = separate_numpy_arrays_in_lists(points_2, self.kernel_dimensions[1])
+            inputs_dict_2 = {}
+            for index, input in enumerate(inputs_2):
+                inputs_dict_2[self.type_kernel[index + 1]] = input
+
+            cov = self.class_kernel.evaluate_cross_cov_defined_by_params(
+                separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
+                inputs_dict_1, inputs_dict_2,
+                self.dimensions[1:], self.type_kernel[1:])
+        elif self.type_kernel[0] == SCALED_KERNEL:
+            cov = self.class_kernel.evaluate_cross_cov_defined_by_params(
+                parameters_kernel, points_1, points_2, self.dimensions[0],
+                *([self.type_kernel[1]],)
+            )
+        else:
+            cov = self.class_kernel.evaluate_cross_cov_defined_by_params(
+                parameters_kernel, points_1, points_2, self.dimensions[0]
+            )
+
+        return cov
+
+    def compute_posterior_parameters(self, points, var_noise=None, mean=None,
+                                     parameters_kernel=None):
         """
         Compute the posterior mean and cov of the GP at points:
             f(points) ~ GP(mu_n(points), cov_n(points, points))
 
         :param points: np.array(nxm)
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(k)
         :return: {
             'mean': np.array(n),
             'cov': np.array(nxn)
@@ -814,18 +869,38 @@ class GPFittingGaussian(object):
         # TODO: cache solve, and np.dot(vec_cov, solve_2). We can just save it here with some
         # TODO: names like: self.mean_product = vec_cov
 
+        if var_noise is None:
+            var_noise = self.var_noise.value[0]
+
+        if parameters_kernel is None:
+            parameters_kernel = self.kernel.hypers_values_as_array
+
+        if mean is None:
+            mean = self.mean.value[0]
+
         chol, cov = self._chol_cov_including_noise(
-            self.var_noise.value[0], self.kernel.hypers_values_as_array)
+            var_noise, parameters_kernel)
 
-        y_unbiased = self.data['evaluations'] - self.mean.value[0]
-        solve = cho_solve(chol, y_unbiased)
 
-        vec_cov = self.kernel.cross_cov(points, self.data['points'])
+        y_unbiased = self.data['evaluations'] - mean
 
-        mu_n = self.mean.value[0] + np.dot(vec_cov, solve)
+        cached_solve = self._get_cached_data((var_noise, tuple(parameters_kernel), mean),
+                                             SOL_CHOL_Y_UNBIASED)
+
+        if cached_solve is False:
+            solve = cho_solve(chol, y_unbiased)
+            self._updated_cached_data((var_noise, tuple(parameters_kernel), mean), solve,
+                                      SOL_CHOL_Y_UNBIASED)
+        else:
+            solve = cached_solve
+
+        vec_cov = self.evaluate_cross_cov(points, self.data['points'], parameters_kernel)
+
+        mu_n = mean + np.dot(vec_cov, solve)
 
         solve_2 = cho_solve(chol, vec_cov.transpose())
-        cov_n = self.kernel.cov(points) - np.dot(vec_cov, solve_2)
+
+        cov_n = self.evaluate_cov(points, parameters_kernel) - np.dot(vec_cov, solve_2)
 
         return {
             'mean': mu_n,
