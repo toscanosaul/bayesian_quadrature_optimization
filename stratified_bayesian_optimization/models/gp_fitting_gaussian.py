@@ -905,9 +905,11 @@ class GradientGPFittingGaussian(object):
 
 
 class ValidationGPModel(object):
-    _validation_filename = 'validation_kernel_{problem}.json'.format
-    _validation_filename_plot = 'validation_kernel_mean_vs_observations_{problem}.png'.format
-    _validation_filename_histogram = 'validation_kernel_histogram_{problem}.png'.format
+    _validation_filename = 'validation_kernel_{problem}_{type_kernel}.json'.format
+    _validation_filename_plot = 'validation_kernel_mean_vs_observations_{problem}_{type_kernel}.' \
+                                'png'.format
+    _validation_filename_histogram = 'validation_kernel_histogram_{problem}_{type_kernel}.' \
+                                     'png'.format
 
     @classmethod
     def cross_validation_mle_parameters(cls, type_kernel, training_data, dimensions, problem_name,
@@ -945,6 +947,11 @@ class ValidationGPModel(object):
             'filename_histogram': str
         }
         """
+
+        kernel_name = ''
+        for kernel in type_kernel:
+            kernel_name += kernel + '_'
+        kernel_name = kernel_name[0: -1]
 
         n_data = len(training_data['evaluations'])
 
@@ -1024,17 +1031,20 @@ class ValidationGPModel(object):
             logger.info("All runs failed!!")
 
         filename = path.join(DIAGNOSTIC_KERNEL_DIR, cls._validation_filename(
-            problem=problem_name
+            problem=problem_name,
+            type_kernel=kernel_name,
         ))
 
         JSONFile.write({'Percentage of success: ': proportion_success}, filename)
 
         filename_plot = path.join(DIAGNOSTIC_KERNEL_DIR, cls._validation_filename_plot(
-            problem=problem_name
+            problem=problem_name,
+            type_kernel=kernel_name,
         ))
 
         filename_histogram = path.join(DIAGNOSTIC_KERNEL_DIR, cls._validation_filename_histogram(
-            problem=problem_name
+            problem=problem_name,
+            type_kernel=kernel_name,
         ))
 
         return {
