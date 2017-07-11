@@ -94,6 +94,7 @@ class GPFittingGaussian(object):
         self.bounds = bounds_domain
         self.training_data = training_data
         self.training_data_as_array = self.convert_from_list_to_numpy(training_data)
+        self.dimension_domain = self.training_data_as_array['points'].shape[1]
         self.dimensions = dimensions
 
         if data is None:
@@ -437,6 +438,7 @@ class GPFittingGaussian(object):
             -(chol, cov) if name is CHOL_COV
             -cov^-1 (y-mean) if name is SOL_CHOL_Y_UNBIASED
         """
+
         if name == CHOL_COV:
             if index in self.cache_chol_cov:
                 return self.cache_chol_cov[index]
@@ -904,7 +906,6 @@ class GPFittingGaussian(object):
 
         chol, cov = self._chol_cov_including_noise(
             var_noise, parameters_kernel)
-
 
         y_unbiased = self.data['evaluations'] - mean
 

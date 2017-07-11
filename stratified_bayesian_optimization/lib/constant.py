@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import sys
 
 
@@ -49,3 +51,7 @@ SOL_CHOL_Y_UNBIASED = 'sol_chol_y_unbiased'
 
 # Random
 DEFAULT_RANDOM_SEED = 1
+
+#Distributions
+UNIFORM_FINITE = 'uniform_finite'
+TASKS = 'tasks'
