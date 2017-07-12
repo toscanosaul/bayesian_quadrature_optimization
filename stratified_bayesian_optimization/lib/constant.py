@@ -54,4 +54,8 @@ DEFAULT_RANDOM_SEED = 1
 
 #Distributions
 UNIFORM_FINITE = 'uniform_finite'
-TASKS = 'tasks'
+TASKS = 'n_tasks'
+
+#Cache Quadrature
+QUADRATURES = 'quadrature'
+POSTERIOR_MEAN = 'posterior_mean'

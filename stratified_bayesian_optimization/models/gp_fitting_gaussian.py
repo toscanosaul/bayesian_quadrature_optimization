@@ -427,17 +427,21 @@ class GPFittingGaussian(object):
             values.append(parameter.value)
         return np.concatenate(values)
 
-    def _get_cached_data(self, index, name):
+    def _get_cached_data(self, index, name, cache=True):
         """
 
         :param index: tuple associated to the type.
             -(var_noise, parameters_kernel) if name is CHOL_COV
             -(var_noise, parameters_kernel, mean) if name is SOL_CHOL_Y_UNBIASED
         :param name: (str) SOL_CHOL_Y_UNBIASED or CHOL_COV
+        :param cache : (boolean) get cached data only if cache is True
         :return: cached data if it's cached, otherwise False
             -(chol, cov) if name is CHOL_COV
             -cov^-1 (y-mean) if name is SOL_CHOL_Y_UNBIASED
         """
+
+        if cache is False:
+            return False
 
         if name == CHOL_COV:
             if index in self.cache_chol_cov:
@@ -497,23 +501,29 @@ class GPFittingGaussian(object):
 
         return cov
 
-    def _chol_cov_including_noise(self, var_noise, parameters_kernel):
+    def _chol_cov_including_noise(self, var_noise, parameters_kernel, historical_points=None,
+                                  cache=True):
         """
         Compute the Cholesky decomposition of
         covariance = cov_kernel + np.diag(var_noise_observations) + np.diag(var_noise), and the
         covariance matrix
         :param var_noise: float
         :param parameters_kernel: np.array(k)
+        :param historical_points: np.array(nxk)
+        :param cache: (boolean) get cached data only if cache is True
         :return: np.array(nxn) (chol), np.array(nxn) (cov)
         """
 
-        cached = self._get_cached_data((var_noise, tuple(parameters_kernel)), CHOL_COV)
+        if historical_points is None:
+            historical_points = self.data['points']
+
+        cached = self._get_cached_data((var_noise, tuple(parameters_kernel)), CHOL_COV, cache=cache)
         if cached is not False:
             return cached
 
-        n = self.data['points'].shape[0]
+        n = historical_points.shape[0]
 
-        cov = self.evaluate_cov(self.data['points'], parameters_kernel)
+        cov = self.evaluate_cov(historical_points, parameters_kernel)
 
         if self.data.get('var_noise') is not None:
             cov += np.diag(self.data['var_noise'])
@@ -877,6 +887,54 @@ class GPFittingGaussian(object):
 
         return cov
 
+
+
+    def _cholesky_solve_vectors_for_posterior(self, var_noise, mean, parameters_kernel,
+                                              historical_points=None, historical_evaluations=None,
+                                              cache=True):
+        """
+        Solves the system cov(historical_points) * x = historical_evaluations - mean, and returns
+        the Cholesky decomposition of cov(historical_points) too.
+
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(k)
+        :param historical_points: np.array(nxk)
+        :param historical_evaluations: np.array(n)
+        :param cache: (boolean) get cached data only if cache is True
+
+        :return: {
+            'chol': np.array(nxn),
+            'solve': np.array(n)
+        }
+        """
+
+        if historical_points is None:
+            historical_points = self.data['points']
+
+        if historical_evaluations is None:
+            historical_evaluations = self.data['evaluations']
+
+        chol, cov = self._chol_cov_including_noise(
+            var_noise, parameters_kernel, historical_points=historical_points, cache=cache)
+
+        y_unbiased = historical_evaluations - mean
+
+        cached_solve = self._get_cached_data((var_noise, tuple(parameters_kernel), mean),
+                                             SOL_CHOL_Y_UNBIASED, cache=cache)
+
+        if cached_solve is False:
+            solve = cho_solve(chol, y_unbiased)
+            self._updated_cached_data((var_noise, tuple(parameters_kernel), mean), solve,
+                                      SOL_CHOL_Y_UNBIASED)
+        else:
+            solve = cached_solve
+
+        return {
+            'chol': chol,
+            'solve': solve,
+        }
+
     def compute_posterior_parameters(self, points, var_noise=None, mean=None,
                                      parameters_kernel=None):
         """
@@ -904,20 +962,9 @@ class GPFittingGaussian(object):
         if mean is None:
             mean = self.mean.value[0]
 
-        chol, cov = self._chol_cov_including_noise(
-            var_noise, parameters_kernel)
-
-        y_unbiased = self.data['evaluations'] - mean
-
-        cached_solve = self._get_cached_data((var_noise, tuple(parameters_kernel), mean),
-                                             SOL_CHOL_Y_UNBIASED)
-
-        if cached_solve is False:
-            solve = cho_solve(chol, y_unbiased)
-            self._updated_cached_data((var_noise, tuple(parameters_kernel), mean), solve,
-                                      SOL_CHOL_Y_UNBIASED)
-        else:
-            solve = cached_solve
+        chol_solve = self._cholesky_solve_vectors_for_posterior(var_noise, mean, parameters_kernel)
+        chol = chol_solve['chol']
+        solve = chol_solve['solve']
 
         vec_cov = self.evaluate_cross_cov(points, self.data['points'], parameters_kernel)
 
@@ -956,6 +1003,27 @@ class GPFittingGaussian(object):
         if not np.isinf(lp):
             lp += self.log_likelihood(parameters[0], parameters[1], parameters[2:])
         return lp
+
+    def sample_new_observations(self, point, n_samples, random_seed=None):
+        """
+        Sample f(point) n_samples times.
+
+        :param point: np.array(1xn)
+        :param n_samples: int
+        :param random_seed: int
+        :return: np.array(n_samples)
+        """
+
+        if random_seed is not None:
+            np.random.seed(random_seed)
+
+        posterior_parameters = self.compute_posterior_parameters(point)
+        mean = posterior_parameters['mean']
+        var = posterior_parameters['cov']
+
+        samples = np.random.normal(mean[0], np.sqrt(var[0, 0]), n_samples)
+
+        return samples
 
 
 class GradientGPFittingGaussian(object):

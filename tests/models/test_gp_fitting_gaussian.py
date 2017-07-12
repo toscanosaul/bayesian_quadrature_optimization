@@ -529,6 +529,35 @@ class TestGPFittingGaussian(unittest.TestCase):
         npt.assert_almost_equal(mean, np.array([0.30891226, 0.60256237]))
         npt.assert_almost_equal(cov, np.array([[0.48844879, 0.16799927], [0.16799927, 0.16536313]]))
 
+    def test_sample_new_observations(self):
+        np.random.seed(5)
+        n_points = 10
+        normal_noise = np.random.normal(0, 0.5, n_points)
+        points = np.linspace(0, 500, n_points)
+        points = points.reshape([n_points, 1])
+        kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
+        function = SampleFunctions.sample_from_gp(points, kernel)
+        function = function[0, :]
+        evaluations = function + normal_noise
+
+        training_data_gp = {
+            "evaluations": list(evaluations[1:]),
+            "points": points[1:, :],
+            "var_noise": []}
+        gp = GPFittingGaussian([MATERN52_NAME], training_data_gp, [1], kernel_values=[100.0, 1.0],
+                               mean_value=[0.0], var_noise_value=[0.5**2])
+
+        n_samples = 100
+        samples = gp.sample_new_observations(np.array([[30.0]]), n_samples, random_seed=1)
+
+        new_point = np.array([[30.0]])
+        z = gp.compute_posterior_parameters(new_point)
+        mean = z['mean']
+        cov = z['cov']
+
+        npt.assert_almost_equal(mean, np.mean(samples), decimal=1)
+        npt.assert_almost_equal(cov, np.var(samples), decimal=1)
+
     def test_cross_validation_mle_parameters(self):
         type_kernel = [MATERN52_NAME]
 

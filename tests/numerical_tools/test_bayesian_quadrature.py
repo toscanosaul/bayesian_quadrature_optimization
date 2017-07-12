@@ -1,6 +1,9 @@
 import unittest
 
 import numpy as np
+import numpy.testing as npt
+
+from copy import deepcopy
 
 from stratified_bayesian_optimization.models.gp_fitting_gaussian import (
     GPFittingGaussian,
@@ -12,10 +15,10 @@ from stratified_bayesian_optimization.lib.constant import (
     UNIFORM_FINITE,
     TASKS,
 )
-from stratified_bayesian_optimization.numerical_tools.gaussian_quadrature import GaussianQuadrature
+from stratified_bayesian_optimization.numerical_tools.bayesian_quadrature import BayesianQuadrature
 
 
-class TestGaussianQuadrature(unittest.TestCase):
+class TestBayesianQuadrature(unittest.TestCase):
 
     def setUp(self):
         self.training_data_complex = {
@@ -27,7 +30,7 @@ class TestGaussianQuadrature(unittest.TestCase):
             [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
             self.training_data_complex, [2, 1, 1])
 
-        self.gp = GaussianQuadrature(self.complex_gp, [0], UNIFORM_FINITE, {TASKS: 1})
+        self.gp = BayesianQuadrature(self.complex_gp, [0], UNIFORM_FINITE, {TASKS: 1})
 
         training_data_complex = {
             "evaluations": [1.0, 1.1],
@@ -38,7 +41,7 @@ class TestGaussianQuadrature(unittest.TestCase):
             [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
             training_data_complex, [3, 1, 2])
 
-        self.gp_2 = GaussianQuadrature(self.complex_gp_2, [0], UNIFORM_FINITE, {TASKS: 2})
+        self.gp_2 = BayesianQuadrature(self.complex_gp_2, [0], UNIFORM_FINITE, {TASKS: 2})
 
 
     def test_evaluate_quadrature_cross_cov(self):
@@ -75,18 +78,24 @@ class TestGaussianQuadrature(unittest.TestCase):
 
         assert value[1] == np.mean([value_1, value_2])
 
-    def test_compute_posterior_parameters(self):
-        points = np.array([[42.0], [42.1], [1.0]])
-        candidate_point = np.array([[41.0, 1.0]])
-        value = self.gp_2.compute_posterior_parameters(points, candidate_point)
+    def test_compute_posterior_parameters_kg(self):
+        points = np.array([[42.0], [42.1], [41.0]])
+        candidate_point = np.array([[41.0, 0]])
+        value = self.gp_2.compute_posterior_parameters_kg(points, candidate_point)
 
-        points_ = np.array([[42.0, 0], [42.0, 1]])
-        values = self.gp_2.gp.compute_posterior_parameters(points_)
-        assert np.mean(values['mean']) == value['mean'][0]
+        n_samples = 150
+        point = np.array([[41.0]])
+        samples = self.gp_2.gp.sample_new_observations(candidate_point, n_samples, 1)
+        a_n = []
+        points_x = deepcopy(self.gp_2.gp.data['points'])
+        points_x = np.concatenate((points_x, candidate_point))
 
-        points_ = np.array([[1.0, 0], [1.0, 1]])
-        values = self.gp_2.gp.compute_posterior_parameters(points_)
-        assert np.mean(values['mean']) == value['mean'][2]
+        for i in xrange(n_samples):
+            evaluations = deepcopy(self.gp_2.gp.data['evaluations'])
+            evaluations = np.concatenate((evaluations, [samples[i]]))
+            val = self.gp_2.compute_posterior_parameters(point, historical_evaluations=evaluations,
+                                                         historical_points=points_x, cache=False)
+            a_n.append(val['mean'])
 
-        print value
-        assert 1 ==0
+        npt.assert_almost_equal(np.mean(a_n), value['a'][2], decimal=1)
+        npt.assert_almost_equal(np.var(a_n),  value['b'][2], decimal=1)
