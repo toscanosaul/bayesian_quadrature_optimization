@@ -4,19 +4,24 @@ import numpy as np
 
 from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.lib.constant import (
-    SOL_CHOL_Y_UNBIASED,
     UNIFORM_FINITE,
     TASKS,
     QUADRATURES,
     POSTERIOR_MEAN,
+    TASKS_KERNEL_NAME,
+    LBFGS_NAME,
 )
 from stratified_bayesian_optimization.lib.la_functions import (
     cho_solve,
+)
+from stratified_bayesian_optimization.services.domain import (
+    DomainService,
 )
 from stratified_bayesian_optimization.lib.expectations import (
     uniform_finite,
     gradient_uniform_finite,
 )
+from stratified_bayesian_optimization.lib.optimization import Optimization
 
 logger = SBOLog(__name__)
 
@@ -31,7 +36,7 @@ class BayesianQuadrature(object):
         },
     }
 
-    def __init__(self, gp_model, x_domain, distribution, parameters_distribution):
+    def __init__(self, gp_model, x_domain, distribution, parameters_distribution=None):
         """
 
         :param gp_model: gp_fitting_gaussian instance
@@ -39,9 +44,20 @@ class BayesianQuadrature(object):
         :param distribution: (str), it must be in the list of distributions:
             [UNIFORM_FINITE]
         :param parameters_distribution: (dict) dictionary with parameters of the distribution.
-            -UNIFORM_FINITE: TASKS
+            -UNIFORM_FINITE: dict{TASKS: int}
         """
         self.gp = gp_model
+
+        if parameters_distribution == {}:
+            parameters_distribution = None
+
+        if parameters_distribution is None and distribution == UNIFORM_FINITE:
+            for name in self.gp.kernel.names:
+                if name == TASKS_KERNEL_NAME:
+                    n = self.gp.kernel.kernels[name].n_tasks
+                    break
+            parameters_distribution = {TASKS: n}
+
         self.parameters_distribution = parameters_distribution
         self.dimension_domain = self.gp.dimension_domain
         self.x_domain = x_domain
@@ -55,6 +71,7 @@ class BayesianQuadrature(object):
 
         self.cache_quadratures = {}
         self.cache_posterior_mean = {}
+        self.optimal_solutions = [] # The optimal solutions are written here
 
     def _get_cached_data(self, index, name):
         """
@@ -118,10 +135,10 @@ class BayesianQuadrature(object):
             points_2 = (x'_j, w'_j).
         This is [B(x, j)] in the SBO paper.
 
-        :param point: np.array(1xk)
+        :param point: np.array(txk)
         :param points_2: np.array(mxk')
         :param parameters_kernel: np.array(l)
-        :return: np.array(m)
+        :return: np.array(txm)
         """
 
         f = lambda x: self.gp.evaluate_cross_cov(x, points_2, parameters_kernel)
@@ -173,7 +190,7 @@ class BayesianQuadrature(object):
         """
         Compute posterior mean and covariance of the GP on G(x) = E[F(x, w)].
 
-        :param points: np.array(1xk)
+        :param points: np.array(txk) Only if only_mean is True!
         :param var_noise: float
         :param mean: float
         :param parameters_kernel: np.array(l)
@@ -183,7 +200,7 @@ class BayesianQuadrature(object):
         :param only_mean: (boolean) computes only the mean if it's True.
 
         :return: {
-            'mean': float,
+            'mean': np.array(t),
             'cov': float,
         }
         """
@@ -222,7 +239,7 @@ class BayesianQuadrature(object):
 
         if only_mean:
             return {
-            'mean': mu_n[0],
+            'mean': mu_n,
             'cov': None,
         }
 
@@ -231,7 +248,7 @@ class BayesianQuadrature(object):
         cov_n = self.evaluate_quadrate_cov(points, parameters_kernel) - np.dot(vec_covs, solve_2)
 
         return {
-            'mean': mu_n[0],
+            'mean': mu_n,
             'cov': cov_n,
         }
 
@@ -269,7 +286,6 @@ class BayesianQuadrature(object):
         gradient = self.evaluate_grad_quadrature_cross_cov(point, historical_points,
                                                            parameters_kernel)
 
-
         chol_solve = self.gp._cholesky_solve_vectors_for_posterior(
             var_noise, mean, parameters_kernel, historical_points=historical_points,
             historical_evaluations=historical_evaluations, cache=cache)
@@ -277,6 +293,65 @@ class BayesianQuadrature(object):
         solve = chol_solve['solve']
 
         return np.dot(gradient, solve)
+
+    def objective_posterior_mean(self, point):
+        """
+        Computes the posterior mean evaluated on point.
+
+        :param point: np.array(k)
+        :return: float
+        """
+
+        point = point.reshape((1, len(point)))
+
+        return self.compute_posterior_parameters(point, only_mean=True)['mean']
+
+    def grad_posterior_mean(self, point):
+        """
+        Computes the gradient of the posterior mean evaluated on point.
+
+        :param point: np.array(k)
+        :return: np.array(k)
+        """
+
+        point = point.reshape((1, len(point)))
+        return self.gradient_posterior_mean(point)
+
+    def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False):
+        if random_seed is not None:
+            np.random.seed(random_seed)
+
+        bounds_x = [self.gp.bounds[i] for i in xrange(len(self.gp.bounds)) if i in
+                    self.x_domain]
+
+        if start is None:
+            if len(self.optimal_solutions) > 0:
+                start = self.optimal_solutions[-1]['solution']
+            else:
+                start = DomainService.get_points_domain(1, bounds_x,
+                                                        type_bounds=len(self.x_domain)*[0])
+                start = np.array(start[0])
+
+        bounds = [tuple(bound) for bound in bounds_x]
+
+        objective_function = self.objective_posterior_mean
+        grad_function = self.grad_posterior_mean
+
+        optimization = Optimization(
+            LBFGS_NAME,
+            objective_function,
+            bounds,
+            grad_function,
+            minimize=minimize)
+
+        results = optimization.optimize(start)
+
+        logger.info("Results of the optimization of the posterior mean: ")
+        logger.info(results)
+
+        self.optimal_solutions.append(results)
+
+        return results
 
     def compute_posterior_parameters_kg(self, points, candidate_point, var_noise=None, mean=None,
                                         parameters_kernel=None):

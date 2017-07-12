@@ -2,7 +2,10 @@ from __future__ import absolute_import
 
 from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.entities.run_spec import RunSpecEntity
-from stratified_bayesian_optimization.lib.constant import DEFAULT_RANDOM_SEED
+from stratified_bayesian_optimization.lib.constant import (
+    DEFAULT_RANDOM_SEED,
+    UNIFORM_FINITE,
+)
 
 logger = SBOLog(__name__)
 
@@ -15,7 +18,8 @@ class SpecService(object):
                            n_training=10, points=None, noise=False, n_samples=0,
                            random_seed=DEFAULT_RANDOM_SEED, parallel=True,
                            name_model='gp_fitting_gaussian', mle=True, thinning=0, n_burning=0,
-                           max_steps_out=1, training_data=None):
+                           max_steps_out=1, training_data=None, x_domain=None, distribution=None,
+                           parameters_distribution=None):
         """
         Generate dict that represents run spec.
 
@@ -55,6 +59,9 @@ class SpecService(object):
                 doubling procedure in slice sampling.
         :param training_data: {'points': [[float]], 'evaluations': [float],
             'var_noise': [float] or None}
+        :param x_domain: [int], indices of the x domain
+        :param distribution: (str), probability distribution for the Bayesian quadrature
+        :param parameters_distribution: {str: float}, parameters of the distribution
 
         :return: dict
         """
@@ -73,6 +80,15 @@ class SpecService(object):
 
         if training_data is None:
             training_data = {}
+
+        if x_domain is None:
+            x_domain = []
+
+        if distribution is None:
+            distribution = UNIFORM_FINITE
+
+        if parameters_distribution is None:
+            parameters_distribution = {}
 
         return {
             'problem_name': problem_name,
@@ -98,6 +114,9 @@ class SpecService(object):
             'n_burning': n_burning,
             'max_steps_out': max_steps_out,
             'training_data': training_data,
+            'x_domain': x_domain,
+            'distribution': distribution,
+            'parameters_distribution': parameters_distribution,
         }
 
     # TODO - generate a list of runspecentities over different parameters
@@ -109,7 +128,9 @@ class SpecService(object):
                                     method_optimizations=None, type_boundss=None, n_trainings=None,
                                     pointss=None, noises=None, n_sampless=None, random_seeds=None,
                                     parallels=None, name_models=None, mles=None, thinnings=None,
-                                    n_burnings=None, max_steps_outs=None, training_datas=None):
+                                    n_burnings=None, max_steps_outs=None, training_datas=None,
+                                    x_domains=None, distributions=None,
+                                    parameters_distributions=None):
         """
         Generate dict that represents multiple run specs
 
@@ -150,12 +171,24 @@ class SpecService(object):
                 doubling procedure in slice sampling.
         :param training_datas: [{'points': [[float]], 'evaluations': [float],
             'var_noise': [float] or None}]
+        :param x_domains: [[int]], indices of the x domain
+        :param distributions: [str], probability distributions for the Bayesian quadrature
+        :param parameters_distributions: [{str: float}], parameters of the distributions
 
         :return: dict
         """
 
         if name_models is None:
             name_models = ['gp_fitting_gaussian']
+
+        if x_domains is None:
+            x_domains = [[]]
+
+        if parameters_distributions is None:
+            parameters_distributions = [{}]
+
+        if distributions is None:
+            distributions = [UNIFORM_FINITE]
 
         if mles is None:
             mles = [True]
@@ -256,6 +289,15 @@ class SpecService(object):
         if len(training_datas) != n_specs:
             training_datas = n_specs * training_datas
 
+        if len(x_domains) != n_specs:
+            x_domains = n_specs * x_domains
+
+        if len(distributions) != n_specs:
+            distributions = n_specs * distributions
+
+        if len(parameters_distributions) != n_specs:
+            parameters_distributions = n_specs * parameters_distributions
+
         return {
             'problem_names': problem_names,
             'dim_xs': dim_xs,
@@ -279,7 +321,10 @@ class SpecService(object):
             'thinnings': thinnings,
             'n_burnings': n_burnings,
             'max_steps_outs': max_steps_outs,
-            'training_datas': training_datas
+            'training_datas': training_datas,
+            'x_domains': x_domains,
+            'distributions': distributions,
+            'parameters_distributions': parameters_distributions,
         }
 
     @classmethod
@@ -334,7 +379,7 @@ class SpecService(object):
 
         pointss = multiple_spec.pointss
         if pointss is None:
-            pointss = [n_specs * []]
+            pointss = n_specs * [[]]
 
         noises = multiple_spec.noises
         if noises is None:
@@ -352,17 +397,30 @@ class SpecService(object):
         if parallels is None:
             parallels = n_specs * [True]
 
+        x_domains = multiple_spec.x_domains
+        if x_domains is None:
+            x_domains = n_specs * [[]]
+
+        distributions = multiple_spec.distributions
+        if distributions is None:
+            distributions = n_specs * [UNIFORM_FINITE]
+
+        parameters_distributions = multiple_spec.parameters_distributions
+        if parameters_distributions is None:
+            parameters_distributions = n_specs * [{}]
+
         run_spec = []
 
         for problem_name, method_optimization, dim_x, choose_noise, bounds_domain_x, \
             number_points_each_dimension, training_name, bounds_domain, type_bounds, n_training, \
             points, noise, n_samples, random_seed, parallel, type_kernel, dimensions, name_model, \
-            mle, thinning, n_burning, max_steps_out, training_data in \
+            mle, thinning, n_burning, max_steps_out, training_data, x_domain, distribution, \
+            parameters_distribution in \
                 zip(problem_names, method_optimizations, dim_xs, choose_noises, bounds_domain_xs,
                     number_points_each_dimensions, training_names, bounds_domains, type_boundss,
                     n_trainings, pointss, noises, n_sampless, random_seeds, parallels, type_kernels,
                     dimensionss, name_models, mles, thinnings, n_burnings, max_steps_outs,
-                    training_datas):
+                    training_datas, x_domains, distributions, parameters_distributions):
 
             parameters_entity = {
                 'problem_name': problem_name,
@@ -388,6 +446,9 @@ class SpecService(object):
                 'n_burning': n_burning,
                 'max_steps_out': max_steps_out,
                 'training_data': training_data,
+                'x_domain': x_domain,
+                'distribution': distribution,
+                'parameters_distribution': parameters_distribution,
             }
 
             run_spec.append(RunSpecEntity(parameters_entity))

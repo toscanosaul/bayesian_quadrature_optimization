@@ -21,7 +21,7 @@ class RunSpecEntity(Model):
     problem_name = StringType(required=True)
     method_optimization = StringType(required=True)
     dim_x = IntType(required=True)
-    choose_noise = BooleanType(required=True)
+    choose_noise = BooleanType(required=True) #I think that we should remove it
     bounds_domain_x = ListType(ModelType(BoundsEntity), min_size=1, required=True)
     number_points_each_dimension = ListType(IntType)
     training_name = StringType(required=True)
@@ -42,6 +42,10 @@ class RunSpecEntity(Model):
     n_burning = IntType(required=False)
     max_steps_out = IntType(required=False)
     training_data = DictType(StringType, required=False)
+
+    x_domain = ListType(IntType, required=False)
+    distribution = StringType(required=False)
+    parameters_distribution = DictType(StringType, required=False)
 
     @classmethod
     def from_json(cls, specfile):
@@ -95,6 +99,10 @@ class RunSpecEntity(Model):
         max_steps_out = spec.get('max_steps_out', 1)
         training_data = spec.get('training_data')
 
+        x_domain = spec.get('x_domain')
+        distribution = spec.get('distribution')
+        parameters_distribution = spec.get('parameters_distribution')
+
         entry.update({
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -119,6 +127,9 @@ class RunSpecEntity(Model):
             'n_burning': n_burning,
             'max_steps_out': max_steps_out,
             'training_data': training_data,
+            'x_domain': x_domain,
+            'distribution': distribution,
+            'parameters_distribution': parameters_distribution,
         })
 
         return cls(entry)
@@ -152,7 +163,12 @@ class MultipleSpecEntity(Model):
     thinnings = ListType(IntType, required=False)
     n_burnings = ListType(IntType, required=False)
     max_steps_outs = ListType(IntType, required=False)
-    training_datas = ListType(DictType(StringType, required=False))
+    training_datas = ListType(DictType(StringType), required=False)
+
+    # New parameters due Bayesian quadrature
+    x_domains = ListType(ListType(IntType), required=False)
+    distributions = ListType(StringType, required=False)
+    parameters_distributions = ListType(DictType(StringType), required=False)
 
     # TODO - Complete all the other needed params
 
@@ -213,6 +229,10 @@ class MultipleSpecEntity(Model):
         max_steps_outs = spec.get('max_steps_outs', n_specs * [1])
         training_datas = spec.get('training_datas')
 
+        x_domains = spec.get('x_domains')
+        distributions = spec.get('distributions')
+        parameters_distributions = spec.get('parameters_distributions')
+
         entry.update({
             'problem_names': problem_names,
             'dim_xs': dim_xs,
@@ -237,6 +257,9 @@ class MultipleSpecEntity(Model):
             'n_burnings': n_burnings,
             'max_steps_outs': max_steps_outs,
             'training_datas': training_datas,
+            'distributions': distributions,
+            'x_domains': x_domains,
+            'parameters_distributions': parameters_distributions,
         })
 
         return cls(entry)

@@ -19,6 +19,7 @@ from stratified_bayesian_optimization.lib.constant import (
     LENGTH_SCALE_NAME,
     SMALLEST_POSITIVE_NUMBER,
     SCALED_KERNEL,
+    LBFGS_NAME,
 )
 from stratified_bayesian_optimization.lib.util_gp_fitting import (
     get_kernel_default,
@@ -36,7 +37,6 @@ from stratified_bayesian_optimization.lib.util import (
     separate_vector,
 )
 from stratified_bayesian_optimization.lib.optimization import Optimization
-from stratified_bayesian_optimization.lib.constant import LBFGS_NAME
 from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.lib.parallel import Parallel
 from stratified_bayesian_optimization.entities.parameter import ParameterEntity

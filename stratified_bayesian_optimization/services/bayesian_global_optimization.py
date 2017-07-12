@@ -1,15 +1,23 @@
 from __future__ import absolute_import
 
+import numpy as np
+
 from stratified_bayesian_optimization.services.domain import (
     DomainService
 )
 from stratified_bayesian_optimization.services.gp_fitting import GPFittingService
 from stratified_bayesian_optimization.initializers.log import SBOLog
+from stratified_bayesian_optimization.numerical_tools.bayesian_quadrature import BayesianQuadrature
+from stratified_bayesian_optimization.lib.constant import (
+    SBO,
+)
+from stratified_bayesian_optimization.entities.objective import Objective
 
 logger = SBOLog(__name__)
 
 
 class BGO(object):
+    _possible_optimization_methods = [SBO]
 
     @classmethod
     def from_spec(cls, spec):
@@ -23,27 +31,49 @@ class BGO(object):
         logger.info("Training GP model")
 
         gp_model = GPFittingService.from_dict(spec)
-        gp_model.serialize()
+        quadrature = None
 
-        # method_optimization = spec.method_optimization
+        method_optimization = spec.get('method_optimization')
+
+        if method_optimization not in cls._possible_optimization_methods:
+            raise Exception("Incorrect BGO method")
+
+        if method_optimization == SBO:
+            x_domain = spec.get('x_domain')
+            distribution = spec.get('distribution')
+            parameters_distribution = spec.get('parameters_distribution')
+            quadrature = BayesianQuadrature(gp_model, x_domain, distribution,
+                                            parameters_distribution=parameters_distribution)
 
         acquistion_funciton = None
 
-        bgo = cls(acquistion_funciton, gp_model)
+        bgo = cls(acquistion_funciton, gp_model, quadrature)
 
         return bgo
 
-    def __init__(self, acquisition_function, gp_model):
+    def __init__(self, acquisition_function, gp_model, quadrature=None):
         self.acquisition_function = acquisition_function
         self.gp_model = gp_model
+        self.quadrature = quadrature
+        self.objective = Objective({'evaluated_points': [], 'objective_values': [],
+                                    'standard_deviation_evaluations': []})
 
-    def optimize(self, domain, function):
+    def optimize(self, domain, function, n_iterations=5, random_seed=None, minimize=False):
         """
         Optimize objective over the domain.
         :param domain: (DomainEntity)
         :param function:
+        :param n_iterations: int
+        :param random_seed: int
+        :param minimize: (boolean) the function is minimized if minimized is True.
+
         :return: Objective
         """
+        if random_seed is not None:
+            np.random.seed(random_seed)
+
+        optimize_mean = self.quadrature.optimize_posterior_mean(minimize=minimize)
+        print optimize_mean
         return {}
 
     @classmethod

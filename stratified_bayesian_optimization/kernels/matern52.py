@@ -406,4 +406,6 @@ class GradientLSMatern52(object):
 
         gradient = grad_distance_point * derivate_respect_to_r.transpose()
 
+        gradient = np.nan_to_num(gradient)
+
         return gradient
