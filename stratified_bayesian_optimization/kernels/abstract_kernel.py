@@ -84,6 +84,11 @@ class AbstractKernel(object):
     def evaluate_cross_cov_defined_by_params(cls, params, inputs_1, inputs_2, dimension):
         raise NotImplementedError("Not implemented")
 
+    @classmethod
+    @abstractmethod
+    def evaluate_grad_respect_point(cls, params, point, inputs, dimension):
+        raise NotImplementedError("Not implemented")
+
     @abstractmethod
     def sample_parameters(self, number_samples, random_seed):
         raise NotImplementedError("Not implemented")

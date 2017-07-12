@@ -141,14 +141,18 @@ class TestProductKernels(unittest.TestCase):
         }, TASKS_KERNEL_NAME: {'lower_triang': -5.0}}
 
     def test_grad_respect_point_dict(self):
-        expect(self.matern52).cross_cov.once().and_return(5)
-        expect(self.task_kernel).cross_cov.once().and_return(10)
+        inputs = {MATERN52_NAME: np.array([[6.0]]), TASKS_KERNEL_NAME: np.array([[0]])}
+        grad = self.kernel.grad_respect_point_dict(inputs, self.inputs)
+        grad_array = np.array([grad[MATERN52_NAME][0, 0], grad[TASKS_KERNEL_NAME][0, 0]])
 
-        expect(self.matern52).grad_respect_point.once().and_return(-1)
-        expect(self.task_kernel).grad_respect_point.once().and_return(3)
+        dh = 0.00000001
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda x:
+            self.kernel.cross_cov(x.reshape((1, len(x))), np.array([[5.0, 0]])),
+            np.array([6.0, 0]), np.array([dh]))
 
-        assert self.kernel.grad_respect_point_dict(self.inputs, self.inputs) == \
-            {MATERN52_NAME: -10, TASKS_KERNEL_NAME: 15}
+        npt.assert_almost_equal(finite_diff[0][0, 0], grad_array[0])
+        npt.assert_almost_equal(finite_diff[1][0, 0], grad_array[1])
 
     def test_evaluate_cov_defined_by_params(self):
         result = ProductKernels.evaluate_cov_defined_by_params(

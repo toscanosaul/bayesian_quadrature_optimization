@@ -201,8 +201,22 @@ class Matern52(AbstractKernel):
         :return: np.array(nxd)
         """
         grad = GradientLSMatern52.grad_respect_point(self.length_scale, point, inputs)
-
         return grad
+
+    @classmethod
+    def evaluate_grad_respect_point(cls, params, point, inputs, dimension):
+        """
+        Evaluate the gradient of the kernel defined by params respect to the point.
+
+        :param params: (np.array(k)) The first part are the parameters for length_scale.
+        :param point: np.array(1xd)
+        :param inputs: np.array(nxd)
+        :param dimension: (int) dimension of the domain of the kernel
+        :return: np.array(nxd)
+
+        """
+        matern52 = cls.define_kernel_from_array(dimension, params)
+        return matern52.grad_respect_point(point, inputs)
 
     @classmethod
     def evaluate_cov_defined_by_params(cls, params, inputs, dimension):

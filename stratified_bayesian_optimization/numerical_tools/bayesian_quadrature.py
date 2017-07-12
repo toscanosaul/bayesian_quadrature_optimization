@@ -15,6 +15,7 @@ from stratified_bayesian_optimization.lib.la_functions import (
 )
 from stratified_bayesian_optimization.lib.expectations import (
     uniform_finite,
+    gradient_uniform_finite,
 )
 
 logger = SBOLog(__name__)
@@ -25,6 +26,7 @@ class BayesianQuadrature(object):
     _expectations_map = {
         UNIFORM_FINITE: {
             'expectation': uniform_finite,
+            'grad_expectation': gradient_uniform_finite,
             'parameter': TASKS,
         },
     }
@@ -147,13 +149,23 @@ class BayesianQuadrature(object):
         :param point: np.array(1xk)
         :param points_2: np.array(mxk')
         :param parameters_kernel: np.array(l)
-        :return: np.array(k)
+        :return: np.array(kxm)
         """
 
-        f = lambda x: self.gp.evaluate_cross_cov(x, points_2, parameters_kernel)
+        parameters = {
+            'f': self.gp.evaluate_grad_cross_cov_respect_point,
+            'point': point,
+            'points_2': points_2,
+            'index_points': self.x_domain,
+            'index_random': self.w_domain,
+            'parameters_kernel': parameters_kernel,
+        }
 
+        parameters.update(self.arguments_expectation)
 
+        gradient = self.expectation['grad_expectation'](**parameters)
 
+        return gradient
 
     def compute_posterior_parameters(self, points, var_noise=None, mean=None,
                                      parameters_kernel=None, historical_points=None,
@@ -223,9 +235,48 @@ class BayesianQuadrature(object):
             'cov': cov_n,
         }
 
-    def gradient_posterior_mean(self):
+    def gradient_posterior_mean(self, point, var_noise=None, mean=None, parameters_kernel=None,
+                                historical_points=None, historical_evaluations=None, cache=True):
+        """
+        Compute posterior mean and covariance of the GP on G(x) = E[F(x, w)].
 
-        return 0
+        :param point: np.array(1xk)
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
+        :param historical_points: np.array(nxm)
+        :param historical_evaluations: np.array(n)
+        :param cache: (boolean) get cached data only if cache is True
+
+        :return: np.array(k)
+        """
+
+        if var_noise is None:
+            var_noise = self.gp.var_noise.value[0]
+
+        if parameters_kernel is None:
+            parameters_kernel = self.gp.kernel.hypers_values_as_array
+
+        if mean is None:
+            mean = self.gp.mean.value[0]
+
+        if historical_points is None:
+            historical_points = self.gp.data['points']
+
+        if historical_evaluations is None:
+            historical_evaluations = self.gp.data['evaluations']
+
+        gradient = self.evaluate_grad_quadrature_cross_cov(point, historical_points,
+                                                           parameters_kernel)
+
+
+        chol_solve = self.gp._cholesky_solve_vectors_for_posterior(
+            var_noise, mean, parameters_kernel, historical_points=historical_points,
+            historical_evaluations=historical_evaluations, cache=cache)
+
+        solve = chol_solve['solve']
+
+        return np.dot(gradient, solve)
 
     def compute_posterior_parameters_kg(self, points, candidate_point, var_noise=None, mean=None,
                                         parameters_kernel=None):

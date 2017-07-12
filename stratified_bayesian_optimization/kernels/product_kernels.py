@@ -333,7 +333,7 @@ class ProductKernels(AbstractKernel):
 
         for name in self.names:
             grad[name] = self.kernels[name].grad_respect_point(point[name], inputs[name])
-            cov[name] = self.kernels[name].cross_cov(point[name], inputs[name])
+            cov[name] = self.kernels[name].cross_cov(point[name], inputs[name]).transpose()
 
         gradient = {}
 
@@ -341,6 +341,24 @@ class ProductKernels(AbstractKernel):
             gradient[self.names[i]] = grad[self.names[i]] * cov[self.names[(i + 1) % 2]]
 
         return gradient
+
+    @classmethod
+    def evaluate_grad_respect_point(cls, params, point, inputs, dimension, *args):
+        """
+        Evaluate the gradient of the kernel defined by params respect to the point.
+
+        :param params: [np.array(k)] The first part are related to the parameters of the first
+            kernel and so on.
+        :param point: np.array(1xd)
+        :param inputs: np.array(nxd)
+        :param dimension: [int] list with the dimensions of the kernel
+        :param args: [str] List with the names of the kernels.
+        :return: np.array(nxd)
+
+        """
+        kernel = cls.define_kernel_from_array(dimension, params, *args)
+
+        return kernel.grad_respect_point(point, inputs)
 
     @classmethod
     def evaluate_cov_defined_by_params(cls, params, inputs, dimension, *args):

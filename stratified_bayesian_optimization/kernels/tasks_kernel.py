@@ -245,6 +245,21 @@ class TasksKernel(AbstractKernel):
         return np.zeros((inputs.shape[0], 1))
 
     @classmethod
+    def evaluate_grad_respect_point(cls, params, point, inputs, dimension):
+        """
+        Evaluate the gradient of the kernel defined by params respect to the point.
+
+        :param params: np.array(k)
+        :param point: np.array(1x1)
+        :param inputs: np.array(nx1)
+        :param dimension: (int) number of tasks
+        :return: np.array(nx1)
+
+        """
+        kernel = cls.define_kernel_from_array(dimension, params)
+        return kernel.grad_respect_point(point, inputs)
+
+    @classmethod
     def evaluate_cov_defined_by_params(cls, params, inputs, dimension):
         """
         Evaluate the covariance of the kernel defined by params.

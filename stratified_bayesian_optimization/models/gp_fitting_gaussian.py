@@ -887,7 +887,34 @@ class GPFittingGaussian(object):
 
         return cov
 
+    def evaluate_grad_cross_cov_respect_point(self, points_1, points_2, parameters_kernel):
+        """
+        Evaluate the gradient of the cross covariance of the kernel of the model respect to
+        points_1.
 
+        :param points_1: np.array(1xk)
+        :param points_2: np.array(mxk)
+        :param parameters_kernel: np.array(l)
+        :return: np.array(kxm)
+        """
+
+
+        if self.type_kernel[0] == PRODUCT_KERNELS_SEPARABLE:
+            grad = self.class_kernel.evaluate_grad_respect_point(
+                separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
+                points_1, points_2,
+                self.dimensions[1:], self.type_kernel[1:])
+        elif self.type_kernel[0] == SCALED_KERNEL:
+            grad = self.class_kernel.evaluate_grad_respect_point(
+                parameters_kernel, points_1, points_2, self.dimensions[0],
+                *([self.type_kernel[1]],)
+            )
+        else:
+            grad = self.class_kernel.grad_respect_point(
+                parameters_kernel, points_1, points_2, self.dimensions[0]
+            )
+
+        return grad
 
     def _cholesky_solve_vectors_for_posterior(self, var_noise, mean, parameters_kernel,
                                               historical_points=None, historical_evaluations=None,

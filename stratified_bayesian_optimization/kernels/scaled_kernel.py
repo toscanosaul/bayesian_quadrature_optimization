@@ -227,7 +227,24 @@ class ScaledKernel(AbstractKernel):
         return grad * self.sigma2.value
 
     @classmethod
-    def evaluate_cov_defined_by_params(cls, params, inputs, dimension,  *args):
+    def evaluate_grad_respect_point(cls, params, point, inputs, dimension, *args):
+        """
+        Evaluate the gradient of the kernel defined by params respect to the point.
+
+        :param params: (np.array(k)) The first part are the parameters for the kernel instance, the
+            second part is the parameter for sigma2.
+        :param point: np.array(1xd)
+        :param inputs: np.array(nxd)
+        :param dimension: (int) dimension of the domain of the kernel
+        :param args: [str] List with the names of the kernels.
+        :return: np.array(nxd)
+
+        """
+        kernel = cls.define_kernel_from_array(dimension, params, *args)
+        return kernel.grad_respect_point(point, inputs)
+
+    @classmethod
+    def evaluate_cov_defined_by_params(cls, params, inputs, dimension, *args):
         """
         Evaluate the covariance of the kernel defined by params.
 
