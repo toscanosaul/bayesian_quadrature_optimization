@@ -59,6 +59,7 @@ TASKS = 'n_tasks'
 #Cache Quadrature
 QUADRATURES = 'quadrature'
 POSTERIOR_MEAN = 'posterior_mean'
+B_NEW = 'quadratures_with_candidate'
 
 #BGO methods
 SBO = 'sbo'

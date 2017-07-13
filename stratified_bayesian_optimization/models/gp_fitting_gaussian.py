@@ -898,7 +898,6 @@ class GPFittingGaussian(object):
         :return: np.array(kxm)
         """
 
-
         if self.type_kernel[0] == PRODUCT_KERNELS_SEPARABLE:
             grad = self.class_kernel.evaluate_grad_respect_point(
                 separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
