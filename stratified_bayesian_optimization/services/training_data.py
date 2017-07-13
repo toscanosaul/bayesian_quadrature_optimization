@@ -186,17 +186,17 @@ class TrainingDataService(object):
         return name
 
     @classmethod
-    def evaluate_function(cls, module, params, n_samples=None):
+    def evaluate_function(cls, module, point, n_samples=None):
         """
         Evalute the objective function.
 
         :param module:
-        :param params: [float]
+        :param point: [float]
         :param n_samples: (int), number of samples used when the evaluations are noisy
         :return: float
         """
 
         if n_samples is None or n_samples == 0:
-            return module.main(params)
+            return module.main(point)
         else:
-            return module.main(n_samples, params)
+            return module.main(n_samples, point)

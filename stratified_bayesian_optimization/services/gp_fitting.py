@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from os import path
+import os
 
 from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.lib.constant import GP_DIR
@@ -58,6 +59,7 @@ class GPFittingService(object):
         :param problem_name: str
         :param type_kernel: [(str)] Must be in possible_kernels
         :param training_name: (str), prefix used to save the training data
+
         :return: str
         """
 
@@ -70,7 +72,7 @@ class GPFittingService(object):
             model_type=model_type.__name__,
             problem_name=problem_name,
             type_kernel=kernel_name,
-            training_name=training_name
+            training_name=training_name,
         )
 
     @classmethod
@@ -116,7 +118,13 @@ class GPFittingService(object):
             training_name = 'default_training_data_%d_points_rs_%d' % (n_training, random_seed)
 
         f_name = cls._get_filename(model_type, problem_name, type_kernel, training_name)
-        gp_path = path.join(GP_DIR, f_name)
+
+        gp_dir = path.join(GP_DIR, problem_name)
+
+        if not os.path.exists(gp_dir):
+            os.mkdir(gp_dir)
+
+        gp_path = path.join(gp_dir, f_name)
 
         data = JSONFile.read(gp_path)
 

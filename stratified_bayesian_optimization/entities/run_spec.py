@@ -47,6 +47,9 @@ class RunSpecEntity(Model):
     distribution = StringType(required=False)
     parameters_distribution = DictType(StringType, required=False)
 
+    minimize = BooleanType(required=True)
+    n_iterations = IntType(required=True)
+
     @classmethod
     def from_json(cls, specfile):
         """
@@ -103,6 +106,9 @@ class RunSpecEntity(Model):
         distribution = spec.get('distribution')
         parameters_distribution = spec.get('parameters_distribution')
 
+        minimize = spec.get('minimize', False)
+        n_iterations = spec.get('n_iterations', 5)
+
         entry.update({
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -130,6 +136,8 @@ class RunSpecEntity(Model):
             'x_domain': x_domain,
             'distribution': distribution,
             'parameters_distribution': parameters_distribution,
+            'minimize': minimize,
+            'n_iterations': n_iterations,
         })
 
         return cls(entry)
@@ -169,6 +177,9 @@ class MultipleSpecEntity(Model):
     x_domains = ListType(ListType(IntType), required=False)
     distributions = ListType(StringType, required=False)
     parameters_distributions = ListType(DictType(StringType), required=False)
+
+    minimizes = ListType(BooleanType)
+    n_iterationss = ListType(IntType)
 
     # TODO - Complete all the other needed params
 
@@ -233,6 +244,9 @@ class MultipleSpecEntity(Model):
         distributions = spec.get('distributions')
         parameters_distributions = spec.get('parameters_distributions')
 
+        minimizes = spec.get('minimizes', n_specs * [False])
+        n_iterationss = spec.get('n_iterationss', n_specs * [5])
+
         entry.update({
             'problem_names': problem_names,
             'dim_xs': dim_xs,
@@ -260,6 +274,8 @@ class MultipleSpecEntity(Model):
             'distributions': distributions,
             'x_domains': x_domains,
             'parameters_distributions': parameters_distributions,
+            'n_iterationss': n_iterationss,
+            'minimizes': minimizes,
         })
 
         return cls(entry)

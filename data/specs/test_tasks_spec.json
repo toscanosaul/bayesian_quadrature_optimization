@@ -1,0 +1,65 @@
+{
+    "parameters_distribution":{
+
+    },
+    "max_steps_out":1,
+    "type_kernel":[
+        "Product_of_kernels_with_separable_domain",
+        "Matern52",
+        "Tasks_Kernel"
+    ],
+    "bounds_domain_x":[
+        [
+            0,
+            100
+        ]
+    ],
+    "dimensions":[
+        2,
+        1,
+        2
+    ],
+    "type_bounds":[
+        0,
+        1
+    ],
+    "n_burning":0,
+    "method_optimization":"sbo",
+    "noise":false,
+    "random_seed":5,
+    "n_samples":0,
+    "number_points_each_dimension":[
+        10
+    ],
+    "name_model":"gp_fitting_gaussian",
+    "x_domain":[
+        0
+    ],
+    "training_data":{
+
+    },
+    "training_name":"test_global",
+    "dim_x":1,
+    "parallel":true,
+    "n_training":100,
+    "problem_name":"test_problem_with_tasks",
+    "bounds_domain":[
+        [
+            0,
+            100
+        ],
+        [
+            0,
+            1
+        ]
+    ],
+    "minimize":false,
+    "mle":true,
+    "thinning":0,
+    "n_iterations":5,
+    "points":[
+
+    ],
+    "choose_noise":true,
+    "distribution":"uniform_finite"
+}

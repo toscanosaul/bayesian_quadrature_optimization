@@ -14,12 +14,12 @@ class SpecService(object):
     @classmethod
     def generate_dict_spec(cls, problem_name, dim_x, bounds_domain_x, training_name, type_kernel,
                            dimensions, bounds_domain=None, number_points_each_dimension=None,
-                           choose_noise=True, method_optimization='SBO', type_bounds=None,
+                           choose_noise=True, method_optimization='sbo', type_bounds=None,
                            n_training=10, points=None, noise=False, n_samples=0,
                            random_seed=DEFAULT_RANDOM_SEED, parallel=True,
                            name_model='gp_fitting_gaussian', mle=True, thinning=0, n_burning=0,
                            max_steps_out=1, training_data=None, x_domain=None, distribution=None,
-                           parameters_distribution=None):
+                           parameters_distribution=None, minimize=False, n_iterations=5):
         """
         Generate dict that represents run spec.
 
@@ -62,6 +62,8 @@ class SpecService(object):
         :param x_domain: [int], indices of the x domain
         :param distribution: (str), probability distribution for the Bayesian quadrature
         :param parameters_distribution: {str: float}, parameters of the distribution
+        :param minimize: (boolean) Minimizes the function if minimize is True.
+        :param n_iterations: (int)
 
         :return: dict
         """
@@ -117,6 +119,8 @@ class SpecService(object):
             'x_domain': x_domain,
             'distribution': distribution,
             'parameters_distribution': parameters_distribution,
+            'minimize': minimize,
+            'n_iterations': n_iterations,
         }
 
     # TODO - generate a list of runspecentities over different parameters
@@ -130,7 +134,8 @@ class SpecService(object):
                                     parallels=None, name_models=None, mles=None, thinnings=None,
                                     n_burnings=None, max_steps_outs=None, training_datas=None,
                                     x_domains=None, distributions=None,
-                                    parameters_distributions=None):
+                                    parameters_distributions=None, minimizes=None,
+                                    n_iterationss=False):
         """
         Generate dict that represents multiple run specs
 
@@ -174,12 +179,20 @@ class SpecService(object):
         :param x_domains: [[int]], indices of the x domain
         :param distributions: [str], probability distributions for the Bayesian quadrature
         :param parameters_distributions: [{str: float}], parameters of the distributions
+        :param minimizes: [boolean]
+        :param n_iterationss: [int]
 
         :return: dict
         """
 
         if name_models is None:
             name_models = ['gp_fitting_gaussian']
+
+        if minimizes is None:
+            minimizes = [False]
+
+        if n_iterationss is None:
+            n_iterationss = [5]
 
         if x_domains is None:
             x_domains = [[]]
@@ -209,7 +222,7 @@ class SpecService(object):
             choose_noises = [True]
 
         if method_optimizations is None:
-            method_optimizations = ['SBO']
+            method_optimizations = ['sbo']
 
         if n_trainings is None:
             n_trainings = [10]
@@ -298,6 +311,12 @@ class SpecService(object):
         if len(parameters_distributions) != n_specs:
             parameters_distributions = n_specs * parameters_distributions
 
+        if len(minimizes) != n_specs:
+            minimizes = n_specs * minimizes
+
+        if len(n_iterationss) != n_specs:
+            n_iterationss = n_specs * n_iterationss
+
         return {
             'problem_names': problem_names,
             'dim_xs': dim_xs,
@@ -325,6 +344,8 @@ class SpecService(object):
             'x_domains': x_domains,
             'distributions': distributions,
             'parameters_distributions': parameters_distributions,
+            'n_iterationss': n_iterationss,
+            'minimizes': minimizes,
         }
 
     @classmethod
@@ -409,18 +430,27 @@ class SpecService(object):
         if parameters_distributions is None:
             parameters_distributions = n_specs * [{}]
 
+        minimizes = multiple_spec.minimizes
+        if minimizes is None:
+            minimizes = n_specs * [False]
+
+        n_iterationss = multiple_spec.n_iterationss
+        if n_iterationss is None:
+            n_iterationss = n_specs * [5]
+
         run_spec = []
 
         for problem_name, method_optimization, dim_x, choose_noise, bounds_domain_x, \
             number_points_each_dimension, training_name, bounds_domain, type_bounds, n_training, \
             points, noise, n_samples, random_seed, parallel, type_kernel, dimensions, name_model, \
             mle, thinning, n_burning, max_steps_out, training_data, x_domain, distribution, \
-            parameters_distribution in \
+            parameters_distribution, minimize, n_iterations in \
                 zip(problem_names, method_optimizations, dim_xs, choose_noises, bounds_domain_xs,
                     number_points_each_dimensions, training_names, bounds_domains, type_boundss,
                     n_trainings, pointss, noises, n_sampless, random_seeds, parallels, type_kernels,
                     dimensionss, name_models, mles, thinnings, n_burnings, max_steps_outs,
-                    training_datas, x_domains, distributions, parameters_distributions):
+                    training_datas, x_domains, distributions, parameters_distributions, minimizes,
+                    n_iterationss):
 
             parameters_entity = {
                 'problem_name': problem_name,
@@ -449,6 +479,8 @@ class SpecService(object):
                 'x_domain': x_domain,
                 'distribution': distribution,
                 'parameters_distribution': parameters_distribution,
+                'minimize': minimize,
+                'n_iterations': n_iterations,
             }
 
             run_spec.append(RunSpecEntity(parameters_entity))

@@ -62,3 +62,9 @@ POSTERIOR_MEAN = 'posterior_mean'
 
 #BGO methods
 SBO = 'sbo'
+
+#Directory of solutions of BGO in the different iterations
+PARTIAL_RESULTS = 'partial_results'
+
+#Directory of debugging
+DEBUGGING_DIR = 'data/debugging'

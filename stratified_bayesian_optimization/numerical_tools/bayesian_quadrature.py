@@ -2,6 +2,9 @@ from __future__ import absolute_import
 
 import numpy as np
 
+from os import path
+import os
+
 from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.lib.constant import (
     UNIFORM_FINITE,
@@ -10,6 +13,7 @@ from stratified_bayesian_optimization.lib.constant import (
     POSTERIOR_MEAN,
     TASKS_KERNEL_NAME,
     LBFGS_NAME,
+    DEBUGGING_DIR,
 )
 from stratified_bayesian_optimization.lib.la_functions import (
     cho_solve,
@@ -22,11 +26,14 @@ from stratified_bayesian_optimization.lib.expectations import (
     gradient_uniform_finite,
 )
 from stratified_bayesian_optimization.lib.optimization import Optimization
+from stratified_bayesian_optimization.util.json_file import JSONFile
 
 logger = SBOLog(__name__)
 
 
 class BayesianQuadrature(object):
+    _filename = 'opt_post_mean_gp_{model_type}_{problem_name}_{type_kernel}_{training_name}.json'.\
+        format
 
     _expectations_map = {
         UNIFORM_FINITE: {
@@ -451,3 +458,34 @@ class BayesianQuadrature(object):
         samples = np.random.normal(mean, np.sqrt(var), n_samples)
 
         return samples
+
+    def write_debug_data(self, problem_name, model_type, training_name):
+        """
+        Write information about the different optimizations realized.
+
+        :param problem_name: (str)
+        :param model_type: (str)
+        :param training_name: (str)
+        """
+
+        if not os.path.exists(DEBUGGING_DIR):
+            os.mkdir(DEBUGGING_DIR)
+
+        debug_dir = path.join(DEBUGGING_DIR, problem_name)
+
+        if not os.path.exists(debug_dir):
+            os.mkdir(debug_dir)
+
+        kernel_name = ''
+        for kernel in self.gp.type_kernel:
+            kernel_name += kernel + '_'
+        kernel_name = kernel_name[0: -1]
+
+        f_name = self._filename(model_type=model_type,
+                                problem_name=problem_name,
+                                type_kernel=kernel_name,
+                                training_name=training_name)
+
+        debug_path = path.join(debug_dir, f_name)
+
+        JSONFile.write(self.optimal_solutions, debug_path)
