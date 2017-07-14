@@ -300,3 +300,10 @@ class TestMatern52(unittest.TestCase):
         assert result2 == {
             LENGTH_SCALE_NAME: [1.5432098765432098],
         }
+
+    def test_evaluate_grad_respect_point(self):
+        result = Matern52.evaluate_grad_respect_point(np.array([5.0]), np.array([[1]]),
+                                                           np.array([[4], [5]]), 1)
+
+        kernel = Matern52.define_kernel_from_array(1, np.array([5.0]))
+        assert np.all(result == kernel.grad_respect_point(np.array([[1]]), np.array([[4], [5]])))

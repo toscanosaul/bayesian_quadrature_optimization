@@ -22,3 +22,7 @@ def main(n_samples, *params):
 #    print 'Anything printed here will end up in the output directory for job #:', str(2)
 
     return toy_example(n_samples, *params)
+
+def main_objective(n_samples, *params):
+    # Integrate out the task parameter
+    return toy_example(n_samples, *params)

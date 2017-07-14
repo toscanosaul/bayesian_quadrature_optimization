@@ -3,6 +3,8 @@ import unittest
 from doubles import expect
 import numpy.testing as npt
 
+from mock import patch
+
 import numpy as np
 
 from stratified_bayesian_optimization.services.gp_fitting import GPFittingService
@@ -98,6 +100,24 @@ class TestGpFitting(unittest.TestCase):
             'n_burning': 0,
             'max_steps_out': 1,
         }
+
+    @patch('os.path.exists')
+    @patch('os.mkdir')
+    def test_gp_no_dir(self, mock_mkdir, mock_exists):
+        mock_exists.return_value = False
+        name_model = 'gp_fitting_gaussian'
+        dimensions = [1]
+        bounds = [[-10, 10]]
+        n_training = 30
+        points_ = list(np.linspace(-10, 10, n_training))
+        points = [[point] for point in points_]
+
+        gp = GPFittingService.get_gp(name_model, self.problem_name, [SCALED_KERNEL, MATERN52_NAME],
+                                     dimensions, bounds, type_bounds=[0], n_training=n_training,
+                                     noise=False, points=points, mle=True, random_seed=1)
+
+        mock_mkdir.assert_called_with('problems/test_problem/data')
+
 
     def test_from_dict(self):
         name_model = 'gp_fitting_gaussian'

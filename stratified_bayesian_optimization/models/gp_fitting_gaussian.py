@@ -909,7 +909,7 @@ class GPFittingGaussian(object):
                 *([self.type_kernel[1]],)
             )
         else:
-            grad = self.class_kernel.grad_respect_point(
+            grad = self.class_kernel.evaluate_grad_respect_point(
                 parameters_kernel, points_1, points_2, self.dimensions[0]
             )
 

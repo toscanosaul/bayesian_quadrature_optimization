@@ -67,3 +67,11 @@ class TestScaledKernel(unittest.TestCase):
         kernel_s = Matern52(2, ParameterEntity('scale', np.array([1.0, 3.0]), None))
         kernel = ScaledKernel(self.dimension, kernel_s, self.sigma2)
         assert ScaledKernel.compare_kernels(self.matern52, kernel) is False
+
+    def test_evaluate_grad_respect_point(self):
+        result = ScaledKernel.evaluate_grad_respect_point(np.array([5.0, 1.0]), np.array([[1]]),
+                                                           np.array([[4], [5]]), 1,
+                                                          *([MATERN52_NAME],))
+
+        kernel = ScaledKernel.define_kernel_from_array(1, np.array([5.0, 1.0]), *([MATERN52_NAME],))
+        assert np.all(result == kernel.grad_respect_point(np.array([[1]]), np.array([[4], [5]])))

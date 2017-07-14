@@ -118,3 +118,7 @@ class TestAbstractKernel(unittest.TestCase):
     @raises(NotImplementedError)
     def test_evaluate_cross_cov_defined_by_params(self):
         self.test.evaluate_cross_cov_defined_by_params(1, 1, 1, 1)
+
+    @raises(NotImplementedError)
+    def test_evaluate_grad_respect_point(self):
+        self.test.evaluate_grad_respect_point(1, 1, 1, 1)

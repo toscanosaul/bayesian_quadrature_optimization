@@ -201,3 +201,10 @@ class TestTasksKernel(unittest.TestCase):
         value = TasksKernel.evaluate_cross_cov_defined_by_params(np.array([1.0]), np.array([[0.0]]),
                                                                  np.array([[0.0]]), 1)
         npt.assert_almost_equal(value, np.array([[np.exp(2.0)]]))
+
+    def test_evaluate_grad_respect_point(self):
+        result = TasksKernel.evaluate_grad_respect_point(np.array([5.0]), np.array([[0]]),
+                                                         np.array([[0], [0]]), 1)
+
+        kernel = TasksKernel.define_kernel_from_array(1, np.array([5.0]))
+        assert np.all(result == kernel.grad_respect_point(np.array([[0]]), np.array([[0], [0]])))

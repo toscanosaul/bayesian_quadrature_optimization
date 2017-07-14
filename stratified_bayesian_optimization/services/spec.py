@@ -135,7 +135,7 @@ class SpecService(object):
                                     n_burnings=None, max_steps_outs=None, training_datas=None,
                                     x_domains=None, distributions=None,
                                     parameters_distributions=None, minimizes=None,
-                                    n_iterationss=False):
+                                    n_iterationss=None):
         """
         Generate dict that represents multiple run specs
 

@@ -42,6 +42,9 @@ class DomainService(object):
             number_points_each_dimension=number_points_each_dimension_x
         )
 
+        if not os.path.exists(path.join(PROBLEM_DIR, problem_name)):
+            os.mkdir(path.join(PROBLEM_DIR, problem_name))
+
         domain_dir = path.join(PROBLEM_DIR, problem_name, DOMAIN_DIR)
 
         if not os.path.exists(domain_dir):

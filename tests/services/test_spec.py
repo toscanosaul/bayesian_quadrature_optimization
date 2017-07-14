@@ -6,6 +6,7 @@ from stratified_bayesian_optimization.entities.domain import BoundsEntity
 from stratified_bayesian_optimization.lib.constant import (
     MATERN52_NAME,
     SCALED_KERNEL,
+    UNIFORM_FINITE,
 )
 
 
@@ -43,7 +44,7 @@ class TestSpecService(unittest.TestCase):
             'bounds_domain': self.bounds_domain_x,
             'number_points_each_dimension': [10],
             'choose_noise': True,
-            'method_optimization': 'SBO',
+            'method_optimization': 'sbo',
             'type_bounds': [0],
             'n_training': 10,
             'points': [],
@@ -59,7 +60,13 @@ class TestSpecService(unittest.TestCase):
             'n_burning': 0,
             'max_steps_out': 1,
             'training_data': {},
+            'x_domain': [],
+            'distribution': UNIFORM_FINITE,
+            'parameters_distribution': {},
+            'minimize': False,
+            'n_iterations': 5,
         }
+
 
     def test_generate_dic_specs(self):
         specs = SpecService.generate_dict_multiple_spec(1, self.problem_names, self.dim_xs,
@@ -74,7 +81,7 @@ class TestSpecService(unittest.TestCase):
             'bounds_domains': self.bounds_domain_xs,
             'number_points_each_dimensions': [[10]],
             'choose_noises': [True],
-            'method_optimizations': ['SBO'],
+            'method_optimizations': ['sbo'],
             'type_boundss': [[0]],
             'n_trainings': [10],
             'pointss': [[]],
@@ -90,7 +97,11 @@ class TestSpecService(unittest.TestCase):
             'n_burnings': [0],
             'max_steps_outs': [1],
             'training_datas': [{}],
-
+            'distributions': [UNIFORM_FINITE],
+            'minimizes': [False],
+            'n_iterationss': [5],
+            'parameters_distributions': [{}],
+            'x_domains': [[]],
         }
 
         specs_ = SpecService.generate_dict_multiple_spec(2, ['toy', 'toy_2'], [1, 2],
@@ -106,7 +117,7 @@ class TestSpecService(unittest.TestCase):
             'bounds_domains': [[[2, 3]], [[5, 8]]],
             'number_points_each_dimensions': [[10], [10, 10]],
             'choose_noises': [True, True],
-            'method_optimizations': ['SBO', 'SBO'],
+            'method_optimizations': ['sbo', 'sbo'],
             'type_boundss': [[0], [0]],
             'n_trainings': [10, 10],
             'pointss': [[], []],
@@ -122,6 +133,11 @@ class TestSpecService(unittest.TestCase):
             'n_burnings': [0, 0],
             'max_steps_outs': [1, 1],
             'training_datas': [{}, {}],
+            'distributions': [UNIFORM_FINITE, UNIFORM_FINITE],
+            'minimizes': [False, False],
+            'n_iterationss': [5, 5],
+            'parameters_distributions': [{}, {}],
+            'x_domains': [[], []],
         }
 
     def test_generate_specs(self):

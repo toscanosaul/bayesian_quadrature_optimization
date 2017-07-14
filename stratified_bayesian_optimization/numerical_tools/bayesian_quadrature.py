@@ -73,6 +73,7 @@ class BayesianQuadrature(object):
         self.x_domain = x_domain
         self.w_domain = [i for i in range(self.gp.dimension_domain) if i not in x_domain]
         self.expectation = self._expectations_map[distribution]
+        self.distribution = distribution
         self.arguments_expectation = {}
 
         if self.expectation['parameter'] == TASKS:
@@ -363,6 +364,14 @@ class BayesianQuadrature(object):
         return self.gradient_posterior_mean(point)
 
     def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False):
+        """
+        Optimize the posterior mean.
+
+        :param start: np.array(n)
+        :param random_seed: float
+        :param minimize: boolean
+        :return: dictionary with the results of the optimization
+        """
         if random_seed is not None:
             np.random.seed(random_seed)
 
@@ -487,7 +496,7 @@ class BayesianQuadrature(object):
         }
 
     def gradient_vector_b(self, candidate_point, points, var_noise=None, mean=None,
-                          parameters_kernel=None, ):
+                          parameters_kernel=None):
         """
         Compute the gradient of the vector b (see SBO paper).
 

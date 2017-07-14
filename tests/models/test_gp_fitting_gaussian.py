@@ -21,6 +21,7 @@ from stratified_bayesian_optimization.lib.constant import (
 from stratified_bayesian_optimization.lib.finite_differences import FiniteDifferences
 from stratified_bayesian_optimization.lib.sample_functions import SampleFunctions
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
+from stratified_bayesian_optimization.kernels.scaled_kernel import ScaledKernel
 
 
 class TestGPFittingGaussian(unittest.TestCase):
@@ -658,3 +659,36 @@ class TestGPFittingGaussian(unittest.TestCase):
         value = self.complex_gp.evaluate_cross_cov(np.array([[2.0, 0.0]]), np.array([[1.0, 0.0]]),
                                            np.array([1.0, 0.0]))
         assert value == np.array([[0.52399410883182029]])
+
+    def test_evaluate_grad_cross_cov_respect_point(self):
+        value = self.gp.evaluate_grad_cross_cov_respect_point(np.array([[40.0]]),
+                                                              np.array([[39.0], [38.0]]),
+                                                              np.array([1.0, 1.0]))
+
+        value_2 = ScaledKernel.evaluate_grad_respect_point(np.array([1.0, 1.0]),
+                                                           np.array([[40.0]]),
+                                                           np.array([[39.0], [38.0]]), 1,
+                                                           *([MATERN52_NAME],))
+
+        assert np.all(value == value_2)
+
+
+        type_kernel = [MATERN52_NAME]
+        training_data = {
+            "evaluations":
+                [42.2851784656, 72.3121248508, 1.0113231069, 30.9309246906, 15.5288331909],
+            "points": [
+                [42.2851784656], [72.3121248508], [1.0113231069], [30.9309246906], [15.5288331909]],
+            "var_noise": []}
+        dimensions = [1]
+
+        gp = GPFittingGaussian(type_kernel, training_data, dimensions)
+        value = gp.evaluate_grad_cross_cov_respect_point(np.array([[40.0]]),
+                                                         np.array([[39.0], [38.0]]),
+                                                         np.array([1.0]))
+
+        value_2 = Matern52.evaluate_grad_respect_point(np.array([1.0]),
+                                                       np.array([[40.0]]),
+                                                       np.array([[39.0], [38.0]]), 1)
+
+        assert np.all(value == value_2)
