@@ -92,9 +92,10 @@ def AffineBreakPoints(a, b):
     for i in xrange(1, M):
         c[i + 1] = float('Inf')
         while True:
-            j = A[Alen]  # jindex=Alen
+            j = int(A[Alen])  # jindex=Alen
             c[j] = (a[j - 1] - a[i]) / (b[i] - b[j - 1])
-            if len(A) > 1 and c[j] <= c[A[Alen - 1]]:
+
+            if len(A) > 1 and c[j] <= c[int(A[Alen - 1])]:
                 Alen = Alen - 1  # Remove last element j
                 # continue in while(True) loop
             else:

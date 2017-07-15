@@ -237,7 +237,7 @@ class BayesianQuadrature(object):
         """
         Compute posterior mean and covariance of the GP on G(x) = E[F(x, w)].
 
-        :param points: np.array(txk) Only if only_mean is True!
+        :param points: np.array(txk) More than one point only if only_mean is True!
         :param var_noise: float
         :param mean: float
         :param parameters_kernel: np.array(l)
@@ -510,9 +510,10 @@ class BayesianQuadrature(object):
         }
 
     def gradient_vector_b(self, candidate_point, points, var_noise=None, mean=None,
-                          parameters_kernel=None, cache=True):
+                          parameters_kernel=None, cache=True, keep_indexes=None):
         """
-        Compute the gradient of the vector b (see SBO paper).
+        Compute the gradient of the vector b(x,candidate_point) for each x in points
+        (see SBO paper).
 
         :param candidate_point: np.array(1xm), (new_x, new_w)
         :param points: np.array(nxk)
@@ -520,11 +521,14 @@ class BayesianQuadrature(object):
         :param mean: float
         :param parameters_kernel: np.array(l)
         :param cache: (boolean) Use cached data and cache data if cache is True
+        :param keep_indexes: [int], indexes of the points saved of the discretization.
+            They are used to get the useful elements of the cached data.
 
         :return: np.array(nxm)
         """
         # We assume that the gradient of cov(x, x) respect to x is equal to zero.
         # We assume that cov(x, y) = cov(y, x).
+
 
         if var_noise is None:
             var_noise = self.gp.var_noise.value[0]
@@ -569,6 +573,8 @@ class BayesianQuadrature(object):
         if b_new is None:
             compute_b_new = True
             b_new = np.zeros((n, 1))
+        else:
+            b_new = b_new[keep_indexes, :]
 
         compute_vec_covs = False
 
@@ -580,6 +586,8 @@ class BayesianQuadrature(object):
         if vec_covs is None:
             compute_vec_covs = True
             vec_covs = np.zeros((n, m))
+        else:
+            vec_covs = vec_covs[keep_indexes, :]
         # Remove repeated code and put in one function!
         for i in xrange(n):
             if compute_vec_covs:
@@ -665,3 +673,12 @@ class BayesianQuadrature(object):
         debug_path = path.join(debug_dir, f_name)
 
         JSONFile.write(self.optimal_solutions, debug_path)
+
+    def clean_cache(self):
+        """
+        Cleans the cache
+        """
+        self.cache_quadratures = {}
+        self.cache_posterior_mean = {}
+        self.cache_quadrature_with_candidate = {}
+        self.gp.clean_cache()

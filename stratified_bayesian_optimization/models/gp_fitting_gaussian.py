@@ -1056,6 +1056,13 @@ class GPFittingGaussian(object):
 
         return samples
 
+    def clean_cache(self):
+        """
+        Cleans the cache
+        """
+        self.cache_chol_cov = {}
+        self.cache_sol_chol_y_unbiased = {}
+
 
 class GradientGPFittingGaussian(object):
 

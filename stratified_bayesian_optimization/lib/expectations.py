@@ -23,6 +23,7 @@ def uniform_finite(f, point, index_points, domain_random, index_random, double=F
     dim_random = domain_random.shape[1]
 
     new_points = np.zeros((domain_random.shape[0], dim_random + point.shape[1]))
+
     new_points[:, index_points] = np.repeat(point, domain_random.shape[0], axis=0)
 
     new_points[:, index_random] = domain_random

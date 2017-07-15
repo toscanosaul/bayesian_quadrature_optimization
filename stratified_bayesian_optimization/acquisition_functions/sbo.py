@@ -33,6 +33,7 @@ class SBO(object):
         self.bounds_opt = self.bq.gp.bounds
         self.opt_separing_domain = False
 
+        # Bounds or list of number of points of the domain
         self.domain_w = [self.bq.gp.bounds[i] for i in self.bq.w_domain]
 
         if self.bq.distribution == UNIFORM_FINITE:
@@ -45,7 +46,7 @@ class SBO(object):
 
 
 
-    def evaluate(self, point, var_noise=None, mean=None, parameters_kernel=None):
+    def evaluate(self, point, var_noise=None, mean=None, parameters_kernel=None, cache=True):
         """
         Evaluate the acquisition function at the point.
 
@@ -53,25 +54,29 @@ class SBO(object):
         :param var_noise: float
         :param mean: float
         :param parameters_kernel: np.array(l)
+        :param cache: (boolean) Use cached data and cache data if cache is True
 
         :return: float
         """
 
         vectors = self.bq.compute_posterior_parameters_kg(self.discretization, point,
                                                           var_noise=var_noise, mean=mean,
-                                                          parameters_kernel=parameters_kernel)
+                                                          parameters_kernel=parameters_kernel,
+                                                          cache=cache)
 
         a = vectors['a']
         b = vectors['b']
 
         a, b, keep = AffineBreakPointsPrep(a, b)
+
         keep1, c = AffineBreakPoints(a, b)
         keep1 = keep1.astype(np.int64)
 
         return self.hvoi(b, c, keep1)
 
 
-    def evaluate_gradient(self, point, var_noise=None, mean=None, parameters_kernel=None):
+    def evaluate_gradient(self, point, var_noise=None, mean=None, parameters_kernel=None,
+                          cache=True):
         """
         Evaluate the acquisition function at the point.
 
@@ -79,13 +84,15 @@ class SBO(object):
         :param var_noise: float
         :param mean: float
         :param parameters_kernel: np.array(l)
+        :param cache: (boolean) Use cached data and cache data if cache is True
 
         :return: np.array(n)
         """
 
         vectors = self.bq.compute_posterior_parameters_kg(self.discretization, point,
                                                           var_noise=var_noise, mean=mean,
-                                                          parameters_kernel=parameters_kernel)
+                                                          parameters_kernel=parameters_kernel,
+                                                          cache=cache)
 
         a = vectors['a']
         b = vectors['b']
@@ -106,7 +113,8 @@ class SBO(object):
 
         gradients = self.bq.gradient_vector_b(point, self.discretization[keep, :],
                                               var_noise=var_noise, mean=mean,
-                                              parameters_kernel=parameters_kernel)
+                                              parameters_kernel=parameters_kernel,
+                                              keep_indexes=keep)
 
         gradient = np.zeros(point.shape[1])
         for i in xrange(point.shape[1]):
@@ -192,7 +200,6 @@ class SBO(object):
             results = optimization.optimize(start)
         return results
 
-
     @staticmethod
     def hvoi (b,c,keep):
         M=len(keep)
@@ -203,3 +210,9 @@ class SBO(object):
             return np.sum(np.diff(b[keep])*tmp)
         else:
             return 0
+
+    def clean_cache(self):
+        """
+        Cleans the cache
+        """
+        self.bq.clean_cache()
