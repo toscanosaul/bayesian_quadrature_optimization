@@ -296,7 +296,7 @@ class BayesianQuadrature(object):
 
         return {
             'mean': mu_n,
-            'cov': cov_n,
+            'cov': cov_n[0, 0],
         }
 
     def gradient_posterior_mean(self, point, var_noise=None, mean=None, parameters_kernel=None,

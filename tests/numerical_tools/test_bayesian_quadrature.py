@@ -3,6 +3,8 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 
+from mock import patch, mock_open
+
 from copy import deepcopy
 
 from stratified_bayesian_optimization.models.gp_fitting_gaussian import (
@@ -25,6 +27,7 @@ from stratified_bayesian_optimization.lib.sample_functions import SampleFunction
 from stratified_bayesian_optimization.services.domain import (
     DomainService,
 )
+from stratified_bayesian_optimization.util.json_file import JSONFile
 
 
 class TestBayesianQuadrature(unittest.TestCase):
@@ -289,7 +292,27 @@ class TestBayesianQuadrature(unittest.TestCase):
         dh = [dh_]
         finite_diff = FiniteDifferences.forward_difference(
             lambda point:
-            gp.compute_posterior_parameters_kg(points, point.reshape((1, len(point))))['b'],
+            gp.compute_posterior_parameters_kg(
+                points, point.reshape((1, len(point))), cache=False)['b'],
             candidate_point[0, :], np.array(dh))
         npt.assert_almost_equal(finite_diff[0], value[:, 0], decimal=6)
         assert np.all(finite_diff[1] == value[:, 1])
+
+        value_2 = gp.gradient_vector_b(candidate_point, points, cache=True)
+        assert np.all(value_2 == value)
+
+    def test_sample_new_observations(self):
+        gp = self.gp_complete
+        point = np.array([[5.1]])
+        samples = gp.sample_new_observations(point, 2, random_seed=1)
+        assert len(samples) == 2
+
+    @patch('os.path.exists')
+    @patch('os.mkdir')
+    def test_write_debug_data(self, mock_mkdir, mock_exists):
+        mock_exists.return_value = False
+        with patch('__builtin__.open', mock_open()):
+            self.gp.write_debug_data("a", "b", "c")
+            JSONFile.write([], "a")
+        mock_mkdir.assert_called_with('data/debugging/a')
+
