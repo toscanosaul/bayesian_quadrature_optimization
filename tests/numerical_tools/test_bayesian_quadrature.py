@@ -15,10 +15,16 @@ from stratified_bayesian_optimization.lib.constant import (
     PRODUCT_KERNELS_SEPARABLE,
     UNIFORM_FINITE,
     TASKS,
+    QUADRATURES,
+    POSTERIOR_MEAN,
+    B_NEW,
 )
 from stratified_bayesian_optimization.numerical_tools.bayesian_quadrature import BayesianQuadrature
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
 from stratified_bayesian_optimization.lib.sample_functions import SampleFunctions
+from stratified_bayesian_optimization.services.domain import (
+    DomainService,
+)
 
 
 class TestBayesianQuadrature(unittest.TestCase):
@@ -46,6 +52,49 @@ class TestBayesianQuadrature(unittest.TestCase):
 
         self.gp_2 = BayesianQuadrature(self.complex_gp_2, [0], UNIFORM_FINITE, {TASKS: 2})
 
+        np.random.seed(5)
+        n_points = 100
+        points = np.linspace(0, 100, n_points)
+        points = points.reshape([n_points, 1])
+        tasks = np.random.randint(2, size=(n_points, 1))
+
+        add = [10, -10]
+        kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
+        function = SampleFunctions.sample_from_gp(points, kernel)
+
+        for i in xrange(n_points):
+            function[0, i] += add[tasks[i, 0]]
+        points = np.concatenate((points, tasks), axis=1)
+
+        function = function[0, :]
+
+        training_data = {
+            'evaluations': list(function),
+            'points': points,
+            "var_noise": [],
+        }
+
+        gaussian_p = GPFittingGaussian(
+            [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
+            training_data, [2, 1, 2], bounds_domain=[[0, 100]])
+        gaussian_p = gaussian_p.fit_gp_regression(random_seed=1314938)
+
+        self.gp_complete = BayesianQuadrature(gaussian_p, [0], UNIFORM_FINITE, {TASKS: 2})
+
+
+    def test_constructor(self):
+        gp = BayesianQuadrature(self.complex_gp, [0], UNIFORM_FINITE, {})
+        assert gp.parameters_distribution == {TASKS: 1}
+
+    def test_get_cached_data(self):
+        gp = BayesianQuadrature(self.complex_gp, [0], UNIFORM_FINITE, {})
+        gp.cache_quadratures['a'] = 1
+        gp.cache_posterior_mean['a'] = 2
+        gp.cache_quadrature_with_candidate['b'] = 3
+
+        assert gp._get_cached_data('a', QUADRATURES) == 1
+        assert gp._get_cached_data('a', POSTERIOR_MEAN) == 2
+        assert gp._get_cached_data('b', B_NEW) == 3
 
     def test_evaluate_quadrature_cross_cov(self):
         point = np.array([[1.0]])
@@ -101,37 +150,10 @@ class TestBayesianQuadrature(unittest.TestCase):
             a_n.append(val['mean'])
 
         npt.assert_almost_equal(np.mean(a_n), value['a'][2], decimal=1)
-        npt.assert_almost_equal(np.var(a_n),  value['b'][2], decimal=1)
+        npt.assert_almost_equal(np.var(a_n),  (value['b'][2]) ** 2, decimal=1)
 
     def test_gradient_posterior_mean(self):
-        np.random.seed(5)
-        n_points = 100
-        points = np.linspace(0, 100, n_points)
-        points = points.reshape([n_points, 1])
-        tasks = np.random.randint(2, size=(n_points, 1))
-
-        add = [10, -10]
-        kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
-        function = SampleFunctions.sample_from_gp(points, kernel)
-
-        for i in xrange(n_points):
-            function[0, i] += add[tasks[i, 0]]
-        points = np.concatenate((points, tasks), axis=1)
-
-        function = function[0, :]
-
-        training_data = {
-            'evaluations': list(function),
-            'points': points,
-            "var_noise": [],
-        }
-
-        gaussian_p = GPFittingGaussian(
-            [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
-            training_data, [2, 1, 2])
-        gaussian_p = gaussian_p.fit_gp_regression(random_seed=1314938)
-
-        gp = BayesianQuadrature(gaussian_p, [0], UNIFORM_FINITE, {TASKS: 2})
+        gp = self.gp_complete
 
         point = np.array([[80.5]])
 
@@ -163,8 +185,75 @@ class TestBayesianQuadrature(unittest.TestCase):
         npt.assert_almost_equal(finite_diff[0], gradient[0], decimal=5)
 
     def test_optimize_posterior_mean(self):
+        gp = self.gp_complete
+
+        random_seed = 10
+        sol = gp.optimize_posterior_mean(random_seed=random_seed)
+
+        n_points = 1000
+        points = np.linspace(0, 100, n_points)
+        points = points.reshape([n_points, 1])
+        evaluations = gp.compute_posterior_parameters(points, only_mean=True)['mean']
+
+        point = points[np.argmax(evaluations), 0]
+        index = np.argmax(evaluations)
+
+        assert sol['optimal_value'] >= evaluations[index]
+        npt.assert_almost_equal(sol['solution'], point, decimal=2)
+
+        bounds_x = [gp.gp.bounds[i] for i in xrange(len(gp.gp.bounds)) if i in
+                    gp.x_domain]
+        random_seed = 10
+        np.random.seed(10)
+        start = DomainService.get_points_domain(1, bounds_x,
+                                                type_bounds=len(gp.x_domain) * [0])
+        start = np.array(start[0])
+        gp.optimal_solutions.append({'solution': start})
+
+        sol_2 = gp.optimize_posterior_mean(random_seed=random_seed)
+        assert sol_2['optimal_value'] == sol['optimal_value']
+        assert sol['solution'] == sol_2['solution']
+
+    def test_evaluate_grad_quadrature_cross_cov_resp_candidate(self):
+        candidate_point = np.array([[51.5, 0]])
+        points = np.array([[51.3], [30.5], [95.1]])
+        parameters = self.gp_complete.gp.kernel.hypers_values_as_array
+        sol = self.gp_complete.evaluate_grad_quadrature_cross_cov_resp_candidate(
+            candidate_point, points, parameters
+        )
+
+        gp = self.gp_complete
+
+        dh = 0.000001
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda point:
+            gp.evaluate_quadrature_cross_cov(points[0:1, :], point.reshape((1, len(point))),
+                                             parameters),
+            candidate_point[0, :], np.array([dh]))
+        npt.assert_almost_equal(sol[0, 0], finite_diff[0][0], decimal=2)
+        assert sol[1, 0] == finite_diff[1]
+
+        dh = 0.000001
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda point:
+            gp.evaluate_quadrature_cross_cov(points[1:2, :], point.reshape((1, len(point))),
+                                             parameters),
+            candidate_point[0, :], np.array([dh]))
+        npt.assert_almost_equal(sol[0, 1], finite_diff[0][0], decimal=1)
+        assert sol[1, 1] == finite_diff[1]
+
+        dh = 0.000001
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda point:
+            gp.evaluate_quadrature_cross_cov(points[2:3, :], point.reshape((1, len(point))),
+                                             parameters),
+            candidate_point[0, :], np.array([dh]))
+        npt.assert_almost_equal(sol[0, 2], finite_diff[0][0], decimal=2)
+        assert sol[1, 2] == finite_diff[1]
+
+    def test_gradient_vector_b(self):
         np.random.seed(5)
-        n_points = 100
+        n_points = 10
         points = np.linspace(0, 100, n_points)
         points = points.reshape([n_points, 1])
         tasks = np.random.randint(2, size=(n_points, 1))
@@ -191,17 +280,16 @@ class TestBayesianQuadrature(unittest.TestCase):
         gaussian_p = gaussian_p.fit_gp_regression(random_seed=1314938)
 
         gp = BayesianQuadrature(gaussian_p, [0], UNIFORM_FINITE, {TASKS: 2})
+      #  gp = self.gp_complete
+        candidate_point = np.array([[84.0, 1]])
+        points = np.array([[99.5], [12.1], [70.2]])
+        value = gp.gradient_vector_b(candidate_point, points, cache=False)
 
-        random_seed = 10
-        sol = gp.optimize_posterior_mean(random_seed=random_seed)
-
-        n_points = 1000
-        points = np.linspace(0, 100, n_points)
-        points = points.reshape([n_points, 1])
-        evaluations = gp.compute_posterior_parameters(points, only_mean=True)['mean']
-
-        point = points[np.argmax(evaluations), 0]
-        index = np.argmax(evaluations)
-
-        assert sol['optimal_value'] >= evaluations[index]
-        npt.assert_almost_equal(sol['solution'], point, decimal=2)
+        dh_ = 0.0000001
+        dh = [dh_]
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda point:
+            gp.compute_posterior_parameters_kg(points, point.reshape((1, len(point))))['b'],
+            candidate_point[0, :], np.array(dh))
+        npt.assert_almost_equal(finite_diff[0], value[:, 0], decimal=6)
+        assert np.all(finite_diff[1] == value[:, 1])

@@ -68,7 +68,7 @@ def gradient_uniform_finite(f, point, index_points, domain_random, index_random,
     return gradient
 
 def gradient_uniform_finite_resp_candidate(f, candidate_point, index_points, domain_random,
-                                           points, parameters_kernel):
+                                           index_random, points, parameters_kernel):
     """
     Computes the gradient of the expectation of f(z, candidate_point) respect to candidate_point,
     where z=(point, x) for each point in points.
@@ -92,7 +92,8 @@ def gradient_uniform_finite_resp_candidate(f, candidate_point, index_points, dom
     for i in xrange(points.shape[0]):
         point = points[i : i+1, :]
         new_points[:, index_points] = np.repeat(point, domain_random.shape[0], axis=0)
+        new_points[:, index_random] = domain_random
         values = f(candidate_point, new_points, parameters_kernel)
-        gradients[:, i] = np.mean(values, axis=1)
+        gradients[:, i] = np.mean(values, axis=0)
 
     return gradients

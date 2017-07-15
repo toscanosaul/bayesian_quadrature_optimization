@@ -532,7 +532,8 @@ class GPFittingGaussian(object):
 
         chol = cholesky(cov,  max_tries=7)
 
-        self._updated_cached_data((var_noise, tuple(parameters_kernel)), (chol, cov), CHOL_COV)
+        if cache:
+            self._updated_cached_data((var_noise, tuple(parameters_kernel)), (chol, cov), CHOL_COV)
 
         return chol, cov
 
@@ -946,13 +947,17 @@ class GPFittingGaussian(object):
 
         y_unbiased = historical_evaluations - mean
 
-        cached_solve = self._get_cached_data((var_noise, tuple(parameters_kernel), mean),
-                                             SOL_CHOL_Y_UNBIASED, cache=cache)
+        if cache:
+            cached_solve = self._get_cached_data((var_noise, tuple(parameters_kernel), mean),
+                                                 SOL_CHOL_Y_UNBIASED, cache=cache)
+        else:
+            cached_solve = False
 
         if cached_solve is False:
             solve = cho_solve(chol, y_unbiased)
-            self._updated_cached_data((var_noise, tuple(parameters_kernel), mean), solve,
-                                      SOL_CHOL_Y_UNBIASED)
+            if cache:
+                self._updated_cached_data((var_noise, tuple(parameters_kernel), mean), solve,
+                                          SOL_CHOL_Y_UNBIASED)
         else:
             solve = cached_solve
 

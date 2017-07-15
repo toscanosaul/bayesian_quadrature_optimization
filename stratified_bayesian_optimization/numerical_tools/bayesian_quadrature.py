@@ -221,6 +221,7 @@ class BayesianQuadrature(object):
             'candidate_point': candidate_point,
             'points': points,
             'index_points': self.x_domain,
+            'index_random': self.w_domain,
             'parameters_kernel': parameters_kernel,
         }
 
@@ -408,7 +409,7 @@ class BayesianQuadrature(object):
         return results
 
     def compute_posterior_parameters_kg(self, points, candidate_point, var_noise=None, mean=None,
-                                        parameters_kernel=None):
+                                        parameters_kernel=None, cache=True):
         """
         Compute posterior parameters of the GP after integrating out the random parameters needed
         to compute the knowledge gradient (vectors "a" and "b" in the SBO paper).
@@ -418,6 +419,7 @@ class BayesianQuadrature(object):
         :param var_noise: float
         :param mean: float
         :param parameters_kernel: np.array(l)
+        :param cache: (boolean) Use cached data and cache data if cache is True
 
         :return: {
             'a': np.array(n),
@@ -435,22 +437,29 @@ class BayesianQuadrature(object):
             mean = self.gp.mean.value[0]
 
         chol_solve = self.gp._cholesky_solve_vectors_for_posterior(
-            var_noise, mean, parameters_kernel)
+            var_noise, mean, parameters_kernel, cache=cache)
         chol = chol_solve['chol']
         solve = chol_solve['solve']
 
         n = points.shape[0]
         m = self.gp.data['points'].shape[0]
 
-        b_new = self._get_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :])),
-                                      B_NEW)
+        if cache:
+            b_new = self._get_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :])),
+                                          B_NEW)
+        else:
+            b_new = None
+
         compute_b_new = False
         if b_new is None:
             compute_b_new = True
             b_new = np.zeros((n, 1))
 
         compute_vec_covs = False
-        vec_covs = self._get_cached_data((tuple(parameters_kernel, )), QUADRATURES)
+        if cache:
+            vec_covs = self._get_cached_data((tuple(parameters_kernel, )), QUADRATURES)
+        else:
+            vec_covs = None
 
         if vec_covs is None:
             compute_vec_covs = True
@@ -464,18 +473,23 @@ class BayesianQuadrature(object):
                 b_new[i, 0] = self.evaluate_quadrature_cross_cov(
                     points[i:i+1,:], candidate_point, parameters_kernel)
 
-        if compute_vec_covs:
-            self._updated_cached_data((tuple(parameters_kernel), ), vec_covs, QUADRATURES)
+        if cache:
+            if compute_vec_covs:
+                self._updated_cached_data((tuple(parameters_kernel), ), vec_covs, QUADRATURES)
 
-        if compute_b_new:
-            self._updated_cached_data((tuple(parameters_kernel), tuple(candidate_point[0,:])),
-                                      b_new, B_NEW)
+            if compute_b_new:
+                self._updated_cached_data((tuple(parameters_kernel), tuple(candidate_point[0,:])),
+                                          b_new, B_NEW)
 
-        mu_n = self._get_cached_data((tuple(parameters_kernel),), POSTERIOR_MEAN)
+        if cache:
+            mu_n = self._get_cached_data((tuple(parameters_kernel),), POSTERIOR_MEAN)
+        else:
+            mu_n = None
 
         if mu_n is None:
             mu_n = mean + np.dot(vec_covs, solve)
-            self._updated_cached_data((tuple(parameters_kernel),), mu_n, POSTERIOR_MEAN)
+            if cache:
+                self._updated_cached_data((tuple(parameters_kernel),), mu_n, POSTERIOR_MEAN)
 
         # TODO: CACHE SO WE DON'T COMPUTE MU_N ALL THE TIME
         cross_cov = self.gp.evaluate_cross_cov(candidate_point, self.gp.data['points'],
@@ -492,11 +506,11 @@ class BayesianQuadrature(object):
 
         return {
             'a': mu_n,
-            'b': (numerator ** 2) / denominator,
+            'b': numerator / np.sqrt(denominator)
         }
 
     def gradient_vector_b(self, candidate_point, points, var_noise=None, mean=None,
-                          parameters_kernel=None):
+                          parameters_kernel=None, cache=True):
         """
         Compute the gradient of the vector b (see SBO paper).
 
@@ -505,6 +519,7 @@ class BayesianQuadrature(object):
         :param var_noise: float
         :param mean: float
         :param parameters_kernel: np.array(l)
+        :param cache: (boolean) Use cached data and cache data if cache is True
 
         :return: np.array(nxm)
         """
@@ -522,7 +537,7 @@ class BayesianQuadrature(object):
 
         historical_points = self.gp.data['points']
 
-        gamma = self.gp.evaluate_cross_cov(candidate_point, historical_points, parameters_kernel)
+        gamma = self.gp.evaluate_cross_cov(historical_points, candidate_point, parameters_kernel)
         grad_gamma = self.gp.evaluate_grad_cross_cov_respect_point(candidate_point,
                                                                    historical_points,
                                                                    parameters_kernel)
@@ -531,20 +546,25 @@ class BayesianQuadrature(object):
                                                                             parameters_kernel)
 
         chol_solve = self.gp._cholesky_solve_vectors_for_posterior(
-            var_noise, mean, parameters_kernel)
+            var_noise, mean, parameters_kernel, cache=cache)
         chol = chol_solve['chol']
 
-        solve_1 = cho_solve(chol, gamma)
-        beta_1 = self.gp.evaluate_cov(candidate_point, parameters_kernel), \
+
+        solve_1 = cho_solve(chol, gamma[:, 0])
+
+        beta_1 = self.gp.evaluate_cov(candidate_point, parameters_kernel) - \
                  np.dot(gamma.transpose(), solve_1)
-        beta_1 **= (-0.5)
+
 
         n = points.shape[0]
         m = self.gp.data['points'].shape[0]
 
+        if cache:
+            b_new = self._get_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :])),
+                                          B_NEW)
+        else:
+            b_new = None
 
-        b_new = self._get_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :])),
-                                      B_NEW)
         compute_b_new = False
         if b_new is None:
             compute_b_new = True
@@ -552,7 +572,10 @@ class BayesianQuadrature(object):
 
         compute_vec_covs = False
 
-        vec_covs = self._get_cached_data((tuple(parameters_kernel), ), QUADRATURES)
+        if cache:
+            vec_covs = self._get_cached_data((tuple(parameters_kernel), ), QUADRATURES)
+        else:
+            vec_covs = None
 
         if vec_covs is None:
             compute_vec_covs = True
@@ -565,24 +588,29 @@ class BayesianQuadrature(object):
             if compute_b_new:
                 b_new[i, 0] = self.evaluate_quadrature_cross_cov(
                     points[i:i+1,:], candidate_point, parameters_kernel)
-        if compute_vec_covs:
-            self._updated_cached_data((tuple(parameters_kernel), ), vec_covs, QUADRATURES)
 
-        if compute_b_new:
-            self._updated_cached_data((tuple(parameters_kernel), tuple(candidate_point[0,:])),
-                                      b_new, B_NEW)
+        if cache:
+            if compute_vec_covs:
+                self._updated_cached_data((tuple(parameters_kernel), ), vec_covs, QUADRATURES)
+
+            if compute_b_new:
+                self._updated_cached_data((tuple(parameters_kernel), tuple(candidate_point[0,:])),
+                                          b_new, B_NEW)
 
         solve_2 = cho_solve(chol, vec_covs.transpose())
 
-        beta_2 = b_new - np.dot(vec_covs, solve_1)
+        beta_1 =  beta_1 ** (-0.5)
 
-        beta_3 = grad_b_new - np.dot(grad_gamma, solve_2)
+        beta_2 = b_new[:, 0] - np.dot(vec_covs, solve_1)
 
-        beta_4 = 2.0 * np.dot(grad_gamma, solve_1)
+        beta_3 = grad_b_new - np.dot(grad_gamma.transpose(), solve_2)
+
+        beta_4 = 2.0 * np.dot(grad_gamma.transpose(), solve_1)
+        beta_4 = beta_4.reshape((candidate_point.shape[1], 1))
 
         beta_5 = 0.0
 
-        gradients = beta_1 * beta_3 - 0.5 * (beta_1 ** 3) * beta_2 * (beta_5 - beta_4)
+        gradients = beta_1[0] * beta_3 - 0.5 * (beta_1[0] ** 3) * beta_2 * (beta_5 - beta_4)
 
         return gradients.transpose()
 

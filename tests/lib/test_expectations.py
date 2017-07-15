@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import unittest
+import numpy.testing as npt
 
 import numpy as np
 
@@ -9,6 +10,7 @@ from stratified_bayesian_optimization.models.gp_fitting_gaussian import (
 )
 from stratified_bayesian_optimization.lib.expectations import (
     gradient_uniform_finite,
+    gradient_uniform_finite_resp_candidate,
 )
 from stratified_bayesian_optimization.lib.finite_differences import FiniteDifferences
 from stratified_bayesian_optimization.lib.constant import (
@@ -50,3 +52,31 @@ class TestExpectations(unittest.TestCase):
         grad = grad.reshape(points_2.shape[0])
 
         assert np.all(grad == gradient)
+
+    def test_gradient_uniform_finite_resp_candidate(self):
+        gp = self.gp
+        f = self.gp.gp.evaluate_grad_cross_cov_respect_point
+        candidate_point = np.array([[40.0, 0]])
+        index_points = self.gp.x_domain
+        domain_random = self.gp.arguments_expectation['domain_random']
+        points = np.array([[39.0], [41.0]])
+        parameters_kernel = self.gp.gp.kernel.hypers_values_as_array
+        value = gradient_uniform_finite_resp_candidate(f, candidate_point, index_points,
+                                                       domain_random, self.gp.w_domain, points,
+                                                       parameters_kernel)
+        dh = 0.00001
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda point:
+            gp.evaluate_quadrature_cross_cov(points[0:1, :], point.reshape((1, len(point))),
+                                             parameters_kernel),
+            candidate_point[0, :], np.array([dh]))
+        npt.assert_almost_equal(value[0, 0], finite_diff[0])
+        assert value[1, 0] == finite_diff[1]
+
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda point:
+            gp.evaluate_quadrature_cross_cov(points[1:2, :], point.reshape((1, len(point))),
+                                             parameters_kernel),
+            candidate_point[0, :], np.array([dh]))
+        npt.assert_almost_equal(value[0, 1], finite_diff[0])
+        assert value[1, 1] == finite_diff[1]
