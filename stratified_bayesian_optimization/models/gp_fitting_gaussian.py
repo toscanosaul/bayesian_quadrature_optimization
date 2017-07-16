@@ -60,7 +60,7 @@ class GPFittingGaussian(object):
     def __init__(self, type_kernel, training_data, dimensions=None, bounds_domain=None,
                  kernel_values=None, mean_value=None, var_noise_value=None, thinning=0, n_burning=0,
                  max_steps_out=1, data=None, random_seed=None, type_bounds=None,
-                 training_name=None, problem_name=None):
+                 training_name=None, problem_name=None, name_model='gp_fitting_gaussian'):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL].
@@ -89,6 +89,7 @@ class GPFittingGaussian(object):
             entry, 1 if the bounds are all the finite options for that entry.
         :param training_name: (str)
         :param problem_name: (str)
+        :param name_model: (str)
         """
 
         if random_seed is not None:
@@ -100,7 +101,7 @@ class GPFittingGaussian(object):
         if type_bounds is None and bounds_domain is None:
             type_bounds = []
 
-        self.name_model = 'gp_fitting_gaussian'
+        self.name_model = name_model
         self.training_name = training_name
         self.problem_name = problem_name
 
@@ -849,7 +850,7 @@ class GPFittingGaussian(object):
     @classmethod
     def train(cls, type_kernel, dimensions, mle, training_data, bounds_domain, thinning=0,
               n_burning=0, max_steps_out=1, random_seed=None, type_bounds=None, training_name=None,
-              problem_name=None):
+              problem_name=None, kernel_values=None, mean_value=None, var_noise_value=None):
         """
         :param type_kernel: [(str)] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
@@ -869,6 +870,9 @@ class GPFittingGaussian(object):
             entry, 1 if the bounds are all the finite options for that entry.
         :param training_name: (str)
         :parma problem_name: (str)
+        :param kernel_values: [float], contains the default values of the parameters of the kernel
+        :param mean_value: [float], It contains the value of the mean parameter.
+        :param var_noise_value: [float], It contains the variance of the noise of the model
 
         :return: GPFittingGaussian
         """
@@ -880,14 +884,16 @@ class GPFittingGaussian(object):
             gp = cls(type_kernel, training_data, dimensions, bounds_domain=bounds_domain,
                      thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out,
                      type_bounds=type_bounds, random_seed=random_seed, training_name=training_name,
-                     problem_name=problem_name)
+                     problem_name=problem_name, kernel_values=kernel_values, mean_value=mean_value,
+                     var_noise_value=var_noise_value)
 
             return gp.fit_gp_regression()
 
         return cls(type_kernel, training_data, dimensions, bounds_domain=bounds_domain,
                    thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out,
                    type_bounds=type_bounds, random_seed=random_seed, training_name=training_name,
-                     problem_name=problem_name)
+                   problem_name=problem_name, kernel_values=kernel_values, mean_value=mean_value,
+                   var_noise_value=var_noise_value)
 
     def evaluate_cross_cov(self, points_1, points_2, parameters_kernel):
         """

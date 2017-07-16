@@ -4,7 +4,7 @@ import ujson
 from os import path
 
 from schematics.models import Model
-from schematics.types import IntType, StringType, BooleanType, FloatType
+from schematics.types import IntType, StringType, BooleanType, FloatType, BaseType
 from schematics.types.compound import ModelType, ListType, DictType
 
 from stratified_bayesian_optimization.lib.constant import (
@@ -41,14 +41,18 @@ class RunSpecEntity(Model):
     thinning = IntType(required=False)
     n_burning = IntType(required=False)
     max_steps_out = IntType(required=False)
-    training_data = DictType(StringType, required=False)
+    training_data = BaseType()
 
     x_domain = ListType(IntType, required=False)
     distribution = StringType(required=False)
-    parameters_distribution = DictType(StringType, required=False)
+    parameters_distribution = DictType(ListType(FloatType), required=False)
 
     minimize = BooleanType(required=True)
     n_iterations = IntType(required=True)
+
+    kernel_values = ListType(FloatType)
+    mean_value = ListType(FloatType)
+    var_noise_value = ListType(FloatType)
 
     @classmethod
     def from_json(cls, specfile):
@@ -109,6 +113,10 @@ class RunSpecEntity(Model):
         minimize = spec.get('minimize', False)
         n_iterations = spec.get('n_iterations', 5)
 
+        kernel_values = spec.get('kernel_values')
+        mean_value = spec.get('mean_value')
+        var_noise_value = spec.get('var_noise_value')
+
         entry.update({
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -138,6 +146,9 @@ class RunSpecEntity(Model):
             'parameters_distribution': parameters_distribution,
             'minimize': minimize,
             'n_iterations': n_iterations,
+            'kernel_values': kernel_values,
+            'mean_value': mean_value,
+            'var_noise_value': var_noise_value,
         })
 
         return cls(entry)
@@ -171,15 +182,19 @@ class MultipleSpecEntity(Model):
     thinnings = ListType(IntType, required=False)
     n_burnings = ListType(IntType, required=False)
     max_steps_outs = ListType(IntType, required=False)
-    training_datas = ListType(DictType(StringType), required=False)
+    training_datas = ListType(BaseType())
 
     # New parameters due Bayesian quadrature
     x_domains = ListType(ListType(IntType), required=False)
     distributions = ListType(StringType, required=False)
-    parameters_distributions = ListType(DictType(StringType), required=False)
+    parameters_distributions = ListType(ListType(FloatType), required=False)
 
     minimizes = ListType(BooleanType)
     n_iterationss = ListType(IntType)
+
+    kernel_valuess = ListType(ListType(FloatType))
+    mean_values = ListType(ListType(FloatType))
+    var_noise_values = ListType(ListType(FloatType))
 
     # TODO - Complete all the other needed params
 
@@ -247,6 +262,10 @@ class MultipleSpecEntity(Model):
         minimizes = spec.get('minimizes', n_specs * [False])
         n_iterationss = spec.get('n_iterationss', n_specs * [5])
 
+        kernel_valuess = spec.get('kernel_valuess')
+        mean_values = spec.get('mean_values')
+        var_noise_values = spec.get('var_noise_values')
+
         entry.update({
             'problem_names': problem_names,
             'dim_xs': dim_xs,
@@ -276,6 +295,9 @@ class MultipleSpecEntity(Model):
             'parameters_distributions': parameters_distributions,
             'n_iterationss': n_iterationss,
             'minimizes': minimizes,
+            'kernel_valuess': kernel_valuess,
+            'mean_values': mean_values,
+            'var_noise_values': var_noise_values,
         })
 
         return cls(entry)

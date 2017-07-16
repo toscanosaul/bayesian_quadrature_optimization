@@ -17,6 +17,9 @@ from stratified_bayesian_optimization.lib.constant import (
     TASKS_KERNEL_NAME,
     UNIFORM_FINITE,
 )
+from stratified_bayesian_optimization.kernels.matern52 import Matern52
+from stratified_bayesian_optimization.lib.sample_functions import SampleFunctions
+from stratified_bayesian_optimization.models.gp_fitting_gaussian import GPFittingGaussian
 
 
 class TestBGOService(unittest.TestCase):
@@ -58,6 +61,79 @@ class TestBGOService(unittest.TestCase):
         self.acquisition_function = None
         self.gp_model = None
 
+        ###Define other BGO object
+        np.random.seed(5)
+        n_points = 100
+        points = np.linspace(0, 100, n_points)
+        points = points.reshape([n_points, 1])
+        tasks = np.random.randint(2, size=(n_points, 1))
+
+        add = [10, -10]
+        kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
+        function = SampleFunctions.sample_from_gp(points, kernel)
+
+        for i in xrange(n_points):
+            function[0, i] += add[tasks[i, 0]]
+        points = np.concatenate((points, tasks), axis=1)
+        self.points = points
+
+        function = function[0, :]
+
+        points_ls = [list(points[i, :]) for i in xrange(n_points)]
+
+        training_data_med = {
+            'evaluations': list(function[0:5]),
+            'points': points_ls[0:5],
+            "var_noise": [],
+        }
+
+        training_data = {
+            'evaluations': list(function),
+            'points': points,
+            "var_noise": [],
+        }
+
+        gaussian_p = GPFittingGaussian(
+            [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
+            training_data, [2, 1, 2], bounds_domain=[[0, 100], [0, 1]], type_bounds=[0, 1])
+        gaussian_p = gaussian_p.fit_gp_regression(random_seed=1314938)
+
+        params = gaussian_p.get_value_parameters_model
+
+        dict = {
+            'problem_name': 'test_simulated_gp',
+            'dim_x': 1,
+            'choose_noise': True,
+            'bounds_domain_x': [BoundsEntity({'lower_bound': 0, 'upper_bound': 100})],
+            'number_points_each_dimension': [100],
+            'method_optimization': 'sbo',
+            'training_name': 'test_sbo',
+            'bounds_domain': [[0, 100], [0, 1]],
+            'n_training': 5,
+            'type_kernel': [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
+            'noise': False,
+            'random_seed': 5,
+            'parallel': False,
+            'type_bounds': [0, 1],
+            'dimensions': [2, 1, 2],
+            'name_model': 'gp_fitting_gaussian',
+            'mle': False,
+            'thinning': 0,
+            'n_burning': 0,
+            'max_steps_out': 1,
+            'training_data': training_data_med,
+            'x_domain': [0],
+            'distribution': UNIFORM_FINITE,
+            'parameters_distribution': None,
+            'minimize': False,
+            'n_iterations': 5,
+            'var_noise_value': [params[0]],
+            'mean_value': [params[1]],
+            'kernel_values': list(params[2:])
+        }
+
+        self.spec_2 = RunSpecEntity(dict)
+
         #self.bgo = BGO(self.acquisition_function, self.gp_model)
 
     def test_from_spec(self):
@@ -82,5 +158,11 @@ class TestBGOService(unittest.TestCase):
 
         print z
      #   assert z['optimal_solution'] == np.array([100.0])
+
+    def test_optimize_2(self):
+        bgo_2 = BGO.from_spec(self.spec_2)
+        sol = bgo_2.optimize(random_seed=1)
+        print "new"
+        print sol
         assert 1 == 0
 

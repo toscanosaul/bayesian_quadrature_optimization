@@ -46,7 +46,10 @@ class GPFittingService(object):
             'n_burning': spec.get('n_burning', 0),
             'max_steps_out': spec.get('max_steps_out', 1),
             'n_samples': spec.get('n_samples'),
-            'random_seed': spec.get('random_seed', DEFAULT_RANDOM_SEED)
+            'random_seed': spec.get('random_seed', DEFAULT_RANDOM_SEED),
+            'kernel_values': spec.get('kernel_values'),
+            'mean_value': spec.get('mean_value'),
+            'var_noise_value': spec.get('var_noise_value'),
         }
 
         return cls.get_gp(**entry)
@@ -79,7 +82,8 @@ class GPFittingService(object):
     def get_gp(cls, name_model, problem_name, type_kernel, dimensions, bounds_domain,
                type_bounds=None, n_training=0, noise=False, training_data=None, points=None,
                training_name=None, mle=True, thinning=0, n_burning=0, max_steps_out=1,
-               n_samples=None, random_seed=DEFAULT_RANDOM_SEED):
+               n_samples=None, random_seed=DEFAULT_RANDOM_SEED, kernel_values=None, mean_value=None,
+               var_noise_value=None):
         """
         Fetch a GP model from file if it exists, otherwise train a new model and save it locally.
 
@@ -109,6 +113,9 @@ class GPFittingService(object):
         :param n_samples: (int) If the objective is noisy, we take n_samples of the function to
             estimate its value.
         :param random_seed: (int)
+        :param kernel_values: [float], contains the default values of the parameters of the kernel
+        :param mean_value: [float], It contains the value of the mean parameter.
+        :param var_noise_value: [float], It contains the variance of the noise of the model
 
         :return: (GPFittingGaussian) - An instance of GPFittingGaussian
         """
@@ -147,7 +154,8 @@ class GPFittingService(object):
                                     thinning=thinning, n_burning=n_burning,
                                     max_steps_out=max_steps_out, random_seed=random_seed,
                                     type_bounds=type_bounds, training_name=training_name,
-                                    problem_name=problem_name)
+                                    problem_name=problem_name, kernel_values=kernel_values,
+                                    mean_value=mean_value, var_noise_value=var_noise_value)
 
         JSONFile.write(gp_model.serialize(), gp_path)
 

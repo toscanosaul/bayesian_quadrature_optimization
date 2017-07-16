@@ -19,7 +19,8 @@ class SpecService(object):
                            random_seed=DEFAULT_RANDOM_SEED, parallel=True,
                            name_model='gp_fitting_gaussian', mle=True, thinning=0, n_burning=0,
                            max_steps_out=1, training_data=None, x_domain=None, distribution=None,
-                           parameters_distribution=None, minimize=False, n_iterations=5):
+                           parameters_distribution=None, minimize=False, n_iterations=5,
+                           kernel_values=None, mean_value=None, var_noise_value=None):
         """
         Generate dict that represents run spec.
 
@@ -64,6 +65,9 @@ class SpecService(object):
         :param parameters_distribution: {str: float}, parameters of the distribution
         :param minimize: (boolean) Minimizes the function if minimize is True.
         :param n_iterations: (int)
+        :param kernel_values: [float], contains the default values of the parameters of the kernel
+        :param mean_value: [float], It contains the value of the mean parameter.
+        :param var_noise_value: [float], It contains the variance of the noise of the model
 
         :return: dict
         """
@@ -76,6 +80,15 @@ class SpecService(object):
 
         if type_bounds is None:
             type_bounds = [0] * len(bounds_domain)
+
+        if kernel_values is None:
+            kernel_values = []
+
+        if mean_value is None:
+            mean_value = []
+
+        if var_noise_value is None:
+            var_noise_value = []
 
         if points is None:
             points = []
@@ -121,6 +134,9 @@ class SpecService(object):
             'parameters_distribution': parameters_distribution,
             'minimize': minimize,
             'n_iterations': n_iterations,
+            'var_noise_value': var_noise_value,
+            'mean_value': mean_value,
+            'kernel_values': kernel_values,
         }
 
     # TODO - generate a list of runspecentities over different parameters
@@ -135,7 +151,8 @@ class SpecService(object):
                                     n_burnings=None, max_steps_outs=None, training_datas=None,
                                     x_domains=None, distributions=None,
                                     parameters_distributions=None, minimizes=None,
-                                    n_iterationss=None):
+                                    n_iterationss=None, kernel_valuess=None, mean_values=None,
+                                    var_noise_values=None):
         """
         Generate dict that represents multiple run specs
 
@@ -181,9 +198,21 @@ class SpecService(object):
         :param parameters_distributions: [{str: float}], parameters of the distributions
         :param minimizes: [boolean]
         :param n_iterationss: [int]
+        :param kernel_valuess: [float], contains the default values of the parameters of the kernel
+        :param mean_values: [[float]], It contains the value of the mean parameter.
+        :param var_noise_values: [[float]], It contains the variance of the noise of the model
 
         :return: dict
         """
+
+        if kernel_valuess is None:
+            kernel_valuess = [[]]
+
+        if mean_values is None:
+            mean_values = [[]]
+
+        if var_noise_values is None:
+            var_noise_values = [[]]
 
         if name_models is None:
             name_models = ['gp_fitting_gaussian']
@@ -317,6 +346,15 @@ class SpecService(object):
         if len(n_iterationss) != n_specs:
             n_iterationss = n_specs * n_iterationss
 
+        if len(kernel_valuess) != n_specs:
+            kernel_valuess = n_specs * kernel_valuess
+
+        if len(mean_values) != n_specs:
+            mean_values = n_specs * mean_values
+
+        if len(var_noise_values) != n_specs:
+            var_noise_values = n_specs * var_noise_values
+
         return {
             'problem_names': problem_names,
             'dim_xs': dim_xs,
@@ -346,6 +384,9 @@ class SpecService(object):
             'parameters_distributions': parameters_distributions,
             'n_iterationss': n_iterationss,
             'minimizes': minimizes,
+            'var_noise_values': var_noise_values,
+            'mean_values': mean_values,
+            'kernel_valuess': kernel_valuess,
         }
 
     @classmethod
@@ -438,19 +479,32 @@ class SpecService(object):
         if n_iterationss is None:
             n_iterationss = n_specs * [5]
 
+        kernel_valuess = multiple_spec.kernel_valuess
+        if kernel_valuess is None:
+            kernel_valuess = n_specs * [[]]
+
+        mean_values = multiple_spec.mean_values
+        if mean_values is None:
+            mean_values = n_specs * [[]]
+
+        var_noise_values = multiple_spec.var_noise_values
+        if var_noise_values is None:
+            var_noise_values = n_specs * [[]]
+
         run_spec = []
 
         for problem_name, method_optimization, dim_x, choose_noise, bounds_domain_x, \
             number_points_each_dimension, training_name, bounds_domain, type_bounds, n_training, \
             points, noise, n_samples, random_seed, parallel, type_kernel, dimensions, name_model, \
             mle, thinning, n_burning, max_steps_out, training_data, x_domain, distribution, \
-            parameters_distribution, minimize, n_iterations in \
+            parameters_distribution, minimize, n_iterations, kernel_values, mean_value, \
+            var_noise_value  in \
                 zip(problem_names, method_optimizations, dim_xs, choose_noises, bounds_domain_xs,
                     number_points_each_dimensions, training_names, bounds_domains, type_boundss,
                     n_trainings, pointss, noises, n_sampless, random_seeds, parallels, type_kernels,
                     dimensionss, name_models, mles, thinnings, n_burnings, max_steps_outs,
                     training_datas, x_domains, distributions, parameters_distributions, minimizes,
-                    n_iterationss):
+                    n_iterationss, kernel_valuess, mean_values, var_noise_values):
 
             parameters_entity = {
                 'problem_name': problem_name,
@@ -481,6 +535,9 @@ class SpecService(object):
                 'parameters_distribution': parameters_distribution,
                 'minimize': minimize,
                 'n_iterations': n_iterations,
+                'var_noise_value': var_noise_value,
+                'mean_value': mean_value,
+                'kernel_values': kernel_values,
             }
 
             run_spec.append(RunSpecEntity(parameters_entity))
