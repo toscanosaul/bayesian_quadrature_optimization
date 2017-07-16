@@ -71,6 +71,7 @@ class BayesianQuadrature(object):
         self.parameters_distribution = parameters_distribution
         self.dimension_domain = self.gp.dimension_domain
         self.x_domain = x_domain
+        # Indices of the w_domain
         self.w_domain = [i for i in range(self.gp.dimension_domain) if i not in x_domain]
         self.expectation = self._expectations_map[distribution]
         self.distribution = distribution
@@ -502,11 +503,13 @@ class BayesianQuadrature(object):
                                                    parameters_kernel)
 
         denominator = new_cross_cov - np.dot(cross_cov, solve_2)
-        denominator = denominator[0, 0]
+        denominator = np.clip(denominator[0, 0], 0, None)
+
+        b_value = numerator / np.sqrt(denominator)
 
         return {
             'a': mu_n,
-            'b': numerator / np.sqrt(denominator)
+            'b': b_value,
         }
 
     def gradient_vector_b(self, candidate_point, points, var_noise=None, mean=None,

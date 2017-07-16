@@ -16,6 +16,14 @@ from stratified_bayesian_optimization.services.domain import (
 )
 from stratified_bayesian_optimization.lib.optimization import Optimization
 from stratified_bayesian_optimization.lib.parallel import Parallel
+from stratified_bayesian_optimization.initializers.log import SBOLog
+from stratified_bayesian_optimization.lib.util import (
+    wrapper_optimization,
+    wrapper_objective_voi,
+    wrapper_gradient_voi,
+)
+
+logger = SBOLog(__name__)
 
 
 class SBO(object):
@@ -39,13 +47,6 @@ class SBO(object):
         if self.bq.distribution == UNIFORM_FINITE:
             self.opt_separing_domain = True
 
-        if self.bq.distribution == UNIFORM_FINITE:
-            bounds_x = [self.bounds_opt[i] for i in xrange(len(self.bounds_opt)) if i in
-                        self.bq.x_domain]
-            self.bounds_opt = bounds_x
-
-
-
     def evaluate(self, point, var_noise=None, mean=None, parameters_kernel=None, cache=True):
         """
         Evaluate the acquisition function at the point.
@@ -58,6 +59,9 @@ class SBO(object):
 
         :return: float
         """
+
+        if np.any(np.all((self.bq.gp.data['points'] - point[0, :]) == 0, axis=1)):
+            return 0.0
 
         vectors = self.bq.compute_posterior_parameters_kg(self.discretization, point,
                                                           var_noise=var_noise, mean=mean,
@@ -89,6 +93,9 @@ class SBO(object):
         :return: np.array(n)
         """
 
+        if np.any(np.all((self.bq.gp.data['points'] - point[0, :]) == 0, axis=1)):
+            return np.zeros(point.shape[1])
+
         vectors = self.bq.compute_posterior_parameters_kg(self.discretization, point,
                                                           var_noise=var_noise, mean=mean,
                                                           parameters_kernel=parameters_kernel,
@@ -113,7 +120,7 @@ class SBO(object):
 
         gradients = self.bq.gradient_vector_b(point, self.discretization[keep, :],
                                               var_noise=var_noise, mean=mean,
-                                              parameters_kernel=parameters_kernel,
+                                              parameters_kernel=parameters_kernel, cache=cache,
                                               keep_indexes=keep)
 
         gradient = np.zeros(point.shape[1])
@@ -122,82 +129,79 @@ class SBO(object):
 
         return gradient
 
-    def objective_voi(self, point, *args):
+    def objective_voi(self, point):
         """
         Evaluates the VOI at point.
         :param point: np.array(n)
-        :param args: additional part of point if needed. For example,
-            x = point, and args[0] is w, so the function is evaluated at (x, w)
         :return: float
         """
-        if self.opt_separing_domain:
-            point = np.concatenate((point, args[0]))
+
         point = point.reshape((1, len(point)))
         return self.evaluate(point)
 
-    def grad_obj_voi(self, point, *args):
+    def grad_obj_voi(self, point):
         """
         Evaluates the gradient of VOI at point.
         :param point: np.array(n)
-        :param args: additional part of point if needed
         :return: np.array(n)
         """
-        if self.opt_separing_domain:
-            point = np.concatenate((point, args[0]))
-        point = point.reshape((1, len(point)))
-        return self.evaluate_gradient(point)
 
-    def optimize(self, start=None, random_seed=None):
+        point = point.reshape((1, len(point)))
+        grad = self.evaluate_gradient(point)
+
+        return grad
+
+    def optimize(self, start=None, random_seed=None, parallel=True):
         """
         Optimize the VOI.
         :param start: np.array(n)
         :param random_seed: int
+        :param parallel: (boolean) For several tasks, it's run in paralle if it's True
 
         :return: dictionary with the results of the optimization.
         """
+
         if random_seed is not None:
             np.random.seed(random_seed)
 
         if start is None:
             start = DomainService.get_points_domain(1, self.bounds_opt,
-                                                    type_bounds=len(self.bounds_opt) * [0])
+                                                    type_bounds=self.bq.gp.type_bounds)
 
         bounds = [tuple(bound) for bound in self.bounds_opt]
 
-        objective_function = self.objective_voi
-        grad_function = self.grad_obj_voi
+        for i in self.bq.w_domain:
+            bounds[i] = (None, None)
+
+        optimization = Optimization(
+            LBFGS_NAME,
+            wrapper_objective_voi,
+            bounds,
+            wrapper_gradient_voi,
+            minimize=False)
 
         if self.opt_separing_domain:
-            objective_functions = {}
-            grad_functions = {}
-            optimizations = {}
-            parallel_functions = {}
-            for i, w_point in enumerate(self.domain_w):
-                f = lambda x: self.objective_voi(x, *(np.array(w_point),))
-                objective_functions[i] = f
+            start = np.array(start)[:, self.bq.x_domain]
+            starts = {}
 
-                grad_f = lambda x: self.grad_obj_voi(x, *(np.array(w_point),))
-                grad_functions[i] = grad_f
+            max_values = []
+            for i, w in enumerate(self.domain_w[0]):
+                starts[i] = np.concatenate((start[0, :], np.array([w])))
 
-                optimization = Optimization(
-                    LBFGS_NAME,
-                    objective_functions[i],
-                    bounds,
-                    objective_functions[i],
-                    minimize=False)
-                optimizations[i] = optimization
+            args = (False, None, parallel, optimization, self, )
+            opt_sol = Parallel.run_function_different_arguments_parallel(
+                wrapper_optimization, starts, *args)
 
-       #     new_gp_objects = Parallel.run_function_different_arguments_parallel(
-        #        wrapper_fit_gp_regression, gp_objects, all_success=False, **kwargs)
+            for i in xrange(len(self.domain_w[0])):
+                if opt_sol.get(i) is None:
+                    logger.info("It wasn't possible to optimize for task %d" % i)
+                    continue
+                max_values.append(opt_sol[i]['optimal_value'])
+            index_max = np.argmax(max_values)
+            results = opt_sol[index_max]
         else:
-            optimization = Optimization(
-                LBFGS_NAME,
-                objective_function,
-                bounds,
-                grad_function,
-                minimize=False)
-
             results = optimization.optimize(start)
+
         return results
 
     @staticmethod

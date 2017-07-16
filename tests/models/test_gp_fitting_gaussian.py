@@ -36,7 +36,8 @@ class TestGPFittingGaussian(unittest.TestCase):
             "var_noise": []}
         dimensions = [1]
 
-        self.gp = GPFittingGaussian(type_kernel, self.training_data, dimensions)
+        self.gp = GPFittingGaussian(type_kernel, self.training_data, dimensions,
+                                    bounds_domain=[[0, 100]])
 
         self.training_data_3 = {
             "evaluations": [42.2851784656, 72.3121248508, 1.0113231069, 30.9309246906,
@@ -45,14 +46,16 @@ class TestGPFittingGaussian(unittest.TestCase):
                 [42.2851784656], [72.3121248508], [1.0113231069], [30.9309246906], [15.5288331909]],
             "var_noise": [0.5, 0.8, 0.7, 0.9, 1.0]}
 
-        self.gp_3 = GPFittingGaussian(type_kernel, self.training_data_3, dimensions)
+        self.gp_3 = GPFittingGaussian(type_kernel, self.training_data_3, dimensions,
+                                      bounds_domain=[[0, 100]])
         self.training_data_simple = {
             "evaluations": [5],
             "points": [[5]],
             "var_noise": []}
         dimensions = [1]
 
-        self.simple_gp = GPFittingGaussian(type_kernel, self.training_data_simple, dimensions)
+        self.simple_gp = GPFittingGaussian(type_kernel, self.training_data_simple, dimensions,
+                                           bounds_domain=[[0, 100]])
 
         self.training_data_complex = {
             "evaluations": [1.0],
@@ -61,7 +64,7 @@ class TestGPFittingGaussian(unittest.TestCase):
 
         self.complex_gp = GPFittingGaussian(
             [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
-            self.training_data_complex, [2, 1, 1])
+            self.training_data_complex, [2, 1, 1], bounds_domain=[[0, 100], [0]])
 
         self.training_data_complex_2 = {
             "evaluations": [1.0, 2.0, 3.0],
@@ -70,7 +73,7 @@ class TestGPFittingGaussian(unittest.TestCase):
 
         self.complex_gp_2 = GPFittingGaussian(
             [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
-            self.training_data_complex_2, [3, 1, 2])
+            self.training_data_complex_2, [3, 1, 2], bounds_domain=[[0, 100], [0, 1]])
 
         self.new_point = np.array([[80.0]])
         self.evaluation = np.array([80.0])
@@ -80,7 +83,8 @@ class TestGPFittingGaussian(unittest.TestCase):
             "points": [[42.2851784656]],
             "var_noise": [0.0181073779]}
 
-        self.gp_noisy = GPFittingGaussian(type_kernel, self.training_data_noisy, dimensions)
+        self.gp_noisy = GPFittingGaussian(type_kernel, self.training_data_noisy, dimensions,
+                                          bounds_domain=[[0, 100]])
 
         np.random.seed(2)
         n_points = 50
@@ -101,14 +105,16 @@ class TestGPFittingGaussian(unittest.TestCase):
         self.gp_gaussian = GPFittingGaussian([SCALED_KERNEL, MATERN52_NAME], self.training_data_gp,
                                              [1])
 
-        self.gp_gaussian_2 = GPFittingGaussian([MATERN52_NAME], self.training_data_gp, [1])
+        self.gp_gaussian_2 = GPFittingGaussian([MATERN52_NAME], self.training_data_gp, [1],
+                                               bounds_domain=[[0, 100]])
 
         self.training_data_gp_2 = {
             "evaluations": list(evaluations - 10.0),
             "points": points,
             "var_noise": []}
         self.gp_gaussian_central = GPFittingGaussian([SCALED_KERNEL, MATERN52_NAME],
-                                                     self.training_data_gp_2, [1])
+                                                     self.training_data_gp_2, [1],
+                                                     bounds_domain=[[0, 100]])
 
     def test_add_points_evaluations(self):
 
@@ -183,7 +189,13 @@ class TestGPFittingGaussian(unittest.TestCase):
             "bounds_domain": [],
             'n_burning': 0,
             'max_steps_out': 1,
+            'bounds_domain': [[0, 100]],
+            'type_bounds': [0],
         }
+
+        gp = GPFittingGaussian([MATERN52_NAME], self.training_data, dimensions=[1])
+        dict = gp.serialize()
+        assert dict['bounds_domain'] == []
 
     def test_deserialize(self):
         params = {

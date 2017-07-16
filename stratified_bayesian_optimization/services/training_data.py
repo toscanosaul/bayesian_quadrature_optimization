@@ -124,12 +124,13 @@ class TrainingDataService(object):
             JSONFile.write(training_data, training_path)
             return training_data
 
-        kwargs = {'name_module': name_module, 'cls': cls, 'n_samples': n_samples}
+        kwargs = {'name_module': name_module, 'cls_': cls, 'n_samples': n_samples}
 
         arguments = convert_list_to_dictionary(points)
 
+
         training_points = Parallel.run_function_different_arguments_parallel(
-            wrapper_evaluate_objective_function, arguments, all_success=False, **kwargs)
+            wrapper_evaluate_objective_function, arguments, **kwargs)
 
         training_points = convert_dictionary_to_list(training_points)
 

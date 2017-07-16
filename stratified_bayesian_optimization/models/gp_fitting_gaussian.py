@@ -59,7 +59,7 @@ class GPFittingGaussian(object):
 
     def __init__(self, type_kernel, training_data, dimensions=None, bounds_domain=None,
                  kernel_values=None, mean_value=None, var_noise_value=None, thinning=0, n_burning=0,
-                 max_steps_out=1, data=None, random_seed=None):
+                 max_steps_out=1, data=None, random_seed=None, type_bounds=None):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL].
@@ -84,10 +84,18 @@ class GPFittingGaussian(object):
             to train the kernel, or different points. If its None, it's replaced by the
             traning_data.
         :param random_seed: int
+        :param type_bounds:  [0 or 1], 0 if the bounds are lower or upper bound of the respective
+            entry, 1 if the bounds are all the finite options for that entry.
         """
 
         if random_seed is not None:
             np.random.seed(random_seed)
+
+        if type_bounds is None and bounds_domain is not None:
+            type_bounds = len(bounds_domain) * [0]
+
+        if type_bounds is None and bounds_domain is None:
+            type_bounds = []
 
         self.type_kernel = type_kernel
         self.class_kernel = get_kernel_class(type_kernel[0])
@@ -96,6 +104,7 @@ class GPFittingGaussian(object):
         self.training_data_as_array = self.convert_from_list_to_numpy(training_data)
         self.dimension_domain = self.training_data_as_array['points'].shape[1]
         self.dimensions = dimensions
+        self.type_bounds = type_bounds
 
         if data is None:
             data = training_data
@@ -401,6 +410,7 @@ class GPFittingGaussian(object):
             'max_steps_out': self.max_steps_out,
             'data': self.convert_from_numpy_to_list(self.data),
             'bounds_domain': bounds,
+            'type_bounds': self.type_bounds,
         }
 
     @classmethod
@@ -819,7 +829,7 @@ class GPFittingGaussian(object):
 
     @classmethod
     def train(cls, type_kernel, dimensions, mle, training_data, bounds_domain, thinning=0,
-              n_burning=0, max_steps_out=1, random_seed=None):
+              n_burning=0, max_steps_out=1, random_seed=None, type_bounds=None):
         """
         :param type_kernel: [(str)] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
@@ -835,6 +845,8 @@ class GPFittingGaussian(object):
         :param max_steps_out: (int) Maximum number of steps out for the stepping out  or
                 doubling procedure in slice sampling.
         :param random_seed: int
+        :param type_bounds: [0 or 1], 0 if the bounds are lower or upper bound of the respective
+            entry, 1 if the bounds are all the finite options for that entry.
 
         :return: GPFittingGaussian
         """
@@ -844,12 +856,14 @@ class GPFittingGaussian(object):
                 np.random.seed(random_seed)
 
             gp = cls(type_kernel, training_data, dimensions, bounds_domain=bounds_domain,
-                     thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out)
+                     thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out,
+                     type_bounds=type_bounds, random_seed=random_seed)
 
             return gp.fit_gp_regression()
 
         return cls(type_kernel, training_data, dimensions, bounds_domain=bounds_domain,
-                   thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out)
+                   thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out,
+                   type_bounds=type_bounds, random_seed=random_seed)
 
     def evaluate_cross_cov(self, points_1, points_2, parameters_kernel):
         """

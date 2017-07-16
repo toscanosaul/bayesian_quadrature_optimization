@@ -62,7 +62,7 @@ class TestSBO(unittest.TestCase):
 
         gaussian_p = GPFittingGaussian(
             [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
-            training_data, [2, 1, 2], bounds_domain=[[0, 100], [0, 1]])
+            training_data, [2, 1, 2], bounds_domain=[[0, 100], [0, 1]], type_bounds=[0, 1])
         gaussian_p = gaussian_p.fit_gp_regression(random_seed=1314938)
 
         self.gp = BayesianQuadrature(gaussian_p, [0], UNIFORM_FINITE, {TASKS: 2})
@@ -97,11 +97,27 @@ class TestSBO(unittest.TestCase):
         }
         gaussian_p_simple = GPFittingGaussian(
             [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
-            training_data_simple, [2, 1, 2], bounds_domain=[[0, 100], [0, 1]])
+            training_data_simple, [2, 1, 2], bounds_domain=[[0, 100], [0, 1]], type_bounds=[0, 1])
         gaussian_p_simple.update_value_parameters(self.sbo.bq.gp.get_value_parameters_model)
         gp_simple = BayesianQuadrature(gaussian_p_simple, [0], UNIFORM_FINITE, {TASKS: 2})
 
         self.sbo_simple = SBO(gp_simple, np.array([[2]]))
+
+
+        training_data_med = {
+            'evaluations': list(function[0:5]),
+            'points': points[0:5, :],
+            "var_noise": [],
+        }
+        gaussian_p_med = GPFittingGaussian(
+            [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
+            training_data_med, [2, 1, 2], bounds_domain=[[0, 100], [0, 1]], type_bounds=[0, 1])
+        gaussian_p_med.update_value_parameters(self.sbo.bq.gp.get_value_parameters_model)
+        gp_med = BayesianQuadrature(gaussian_p_med, [0], UNIFORM_FINITE, {TASKS: 2})
+
+        self.sbo_med = SBO(gp_med, np.array(domain.discretization_domain_x))
+
+
 
     def test_evaluate(self):
         point = np.array([[52.5, 0]])
@@ -169,3 +185,10 @@ class TestSBO(unittest.TestCase):
         keep = [0]
         z = self.sbo.hvoi(b, c, keep)
         assert z == 0
+
+    def test_optimization(self):
+        val = self.sbo_med.optimize(random_seed=1, parallel=False)
+        # Benchmark numbers obtained after optimizing the function manually, i.e. plot the function
+        # and find the maximum.
+        npt.assert_almost_equal(2018.8827643498898, val['optimal_value'], decimal=3)
+        npt.assert_almost_equal([ 99.98636451, 0], val['solution'], decimal=4)

@@ -145,7 +145,8 @@ class GPFittingService(object):
 
         gp_model = model_type.train(type_kernel, dimensions, mle, training_data, bounds_domain,
                                     thinning=thinning, n_burning=n_burning,
-                                    max_steps_out=max_steps_out, random_seed=random_seed)
+                                    max_steps_out=max_steps_out, random_seed=random_seed,
+                                    type_bounds=type_bounds)
 
         JSONFile.write(gp_model.serialize(), gp_path)
 

@@ -24,6 +24,7 @@ class Optimization(object):
         self.function = function
         self.gradient = grad
         self.bounds = bounds
+        self.dim = len(self.bounds)
         self.minimize = minimize
 
     @staticmethod
@@ -37,10 +38,11 @@ class Optimization(object):
         if optimizer_name == LBFGS_NAME:
             return fmin_l_bfgs_b
 
-    def optimize(self, start):
+    def optimize(self, start, *args):
         """
 
         :param start: (np.array(n)) starting point of the optimization of the llh.
+        :param args: Arguments to pass to function and gradient.
 
         :return: {
             'solution': np.array(n),
@@ -51,11 +53,17 @@ class Optimization(object):
         }
         """
         if self.minimize:
-            opt = self.optimizer(self.function, start, fprime=self.gradient, bounds=self.bounds)
+            opt = self.optimizer(self.function, start, fprime=self.gradient, args=args,
+                                 bounds=self.bounds)
         else:
+            def f(x, *args):
+                return -1.0 * self.function(x, *args)
+            def grad(x, *args):
+                return -1.0 * self.gradient(x, *args)
             opt = self.optimizer(
-                lambda x: -1.0 * self.function(x), start,
-                fprime=lambda x: -1.0 * self.gradient(x),
+                f, start,
+                fprime=grad,
+                args=args,
                 bounds=self.bounds)
 
         return {

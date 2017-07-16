@@ -64,6 +64,7 @@ class TestGpFitting(unittest.TestCase):
             'bounds_domain': bounds,
             'n_burning': 0,
             'max_steps_out': 1,
+            'type_bounds': [0],
         }
 
         estimation = gp.compute_posterior_parameters(np.array([[1.4], [2.4], [0], [-9.9], [8.5],
@@ -72,6 +73,7 @@ class TestGpFitting(unittest.TestCase):
         points_2 = np.array([[1.4], [2.4], [0], [-9.9], [8.5], [points_[3]]]).reshape(6)
         npt.assert_almost_equal(estimation['mean'], points_2, decimal=4)
         npt.assert_almost_equal(estimation['cov'], np.zeros((6, 6)))
+
 
     def test_get_gp_cached(self):
         name_model = 'gp_fitting_gaussian'
@@ -99,6 +101,7 @@ class TestGpFitting(unittest.TestCase):
             'bounds_domain': bounds,
             'n_burning': 0,
             'max_steps_out': 1,
+            'type_bounds': [0],
         }
 
     @patch('os.path.exists')

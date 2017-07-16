@@ -89,10 +89,10 @@ def wrapper_fit_gp_regression(self, **kwargs):
     return self.fit_gp_regression(**kwargs)
 
 
-def wrapper_evaluate_objective_function(point, cls, name_module, n_samples):
+def wrapper_evaluate_objective_function(point, cls_, name_module, n_samples):
     """
     Wrapper of evaluate_function in training_data
-    :param cls: TrainingDataService
+    :param cls_: TrainingDataService
     :param name_module: (str) Name of the module of the problem
     :param point: [float]
     :param n_samples: int. If noise is true, we take n_samples of the function to estimate its
@@ -102,7 +102,7 @@ def wrapper_evaluate_objective_function(point, cls, name_module, n_samples):
 
     module = __import__(name_module, globals(), locals(), -1)
 
-    return cls.evaluate_function(module, point, n_samples)
+    return cls_.evaluate_function(module, point, n_samples)
 
 
 def get_number_parameters_kernel(kernel_name, dim):
@@ -279,3 +279,46 @@ def separate_vector(vector, indexes1):
     vector2 = vector[indexes2]
 
     return [vector1, vector2]
+
+
+def wrapper_optimization(start, *args):
+    """
+    Wrapper of optimization.optimize
+
+
+    :param start: np.array(n), starting point of the optimization
+    :param args: args[0] is an optimization instance, and args[1:] are arrguments to pass to
+        the objective function and its gradient.
+
+    :return: {
+        'solution': np.array(n),
+        'optimal_value': float,
+        'gradient': np.array(n),
+        'warnflag': int,
+        'task': str
+    }
+    """
+
+    return args[0].optimize(start, *args[1:])
+
+
+def wrapper_objective_voi(point, self):
+    """
+    Wrapper of objective_voi
+    :param self: instance of the acquisition function
+    :param point: np.array(n)
+
+    :return: float
+    """
+    return self.objective_voi(point)
+
+
+def wrapper_gradient_voi(point, self):
+    """
+    Wrapper of objective_voi (an acquisition function)
+    :param self: instance of the acquisition function
+    :param point: np.array(n)
+
+    :return: np.array(n)
+    """
+    return self.grad_obj_voi(point)
