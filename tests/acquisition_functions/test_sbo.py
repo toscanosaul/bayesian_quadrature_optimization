@@ -3,6 +3,8 @@ import unittest
 from mock import create_autospec
 import mock
 
+from doubles import expect
+
 import numpy as np
 import numpy.testing as npt
 
@@ -30,6 +32,7 @@ from stratified_bayesian_optimization.lib.finite_differences import FiniteDiffer
 from stratified_bayesian_optimization.lib.affine_break_points import (
     AffineBreakPoints,
 )
+from stratified_bayesian_optimization.lib.parallel import Parallel
 
 
 def simple_affine_break_points(a, b):
@@ -51,6 +54,7 @@ class TestSBO(unittest.TestCase):
         for i in xrange(n_points):
             function[0, i] += add[tasks[i, 0]]
         points = np.concatenate((points, tasks), axis=1)
+        self.points = points
 
         function = function[0, :]
 
@@ -118,7 +122,6 @@ class TestSBO(unittest.TestCase):
         self.sbo_med = SBO(gp_med, np.array(domain.discretization_domain_x))
 
 
-
     def test_evaluate(self):
         point = np.array([[52.5, 0]])
         value = self.sbo.evaluate(point)
@@ -154,6 +157,9 @@ class TestSBO(unittest.TestCase):
         std = np.std(max_values) / n_samples
         assert kg - 1.96 * std <= value <= kg + 1.96 * std
 
+        point = self.points[0:1, :]
+        assert self.sbo.evaluate(point) == 0
+
     def test_evaluate_gradient(self):
         candidate = np.array([[52.5, 0]])
         self.sbo.clean_cache()
@@ -165,6 +171,9 @@ class TestSBO(unittest.TestCase):
             np.array([52.5, 0]), np.array([dh]))
         npt.assert_almost_equal(finite_diff[1], grad[1], decimal=5)
         npt.assert_almost_equal(finite_diff[0], grad[0], decimal=2)
+
+        point = self.points[0:1, :]
+        assert np.all(self.sbo.evaluate_gradient(point) == [0, 0])
 
     def test_evaluate_gradient_keeping_one_point(self):
         candidate = np.array([[52.5, 0]])
@@ -192,3 +201,13 @@ class TestSBO(unittest.TestCase):
         # and find the maximum.
         npt.assert_almost_equal(2018.8827643498898, val['optimal_value'], decimal=3)
         npt.assert_almost_equal([ 99.98636451, 0], val['solution'], decimal=4)
+
+        self.sbo_med.opt_separing_domain = False
+        val = self.sbo_med.optimize(random_seed=1)
+        npt.assert_almost_equal([99.98636451, 0], val['solution'], decimal=4)
+        npt.assert_almost_equal(2018.8827643498898, val['optimal_value'], decimal=3)
+
+    def test_optimization_error(self):
+        expect(Parallel).run_function_different_arguments_parallel.and_return({0: None})
+        with self.assertRaises(Exception):
+            self.sbo_med.optimize(random_seed=1, parallel=False)

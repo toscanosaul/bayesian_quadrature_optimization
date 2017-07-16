@@ -197,10 +197,13 @@ class SBO(object):
                     logger.info("It wasn't possible to optimize for task %d" % i)
                     continue
                 max_values.append(opt_sol[i]['optimal_value'])
+
+            if len(max_values) == 0:
+                raise Exception("Optimization failed for all the tasks!")
             index_max = np.argmax(max_values)
             results = opt_sol[index_max]
         else:
-            results = optimization.optimize(start)
+            results = optimization.optimize(start, *(self, ))
 
         return results
 
