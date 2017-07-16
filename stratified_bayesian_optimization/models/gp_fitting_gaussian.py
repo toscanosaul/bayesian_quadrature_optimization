@@ -59,7 +59,8 @@ class GPFittingGaussian(object):
 
     def __init__(self, type_kernel, training_data, dimensions=None, bounds_domain=None,
                  kernel_values=None, mean_value=None, var_noise_value=None, thinning=0, n_burning=0,
-                 max_steps_out=1, data=None, random_seed=None, type_bounds=None):
+                 max_steps_out=1, data=None, random_seed=None, type_bounds=None,
+                 training_name=None, problem_name=None):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL].
@@ -86,6 +87,8 @@ class GPFittingGaussian(object):
         :param random_seed: int
         :param type_bounds:  [0 or 1], 0 if the bounds are lower or upper bound of the respective
             entry, 1 if the bounds are all the finite options for that entry.
+        :param training_name: (str)
+        :param problem_name: (str)
         """
 
         if random_seed is not None:
@@ -96,6 +99,10 @@ class GPFittingGaussian(object):
 
         if type_bounds is None and bounds_domain is None:
             type_bounds = []
+
+        self.name_model = 'gp_fitting_gaussian'
+        self.training_name = training_name
+        self.problem_name = problem_name
 
         self.type_kernel = type_kernel
         self.class_kernel = get_kernel_class(type_kernel[0])
@@ -318,6 +325,7 @@ class GPFittingGaussian(object):
         :param evaluation: np.array(k)
         :param var_noise_eval: np.array(k)
         """
+
         self.data['points'] = np.append(self.data['points'], point, axis=0)
         self.data['evaluations'] = np.append(self.data['evaluations'], evaluation)
 
@@ -398,6 +406,14 @@ class GPFittingGaussian(object):
         if self.bounds is None:
             bounds = []
 
+        training_name = self.training_name
+        if self.training_name is None:
+            training_name = ''
+
+        problem_name = self.problem_name
+        if self.problem_name is None:
+            problem_name = ''
+
         return {
             'type_kernel': self.type_kernel,
             'training_data': self.training_data,
@@ -411,6 +427,9 @@ class GPFittingGaussian(object):
             'data': self.convert_from_numpy_to_list(self.data),
             'bounds_domain': bounds,
             'type_bounds': self.type_bounds,
+            'name_model': self.name_model,
+            'training_name': training_name,
+            'problem_name': problem_name,
         }
 
     @classmethod
@@ -829,7 +848,8 @@ class GPFittingGaussian(object):
 
     @classmethod
     def train(cls, type_kernel, dimensions, mle, training_data, bounds_domain, thinning=0,
-              n_burning=0, max_steps_out=1, random_seed=None, type_bounds=None):
+              n_burning=0, max_steps_out=1, random_seed=None, type_bounds=None, training_name=None,
+              problem_name=None):
         """
         :param type_kernel: [(str)] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
@@ -847,6 +867,8 @@ class GPFittingGaussian(object):
         :param random_seed: int
         :param type_bounds: [0 or 1], 0 if the bounds are lower or upper bound of the respective
             entry, 1 if the bounds are all the finite options for that entry.
+        :param training_name: (str)
+        :parma problem_name: (str)
 
         :return: GPFittingGaussian
         """
@@ -857,13 +879,15 @@ class GPFittingGaussian(object):
 
             gp = cls(type_kernel, training_data, dimensions, bounds_domain=bounds_domain,
                      thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out,
-                     type_bounds=type_bounds, random_seed=random_seed)
+                     type_bounds=type_bounds, random_seed=random_seed, training_name=training_name,
+                     problem_name=problem_name)
 
             return gp.fit_gp_regression()
 
         return cls(type_kernel, training_data, dimensions, bounds_domain=bounds_domain,
                    thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out,
-                   type_bounds=type_bounds, random_seed=random_seed)
+                   type_bounds=type_bounds, random_seed=random_seed, training_name=training_name,
+                     problem_name=problem_name)
 
     def evaluate_cross_cov(self, points_1, points_2, parameters_kernel):
         """

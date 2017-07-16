@@ -88,9 +88,6 @@ class TestSBO(unittest.TestCase):
 
         domain = DomainService.from_dict(self.spec)
 
-        self.kernel = None
-        self.domain = create_autospec(DomainEntity)
-
         self.sbo = SBO(self.gp, np.array(domain.discretization_domain_x))
 
 

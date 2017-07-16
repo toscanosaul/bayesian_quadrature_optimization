@@ -9,15 +9,17 @@ from stratified_bayesian_optimization.services.gp_fitting import GPFittingServic
 from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.numerical_tools.bayesian_quadrature import BayesianQuadrature
 from stratified_bayesian_optimization.lib.constant import (
-    SBO,
+    SBO_METHOD,
 )
 from stratified_bayesian_optimization.entities.objective import Objective
+from stratified_bayesian_optimization.acquisition_functions.sbo import SBO
+from stratified_bayesian_optimization.services.training_data import TrainingDataService
 
 logger = SBOLog(__name__)
 
 
 class BGO(object):
-    _possible_optimization_methods = [SBO]
+    _possible_optimization_methods = [SBO_METHOD]
 
     @classmethod
     def from_spec(cls, spec):
@@ -32,40 +34,45 @@ class BGO(object):
 
         gp_model = GPFittingService.from_dict(spec)
         quadrature = None
+        acquisition_function = None
 
         method_optimization = spec.get('method_optimization')
+
+        domain = DomainService.from_dict(spec)
 
         if method_optimization not in cls._possible_optimization_methods:
             raise Exception("Incorrect BGO method")
 
-        if method_optimization == SBO:
+        if method_optimization == SBO_METHOD:
             x_domain = spec.get('x_domain')
             distribution = spec.get('distribution')
             parameters_distribution = spec.get('parameters_distribution')
             quadrature = BayesianQuadrature(gp_model, x_domain, distribution,
                                             parameters_distribution=parameters_distribution)
 
-        acquistion_function = None
+            acquisition_function = SBO(quadrature, np.array(domain.discretization_domain_x))
 
         problem_name = spec.get('problem_name')
         training_name = spec.get('training_name')
         random_seed = spec.get('random_seed')
-        n_training = spec.get('n_training')
         n_samples = spec.get('n_samples')
         noise = spec.get('noise')
         minimize = spec.get('minimize')
         n_iterations = spec.get('n_iterations')
         name_model = spec.get('name_model')
+        parallel = spec.get('parallel')
+        n_training = spec.get('n_training')
 
-        bgo = cls(acquistion_function, gp_model, n_iterations, problem_name, training_name,
+
+        bgo = cls(acquisition_function, gp_model, n_iterations, problem_name, training_name,
                   random_seed, n_training, name_model, method_optimization, minimize=minimize,
-                  n_samples=n_samples, noise=noise, quadrature=quadrature)
+                  n_samples=n_samples, noise=noise, quadrature=quadrature, parallel=parallel)
 
         return bgo
 
     def __init__(self, acquisition_function, gp_model, n_iterations, problem_name, training_name,
                  random_seed, n_training, name_model, method_optimization, minimize=False,
-                 n_samples=None, noise=False, quadrature=None):
+                 n_samples=None, noise=False, quadrature=None, parallel=True):
 
         self.acquisition_function = acquisition_function
         self.gp_model = gp_model
@@ -78,6 +85,10 @@ class BGO(object):
                                    noise)
         self.n_iterations = n_iterations
         self.minimize = minimize
+        self.parallel = parallel
+        self.n_training = n_training
+        self.random_seed = random_seed
+        self.n_samples = n_samples
 
     def optimize(self, random_seed=None):
         """
@@ -89,15 +100,47 @@ class BGO(object):
         if random_seed is not None:
             np.random.seed(random_seed)
 
-
-        if self.method_optimization == SBO:
+        if self.method_optimization == SBO_METHOD:
             model = self.quadrature
+
+        noise = None
 
         optimize_mean = model.optimize_posterior_mean(minimize=self.minimize)
         optimal_value = \
             self.objective.add_point(optimize_mean['solution'], optimize_mean['optimal_value'][0])
 
-        model.write_debug_data(self.problem_name, self.name_model, self.training_name)
+        model.write_debug_data(self.problem_name, self.name_model, self.training_name,
+                               self.n_training, self.random_seed)
+
+        for iteration in xrange(self.n_iterations):
+
+            new_point = self.acquisition_function.optimize(parallel=self.parallel)['solution']
+
+            self.acquisition_function.write_debug_data(self.problem_name, self.name_model,
+                                                       self.training_name, self.n_training,
+                                                       self.random_seed)
+            self.acquisition_function.clean_cache()
+
+            evaluation = TrainingDataService.evaluate_function(self.objective.module, new_point,
+                                                               self.n_samples)
+
+            if self.objective.noise:
+                noise = np.array([evaluation[1]])
+
+            self.gp_model.add_points_evaluations(new_point.reshape((1, len(new_point))),
+                                                 np.array([evaluation[0]]),
+                                                 var_noise_eval=noise)
+
+            GPFittingService.write_gp_model(self.gp_model)
+
+            optimize_mean = model.optimize_posterior_mean(minimize=self.minimize)
+            optimal_value = \
+                self.objective.add_point(optimize_mean['solution'],
+                                         optimize_mean['optimal_value'][0])
+
+            model.write_debug_data(self.problem_name, self.name_model, self.training_name,
+                                   self.n_training, self.random_seed)
+
         return {
             'optimal_solution': optimize_mean['solution'],
             'optimal_value': optimal_value,
@@ -116,7 +159,6 @@ class BGO(object):
         }
         """
         bgo = cls.from_spec(spec)
-        domain = DomainService.from_dict(spec)
 
         # WE CAN STILL ADD THE DOMAIN IF NEEDED FOR THE KG
         result = bgo.optimize()

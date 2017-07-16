@@ -146,8 +146,32 @@ class GPFittingService(object):
         gp_model = model_type.train(type_kernel, dimensions, mle, training_data, bounds_domain,
                                     thinning=thinning, n_burning=n_burning,
                                     max_steps_out=max_steps_out, random_seed=random_seed,
-                                    type_bounds=type_bounds)
+                                    type_bounds=type_bounds, training_name=training_name,
+                                    problem_name=problem_name)
 
         JSONFile.write(gp_model.serialize(), gp_path)
 
         return gp_model
+
+    @classmethod
+    def write_gp_model(cls, gp_model, name_model='gp_fitting_gaussian'):
+        """
+        Write the gp_model
+
+        :param gp_model: gp model instance
+        :param name_model: (str)
+        """
+        model_type = cls._model_map[name_model]
+
+
+        f_name = cls._get_filename(model_type, gp_model.problem_name, gp_model.type_kernel,
+                                   gp_model.training_name)
+
+        gp_dir = path.join(GP_DIR, gp_model.problem_name)
+
+        if not os.path.exists(gp_dir):
+            os.mkdir(gp_dir)
+
+        gp_path = path.join(gp_dir, f_name)
+
+        JSONFile.write(gp_model.serialize(), gp_path)
