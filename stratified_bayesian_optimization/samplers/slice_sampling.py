@@ -248,6 +248,7 @@ class SliceSampling(object):
         lower = upper - self.sigma
         llh = np.log(npr.rand()) + self.directional_log_prob(0.0, direction, point,
                                                              fixed_parameters, *args_log_prob)
+
         if self.step_out:
             upper, lower = self.find_x_interval(llh, lower, upper, direction, point,
                                                 fixed_parameters, *args_log_prob)

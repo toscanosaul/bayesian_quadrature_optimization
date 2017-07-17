@@ -228,6 +228,7 @@ class GPFittingGaussian(object):
 
         parameters_priors = parameters_kernel_from_list_to_dict(parameters_priors, self.type_kernel,
                                                                 self.dimensions)
+
         if self.kernel_values is None:
             self.kernel_values = list(
                 get_default_values_kernel(self.type_kernel, self.dimensions, **parameters_priors))
@@ -1073,7 +1074,6 @@ class GPFittingGaussian(object):
 
         :return: float
         """
-
         lp = 0.0
 
         parameters_model = self.get_parameters_model

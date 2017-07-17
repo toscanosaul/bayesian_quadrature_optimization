@@ -2,10 +2,10 @@
     "parameters_distribution":{
 
     },
-    "max_steps_out":1,
+    "max_steps_out":1000,
     "noise":false,
     "random_seed":5,
-    "n_burning":0,
+    "n_burning":100,
     "number_points_each_dimension":[
         6,
         6,
@@ -83,8 +83,8 @@
     "minimize":false,
     "debug":false,
     "mle":true,
-    "thinning":0,
-    "n_iterations":5,
+    "thinning":5,
+    "n_iterations":100,
     "points":[
 
     ],

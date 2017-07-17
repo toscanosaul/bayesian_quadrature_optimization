@@ -34,6 +34,10 @@ if __name__ == '__main__':
     mle = True
     distribution = UNIFORM_FINITE
     parallel = False
+    thinning = 5
+    n_burning = 100
+    max_steps_out = 1000
+    n_iterations = 100
 
     # var_noise_value = [1.00001785e-10]
     # mean_value = [-8.81677684e+00]
@@ -71,7 +75,9 @@ if __name__ == '__main__':
                                           n_training=n_training, random_seed=random_seed,
                                           type_bounds=type_bounds, x_domain=x_domain, mle=mle,
                                           number_points_each_dimension=number_points_each_dimension,
-                                          distribution=distribution, parallel=parallel)
+                                          distribution=distribution, parallel=parallel,
+                                          thinning=thinning, n_burning=n_burning,
+                                          max_steps_out=max_steps_out, n_iterations=n_iterations)
 
     print ujson.dumps(spec, indent=4)
 

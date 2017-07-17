@@ -145,8 +145,9 @@ class Matern52(AbstractKernel):
 
         kernel = cls.define_kernel_from_array(dimension, default_values)
 
+
         if bounds is not None:
-            diffs = [float(bound[1] - bound[0]) / 0.324 for bound in bounds]
+            diffs = [float(bound[1] - bound[0]) / 0.05 for bound in bounds]
             prior = UniformPrior(dimension, dimension * [SMALLEST_POSITIVE_NUMBER], diffs)
             bounds = [(SMALLEST_POSITIVE_NUMBER, diff) for diff in diffs]
         else:
