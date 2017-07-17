@@ -118,6 +118,15 @@ class GPFittingGaussian(object):
             data = training_data
         self.data = self.convert_from_list_to_numpy(data)
 
+        if mean_value == []:
+            mean_value = None
+
+        if kernel_values == []:
+            kernel_values = None
+
+        if var_noise_value == []:
+            var_noise_value = None
+
         self.kernel_values = kernel_values
         self.mean_value = mean_value
         self.var_noise_value = var_noise_value
@@ -293,7 +302,6 @@ class GPFittingGaussian(object):
             'var_noise_value': [float],
         }
         """
-
         if mean_value is None:
             mu = np.mean(self.training_data_as_array['evaluations'])
             mean_value = [mu]
