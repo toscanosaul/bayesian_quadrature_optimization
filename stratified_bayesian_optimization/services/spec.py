@@ -20,7 +20,8 @@ class SpecService(object):
                            name_model='gp_fitting_gaussian', mle=True, thinning=0, n_burning=0,
                            max_steps_out=1, training_data=None, x_domain=None, distribution=None,
                            parameters_distribution=None, minimize=False, n_iterations=5,
-                           kernel_values=None, mean_value=None, var_noise_value=None):
+                           kernel_values=None, mean_value=None, var_noise_value=None,
+                           debug=False):
         """
         Generate dict that represents run spec.
 
@@ -68,6 +69,7 @@ class SpecService(object):
         :param kernel_values: [float], contains the default values of the parameters of the kernel
         :param mean_value: [float], It contains the value of the mean parameter.
         :param var_noise_value: [float], It contains the variance of the noise of the model
+        :param debug: (boolean) If true, it generates the evaluations of the VOI and posterior mean.
 
         :return: dict
         """
@@ -105,6 +107,9 @@ class SpecService(object):
         if parameters_distribution is None:
             parameters_distribution = {}
 
+        if debug is None:
+            debug = False
+
         return {
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -137,6 +142,7 @@ class SpecService(object):
             'var_noise_value': var_noise_value,
             'mean_value': mean_value,
             'kernel_values': kernel_values,
+            'debug': debug,
         }
 
     # TODO - generate a list of runspecentities over different parameters

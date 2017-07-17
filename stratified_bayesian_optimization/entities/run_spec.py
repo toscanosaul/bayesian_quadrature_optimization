@@ -54,6 +54,9 @@ class RunSpecEntity(Model):
     mean_value = ListType(FloatType)
     var_noise_value = ListType(FloatType)
 
+    cache = BooleanType(required=False)
+    debug = BooleanType(required=False)
+
     @classmethod
     def from_json(cls, specfile):
         """
@@ -117,6 +120,9 @@ class RunSpecEntity(Model):
         mean_value = spec.get('mean_value')
         var_noise_value = spec.get('var_noise_value')
 
+        cache = spec.get('cache', True)
+        debug = spec.get('debug', False)
+
         entry.update({
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -149,6 +155,8 @@ class RunSpecEntity(Model):
             'kernel_values': kernel_values,
             'mean_value': mean_value,
             'var_noise_value': var_noise_value,
+            'cache': cache,
+            'debug': debug,
         })
 
         return cls(entry)

@@ -90,10 +90,13 @@ class BGO(object):
         self.random_seed = random_seed
         self.n_samples = n_samples
 
-    def optimize(self, random_seed=None):
+    def optimize(self, random_seed=None, start=None, debug=False):
         """
         Optimize objective over the domain.
         :param random_seed: int
+        :param start: (np.array(n)) starting point for the optimization of VOI
+        :param debug: (boolean) If true, saves evaluations of the VOI and posterior mean at each
+            iteration.
 
         :return: Objective
         """
@@ -112,13 +115,25 @@ class BGO(object):
         model.write_debug_data(self.problem_name, self.name_model, self.training_name,
                                self.n_training, self.random_seed)
 
+        if debug:
+            model.generate_evaluations(
+                self.problem_name, self.name_model, self.training_name, self.n_training,
+                self.random_seed, 0)
+
         for iteration in xrange(self.n_iterations):
 
-            new_point = self.acquisition_function.optimize(parallel=self.parallel)['solution']
+            new_point = self.acquisition_function.optimize(parallel=self.parallel,
+                                                           start=start)['solution']
 
             self.acquisition_function.write_debug_data(self.problem_name, self.name_model,
                                                        self.training_name, self.n_training,
                                                        self.random_seed)
+
+            if debug:
+                self.acquisition_function.generate_evaluations(
+                    self.problem_name, self.name_model, self.training_name, self.n_training,
+                    self.random_seed, iteration)
+
             self.acquisition_function.clean_cache()
 
             evaluation = TrainingDataService.evaluate_function(self.objective.module, new_point,
@@ -141,6 +156,11 @@ class BGO(object):
             model.write_debug_data(self.problem_name, self.name_model, self.training_name,
                                    self.n_training, self.random_seed)
 
+            if debug:
+                model.generate_evaluations(
+                    self.problem_name, self.name_model, self.training_name, self.n_training,
+                    self.random_seed, iteration + 1)
+
         return {
             'optimal_solution': optimize_mean['solution'],
             'optimal_value': optimal_value,
@@ -159,7 +179,8 @@ class BGO(object):
         }
         """
         bgo = cls.from_spec(spec)
+        debug = spec.get('debug')
 
         # WE CAN STILL ADD THE DOMAIN IF NEEDED FOR THE KG
-        result = bgo.optimize()
+        result = bgo.optimize(debug=debug)
         return result

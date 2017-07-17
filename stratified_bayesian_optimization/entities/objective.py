@@ -85,7 +85,8 @@ class Objective(object):
             'standard_deviation_evaluations': self.standard_deviation_evaluations,
         }
 
-    def evaluate_objective(self, module, point, n_samples=None):
+    @staticmethod
+    def evaluate_objective(module, point, n_samples=None):
         """
         Evalute the objective function.
 

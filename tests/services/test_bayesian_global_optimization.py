@@ -3,6 +3,10 @@ import unittest
 from mock import create_autospec
 from doubles import expect
 
+import numpy.testing as npt
+
+from copy import deepcopy
+
 import numpy as np
 
 from stratified_bayesian_optimization.services.bayesian_global_optimization import BGO
@@ -16,15 +20,33 @@ from stratified_bayesian_optimization.lib.constant import (
     PRODUCT_KERNELS_SEPARABLE,
     TASKS_KERNEL_NAME,
     UNIFORM_FINITE,
+    TASKS,
 )
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
 from stratified_bayesian_optimization.lib.sample_functions import SampleFunctions
 from stratified_bayesian_optimization.models.gp_fitting_gaussian import GPFittingGaussian
+from stratified_bayesian_optimization.numerical_tools.bayesian_quadrature import BayesianQuadrature
+from stratified_bayesian_optimization.acquisition_functions.sbo import SBO
 
 
 class TestBGOService(unittest.TestCase):
 
     def setUp(self):
+
+        self.bounds_domain_x = BoundsEntity({
+            'lower_bound': 0,
+            'upper_bound': 100,
+        })
+
+        spec_domain = {
+            'dim_x': 1,
+            'choose_noise': True,
+            'bounds_domain_x': [self.bounds_domain_x],
+            'number_points_each_dimension': [100],
+            'problem_name': 'a',
+        }
+
+        self.domain = DomainService.from_dict(spec_domain)
 
         dict = {
             'problem_name': 'test_problem_with_tasks',
@@ -87,6 +109,8 @@ class TestBGOService(unittest.TestCase):
             "var_noise": [],
         }
 
+        self.training_data = training_data_med
+
         training_data = {
             'evaluations': list(function),
             'points': points,
@@ -99,6 +123,7 @@ class TestBGOService(unittest.TestCase):
         gaussian_p = gaussian_p.fit_gp_regression(random_seed=1314938)
 
         params = gaussian_p.get_value_parameters_model
+        self.params = params
 
         dict = {
             'problem_name': 'test_simulated_gp',
@@ -126,10 +151,12 @@ class TestBGOService(unittest.TestCase):
             'distribution': UNIFORM_FINITE,
             'parameters_distribution': None,
             'minimize': False,
-            'n_iterations': 5,
+            'n_iterations': 50,
             'var_noise_value': [params[0]],
             'mean_value': [params[1]],
-            'kernel_values': list(params[2:])
+            'kernel_values': list(params[2:]),
+            'cache': False,
+            'debug': False,
         }
 
         self.spec_2 = RunSpecEntity(dict)
@@ -162,6 +189,27 @@ class TestBGOService(unittest.TestCase):
     def test_optimize_2(self):
         bgo_2 = BGO.from_spec(self.spec_2)
         sol = bgo_2.optimize(random_seed=1)
+
+        # test that after the first iterations the new points are added correctly
+        training_data = deepcopy(self.training_data)
+
+        training_data['points'] = np.concatenate((training_data['points'],
+                                                  np.array([[99.9863644153, 0]])), axis=0)
+        training_data['evaluations'] = np.concatenate((training_data['evaluations'],
+                                                       np.array([9.0335599603])))
+        gaussian_p_med = GPFittingGaussian(
+            [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
+            training_data, [2, 1, 2], bounds_domain=[[0, 100], [0, 1]], type_bounds=[0, 1])
+        gaussian_p_med.update_value_parameters(self.params)
+        gp_med = BayesianQuadrature(gaussian_p_med, [0], UNIFORM_FINITE, {TASKS: 2})
+        sbo = SBO(gp_med, np.array(self.domain.discretization_domain_x))
+
+        point = sbo.optimize(start=np.array([[10 ,0]]))
+
+        npt.assert_almost_equal(point['optimal_value'], 542.4598435381, decimal=4)
+        npt.assert_almost_equal(point['solution'], np.array([61.58743036, 0]))
+        print "with other way"
+        print point
         print "new"
         print sol
         assert 1 == 0

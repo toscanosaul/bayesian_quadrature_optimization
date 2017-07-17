@@ -55,7 +55,8 @@ class TrainingDataService(object):
     @classmethod
     def get_training_data(cls, problem_name, training_name, bounds_domain, n_training=5,
                           points=None, noise=False, n_samples=None,
-                          random_seed=DEFAULT_RANDOM_SEED, parallel=True, type_bounds=None):
+                          random_seed=DEFAULT_RANDOM_SEED, parallel=True, type_bounds=None,
+                          cache=True):
         """
 
         :param problem_name: str
@@ -72,6 +73,7 @@ class TrainingDataService(object):
         :param parallel: (boolean) Train in parallel if it's True.
         :param type_bounds: [0 or 1], 0 if the bounds are lower or upper bound of the respective
             entry, 1 if the bounds are all the finite options for that entry.
+        :param cache: (boolean) Try to get model from cache
         :return: {'points': [[float]], 'evaluations': [float], 'var_noise': [float] or None}
         """
 
@@ -96,7 +98,11 @@ class TrainingDataService(object):
 
         training_path = path.join(training_dir, file_name)
 
-        training_data = JSONFile.read(training_path)
+        if cache:
+            training_data = JSONFile.read(training_path)
+        else:
+            training_data = None
+
         if training_data is not None:
             return training_data
         np.random.seed(random_seed)
@@ -139,7 +145,8 @@ class TrainingDataService(object):
         if noise:
             training_data['var_noise'] = [value[1] for value in training_points]
 
-        JSONFile.write(training_data, training_path)
+        if cache:
+            JSONFile.write(training_data, training_path)
 
         return training_data
 

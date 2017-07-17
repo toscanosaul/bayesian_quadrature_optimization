@@ -50,6 +50,7 @@ class GPFittingService(object):
             'kernel_values': spec.get('kernel_values'),
             'mean_value': spec.get('mean_value'),
             'var_noise_value': spec.get('var_noise_value'),
+            'cache': spec.get('cache', True),
         }
 
         return cls.get_gp(**entry)
@@ -83,7 +84,7 @@ class GPFittingService(object):
                type_bounds=None, n_training=0, noise=False, training_data=None, points=None,
                training_name=None, mle=True, thinning=0, n_burning=0, max_steps_out=1,
                n_samples=None, random_seed=DEFAULT_RANDOM_SEED, kernel_values=None, mean_value=None,
-               var_noise_value=None):
+               var_noise_value=None, cache=True):
         """
         Fetch a GP model from file if it exists, otherwise train a new model and save it locally.
 
@@ -116,6 +117,7 @@ class GPFittingService(object):
         :param kernel_values: [float], contains the default values of the parameters of the kernel
         :param mean_value: [float], It contains the value of the mean parameter.
         :param var_noise_value: [float], It contains the variance of the noise of the model
+        :param cache: (boolean) Try to get model from cache
 
         :return: (GPFittingGaussian) - An instance of GPFittingGaussian
         """
@@ -133,7 +135,10 @@ class GPFittingService(object):
 
         gp_path = path.join(gp_dir, f_name)
 
-        data = JSONFile.read(gp_path)
+        if cache:
+            data = JSONFile.read(gp_path)
+        else:
+            data = None
 
         if data is not None:
             return model_type.deserialize(data)
@@ -146,7 +151,8 @@ class GPFittingService(object):
                                                                   noise=noise,
                                                                   n_samples=n_samples,
                                                                   random_seed=random_seed,
-                                                                  type_bounds=type_bounds)
+                                                                  type_bounds=type_bounds,
+                                                                  cache=cache)
 
         logger.info("Training %s" % model_type.__name__)
 

@@ -36,6 +36,11 @@ class SBO(object):
     _filename = 'opt_sbo_{model_type}_{problem_name}_{type_kernel}_{training_name}_' \
                 '{n_training}_{random_seed}.json'.format
 
+    _filename_voi_evaluations = '{iteration}_sbo_{model_type}_{problem_name}_' \
+                                '{type_kernel}_{training_name}_{n_training}_{random_seed}.' \
+                                'json'.format
+
+
     def __init__(self, bayesian_quadrature, discretization_domain=None):
         """
 
@@ -269,3 +274,63 @@ class SBO(object):
         debug_path = path.join(debug_dir, f_name)
 
         JSONFile.write(self.optimization_results, debug_path)
+
+    def generate_evaluations(self, problem_name, model_type, training_name, n_training,
+                             random_seed, iteration, n_points_by_dimension=None):
+        """
+        Generates evaluations of the posterior mean, and write them in the debug directory.
+
+        :param problem_name: (str)
+        :param model_type: (str)
+        :param training_name: (str)
+        :param n_training: (int)
+        :param random_seed: (int)
+        :param iteration: (int)
+        :param n_points_by_dimension: (int) Number of points by dimension
+
+        """
+
+        # TODO: extend to more than one dimension
+        bounds = self.bq.gp.bounds
+        n_points = n_points_by_dimension
+        if n_points is None:
+            n_points = (bounds[0][1] - bounds[0][0]) * 10
+
+        points = np.linspace(bounds[0][0], bounds[0][1], n_points)
+
+        values = {}
+
+        if self.bq.tasks:
+            for i in xrange(self.bq.n_tasks):
+                vals = []
+                for point in points:
+                    point_ = np.concatenate((np.array([point]), np.array([i])))
+                    point_ = point_.reshape((1, len(point_)))
+                    value = self.evaluate(point_,)
+                    vals.append(value)
+                values[i] = vals
+
+        if not os.path.exists(DEBUGGING_DIR):
+            os.mkdir(DEBUGGING_DIR)
+
+        debug_dir = path.join(DEBUGGING_DIR, problem_name)
+
+        if not os.path.exists(debug_dir):
+            os.mkdir(debug_dir)
+
+        kernel_name = ''
+        for kernel in self.bq.gp.type_kernel:
+            kernel_name += kernel + '_'
+        kernel_name = kernel_name[0: -1]
+
+        f_name = self._filename_voi_evaluations(iteration=iteration,
+                                                model_type=model_type,
+                                                problem_name=problem_name,
+                                                type_kernel=kernel_name,
+                                                training_name=training_name,
+                                                n_training=n_training,
+                                                random_seed=random_seed)
+
+        debug_path = path.join(debug_dir, f_name)
+
+        JSONFile.write({'points': points, 'evaluations': values}, debug_path)
