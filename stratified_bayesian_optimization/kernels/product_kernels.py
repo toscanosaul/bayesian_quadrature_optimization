@@ -128,7 +128,7 @@ class ProductKernels(AbstractKernel):
         :param dimension: [int] list with the dimensions of the kernel
         :param params: [np.array(k)] The first part are related to the parameters of the first
             kernel and so on.
-        :param args: [str] List with the names of the kernels.
+        :param args: ([str], ) List with the names of the kernels.
 
         :return: ProductKernels
         """

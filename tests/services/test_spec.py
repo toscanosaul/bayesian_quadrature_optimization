@@ -65,8 +65,11 @@ class TestSpecService(unittest.TestCase):
             'parameters_distribution': {},
             'minimize': False,
             'n_iterations': 5,
+            'debug': False,
+            'kernel_values': [],
+            'mean_value': [],
+            'var_noise_value': [],
         }
-
 
     def test_generate_dic_specs(self):
         specs = SpecService.generate_dict_multiple_spec(1, self.problem_names, self.dim_xs,
@@ -102,6 +105,9 @@ class TestSpecService(unittest.TestCase):
             'n_iterationss': [5],
             'parameters_distributions': [{}],
             'x_domains': [[]],
+            'kernel_valuess': [[]],
+            'mean_values': [[]],
+            'var_noise_values': [[]],
         }
 
         specs_ = SpecService.generate_dict_multiple_spec(2, ['toy', 'toy_2'], [1, 2],
@@ -138,6 +144,9 @@ class TestSpecService(unittest.TestCase):
             'n_iterationss': [5, 5],
             'parameters_distributions': [{}, {}],
             'x_domains': [[], []],
+            'kernel_valuess': [[], []],
+            'mean_values': [[], []],
+            'var_noise_values': [[], []],
         }
 
     def test_generate_specs(self):
@@ -153,7 +162,7 @@ class TestSpecService(unittest.TestCase):
             'type_boundss': [[0]],
             'n_trainings': [10],
             'type_kernels': [self.type_kernel],
-            'dimensionss': [self.dimensions]
+            'dimensionss': [self.dimensions],
         })
 
         specs = SpecService.generate_specs(1, multiple_spec)

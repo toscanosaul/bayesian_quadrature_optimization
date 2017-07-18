@@ -63,7 +63,7 @@ class TestUtilGPFitting(unittest.TestCase):
                                     bounds=[[-1, 2]])
 
         assert ProductKernels.compare_kernels(kernel, kernel_)
-        assert kernel.parameters[MATERN52_NAME][LENGTH_SCALE_NAME].prior.max == 9.25925925925926
+        assert kernel.parameters[MATERN52_NAME][LENGTH_SCALE_NAME].prior.max == 60.0
 
         compare = kernel.parameters[MATERN52_NAME][LENGTH_SCALE_NAME].prior.min
         assert compare == SMALLEST_POSITIVE_NUMBER

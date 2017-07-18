@@ -92,7 +92,7 @@ def wrapper_fit_gp_regression(self, **kwargs):
 def wrapper_evaluate_objective_function(point, cls_, name_module, n_samples):
     """
     Wrapper of evaluate_function in training_data
-    :param cls_: TrainingDataService
+    :param cls: TrainingDataService
     :param name_module: (str) Name of the module of the problem
     :param point: [float]
     :param n_samples: int. If noise is true, we take n_samples of the function to estimate its

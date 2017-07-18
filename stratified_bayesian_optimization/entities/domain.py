@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import numpy as np
+import itertools
 
 from schematics.exceptions import ModelValidationError
 from schematics.models import Model
@@ -82,19 +83,11 @@ class DomainEntity(Model):
         for bound, number_points in zip(bounds_domain, number_points_each_dimension):
             points.append(np.linspace(bound.lower_bound, bound.upper_bound, number_points))
 
-        grid = np.meshgrid(*points)
+        domain = []
+        for point in itertools.product(*points):
+            domain.append(list(point))
 
-        # TODO: GENERALIZE!!!!!!!!!!!!
-        domain = [[a, b, c, d] for a in points[0] for b in points[1] for c in points[2] for d in
-                  points[3]]
         return domain
-
-        discretization_domain = []
-        for point in zip(*points):
-            discretization_domain.append(list(point))
-
-        return discretization_domain
-
 
     @staticmethod
     def check_dimension_each_entry(list_elements, dimension):

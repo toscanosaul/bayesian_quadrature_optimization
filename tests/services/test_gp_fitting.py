@@ -65,6 +65,9 @@ class TestGpFitting(unittest.TestCase):
             'n_burning': 0,
             'max_steps_out': 1,
             'type_bounds': [0],
+            'name_model': 'gp_fitting_gaussian',
+            'problem_name': 'test_problem',
+            'training_name': 'default_training_data_30_points_rs_1',
         }
 
         estimation = gp.compute_posterior_parameters(np.array([[1.4], [2.4], [0], [-9.9], [8.5],
@@ -102,6 +105,9 @@ class TestGpFitting(unittest.TestCase):
             'n_burning': 0,
             'max_steps_out': 1,
             'type_bounds': [0],
+            'name_model': 'gp_fitting_gaussian',
+            'problem_name': 'test_problem',
+            'training_name': 'default_training_data_30_points_rs_1',
         }
 
     @patch('os.path.exists')

@@ -250,7 +250,7 @@ class TestMatern52(unittest.TestCase):
         assert kern3.dimension == 1
         assert kern3.dimension_parameters == 1
         assert kern3.length_scale.value == np.array([1])
-        assert kern3.length_scale.prior.max == [3.0864197530864197]
+        assert kern3.length_scale.prior.max == [20.0]
         assert kern3.length_scale.prior.min == [SMALLEST_POSITIVE_NUMBER]
 
     def test_compare_kernels(self):

@@ -30,6 +30,12 @@ class TestTasksKernel(unittest.TestCase):
         self.inputs = np.array([[0]])
         self.inputs_ = np.array([[0], [1]])
 
+        lower_triang = ParameterEntity('lower_triang', np.array([0.0, 0.0]), None)
+        self.task_same_cor = TasksKernel(2, lower_triang, same_correlation=True)
+
+        lower_triang = ParameterEntity('lower_triang', np.array([0.0]), None)
+        self.task_same_cor_1 = TasksKernel(1, lower_triang, same_correlation=True)
+
     def test_hypers(self):
         assert self.task_kernel.dimension_parameters == 1
         assert {'lower_triang': self.lower_triang} == self.task_kernel.hypers
@@ -56,6 +62,14 @@ class TestTasksKernel(unittest.TestCase):
         assert self.task_kernel.chol_base_cov_matrix == np.array([[np.exp(3.0)]])
         assert self.task_kernel.base_cov_matrix == np.array([[np.exp(6.0)]])
 
+        self.task_same_cor.compute_cov_matrix()
+        assert np.all(self.task_same_cor.chol_base_cov_matrix == np.array([[1.0, 1.0], [1.0, 1.0]]))
+        assert np.all(self.task_same_cor.base_cov_matrix == np.array([[1.0, 1.0], [1.0, 1.0]]))
+
+        self.task_same_cor_1.compute_cov_matrix()
+        assert self.task_same_cor_1.chol_base_cov_matrix == np.array([[1.0]])
+        assert self.task_same_cor_1.base_cov_matrix == np.array([[1.0]])
+
     def test_cov(self):
         expect(self.task_kernel).cross_cov.once().and_return(0)
         assert self.task_kernel.cov(self.inputs) == 0
@@ -74,6 +88,7 @@ class TestTasksKernel(unittest.TestCase):
 
         assert self.task_kernel.gradient_respect_parameters(self.inputs) == gradient
 
+
     def test_gradient_respect_parameters_finite_differences(self):
         dh = 0.00000001
         finite_diff = FiniteDifferences.forward_difference(
@@ -85,6 +100,28 @@ class TestTasksKernel(unittest.TestCase):
 
         for i in range(3):
             npt.assert_almost_equal(finite_diff[i], gradient[i],  decimal=4)
+
+        gradient = TasksKernel.evaluate_grad_defined_by_params_respect_params(
+            np.array([2.0, 3.0]), self.inputs_, 2, **{'same_correlation': True})
+
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda params: TasksKernel.evaluate_cov_defined_by_params(params, self.inputs_, 2,
+                                                                      **{'same_correlation': True}),
+            np.array([2.0, 3.0]), np.array([dh]))
+
+        for i in range(2):
+            npt.assert_almost_equal(finite_diff[i], gradient[i],  decimal=4)
+
+        gradient = TasksKernel.evaluate_grad_defined_by_params_respect_params(
+            np.array([2.0]), self.inputs, 1, **{'same_correlation': True})
+
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda params: TasksKernel.evaluate_cov_defined_by_params(params, self.inputs, 1,
+                                                                      **{'same_correlation': True}),
+            np.array([2.0]), np.array([dh]))
+
+        npt.assert_almost_equal(finite_diff[0], gradient[0],  decimal=4)
+
 
     def test_grad_respect_point(self):
         assert self.task_kernel.grad_respect_point(self.inputs, self.inputs) == np.array([[0]])
@@ -151,6 +188,27 @@ class TestTasksKernel(unittest.TestCase):
         assert kern.base_cov_matrix is None
         assert kern.chol_base_cov_matrix is None
 
+        kern_3 = TasksKernel.define_default_kernel(1, None, np.array([3]),
+                                                   **{'same_correlation': True})
+        assert kern_3.lower_triang.value == np.array([3])
+        assert kern_3.name == TASKS_KERNEL_NAME
+        assert kern_3.dimension == 1
+        assert kern_3.dimension_parameters == 1
+        assert kern_3.n_tasks == 1
+        assert kern_3.base_cov_matrix is None
+        assert kern_3.chol_base_cov_matrix is None
+
+        kern_3 = TasksKernel.define_default_kernel(2, None, np.array([3, 4]),
+                                                   **{'same_correlation': True})
+        assert np.all(kern_3.lower_triang.value == np.array([3, 4]))
+        assert kern_3.name == TASKS_KERNEL_NAME
+        assert kern_3.dimension == 1
+        assert kern_3.dimension_parameters == 2
+        assert kern_3.n_tasks == 2
+        assert kern_3.base_cov_matrix is None
+        assert kern_3.chol_base_cov_matrix is None
+
+
     def test_compare_kernels(self):
         kernel = TasksKernel.define_kernel_from_array(1, np.ones(1))
 
@@ -182,6 +240,10 @@ class TestTasksKernel(unittest.TestCase):
         kernel_.chol_base_cov_matrix = np.array([[1]])
         assert TasksKernel.compare_kernels(kernel, kernel_) is False
 
+        kernel_ = copy.deepcopy(kernel)
+        kernel_.same_correlation = True
+        assert TasksKernel.compare_kernels(kernel, kernel_) is False
+
     def test_define_prior_parameters(self):
         data = {
             'points': np.array([[0]]),
@@ -195,6 +257,18 @@ class TestTasksKernel(unittest.TestCase):
 
         assert result == {
             LOWER_TRIANG_NAME: [0.0, -9.2103403719761818, 0.0],
+        }
+
+        result = TasksKernel.define_prior_parameters(data, dimension, same_correlation=True)
+
+        assert result == {
+            LOWER_TRIANG_NAME: [0.0, 0.0],
+        }
+
+        result = TasksKernel.define_prior_parameters(data, 1, same_correlation=True)
+
+        assert result == {
+            LOWER_TRIANG_NAME: [0.0],
         }
 
     def test_evaluate_cross_cov_defined_by_params(self):

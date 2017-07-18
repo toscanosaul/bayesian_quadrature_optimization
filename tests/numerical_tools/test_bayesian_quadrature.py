@@ -202,7 +202,7 @@ class TestBayesianQuadrature(unittest.TestCase):
         index = np.argmax(evaluations)
 
         assert sol['optimal_value'] >= evaluations[index]
-        npt.assert_almost_equal(sol['solution'], point, decimal=2)
+        npt.assert_almost_equal(sol['solution'], point, decimal=1)
 
         bounds_x = [gp.gp.bounds[i] for i in xrange(len(gp.gp.bounds)) if i in
                     gp.x_domain]
@@ -295,7 +295,7 @@ class TestBayesianQuadrature(unittest.TestCase):
             gp.compute_posterior_parameters_kg(
                 points, point.reshape((1, len(point))), cache=False)['b'],
             candidate_point[0, :], np.array(dh))
-        npt.assert_almost_equal(finite_diff[0], value[:, 0], decimal=6)
+        npt.assert_almost_equal(finite_diff[0], value[:, 0], decimal=5)
         assert np.all(finite_diff[1] == value[:, 1])
 
         value_2 = gp.gradient_vector_b(candidate_point, points, cache=True)
@@ -312,7 +312,7 @@ class TestBayesianQuadrature(unittest.TestCase):
     def test_write_debug_data(self, mock_mkdir, mock_exists):
         mock_exists.return_value = False
         with patch('__builtin__.open', mock_open()):
-            self.gp.write_debug_data("a", "b", "c")
+            self.gp.write_debug_data("a", "b", "c", "d", "e")
             JSONFile.write([], "a")
         mock_mkdir.assert_called_with('data/debugging/a')
 

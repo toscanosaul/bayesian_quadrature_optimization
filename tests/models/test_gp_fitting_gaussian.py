@@ -191,6 +191,9 @@ class TestGPFittingGaussian(unittest.TestCase):
             'max_steps_out': 1,
             'bounds_domain': [[0, 100]],
             'type_bounds': [0],
+            'name_model': 'gp_fitting_gaussian',
+            'problem_name': '',
+            'training_name': '',
         }
 
         gp = GPFittingGaussian([MATERN52_NAME], self.training_data, dimensions=[1])
