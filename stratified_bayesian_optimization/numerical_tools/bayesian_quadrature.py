@@ -309,7 +309,8 @@ class BayesianQuadrature(object):
             point_dict = {}
             for i in xrange(n):
                 point_dict[i] = points[i:i+1, :]
-            args = (historical_points, parameters_kernel, self, )
+            args = (False, None, True, historical_points, parameters_kernel, self, )
+
             b_vector = Parallel.run_function_different_arguments_parallel(
                 wrapper_evaluate_quadrature_cross_cov, point_dict, *args)
 
