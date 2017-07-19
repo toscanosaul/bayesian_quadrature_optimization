@@ -10,6 +10,7 @@ from stratified_bayesian_optimization.lib.constant import (
     TASKS_KERNEL_NAME,
     LOWER_TRIANG_NAME,
     SMALLEST_POSITIVE_NUMBER,
+    SAME_CORRELATION,
 )
 from stratified_bayesian_optimization.lib.util import (
     get_number_parameters_kernel,
@@ -21,7 +22,7 @@ from stratified_bayesian_optimization.priors.multivariate_normal import Multivar
 
 class TasksKernel(AbstractKernel):
 
-    def __init__(self, n_tasks, lower_triang, same_correlation=False):
+    def __init__(self, n_tasks, lower_triang, same_correlation=False, **kernel_parameters):
         """
 
         :param n_tasks: (int) number of tasks
@@ -30,7 +31,8 @@ class TasksKernel(AbstractKernel):
             If same_correlation is True, then
         :param same_correlation: (boolena) If True, it uses the same correlation for all tasks.
             We then have two parameters in total: var(task_i, task_i) and cov(task_i, task_j).
-            In that case, the lower_triang consists of only the log(variance) and log(covariance).
+            In that case, the lower_triang consists of only the log(r) and log(covariance), where
+            variance = covariance * (n_tasks - 1) + r (this guarantees that the matrix is P.D.)
         """
 
         name = TASKS_KERNEL_NAME
@@ -126,14 +128,14 @@ class TasksKernel(AbstractKernel):
         """
         :param dimension: (int) number of tasks
         :param params: (np.array(k))
-        :param kwargs: {'same_correlation': boolean}
+        :param kwargs: {SAME_CORRELATION: boolean}
 
         :return: TasksKernel
         """
 
         lower_triang = ParameterEntity(LOWER_TRIANG_NAME, params, None)
 
-        same_correlation = kwargs.get('same_correlation', False)
+        same_correlation = kwargs.get(SAME_CORRELATION, False)
 
         return cls(dimension, lower_triang, same_correlation=same_correlation)
 
@@ -148,12 +150,12 @@ class TasksKernel(AbstractKernel):
         :param parameters_priors: {
                         LOWER_TRIANG_NAME: [float]
                     }
-        :param kwargs: {'same_correlation': boolean}
+        :param kwargs: {SAME_CORRELATION: boolean}
 
         :return: TasksKernel
         """
 
-        same_correlation = kwargs.get('same_correlation', False)
+        same_correlation = kwargs.get(SAME_CORRELATION, False)
 
         if not same_correlation:
             n_params = get_number_parameters_kernel([TASKS_KERNEL_NAME], [dimension])
@@ -194,6 +196,7 @@ class TasksKernel(AbstractKernel):
 
         if self.base_cov_matrix is not None:
             return
+
         if not self.same_correlation:
             count = 0
             L = np.zeros((self.n_tasks, self.n_tasks))
@@ -209,11 +212,14 @@ class TasksKernel(AbstractKernel):
             if self.n_tasks > 1:
                 value = self.lower_triang.value[1]
                 covM.fill(np.exp(value))
+
                 for i in xrange(self.n_tasks):
-                    covM[i, i] = np.exp(self.lower_triang.value[0])
+                    covM[i, i] = np.exp(self.lower_triang.value[0]) + np.exp(value) * \
+                                                                      (self.n_tasks - 1 )
             else:
-                covM[0, 0 ] = np.exp(self.lower_triang.value[0])
+                covM[0, 0] = np.exp(self.lower_triang.value[0])
             L = covM
+
 
         self.chol_base_cov_matrix = L
         self.base_cov_matrix = covM
@@ -301,11 +307,11 @@ class TasksKernel(AbstractKernel):
         :param params: (np.array(k))
         :param inputs: np.array(nx1)
         :param dimension: (int) number of tasks
-        :param kwargs: {'same_correlation': boolean}
+        :param kwargs: {SAME_CORRELATION: boolean}
 
         :return: cov(inputs) where the kernel is defined with params
         """
-        same_correlation = kwargs.get('same_correlation', False)
+        same_correlation = kwargs.get(SAME_CORRELATION, False)
         task_kernels = cls.define_kernel_from_array(dimension, params,
                                                     same_correlation=same_correlation)
         return task_kernels.cov(inputs)
@@ -319,11 +325,11 @@ class TasksKernel(AbstractKernel):
         :param inputs_1: np.array(nxm)
         :param inputs_2: np.array(kxm)
         :param dimension: (int) dimension of the domain of the kernel
-        :param kwargs: {'same_correlation': boolean}
+        :param kwargs: {SAME_CORRELATION: boolean}
 
         :return: (np.array(nxk)) cov(inputs_1, inputs_2) where the kernel is defined with params
         """
-        same_correlation = kwargs.get('same_correlation', False)
+        same_correlation = kwargs.get(SAME_CORRELATION, False)
         task_kernels = cls.define_kernel_from_array(dimension, params,
                                                     same_correlation=same_correlation)
 
@@ -337,12 +343,12 @@ class TasksKernel(AbstractKernel):
         :param params: (np.array(k))
         :param inputs: np.array(nx1)
         :param dimension: (int) number of tasks
-        :param kwargs: {'same_correlation': boolean}
+        :param kwargs: {SAME_CORRELATION: boolean}
         :return: {
             (int) i: (nxn), derivative respect to the ith parameter
         }
         """
-        same_correlation = kwargs.get('same_correlation', False)
+        same_correlation = kwargs.get(SAME_CORRELATION, False)
         task_kernels = cls.define_kernel_from_array(dimension, params,
                                                     same_correlation=same_correlation)
         gradient = task_kernels.gradient_respect_parameters(inputs)
@@ -406,14 +412,14 @@ class TasksKernel(AbstractKernel):
         if same_correlation:
             var = [cov_estimate[i, i] for i in xrange(dimension)]
             task_params = []
-            task_params.append(np.mean(var))
+            task_params.append(np.log ( max(np.mean(var), 0.1)))
 
             if dimension == 1:
                 return {LOWER_TRIANG_NAME: task_params}
 
             cov = [cov_estimate[i, j] for i in xrange(dimension) for j in xrange(dimension) if
                    i != j]
-            task_params.append(np.mean(cov))
+            task_params.append(np.log (max (np.mean(cov), 0.1)))
 
             return {LOWER_TRIANG_NAME: task_params}
 
@@ -525,14 +531,19 @@ class GradientTasksKernel(object):
                 count += i + 1
             return gradient
 
-        gradient[0] = chol_base_cov_matrix[0, 0] * np.identity(n_tasks)
+
+        gradient[0] = (chol_base_cov_matrix[0, 0]) * np.identity(n_tasks)
 
         if n_tasks == 1:
             return gradient
 
         gradient[1] = deepcopy(chol_base_cov_matrix)
 
+        value = chol_base_cov_matrix[0, 1]
+
+        gradient[0] = (chol_base_cov_matrix[0, 0] - value * (n_tasks - 1)) * np.identity(n_tasks)
+
         for i in xrange(n_tasks):
-            gradient[1][i, i] = 0.0
+            gradient[1][i, i] = value * (n_tasks - 1)
 
         return gradient

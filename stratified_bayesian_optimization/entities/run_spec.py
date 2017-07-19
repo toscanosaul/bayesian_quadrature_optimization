@@ -53,6 +53,7 @@ class RunSpecEntity(Model):
     kernel_values = ListType(FloatType)
     mean_value = ListType(FloatType)
     var_noise_value = ListType(FloatType)
+    same_correlation = BooleanType(required=False) # Used only for the task kernel
 
     cache = BooleanType(required=False)
     debug = BooleanType(required=False)
@@ -123,6 +124,8 @@ class RunSpecEntity(Model):
         cache = spec.get('cache', True)
         debug = spec.get('debug', False)
 
+        same_correlation = spec.get('same_correlation', False)
+
         entry.update({
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -157,6 +160,7 @@ class RunSpecEntity(Model):
             'var_noise_value': var_noise_value,
             'cache': cache,
             'debug': debug,
+            'same_correlation': same_correlation,
         })
 
         return cls(entry)

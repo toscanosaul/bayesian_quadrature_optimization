@@ -20,6 +20,7 @@ from stratified_bayesian_optimization.lib.constant import (
     SMALLEST_POSITIVE_NUMBER,
     SCALED_KERNEL,
     LBFGS_NAME,
+    SAME_CORRELATION,
 )
 from stratified_bayesian_optimization.lib.util_gp_fitting import (
     get_kernel_default,
@@ -60,7 +61,8 @@ class GPFittingGaussian(object):
     def __init__(self, type_kernel, training_data, dimensions=None, bounds_domain=None,
                  kernel_values=None, mean_value=None, var_noise_value=None, thinning=0, n_burning=0,
                  max_steps_out=1, data=None, random_seed=None, type_bounds=None,
-                 training_name=None, problem_name=None, name_model='gp_fitting_gaussian'):
+                 training_name=None, problem_name=None, name_model='gp_fitting_gaussian',
+                 **kernel_parameters):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL].
@@ -90,6 +92,9 @@ class GPFittingGaussian(object):
         :param training_name: (str)
         :param problem_name: (str)
         :param name_model: (str)
+        :param kernel_parameters: additional kernel parameters,
+            - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
+
         """
 
         if random_seed is not None:
@@ -106,6 +111,9 @@ class GPFittingGaussian(object):
         self.problem_name = problem_name
 
         self.type_kernel = type_kernel
+
+        self.additional_kernel_parameters = kernel_parameters
+
         self.class_kernel = get_kernel_class(type_kernel[0])
         self.bounds = bounds_domain
         self.training_data = training_data
@@ -222,7 +230,7 @@ class GPFittingGaussian(object):
         """
         prior_parameters_values = self.get_values_parameters_from_data(
             self.kernel_values, self.mean_value, self.var_noise_value, self.type_kernel,
-            self.dimensions)
+            self.dimensions, **self.additional_kernel_parameters)
 
         parameters_priors = prior_parameters_values['kernel_values']
 
@@ -232,6 +240,7 @@ class GPFittingGaussian(object):
         if self.kernel_values is None:
             self.kernel_values = list(
                 get_default_values_kernel(self.type_kernel, self.dimensions, **parameters_priors))
+
         if self.mean_value is None:
             self.mean_value = list(prior_parameters_values['mean_value'])
 
@@ -247,7 +256,8 @@ class GPFittingGaussian(object):
             bounds=[(SMALLEST_POSITIVE_NUMBER, None)])
 
         self.kernel = get_kernel_default(self.type_kernel, self.dimensions, self.bounds,
-                                         np.array(self.kernel_values), parameters_priors)
+                                         np.array(self.kernel_values), parameters_priors,
+                                         **self.additional_kernel_parameters)
 
         self.dimension_parameters = self.kernel.dimension_parameters + 2
 
@@ -259,10 +269,12 @@ class GPFittingGaussian(object):
 
             # I think that this is only useful for the product of kernels.
             self.number_parameters = [get_number_parameters_kernel(
-                self.type_kernel, self.dimensions)]
+                self.type_kernel, self.dimensions, **self.additional_kernel_parameters)]
             if len(self.dimensions) > 1:
                 for type_k, dim in zip(self.type_kernel[1:], self.dimensions[1:]):
-                    self.number_parameters.append(get_number_parameters_kernel([type_k], [dim]))
+                    self.number_parameters.append(
+                        get_number_parameters_kernel([type_k], [dim],
+                                                     **self.additional_kernel_parameters))
 
         self.length_scale_indexes = self.get_indexes_length_scale()
 
@@ -285,7 +297,7 @@ class GPFittingGaussian(object):
         return length_scale_indexes
 
     def get_values_parameters_from_data(self, kernel_values, mean_value, var_noise_value,
-                                        type_kernel, dimensions):
+                                        type_kernel, dimensions, **kernel_parameters):
         """
         Defines value of the parameters of the prior distributions of the model's parameters.
 
@@ -297,6 +309,8 @@ class GPFittingGaussian(object):
         :param dimensions: [int]. It has only the n_tasks for the task_kernels, and for the
             PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product, and
             the total dimension of the product_kernels_separable too in the first entry.
+        :param kernel_parameters: additional kernel parameters,
+            - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
         :return: {
             'kernel_values': [float],
             'mean_value': [float],
@@ -317,6 +331,7 @@ class GPFittingGaussian(object):
                 type_kernel,
                 dimensions,
                 sigma2=var_noise_value[0],
+                **kernel_parameters
             )
 
             kernel_values = get_default_values_kernel(type_kernel, dimensions,
@@ -424,6 +439,8 @@ class GPFittingGaussian(object):
         if self.problem_name is None:
             problem_name = ''
 
+        same_correlation = self.additional_kernel_parameters.get(SAME_CORRELATION, False)
+
         return {
             'type_kernel': self.type_kernel,
             'training_data': self.training_data,
@@ -440,6 +457,7 @@ class GPFittingGaussian(object):
             'name_model': self.name_model,
             'training_name': training_name,
             'problem_name': problem_name,
+            'same_correlation': same_correlation,
         }
 
     @classmethod
@@ -527,7 +545,7 @@ class GPFittingGaussian(object):
             cov = self.class_kernel.evaluate_cov_defined_by_params(
                 separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
                 inputs_dict,
-                self.dimensions[1:], self.type_kernel[1:])
+                self.dimensions[1:], self.type_kernel[1:], **self.additional_kernel_parameters)
         elif self.type_kernel[0] == SCALED_KERNEL:
             cov = self.class_kernel.evaluate_cov_defined_by_params(
                 parameters_kernel, points, self.dimensions[0],
@@ -535,7 +553,7 @@ class GPFittingGaussian(object):
             )
         else:
             cov = self.class_kernel.evaluate_cov_defined_by_params(
-                parameters_kernel, points, self.dimensions[0]
+                parameters_kernel, points, self.dimensions[0], **self.additional_kernel_parameters
             )
 
         return cov
@@ -624,14 +642,14 @@ class GPFittingGaussian(object):
             grad_cov = self.class_kernel.evaluate_grad_defined_by_params_respect_params(
                 separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
                 inputs_dict,
-                self.dimensions[1:], self.type_kernel[1:])
+                self.dimensions[1:], self.type_kernel[1:], **self.additional_kernel_parameters)
         elif self.type_kernel[0] == SCALED_KERNEL:
             grad_cov = self.class_kernel.evaluate_grad_defined_by_params_respect_params(
                 parameters_kernel, points, self.dimensions[0],
                 *([self.type_kernel[1]],))
         else:
             grad_cov = self.class_kernel.evaluate_grad_defined_by_params_respect_params(
-                parameters_kernel, points, self.dimensions[0])
+                parameters_kernel, points, self.dimensions[0], **self.additional_kernel_parameters)
 
         return grad_cov
 
@@ -859,7 +877,8 @@ class GPFittingGaussian(object):
     @classmethod
     def train(cls, type_kernel, dimensions, mle, training_data, bounds_domain, thinning=0,
               n_burning=0, max_steps_out=1, random_seed=None, type_bounds=None, training_name=None,
-              problem_name=None, kernel_values=None, mean_value=None, var_noise_value=None):
+              problem_name=None, kernel_values=None, mean_value=None, var_noise_value=None,
+              same_correlation=False):
         """
         :param type_kernel: [(str)] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
@@ -882,6 +901,8 @@ class GPFittingGaussian(object):
         :param kernel_values: [float], contains the default values of the parameters of the kernel
         :param mean_value: [float], It contains the value of the mean parameter.
         :param var_noise_value: [float], It contains the variance of the noise of the model
+        :param same_correlation: (boolean) If true, it uses the same correlations for the task
+            kernel.
 
         :return: GPFittingGaussian
         """
@@ -894,7 +915,7 @@ class GPFittingGaussian(object):
                      thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out,
                      type_bounds=type_bounds, random_seed=random_seed, training_name=training_name,
                      problem_name=problem_name, kernel_values=kernel_values, mean_value=mean_value,
-                     var_noise_value=var_noise_value)
+                     var_noise_value=var_noise_value, **{SAME_CORRELATION: same_correlation})
 
             return gp.fit_gp_regression()
 
@@ -902,7 +923,7 @@ class GPFittingGaussian(object):
                    thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out,
                    type_bounds=type_bounds, random_seed=random_seed, training_name=training_name,
                    problem_name=problem_name, kernel_values=kernel_values, mean_value=mean_value,
-                   var_noise_value=var_noise_value)
+                   var_noise_value=var_noise_value, **{SAME_CORRELATION: same_correlation})
 
     def evaluate_cross_cov(self, points_1, points_2, parameters_kernel):
         """
@@ -928,7 +949,7 @@ class GPFittingGaussian(object):
             cov = self.class_kernel.evaluate_cross_cov_defined_by_params(
                 separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
                 inputs_dict_1, inputs_dict_2,
-                self.dimensions[1:], self.type_kernel[1:])
+                self.dimensions[1:], self.type_kernel[1:], **self.additional_kernel_parameters)
         elif self.type_kernel[0] == SCALED_KERNEL:
             cov = self.class_kernel.evaluate_cross_cov_defined_by_params(
                 parameters_kernel, points_1, points_2, self.dimensions[0],
@@ -936,7 +957,8 @@ class GPFittingGaussian(object):
             )
         else:
             cov = self.class_kernel.evaluate_cross_cov_defined_by_params(
-                parameters_kernel, points_1, points_2, self.dimensions[0]
+                parameters_kernel, points_1, points_2, self.dimensions[0],
+                **self.additional_kernel_parameters
             )
 
         return cov
@@ -956,7 +978,7 @@ class GPFittingGaussian(object):
             grad = self.class_kernel.evaluate_grad_respect_point(
                 separate_numpy_arrays_in_lists(parameters_kernel, self.number_parameters[1]),
                 points_1, points_2,
-                self.dimensions[1:], self.type_kernel[1:])
+                self.dimensions[1:], self.type_kernel[1:], **self.additional_kernel_parameters)
         elif self.type_kernel[0] == SCALED_KERNEL:
             grad = self.class_kernel.evaluate_grad_respect_point(
                 parameters_kernel, points_1, points_2, self.dimensions[0],
@@ -964,7 +986,8 @@ class GPFittingGaussian(object):
             )
         else:
             grad = self.class_kernel.evaluate_grad_respect_point(
-                parameters_kernel, points_1, points_2, self.dimensions[0]
+                parameters_kernel, points_1, points_2, self.dimensions[0],
+                **self.additional_kernel_parameters
             )
 
         return grad

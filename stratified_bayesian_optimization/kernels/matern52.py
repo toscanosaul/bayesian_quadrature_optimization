@@ -20,7 +20,7 @@ from stratified_bayesian_optimization.priors.uniform import UniformPrior
 
 class Matern52(AbstractKernel):
 
-    def __init__(self, dimension, length_scale):
+    def __init__(self, dimension, length_scale, **kernel_parameters):
         """
         :param dimension: int
         :param length_scale: ParameterEntity
@@ -109,7 +109,7 @@ class Matern52(AbstractKernel):
         self.length_scale.set_value(params[0:self.dimension])
 
     @classmethod
-    def define_kernel_from_array(cls, dimension, params):
+    def define_kernel_from_array(cls, dimension, params, **kernel_parameters):
         """
         :param dimension: (int) dimension of the domain of the kernel
         :param params: (np.array(k)) The first part are the parameters for length_scale.
@@ -123,7 +123,7 @@ class Matern52(AbstractKernel):
 
     @classmethod
     def define_default_kernel(cls, dimension, bounds=None, default_values=None,
-                              parameters_priors=None):
+                              parameters_priors=None, **kernel_parameters):
         """
         :param dimension: (int) dimension of the domain of the kernel
         :param bounds: [[float, float]], lower bound and upper bound for each entry of the domain.
@@ -221,7 +221,7 @@ class Matern52(AbstractKernel):
         return matern52.grad_respect_point(point, inputs)
 
     @classmethod
-    def evaluate_cov_defined_by_params(cls, params, inputs, dimension):
+    def evaluate_cov_defined_by_params(cls, params, inputs, dimension, **kwargs):
         """
         Evaluate the covariance of the kernel defined by params.
 
@@ -234,7 +234,7 @@ class Matern52(AbstractKernel):
         return matern52.cov(inputs)
 
     @classmethod
-    def evaluate_grad_defined_by_params_respect_params(cls, params, inputs, dimension):
+    def evaluate_grad_defined_by_params_respect_params(cls, params, inputs, dimension, **kwargs):
         """
         Evaluate the gradient respect the parameters of the kernel defined by params.
 
@@ -254,7 +254,7 @@ class Matern52(AbstractKernel):
         return gradient
 
     @classmethod
-    def evaluate_cross_cov_defined_by_params(cls, params, inputs_1, inputs_2, dimension):
+    def evaluate_cross_cov_defined_by_params(cls, params, inputs_1, inputs_2, dimension, **kwargs):
         """
         Evaluate the covariance of the kernel defined by params.
 

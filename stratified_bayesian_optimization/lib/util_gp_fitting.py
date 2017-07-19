@@ -8,6 +8,7 @@ from stratified_bayesian_optimization.lib.constant import(
     SIGMA2_NAME,
     LENGTH_SCALE_NAME,
     LOWER_TRIANG_NAME,
+    SAME_CORRELATION,
 )
 from stratified_bayesian_optimization.kernels.scaled_kernel import ScaledKernel
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
@@ -19,7 +20,7 @@ from stratified_bayesian_optimization.lib.util import (
 
 
 def get_kernel_default(kernel_name, dimension, bounds=None, default_values=None,
-                       parameters_priors=None):
+                       parameters_priors=None, **kernel_parameters):
     """
     Returns a default kernel object associated to the kernel_name
     :param kernel_name: [str]
@@ -32,6 +33,8 @@ def get_kernel_default(kernel_name, dimension, bounds=None, default_values=None,
             LENGTH_SCALE_NAME: [float],
             LOWER_TRIANG_NAME: [float],
         }
+    :param kernel_parameters: additional kernel parameters,
+        - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
 
     :return: kernel object
     """
@@ -47,7 +50,7 @@ def get_kernel_default(kernel_name, dimension, bounds=None, default_values=None,
 
     if kernel_name[0] == TASKS_KERNEL_NAME:
         return TasksKernel.define_default_kernel(dimension[0], bounds, default_values,
-                                                 parameters_priors)
+                                                 parameters_priors, **kernel_parameters)
 
     if kernel_name[0] == PRODUCT_KERNELS_SEPARABLE:
         values = []
@@ -55,7 +58,7 @@ def get_kernel_default(kernel_name, dimension, bounds=None, default_values=None,
         bounds_ = []
         cont_b = 0
         for name, dim in zip(kernel_name[1:], dimension[1:]):
-            n_params = get_number_parameters_kernel([name], [dim])
+            n_params = get_number_parameters_kernel([name], [dim], **kernel_parameters)
             if default_values is not None:
                 value_kernel = default_values[cont: cont + n_params]
             else:
@@ -75,7 +78,8 @@ def get_kernel_default(kernel_name, dimension, bounds=None, default_values=None,
             bounds = bounds_
 
         return ProductKernels.define_default_kernel(dimension[1:], bounds, values,
-                                                    parameters_priors, kernel_name[1:])
+                                                    parameters_priors, kernel_name[1:],
+                                                    **kernel_parameters)
 
 
 def get_kernel_class(kernel_name):
@@ -136,7 +140,8 @@ def wrapper_log_prob(vector, self):
     return self.log_prob_parameters(vector)
 
 
-def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2=None):
+def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2=None,
+                                       **kernel_parameters):
     """
     Defines value of the parameters of the prior distributions of the kernel's parameters.
 
@@ -147,6 +152,8 @@ def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2=Non
             PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product, and
             the total dimension of the product_kernels_separable too in the first entry.
     :param: sigma2: float
+    :param kernel_parameters: additional kernel parameters,
+        - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
     :return: {
         SIGMA2_NAME: float,
         LENGTH_SCALE_NAME: [float],
@@ -165,6 +172,7 @@ def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2=Non
     index = -1
 
     if TASKS_KERNEL_NAME in type_kernel:
+        same_correlation = kernel_parameters.get(SAME_CORRELATION, False)
         index = type_kernel.index(TASKS_KERNEL_NAME)
         index_tasks = 0
         for i in xrange(1, index):
@@ -173,7 +181,8 @@ def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2=Non
         tasks_index = data['points'][:, index_tasks]
         task_data = data.copy()
         task_data['points'] = tasks_index.reshape((len(tasks_index), 1))
-        task_parameters = TasksKernel.define_prior_parameters(task_data, n_tasks)
+        task_parameters = TasksKernel.define_prior_parameters(task_data, n_tasks,
+                                                              same_correlation=same_correlation)
         parameters_priors[LOWER_TRIANG_NAME] = task_parameters[LOWER_TRIANG_NAME]
 
     if MATERN52_NAME in type_kernel:

@@ -51,6 +51,7 @@ class GPFittingService(object):
             'mean_value': spec.get('mean_value'),
             'var_noise_value': spec.get('var_noise_value'),
             'cache': spec.get('cache', True),
+            'same_correlation': spec.get('same_correlation', False),
         }
 
         return cls.get_gp(**entry)
@@ -84,7 +85,7 @@ class GPFittingService(object):
                type_bounds=None, n_training=0, noise=False, training_data=None, points=None,
                training_name=None, mle=True, thinning=0, n_burning=0, max_steps_out=1,
                n_samples=None, random_seed=DEFAULT_RANDOM_SEED, kernel_values=None, mean_value=None,
-               var_noise_value=None, cache=True):
+               var_noise_value=None, cache=True, same_correlation=False):
         """
         Fetch a GP model from file if it exists, otherwise train a new model and save it locally.
 
@@ -118,6 +119,8 @@ class GPFittingService(object):
         :param mean_value: [float], It contains the value of the mean parameter.
         :param var_noise_value: [float], It contains the variance of the noise of the model
         :param cache: (boolean) Try to get model from cache
+        :param same_correlation: (boolean) If true, it uses the same correlations for the task
+            kernel.
 
         :return: (GPFittingGaussian) - An instance of GPFittingGaussian
         """
@@ -161,7 +164,8 @@ class GPFittingService(object):
                                     max_steps_out=max_steps_out, random_seed=random_seed,
                                     type_bounds=type_bounds, training_name=training_name,
                                     problem_name=problem_name, kernel_values=kernel_values,
-                                    mean_value=mean_value, var_noise_value=var_noise_value)
+                                    mean_value=mean_value, var_noise_value=var_noise_value,
+                                    same_correlation=same_correlation)
 
         JSONFile.write(gp_model.serialize(), gp_path)
 

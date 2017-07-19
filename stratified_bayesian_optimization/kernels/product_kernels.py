@@ -123,12 +123,14 @@ class ProductKernels(AbstractKernel):
         return names
 
     @classmethod
-    def define_kernel_from_array(cls, dimension, params, *args):
+    def define_kernel_from_array(cls, dimension, params, *args, **kernel_parameters):
         """
         :param dimension: [int] list with the dimensions of the kernel
         :param params: [np.array(k)] The first part are related to the parameters of the first
             kernel and so on.
         :param args: ([str], ) List with the names of the kernels.
+        :param kernel_parameters: additional kernel parameters,
+            - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
 
         :return: ProductKernels
         """
@@ -137,13 +139,13 @@ class ProductKernels(AbstractKernel):
 
         for name, dim, param in zip(args[0], dimension, params):
             kernel_ct = find_define_kernel_from_array(name)
-            kernels.append(kernel_ct(dim, param))
+            kernels.append(kernel_ct(dim, param, **kernel_parameters))
 
         return cls(*kernels)
 
     @classmethod
     def define_default_kernel(cls, dimension, bounds=None, default_values=None,
-                              parameters_priors=None, *args):
+                              parameters_priors=None, *args, **kernel_parameters):
         """
         :param dimension: [(int)] dimension of the domain of the kernels. It's the number of tasks
             for the tasks kernel.
@@ -157,6 +159,8 @@ class ProductKernels(AbstractKernel):
                 LOWER_TRIANG_NAME: [float]
             }
         :param args: [str] List with the names of the kernels.
+        :param kernel_parameters: additional kernel parameters,
+            - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
 
         :return: ProductKernels
         """
@@ -179,10 +183,12 @@ class ProductKernels(AbstractKernel):
             constructor = find_kernel_constructor(name)
             if default_values is None:
                 kernels.append(constructor.define_default_kernel(dim, bound, None,
-                                                                 parameters_priors))
+                                                                 parameters_priors,
+                                                                 **kernel_parameters))
             else:
                 kernels.append(constructor.define_default_kernel(dim, bound, value[2],
-                                                                 parameters_priors))
+                                                                 parameters_priors,
+                                                                 **kernel_parameters))
 
         return cls(*kernels)
 
@@ -343,7 +349,8 @@ class ProductKernels(AbstractKernel):
         return gradient
 
     @classmethod
-    def evaluate_grad_respect_point(cls, params, point, inputs, dimension, *args):
+    def evaluate_grad_respect_point(cls, params, point, inputs, dimension, *args,
+                                    **kernel_parameters):
         """
         Evaluate the gradient of the kernel defined by params respect to the point.
 
@@ -353,15 +360,17 @@ class ProductKernels(AbstractKernel):
         :param inputs: np.array(nxd)
         :param dimension: [int] list with the dimensions of the kernel
         :param args: [str] List with the names of the kernels.
+        :param kernel_parameters: additional kernel parameters,
+            - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
         :return: np.array(nxd)
 
         """
-        kernel = cls.define_kernel_from_array(dimension, params, *args)
+        kernel = cls.define_kernel_from_array(dimension, params, *args, **kernel_parameters)
 
         return kernel.grad_respect_point(point, inputs)
 
     @classmethod
-    def evaluate_cov_defined_by_params(cls, params, inputs, dimension, *args):
+    def evaluate_cov_defined_by_params(cls, params, inputs, dimension, *args, **kernel_parameters):
         """
         Evaluate the covariance of the kernel defined by params.
 
@@ -370,16 +379,19 @@ class ProductKernels(AbstractKernel):
         :param inputs: {(str) kernel_name: np.array(nxd)}.
         :param dimension: [int] list with the dimensions of the kernel
         :param args: [str] List with the names of the kernels.
+        :param kernel_parameters: additional kernel parameters,
+            - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
 
         :return: cov(inputs) where the kernel is defined with params
         """
 
-        kernel = cls.define_kernel_from_array(dimension, params, *args)
+        kernel = cls.define_kernel_from_array(dimension, params, *args, **kernel_parameters)
 
         return kernel.cov_dict(inputs)
 
     @classmethod
-    def evaluate_grad_defined_by_params_respect_params(cls, params, inputs, dimension, *args):
+    def evaluate_grad_defined_by_params_respect_params(cls, params, inputs, dimension, *args,
+                                                       **kernel_parameters):
         """
         Evaluate the gradient respect the parameters of the kernel defined by params.
 
@@ -388,12 +400,14 @@ class ProductKernels(AbstractKernel):
             kernel and so on.
         :param inputs: {(str) kernel_name: np.array(nxd)}
         :param args: [str] List with the names of the kernels.
+        :param kernel_parameters: additional kernel parameters,
+            - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
         :return: {
             (int) i: np.array(nxn), derivative respect to the ith parameter
         }
         """
 
-        kernel = cls.define_kernel_from_array(dimension, params, *args)
+        kernel = cls.define_kernel_from_array(dimension, params, *args, **kernel_parameters)
 
         gradient = kernel.gradient_respect_parameters(inputs)
 
@@ -403,7 +417,8 @@ class ProductKernels(AbstractKernel):
         return gradient
 
     @classmethod
-    def evaluate_cross_cov_defined_by_params(cls, params, inputs_1, inputs_2, dimension, *args):
+    def evaluate_cross_cov_defined_by_params(cls, params, inputs_1, inputs_2, dimension, *args,
+                                             **kernel_parameters):
         """
         Evaluate the covariance of the kernel defined by params.
 
@@ -413,11 +428,13 @@ class ProductKernels(AbstractKernel):
         :param inputs_2: {(str) kernel_name: np.array(kxd)}
         :param dimension: [int] list with the dimensions of the kernel
         :param args: [str] List with the names of the kernels.
+        :param kernel_parameters: additional kernel parameters,
+            - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
 
         :return: (np.array(nxk)) cov(inputs_1, inputs_2) where the kernel is defined with params
         """
 
-        kernel = cls.define_kernel_from_array(dimension, params, *args)
+        kernel = cls.define_kernel_from_array(dimension, params, *args, **kernel_parameters)
 
         return kernel.cross_cov_dict(inputs_1, inputs_2)
 
@@ -469,8 +486,8 @@ class ProductKernels(AbstractKernel):
         :param kwargs:{
             'dimensions': [float],
             'kernels': [str],
+            SAME_CORRELATION: (boolean),
         }
-
         :return: {
            PARAM_NAME: [float] or float
         }
@@ -485,7 +502,7 @@ class ProductKernels(AbstractKernel):
                 params = params[n_params:]
                 parameters.update(param_dict)
             elif kernel == TASKS_KERNEL_NAME:
-                n_params = get_number_parameters_kernel([kernel], [dim])
+                n_params = get_number_parameters_kernel([kernel], [dim], **kwargs)
                 param_dict = TasksKernel.parameters_from_list_to_dict(params[0: n_params])
                 params = params[n_params:]
                 parameters.update(param_dict)

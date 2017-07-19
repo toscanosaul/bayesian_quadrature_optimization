@@ -68,6 +68,7 @@ class TestGpFitting(unittest.TestCase):
             'name_model': 'gp_fitting_gaussian',
             'problem_name': 'test_problem',
             'training_name': 'default_training_data_30_points_rs_1',
+            'same_correlation': False,
         }
 
         estimation = gp.compute_posterior_parameters(np.array([[1.4], [2.4], [0], [-9.9], [8.5],
@@ -76,6 +77,33 @@ class TestGpFitting(unittest.TestCase):
         points_2 = np.array([[1.4], [2.4], [0], [-9.9], [8.5], [points_[3]]]).reshape(6)
         npt.assert_almost_equal(estimation['mean'], points_2, decimal=4)
         npt.assert_almost_equal(estimation['cov'], np.zeros((6, 6)))
+
+        gp = GPFittingService.get_gp(name_model, "test_problem_with_tasks",
+                                     [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
+                                     [2, 1, 2], [[-5, 5], [0, 1]], type_bounds=[0, 1],
+                                     n_training=n_training,
+                                     noise=False, mle=True, random_seed=1, same_correlation=True)
+
+        model = gp.serialize()
+
+        assert model == {
+            'type_kernel': [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
+            'training_data': model['training_data'],
+            'data': model['training_data'],
+            'dimensions': [2, 1, 2],
+            'kernel_values': model['kernel_values'],
+            'mean_value': model['mean_value'],
+            'var_noise_value': model['var_noise_value'],
+            'thinning': 0,
+            'bounds_domain': [[-5, 5], [0, 1]],
+            'n_burning': 0,
+            'max_steps_out': 1,
+            'type_bounds': [0, 1],
+            'name_model': 'gp_fitting_gaussian',
+            'problem_name': 'test_problem_with_tasks',
+            'training_name': 'default_training_data_30_points_rs_1',
+            'same_correlation': True,
+        }
 
 
     def test_get_gp_cached(self):
@@ -108,6 +136,7 @@ class TestGpFitting(unittest.TestCase):
             'name_model': 'gp_fitting_gaussian',
             'problem_name': 'test_problem',
             'training_name': 'default_training_data_30_points_rs_1',
+            'same_correlation': False,
         }
 
     @patch('os.path.exists')

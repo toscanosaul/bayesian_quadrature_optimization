@@ -12,6 +12,7 @@ from stratified_bayesian_optimization.lib.constant import(
     SIGMA2_NAME,
     LOWER_TRIANG_NAME,
     SCALED_KERNEL,
+    SAME_CORRELATION,
 )
 
 
@@ -105,7 +106,7 @@ def wrapper_evaluate_objective_function(point, cls_, name_module, n_samples):
     return cls_.evaluate_function(module, point, n_samples)
 
 
-def get_number_parameters_kernel(kernel_name, dim):
+def get_number_parameters_kernel(kernel_name, dim, **kernel_parameters):
     """
     Returns the number of parameters associated to the kernel.
 
@@ -113,6 +114,8 @@ def get_number_parameters_kernel(kernel_name, dim):
     :param dim: [int], for standard kernels the list consists of only one element. For the product
         of kernels the lists consists of the dimension of the product of kernels, and each of the
         kernels of the product.
+    :param kernel_parameters: additional kernel parameters,
+        - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
     :return: int
     """
 
@@ -120,23 +123,29 @@ def get_number_parameters_kernel(kernel_name, dim):
         return dim[0]
 
     if kernel_name[0] == TASKS_KERNEL_NAME:
-        return np.cumsum(xrange(dim[0] + 1))[dim[0]]
+        same_correlation = kernel_parameters.get(SAME_CORRELATION, False)
+
+        if not same_correlation:
+            return np.cumsum(xrange(dim[0] + 1))[dim[0]]
+        else:
+            return min(dim[0], 2)
 
     if kernel_name[0] == PRODUCT_KERNELS_SEPARABLE:
         n_params = 0
         for name, dimension in zip(kernel_name[1:], dim[1:]):
-            n_params += get_number_parameters_kernel([name], [dimension])
+            n_params += get_number_parameters_kernel([name], [dimension], **kernel_parameters)
         return n_params
 
     raise NameError(kernel_name[0] + " doesn't exist")
 
 
-def get_default_values_kernel(kernel_name, dim, **parameters_priors):
+def get_default_values_kernel(kernel_name, dim, same_correlation=False, **parameters_priors):
     """
     Returns default values for the kernel_name.
 
     :param kernel_name: [str]
     :param dim: [int]
+    :param same_correlation: (boolean) Parameter for the task kernel
     :param parameters_priors:
             -SIGMA2_NAME: float,
             -LENGTH_SCALE_NAME: [float],
@@ -155,7 +164,8 @@ def get_default_values_kernel(kernel_name, dim, **parameters_priors):
         return ls
 
     if kernel_name[0] == TASKS_KERNEL_NAME:
-        n_params = get_number_parameters_kernel(kernel_name, dim)
+        n_params = get_number_parameters_kernel(kernel_name, dim,
+                                                **{SAME_CORRELATION: same_correlation})
         tasks_kernel_chol = parameters_priors.get(LOWER_TRIANG_NAME, n_params * [0.0])
         return tasks_kernel_chol
 

@@ -63,8 +63,8 @@ class TestTasksKernel(unittest.TestCase):
         assert self.task_kernel.base_cov_matrix == np.array([[np.exp(6.0)]])
 
         self.task_same_cor.compute_cov_matrix()
-        assert np.all(self.task_same_cor.chol_base_cov_matrix == np.array([[1.0, 1.0], [1.0, 1.0]]))
-        assert np.all(self.task_same_cor.base_cov_matrix == np.array([[1.0, 1.0], [1.0, 1.0]]))
+        assert np.all(self.task_same_cor.chol_base_cov_matrix == np.array([[2.0, 1.0], [1.0, 2.0]]))
+        assert np.all(self.task_same_cor.base_cov_matrix == np.array([[2.0, 1.0], [1.0, 2.0]]))
 
         self.task_same_cor_1.compute_cov_matrix()
         assert self.task_same_cor_1.chol_base_cov_matrix == np.array([[1.0]])
@@ -121,7 +121,6 @@ class TestTasksKernel(unittest.TestCase):
             np.array([2.0]), np.array([dh]))
 
         npt.assert_almost_equal(finite_diff[0], gradient[0],  decimal=4)
-
 
     def test_grad_respect_point(self):
         assert self.task_kernel.grad_respect_point(self.inputs, self.inputs) == np.array([[0]])
@@ -262,13 +261,13 @@ class TestTasksKernel(unittest.TestCase):
         result = TasksKernel.define_prior_parameters(data, dimension, same_correlation=True)
 
         assert result == {
-            LOWER_TRIANG_NAME: [0.0, 0.0],
+            LOWER_TRIANG_NAME: [-2.3025850929940455, -2.3025850929940455],
         }
 
         result = TasksKernel.define_prior_parameters(data, 1, same_correlation=True)
 
         assert result == {
-            LOWER_TRIANG_NAME: [0.0],
+            LOWER_TRIANG_NAME: [-2.3025850929940455],
         }
 
     def test_evaluate_cross_cov_defined_by_params(self):

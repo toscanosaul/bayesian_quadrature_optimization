@@ -194,6 +194,7 @@ class TestGPFittingGaussian(unittest.TestCase):
             'name_model': 'gp_fitting_gaussian',
             'problem_name': '',
             'training_name': '',
+            'same_correlation': False,
         }
 
         gp = GPFittingGaussian([MATERN52_NAME], self.training_data, dimensions=[1])

@@ -25,6 +25,7 @@ FILE_PROBLEM = 'main'
 
 MATERN52_NAME = 'Matern52'
 TASKS_KERNEL_NAME = 'Tasks_Kernel'
+SAME_CORRELATION = 'same_correlation'
 PRODUCT_KERNELS_SEPARABLE = 'Product_of_kernels_with_separable_domain'
 SCALED_KERNEL = 'Scaled_kernel'
 
