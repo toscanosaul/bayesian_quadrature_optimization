@@ -31,6 +31,11 @@ from stratified_bayesian_optimization.lib.expectations import (
 )
 from stratified_bayesian_optimization.lib.optimization import Optimization
 from stratified_bayesian_optimization.util.json_file import JSONFile
+from stratified_bayesian_optimization.lib.parallel import Parallel
+from stratified_bayesian_optimization.lib.util import (
+    wrapper_evaluate_quadrature_cross_cov,
+    wrapper_compute_vector_b,
+)
 
 logger = SBOLog(__name__)
 
@@ -40,6 +45,11 @@ class BayesianQuadrature(object):
                 '{n_training}_{random_seed}.json'.format
 
     _filename_mu_evaluations = '{iteration}_post_mean_gp_{model_type}_{problem_name}_' \
+                                '{type_kernel}_{training_name}_{n_training}_{random_seed}.' \
+                                'json'.format
+
+
+    _filename_points_mu_evaluations = 'points_for_post_mean_gp_{model_type}_{problem_name}_' \
                                 '{type_kernel}_{training_name}_{n_training}_{random_seed}.' \
                                 'json'.format
 
@@ -246,7 +256,8 @@ class BayesianQuadrature(object):
 
     def compute_posterior_parameters(self, points, var_noise=None, mean=None,
                                      parameters_kernel=None, historical_points=None,
-                                     historical_evaluations=None, only_mean=False, cache=True):
+                                     historical_evaluations=None, only_mean=False, cache=True,
+                                     parallel=False):
         """
         Compute posterior mean and covariance of the GP on G(x) = E[F(x, w)].
 
@@ -258,6 +269,8 @@ class BayesianQuadrature(object):
         :param historical_evaluations: np.array(n)
         :param cache: (boolean) get cached data only if cache is True
         :param only_mean: (boolean) computes only the mean if it's True.
+        :param parallel: (boolean) computes the vector B(x, i) in parallel for all the points
+            of the discretization.
 
         :return: {
             'mean': np.array(t),
@@ -291,9 +304,24 @@ class BayesianQuadrature(object):
         m = historical_points.shape[0]
 
         vec_covs = np.zeros((n, m))
-        for i in xrange(n):
-            vec_covs[i, :] = self.evaluate_quadrature_cross_cov(
-                points[i:i+1,:], historical_points, parameters_kernel)
+
+        if parallel:
+            point_dict = {}
+            for i in xrange(n):
+                point_dict[i] = points[i:i+1, :]
+            args = (historical_points, parameters_kernel, self, )
+            b_vector = Parallel.run_function_different_arguments_parallel(
+                wrapper_evaluate_quadrature_cross_cov, point_dict, *args)
+
+            for i in xrange(n):
+                if b_vector.get(i) is None:
+                    logger.info("Error in computing B at point %d" % i)
+                    continue
+                vec_covs[i, :] = b_vector[i]
+        else:
+            for i in xrange(n):
+                vec_covs[i, :] = self.evaluate_quadrature_cross_cov(
+                    points[i:i+1,:], historical_points, parameters_kernel)
 
         mu_n = mean + np.dot(vec_covs, solve)
 
@@ -315,7 +343,7 @@ class BayesianQuadrature(object):
     def gradient_posterior_mean(self, point, var_noise=None, mean=None, parameters_kernel=None,
                                 historical_points=None, historical_evaluations=None, cache=True):
         """
-        Compute posterior mean and covariance of the GP on G(x) = E[F(x, w)].
+        Compute gradient of the posterior mean of the GP on G(x) = E[F(x, w)].
 
         :param point: np.array(1xk)
         :param var_noise: float
@@ -421,8 +449,71 @@ class BayesianQuadrature(object):
 
         return results
 
+    def compute_vectors_b(self, points, candidate_point, historical_points, parameters_kernel,
+                          compute_vec_covs, compute_b_new, parallel):
+        """
+        Compute B(x, i) for ever x in points, and B(candidate_point, i) for each i.
+
+        :param points: np.array(nxk)
+        :param candidate_point: np.array(1xm), (new_x, new_w)
+        :param parameters_kernel: np.array(l)
+        :param historical_points: np.array(txm)
+        :param parameters_kernel: np.array(l)
+        :param compute_vec_covs: boolean
+        :param compute_b_new: boolean
+
+        :return: {
+            'b_new': np.array(1xt),
+            'vec_covs': np.array(nxt),
+        }
+        """
+
+
+        n = points.shape[0]
+        m = historical_points.shape[0]
+
+        vec_covs = None
+        b_new = None
+
+        if compute_vec_covs:
+            vec_covs = np.zeros((n, m))
+
+        if compute_b_new:
+            b_new = np.zeros((n, 1))
+
+        if parallel:
+            point_dict = {}
+            for i in xrange(n):
+                point_dict[i] = points[i:i + 1, :]
+
+            args = (compute_vec_covs, compute_b_new, historical_points, parameters_kernel,
+                    candidate_point, self,)
+
+            b_vectors = Parallel.run_function_different_arguments_parallel(
+                wrapper_compute_vector_b, point_dict, *args)
+
+            for i in xrange(n):
+                if b_vectors.get(i) is None:
+                    logger.info("Error in computing b vectors at point %d" % i)
+                    continue
+                if compute_vec_covs:
+                    vec_covs[i, :] = b_vectors[i]['vec_covs']
+                if compute_b_new:
+                    b_new[i, 0] = b_vectors[i]['b_new']
+        else:
+            for i in xrange(n):
+                if compute_vec_covs:
+                    vec_covs[i, :] = self.evaluate_quadrature_cross_cov(
+                        points[i:i + 1, :], self.gp.data['points'], parameters_kernel)
+                if compute_b_new:
+                    b_new[i, 0] = self.evaluate_quadrature_cross_cov(
+                        points[i:i + 1, :], candidate_point, parameters_kernel)
+
+        return {'b_new': b_new, 'vec_covs': vec_covs}
+
+
     def compute_posterior_parameters_kg(self, points, candidate_point, var_noise=None, mean=None,
-                                        parameters_kernel=None, cache=True):
+                                        parameters_kernel=None, cache=True, parallel=True):
         """
         Compute posterior parameters of the GP after integrating out the random parameters needed
         to compute the knowledge gradient (vectors "a" and "b" in the SBO paper).
@@ -433,6 +524,7 @@ class BayesianQuadrature(object):
         :param mean: float
         :param parameters_kernel: np.array(l)
         :param cache: (boolean) Use cached data and cache data if cache is True
+        :param parallel: (boolean) compute B(x, i) in parallel for all x in points
 
         :return: {
             'a': np.array(n),
@@ -478,13 +570,15 @@ class BayesianQuadrature(object):
             compute_vec_covs = True
             vec_covs = np.zeros((n, m))
 
-        for i in xrange(n):
+        if compute_vec_covs or compute_b_new:
+            computations = self.compute_vectors_b(points, candidate_point, self.gp.data['points'],
+                                                  parameters_kernel, compute_vec_covs,
+                                                  compute_b_new, parallel)
             if compute_vec_covs:
-                vec_covs[i, :] = self.evaluate_quadrature_cross_cov(
-                    points[i:i+1,:], self.gp.data['points'], parameters_kernel)
+                compute_vec_covs = computations['vec_covs']
+
             if compute_b_new:
-                b_new[i, 0] = self.evaluate_quadrature_cross_cov(
-                    points[i:i+1,:], candidate_point, parameters_kernel)
+                compute_b_new = computations['b_new']
 
         if cache:
             if compute_vec_covs:
@@ -525,7 +619,8 @@ class BayesianQuadrature(object):
         }
 
     def gradient_vector_b(self, candidate_point, points, var_noise=None, mean=None,
-                          parameters_kernel=None, cache=True, keep_indexes=None):
+                          parameters_kernel=None, cache=True, keep_indexes=None,
+                          parallel=True):
         """
         Compute the gradient of the vector b(x,candidate_point) for each x in points
         (see SBO paper).
@@ -538,6 +633,7 @@ class BayesianQuadrature(object):
         :param cache: (boolean) Use cached data and cache data if cache is True
         :param keep_indexes: [int], indexes of the points saved of the discretization.
             They are used to get the useful elements of the cached data.
+        :param parallel: (boolean)
 
         :return: np.array(nxm)
         """
@@ -604,13 +700,16 @@ class BayesianQuadrature(object):
         else:
             vec_covs = vec_covs[keep_indexes, :]
         # Remove repeated code and put in one function!
-        for i in xrange(n):
+
+        if compute_vec_covs or compute_b_new:
+            computations = self.compute_vectors_b(points, candidate_point, self.gp.data['points'],
+                                                  parameters_kernel, compute_vec_covs,
+                                                  compute_b_new, parallel)
             if compute_vec_covs:
-                vec_covs[i, :] = self.evaluate_quadrature_cross_cov(
-                    points[i:i+1,:], self.gp.data['points'], parameters_kernel)
+                compute_vec_covs = computations['vec_covs']
+
             if compute_b_new:
-                b_new[i, 0] = self.evaluate_quadrature_cross_cov(
-                    points[i:i+1,:], candidate_point, parameters_kernel)
+                compute_b_new = computations['b_new']
 
         if cache:
             if compute_vec_covs:
@@ -718,22 +817,6 @@ class BayesianQuadrature(object):
         """
 
         # TODO: extend to more than one dimension
-        bounds = self.gp.bounds
-        bounds = [bounds[i] for i in xrange(len(bounds)) if i in self.x_domain]
-
-        n_points = n_points_by_dimension
-        if n_points is None:
-            n_points = (bounds[0][1] - bounds[0][0]) * 10
-
-        points = []
-        for bound, number_points in zip(bounds, n_points):
-            points.append(np.linspace(bound[0], bound[1], number_points))
-
-        values = []
-        for point in itertools.product(*points):
-            value = self.objective_posterior_mean(np.array(list(point)))
-            values.append(value)
-
         if not os.path.exists(DEBUGGING_DIR):
             os.mkdir(DEBUGGING_DIR)
 
@@ -747,6 +830,41 @@ class BayesianQuadrature(object):
             kernel_name += kernel + '_'
         kernel_name = kernel_name[0: -1]
 
+        f_name = self._filename_points_mu_evaluations(
+                                                model_type=model_type,
+                                                problem_name=problem_name,
+                                                type_kernel=kernel_name,
+                                                training_name=training_name,
+                                                n_training=n_training,
+                                                random_seed=random_seed)
+
+        debug_path = path.join(debug_dir, f_name)
+
+        vectors = JSONFile.read(debug_path)
+
+        if vectors is None:
+            bounds = self.gp.bounds
+            bounds = [bounds[i] for i in xrange(len(bounds)) if i in self.x_domain]
+
+            n_points = n_points_by_dimension
+            if n_points is None:
+                n_points = (bounds[0][1] - bounds[0][0]) * 10
+
+            points = []
+            for bound, number_points in zip(bounds, n_points):
+                points.append(np.linspace(bound[0], bound[1], number_points))
+
+            vectors = []
+            for point in itertools.product(*points):
+                vectors.append(point)
+
+            JSONFile.write(vectors, debug_path)
+
+        vectors = np.array(vectors)
+
+        values = self.compute_posterior_parameters(vectors, only_mean=True, parallel=True)['mean']
+
+
         f_name = self._filename_mu_evaluations(iteration=iteration,
                                                 model_type=model_type,
                                                 problem_name=problem_name,
@@ -757,5 +875,5 @@ class BayesianQuadrature(object):
 
         debug_path = path.join(debug_dir, f_name)
 
-        JSONFile.write({'points': points, 'evaluations': values}, debug_path)
+        JSONFile.write({'points': vectors, 'evaluations': values}, debug_path)
 

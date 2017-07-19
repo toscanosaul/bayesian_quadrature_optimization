@@ -346,3 +346,48 @@ def wrapper_evaluate_quadrature_cross_cov(point, historical_points, parameters_k
 
     return self.evaluate_quadrature_cross_cov(
                 point, historical_points, parameters_kernel)
+
+
+def wrapper_compute_vector_b(point, compute_vec_covs, compute_b_new, historical_points,
+                             parameters_kernel, candidate_point, self):
+    """
+    Wrapper of the function that computes B(x, i) and B(new, i)
+
+    :param point: np.array(1xn)
+    :param compute_vec_covs: boolean
+    :param compute_b_new: boolean
+    :param historical_points: np.array(kxm)
+    :param parameters_kernel: np.array(l)
+    :param candidate_point: np.array(1xm)
+    :param self: bq instance
+    :return: {
+        'b_new': float,
+        'vec_covs': np.array(k),
+    }
+    """
+    b_new = None
+    vec_covs = None
+
+    if compute_vec_covs:
+        b_new = self.evaluate_quadrature_cross_cov(
+            point, historical_points, parameters_kernel)
+    if compute_b_new:
+        vec_covs = self.evaluate_quadrature_cross_cov(
+            point, candidate_point, parameters_kernel)
+
+    return {
+        'b_new': b_new,
+        'vec_covs': vec_covs,
+    }
+
+
+def wrapper_evaluate_sbo(point, task, self):
+    """
+
+    :param point: np.array(1xn)
+    :param task: (int)
+    :param self: sbo instance
+    :return: float
+    """
+    point = np.concatenate((point, np.array([[task]])), axis=1)
+    return self.evaluate(point)

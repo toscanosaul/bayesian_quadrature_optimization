@@ -6,6 +6,10 @@ from scipy.stats import norm
 from os import path
 import os
 
+from copy import deepcopy
+
+import itertools
+
 from stratified_bayesian_optimization.lib.constant import (
     UNIFORM_FINITE,
     LBFGS_NAME,
@@ -27,6 +31,7 @@ from stratified_bayesian_optimization.lib.util import (
     wrapper_gradient_voi,
 )
 from stratified_bayesian_optimization.util.json_file import JSONFile
+from stratified_bayesian_optimization.lib.util import wrapper_evaluate_sbo
 
 logger = SBOLog(__name__)
 
@@ -37,6 +42,10 @@ class SBO(object):
                 '{n_training}_{random_seed}.json'.format
 
     _filename_voi_evaluations = '{iteration}_sbo_{model_type}_{problem_name}_' \
+                                '{type_kernel}_{training_name}_{n_training}_{random_seed}.' \
+                                'json'.format
+
+    _filename_points_voi_evaluations = 'points_for_voi_{model_type}_{problem_name}_' \
                                 '{type_kernel}_{training_name}_{n_training}_{random_seed}.' \
                                 'json'.format
 
@@ -290,32 +299,6 @@ class SBO(object):
 
         """
 
-
-        bounds = self.bq.gp.bounds
-        n_points = n_points_by_dimension
-        if n_points is None:
-            n_points = (bounds[0][1] - bounds[0][0]) * 10
-
-        bounds_x = [bounds[i] for i in xrange(len(bounds)) if i in self.bq.x_domain]
-        n_points_x = [n_points[i] for i in xrange(len(n_points)) if i in self.bq.x_domain]
-
-        points = []
-        for bound, number_points in zip(bounds_x, n_points_x):
-            points.append(np.linspace(bound[0], bound[1], number_points))
-
-        # TODO: extend to the case where w can be continuous
-
-        values = {}
-        if self.bq.tasks:
-            for i in xrange(self.bq.n_tasks):
-                vals = []
-                for point in points:
-                    point_ = np.concatenate((np.array([point]), np.array([i])))
-                    point_ = point_.reshape((1, len(point_)))
-                    value = self.evaluate(point_)
-                    vals.append(value)
-                values[i] = vals
-
         if not os.path.exists(DEBUGGING_DIR):
             os.mkdir(DEBUGGING_DIR)
 
@@ -328,6 +311,65 @@ class SBO(object):
         for kernel in self.bq.gp.type_kernel:
             kernel_name += kernel + '_'
         kernel_name = kernel_name[0: -1]
+
+
+        f_name = self._filename_points_voi_evaluations(
+                                                model_type=model_type,
+                                                problem_name=problem_name,
+                                                type_kernel=kernel_name,
+                                                training_name=training_name,
+                                                n_training=n_training,
+                                                random_seed=random_seed)
+
+        debug_path = path.join(debug_dir, f_name)
+
+        vectors = JSONFile.read(debug_path)
+
+
+        if vectors is None:
+            bounds = self.bq.gp.bounds
+            n_points = n_points_by_dimension
+            if n_points is None:
+                n_points = (bounds[0][1] - bounds[0][0]) * 10
+
+            bounds_x = [bounds[i] for i in xrange(len(bounds)) if i in self.bq.x_domain]
+            n_points_x = [n_points[i] for i in xrange(len(n_points)) if i in self.bq.x_domain]
+
+            points = []
+            for bound, number_points in zip(bounds_x, n_points_x):
+                points.append(np.linspace(bound[0], bound[1], number_points))
+
+            vectors = []
+            for point in itertools.product(*points):
+                vectors.append(point)
+
+            JSONFile.write(vectors, debug_path)
+
+
+        # TODO: extend to the case where w can be continuous
+        n = len(vectors)
+        points = deepcopy(vectors)
+        vectors = np.array(vectors)
+
+        point_dict = {}
+        for i in xrange(n):
+            point_dict[i] = vectors[i:i+1, :]
+
+        values = {}
+        if self.bq.tasks:
+            for task in xrange(self.bq.n_tasks):
+                vals = []
+                args = (task, self,)
+                evaluations = Parallel.run_function_different_arguments_parallel(
+                    wrapper_evaluate_sbo, point_dict, *args)
+
+                for i in xrange(n):
+                    if evaluations.get(i) is None:
+                        logger.info("Error in computing SBO at point %d and task %d" % (i, task))
+                        continue
+                    vals.append(evaluations[i])
+
+                values[task] = vals
 
         f_name = self._filename_voi_evaluations(iteration=iteration,
                                                 model_type=model_type,
