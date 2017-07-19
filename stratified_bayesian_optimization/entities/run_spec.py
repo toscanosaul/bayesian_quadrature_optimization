@@ -23,7 +23,7 @@ class RunSpecEntity(Model):
     dim_x = IntType(required=True)
     choose_noise = BooleanType(required=True) #I think that we should remove it
     bounds_domain_x = ListType(ModelType(BoundsEntity), min_size=1, required=True)
-    number_points_each_dimension = ListType(IntType)
+    number_points_each_dimension = ListType(IntType) # Only for x
     training_name = StringType(required=True)
     bounds_domain = ListType(ListType(FloatType), min_size=1, required=True)
     type_bounds = ListType(IntType, required=True)
@@ -57,6 +57,8 @@ class RunSpecEntity(Model):
 
     cache = BooleanType(required=False)
     debug = BooleanType(required=False)
+
+    number_points_each_dimension_debug = ListType(IntType) #Used to debug.
 
     @classmethod
     def from_json(cls, specfile):
@@ -126,6 +128,8 @@ class RunSpecEntity(Model):
 
         same_correlation = spec.get('same_correlation', False)
 
+        number_points_each_dimension_debug = spec.get('number_points_each_dimension_debug')
+
         entry.update({
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -161,6 +165,7 @@ class RunSpecEntity(Model):
             'cache': cache,
             'debug': debug,
             'same_correlation': same_correlation,
+            'number_points_each_dimension_debug': number_points_each_dimension_debug,
         })
 
         return cls(entry)

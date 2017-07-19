@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 import numpy as np
 
+import itertools
+
 from os import path
 import os
 
@@ -711,21 +713,25 @@ class BayesianQuadrature(object):
         :param n_training: (int)
         :param random_seed: (int)
         :param iteration: (int)
-        :param n_points_by_dimension: (int) Number of points by dimension
+        :param n_points_by_dimension: [int] Number of points by dimension
 
         """
 
         # TODO: extend to more than one dimension
-        bounds = self.gp.bounds
+        bounds = self.gp.bounds[self.x_domain]
+        bounds = [bounds[i] for i in xrange(len(bounds)) if i in self.x_domain]
+
         n_points = n_points_by_dimension
         if n_points is None:
             n_points = (bounds[0][1] - bounds[0][0]) * 10
 
-        points = np.linspace(bounds[0][0], bounds[0][1], n_points)
+        points = []
+        for bound, number_points in zip(bounds, n_points):
+            points.append(np.linspace(bound[0], bound[1], number_points))
 
         values = []
-        for point in points:
-            value = self.objective_posterior_mean(np.array([point]))
+        for point in itertools.product(*points):
+            value = self.objective_posterior_mean(np.array(list(point)))
             values.append(value)
 
         if not os.path.exists(DEBUGGING_DIR):

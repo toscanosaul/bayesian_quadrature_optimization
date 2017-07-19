@@ -62,17 +62,20 @@ class BGO(object):
         name_model = spec.get('name_model')
         parallel = spec.get('parallel')
         n_training = spec.get('n_training')
+        number_points_each_dimension_debug = spec.get('number_points_each_dimension_debug')
 
 
         bgo = cls(acquisition_function, gp_model, n_iterations, problem_name, training_name,
                   random_seed, n_training, name_model, method_optimization, minimize=minimize,
-                  n_samples=n_samples, noise=noise, quadrature=quadrature, parallel=parallel)
+                  n_samples=n_samples, noise=noise, quadrature=quadrature, parallel=parallel,
+                  number_points_each_dimension_debug=number_points_each_dimension_debug)
 
         return bgo
 
     def __init__(self, acquisition_function, gp_model, n_iterations, problem_name, training_name,
                  random_seed, n_training, name_model, method_optimization, minimize=False,
-                 n_samples=None, noise=False, quadrature=None, parallel=True):
+                 n_samples=None, noise=False, quadrature=None, parallel=True,
+                 number_points_each_dimension_debug=None):
 
         self.acquisition_function = acquisition_function
         self.gp_model = gp_model
@@ -89,6 +92,7 @@ class BGO(object):
         self.n_training = n_training
         self.random_seed = random_seed
         self.n_samples = n_samples
+        self.number_points_each_dimension_debug = number_points_each_dimension_debug
 
     def optimize(self, random_seed=None, start=None, debug=False):
         """
@@ -118,7 +122,7 @@ class BGO(object):
         if debug:
             model.generate_evaluations(
                 self.problem_name, self.name_model, self.training_name, self.n_training,
-                self.random_seed, 0)
+                self.random_seed, 0, n_points_by_dimension=self.number_points_each_dimension_debug)
 
         for iteration in xrange(self.n_iterations):
 
@@ -132,7 +136,8 @@ class BGO(object):
             if debug:
                 self.acquisition_function.generate_evaluations(
                     self.problem_name, self.name_model, self.training_name, self.n_training,
-                    self.random_seed, iteration)
+                    self.random_seed, iteration,
+                    n_points_by_dimension=self.number_points_each_dimension_debug)
 
             self.acquisition_function.clean_cache()
 
@@ -159,7 +164,8 @@ class BGO(object):
             if debug:
                 model.generate_evaluations(
                     self.problem_name, self.name_model, self.training_name, self.n_training,
-                    self.random_seed, iteration + 1)
+                    self.random_seed, iteration + 1,
+                    n_points_by_dimension=self.number_points_each_dimension_debug)
 
         return {
             'optimal_solution': optimize_mean['solution'],

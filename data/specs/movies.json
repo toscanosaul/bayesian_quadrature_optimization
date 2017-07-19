@@ -13,6 +13,7 @@
         6
     ],
     "name_model":"gp_fitting_gaussian",
+    "same_correlation":true,
     "type_kernel":[
         "Product_of_kernels_with_separable_domain",
         "Matern52",

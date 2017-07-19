@@ -21,7 +21,8 @@ class SpecService(object):
                            max_steps_out=1, training_data=None, x_domain=None, distribution=None,
                            parameters_distribution=None, minimize=False, n_iterations=5,
                            kernel_values=None, mean_value=None, var_noise_value=None,
-                           debug=False, same_correlation=False):
+                           debug=False, same_correlation=False,
+                           number_points_each_dimension_debug=None):
         """
         Generate dict that represents run spec.
 
@@ -72,6 +73,8 @@ class SpecService(object):
         :param debug: (boolean) If true, it generates the evaluations of the VOI and posterior mean.
         :param same_correlation: (boolean) If true, it uses the same correlations for the task
             kernel.
+        :param number_points_each_dimension_debug: ([int]) Number of points for the discretization
+            of the debug plots.
         :return: dict
         """
 
@@ -114,6 +117,7 @@ class SpecService(object):
         if same_correlation is None:
             same_correlation = False
 
+
         return {
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -148,6 +152,7 @@ class SpecService(object):
             'kernel_values': kernel_values,
             'debug': debug,
             'same_correlation': same_correlation,
+            'number_points_each_dimension_debug': number_points_each_dimension_debug,
         }
 
     # TODO - generate a list of runspecentities over different parameters

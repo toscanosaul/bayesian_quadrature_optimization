@@ -286,27 +286,33 @@ class SBO(object):
         :param n_training: (int)
         :param random_seed: (int)
         :param iteration: (int)
-        :param n_points_by_dimension: (int) Number of points by dimension
+        :param n_points_by_dimension: [int] Number of points by dimension
 
         """
 
-        # TODO: extend to more than one dimension
+
         bounds = self.bq.gp.bounds
         n_points = n_points_by_dimension
         if n_points is None:
             n_points = (bounds[0][1] - bounds[0][0]) * 10
 
-        points = np.linspace(bounds[0][0], bounds[0][1], n_points)
+        bounds_x = [bounds[i] for i in xrange(len(bounds)) if i in self.bq.x_domain]
+        n_points_x = [n_points[i] for i in xrange(len(n_points)) if i in self.bq.x_domain]
+
+        points = []
+        for bound, number_points in zip(bounds_x, n_points_x):
+            points.append(np.linspace(bound[0], bound[1], number_points))
+
+        # TODO: extend to the case where w can be continuous
 
         values = {}
-
         if self.bq.tasks:
             for i in xrange(self.bq.n_tasks):
                 vals = []
                 for point in points:
                     point_ = np.concatenate((np.array([point]), np.array([i])))
                     point_ = point_.reshape((1, len(point_)))
-                    value = self.evaluate(point_,)
+                    value = self.evaluate(point_)
                     vals.append(value)
                 values[i] = vals
 

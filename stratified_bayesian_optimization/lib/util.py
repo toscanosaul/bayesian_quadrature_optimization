@@ -332,3 +332,17 @@ def wrapper_gradient_voi(point, self):
     :return: np.array(n)
     """
     return self.grad_obj_voi(point)
+
+def wrapper_evaluate_quadrature_cross_cov(point, historical_points, parameters_kernel, self):
+    """
+    Wrapper of evaluate quadrature cross cov
+
+    :param point: np.array(1xn)
+    :param historical_points: np.array(mxk)
+    :param parameters_kernel: np.array(l)
+    :param self: instance of bayesian quadrature
+    :return: np.array(1xm)
+    """
+
+    return self.evaluate_quadrature_cross_cov(
+                point, historical_points, parameters_kernel)
