@@ -718,6 +718,7 @@ class BayesianQuadrature(object):
         """
 
         # TODO: extend to more than one dimension
+        bounds = self.gp.bounds
         bounds = [bounds[i] for i in xrange(len(bounds)) if i in self.x_domain]
 
         n_points = n_points_by_dimension
