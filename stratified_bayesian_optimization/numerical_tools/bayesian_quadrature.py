@@ -486,8 +486,8 @@ class BayesianQuadrature(object):
             for i in xrange(n):
                 point_dict[i] = points[i:i + 1, :]
 
-            args = (compute_vec_covs, compute_b_new, historical_points, parameters_kernel,
-                    candidate_point, self,)
+            args = (False, None, True, compute_vec_covs, compute_b_new, historical_points,
+                    parameters_kernel, candidate_point, self,)
 
             b_vectors = Parallel.run_function_different_arguments_parallel(
                 wrapper_compute_vector_b, point_dict, *args)
@@ -574,11 +574,12 @@ class BayesianQuadrature(object):
             computations = self.compute_vectors_b(points, candidate_point, self.gp.data['points'],
                                                   parameters_kernel, compute_vec_covs,
                                                   compute_b_new, parallel)
+
             if compute_vec_covs:
-                compute_vec_covs = computations['vec_covs']
+                vec_covs = computations['vec_covs']
 
             if compute_b_new:
-                compute_b_new = computations['b_new']
+                b_new = computations['b_new']
 
         if cache:
             if compute_vec_covs:
@@ -706,10 +707,10 @@ class BayesianQuadrature(object):
                                                   parameters_kernel, compute_vec_covs,
                                                   compute_b_new, parallel)
             if compute_vec_covs:
-                compute_vec_covs = computations['vec_covs']
+                vec_covs = computations['vec_covs']
 
             if compute_b_new:
-                compute_b_new = computations['b_new']
+                b_new = computations['b_new']
 
         if cache:
             if compute_vec_covs:

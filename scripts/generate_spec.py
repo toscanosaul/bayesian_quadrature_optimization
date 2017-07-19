@@ -39,6 +39,8 @@ if __name__ == '__main__':
     max_steps_out = 1000
     n_iterations = 100
     same_correlation = True
+    debug = True
+    number_points_each_dimension_debug = [10, 10, 10, 10]
 
 
 
@@ -81,7 +83,9 @@ if __name__ == '__main__':
                                           distribution=distribution, parallel=parallel,
                                           thinning=thinning, n_burning=n_burning,
                                           max_steps_out=max_steps_out, n_iterations=n_iterations,
-                                          same_correlation=same_correlation)
+                                          same_correlation=same_correlation, debug=debug,
+                                          number_points_each_dimension_debug=
+                                          number_points_each_dimension_debug)
 
     print ujson.dumps(spec, indent=4)
 

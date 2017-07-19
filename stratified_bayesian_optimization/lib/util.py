@@ -369,10 +369,10 @@ def wrapper_compute_vector_b(point, compute_vec_covs, compute_b_new, historical_
     vec_covs = None
 
     if compute_vec_covs:
-        b_new = self.evaluate_quadrature_cross_cov(
+        vec_covs = self.evaluate_quadrature_cross_cov(
             point, historical_points, parameters_kernel)
     if compute_b_new:
-        vec_covs = self.evaluate_quadrature_cross_cov(
+        b_new = self.evaluate_quadrature_cross_cov(
             point, candidate_point, parameters_kernel)
 
     return {

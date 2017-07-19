@@ -359,7 +359,8 @@ class SBO(object):
         if self.bq.tasks:
             for task in xrange(self.bq.n_tasks):
                 vals = []
-                args = (task, self,)
+
+                args = (False, None, True, task, self,)
                 evaluations = Parallel.run_function_different_arguments_parallel(
                     wrapper_evaluate_sbo, point_dict, *args)
 

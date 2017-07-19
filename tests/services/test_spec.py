@@ -70,6 +70,7 @@ class TestSpecService(unittest.TestCase):
             'mean_value': [],
             'var_noise_value': [],
             'same_correlation': False,
+            'number_points_each_dimension_debug': None,
         }
 
     def test_generate_dic_specs(self):

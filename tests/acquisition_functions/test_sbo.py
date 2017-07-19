@@ -152,10 +152,6 @@ class TestSBO(unittest.TestCase):
         kg = np.mean(max_values) - max_mean
         std = np.std(max_values) / n_samples
 
-        print "val"
-        print kg - 1.96 * std
-        print kg + 1.96 * std
-        print value
         assert kg - 1.96 * std <= value <= kg + 1.96 * std
 
         point = self.points[0:1, :]
