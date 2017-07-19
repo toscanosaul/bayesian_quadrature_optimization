@@ -38,6 +38,8 @@ if __name__ == '__main__':
     n_burning = 100
     max_steps_out = 1000
     n_iterations = 100
+    same_correlation = True
+
 
     # var_noise_value = [1.00001785e-10]
     # mean_value = [-8.81677684e+00]
@@ -77,7 +79,8 @@ if __name__ == '__main__':
                                           number_points_each_dimension=number_points_each_dimension,
                                           distribution=distribution, parallel=parallel,
                                           thinning=thinning, n_burning=n_burning,
-                                          max_steps_out=max_steps_out, n_iterations=n_iterations)
+                                          max_steps_out=max_steps_out, n_iterations=n_iterations,
+                                          same_correlation=same_correlation)
 
     print ujson.dumps(spec, indent=4)
 
