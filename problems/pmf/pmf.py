@@ -88,7 +88,7 @@ def cross_validation(num_user, num_item, train, val, epsilon=1, lamb=0.01, maxep
     error = 0
     for i in range(n):
         error += PMF(num_user, num_item, train[i], val[i], epsilon, lamb, maxepoch, num_Feat)
-    return error / n
+    return -1.0 * error / n
 
 
 if __name__ == '__main__':
