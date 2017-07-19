@@ -7,6 +7,7 @@ from os import path
 import os
 
 from copy import deepcopy
+from numpy import linalg as LA
 
 import itertools
 
@@ -84,9 +85,6 @@ class SBO(object):
         :return: float
         """
 
-        if np.any(np.all((self.bq.gp.data['points'] - point[0, :]) == 0, axis=1)):
-            return 0.0
-
         vectors = self.bq.compute_posterior_parameters_kg(self.discretization, point,
                                                           var_noise=var_noise, mean=mean,
                                                           parameters_kernel=parameters_kernel,
@@ -94,6 +92,9 @@ class SBO(object):
 
         a = vectors['a']
         b = vectors['b']
+
+        if not np.all(np.isfinite(b)):
+            return 0.0
 
         a, b, keep = AffineBreakPointsPrep(a, b)
 
@@ -117,9 +118,6 @@ class SBO(object):
         :return: np.array(n)
         """
 
-        if np.any(np.all((self.bq.gp.data['points'] - point[0, :]) == 0, axis=1)):
-            return np.zeros(point.shape[1])
-
         vectors = self.bq.compute_posterior_parameters_kg(self.discretization, point,
                                                           var_noise=var_noise, mean=mean,
                                                           parameters_kernel=parameters_kernel,
@@ -127,6 +125,9 @@ class SBO(object):
 
         a = vectors['a']
         b = vectors['b']
+
+        if not np.all(np.isfinite(b)):
+            return np.zeros(point.shape[1])
 
         a, b, keep = AffineBreakPointsPrep(a, b)
         keep1, c = AffineBreakPoints(a, b)
@@ -382,4 +383,7 @@ class SBO(object):
 
         debug_path = path.join(debug_dir, f_name)
 
+
         JSONFile.write({'points': points, 'evaluations': values}, debug_path)
+
+        return values

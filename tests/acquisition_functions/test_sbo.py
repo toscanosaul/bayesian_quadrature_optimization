@@ -166,6 +166,7 @@ class TestSBO(unittest.TestCase):
         finite_diff = FiniteDifferences.forward_difference(
             lambda point: self.sbo.evaluate(point.reshape((1, len(point)))),
             np.array([52.5, 0]), np.array([dh]))
+
         npt.assert_almost_equal(finite_diff[1], grad[1], decimal=5)
         npt.assert_almost_equal(finite_diff[0], grad[0], decimal=2)
 
@@ -208,3 +209,24 @@ class TestSBO(unittest.TestCase):
         expect(Parallel).run_function_different_arguments_parallel.and_return({0: None})
         with self.assertRaises(Exception):
             self.sbo_med.optimize(random_seed=1, parallel=False)
+
+    def test_generate_evaluations(self):
+        evaluations = self.sbo.generate_evaluations(
+            "test_generate_sbo_evals", "gp_fitting_gaussian", "test", 5, 1, 0, [10])
+
+        points_x = [[11.1111111111], [22.2222222222]]
+
+        values = []
+        for task in xrange(2):
+            for point in points_x:
+                point_ = np.concatenate(([point], [[task]]), axis=1)
+                values.append(self.sbo.evaluate(point_))
+
+        point_ = np.concatenate(([[88.8888888889]], [[1]]), axis=1)
+        value = self.sbo.evaluate(point_)
+
+        npt.assert_almost_equal(values[0], evaluations[0][1])
+        npt.assert_almost_equal(values[1], evaluations[0][2])
+        npt.assert_almost_equal(values[2], evaluations[1][1])
+        npt.assert_almost_equal(values[3], evaluations[1][2])
+        npt.assert_almost_equal(value, evaluations[1][-2])
