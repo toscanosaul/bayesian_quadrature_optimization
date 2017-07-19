@@ -74,7 +74,7 @@ def PMF(num_user, num_item, train, val, epsilon=50, lamb=0.01, maxepoch=50, num_
     pred_out[pred_out < 1] = 1
 
     rawErr = pred_out - val[:, 2]
-    return np.sum(rawErr ** 2) / float(pairs_va)
+    return -1.0 * np.sum(rawErr ** 2) / float(pairs_va)
 
 
 def cross_validation(num_user, num_item, train, val, epsilon=1, lamb=0.01, maxepoch=50,
@@ -88,7 +88,7 @@ def cross_validation(num_user, num_item, train, val, epsilon=1, lamb=0.01, maxep
     error = 0
     for i in range(n):
         error += PMF(num_user, num_item, train[i], val[i], epsilon, lamb, maxepoch, num_Feat)
-    return -1.0 * error / n
+    return error / n
 
 
 if __name__ == '__main__':
