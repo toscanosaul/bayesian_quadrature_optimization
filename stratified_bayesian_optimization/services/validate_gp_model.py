@@ -80,6 +80,6 @@ class ValidateGPService(object):
             training_name=training_name, **kernel_parameters
         )
 
-        logger.info('Percentage of success is: %f' % results['percentage_success'])
+        logger.info('Percentage of success is: %f' % results['success_proportion'])
 
-        return results['percentage_success']
+        return results['success_proportion']

@@ -38,6 +38,7 @@ from stratified_bayesian_optimization.lib.util import (
     get_number_parameters_kernel,
     combine_vectors,
     separate_vector,
+    wrapper_GPFittingGaussian,
 )
 from stratified_bayesian_optimization.lib.optimization import Optimization
 from stratified_bayesian_optimization.initializers.log import SBOLog
@@ -1240,7 +1241,6 @@ class ValidationGPModel(object):
             'n_data': int, total number of points.
             'filename_plot': str,
             'filename_histogram': str,
-            'percentage_success': int,
         }
         """
 
@@ -1278,12 +1278,18 @@ class ValidationGPModel(object):
                 training_data_sets[i]['var_noise'] = []
                 test_points[i]['var_noise'] = []
 
-            gp_objects[i] = GPFittingGaussian(type_kernel, training_data_sets[i],
-                                              dimensions=dimensions, bounds_domain=bounds_domain,
-                                              thinning=thinning, n_burning=n_burning,
-                                              max_steps_out=max_steps_out, random_seed=random_seed,
-                                              problem_name=problem_name,
-                                              training_name=training_name, **kernel_parameters)
+        args = (False, None, True, GPFittingGaussian, type_kernel, dimensions, bounds_domain,
+                thinning, n_burning, max_steps_out, random_seed, problem_name, training_name)
+        gp_results = Parallel.run_function_different_arguments_parallel(
+            wrapper_GPFittingGaussian, training_data_sets, *args, **kernel_parameters
+        )
+
+        for i in xrange(n_data):
+            if gp_results.get(i) is None:
+                logger.info("It wasn't possible to create the GP instance for fold %d" % i)
+                continue
+            gp_objects[i] = gp_results[i]
+
 
         kwargs = {
             'start': start,
@@ -1373,21 +1379,12 @@ class ValidationGPModel(object):
             'success_proportion': proportion_success,
             'filename_plot': filename_plot,
             'filename_histogram': filename_histogram,
-            'percentage_success': proportion_success,
+            'number_correctly_fitted_models': success_runs,
         }
 
         JSONFile.write(results, filename)
 
-        return {
-            'means': means,
-            'std_vec': std_vec,
-            'y_eval': y_eval,
-            'n_data': n_data,
-            'success_proportion': proportion_success,
-            'filename_plot': filename_plot,
-            'filename_histogram': filename_histogram,
-            'percentage_success': proportion_success,
-        }
+        return results
 
     @staticmethod
     def check_value_within_ci(value, mean, variance, var_noise=None):

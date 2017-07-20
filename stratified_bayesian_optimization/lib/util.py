@@ -449,3 +449,29 @@ def wrapper_hvoi(b, a, self):
     keep1 = keep1.astype(np.int64)
 
     return self.hvoi(b, c, keep1)
+
+def wrapper_GPFittingGaussian(training_data_sets, model, type_kernel, dimensions, bounds_domain,
+                              thinning, n_burning, max_steps_out, random_seed, problem_name,
+                              training_name, **kernel_parameters):
+    """
+
+    :param training_data_sets:
+    :param type_kernel:
+    :param dimensions:
+    :param bounds_domain:
+    :param thinning:
+    :param n_burning:
+    :param max_steps_out:
+    :param random_seed:
+    :param problem_name:
+    :param training_name:
+    :param kernel_parameters:
+    :return: GP-model instance.
+    """
+
+    gp = model(type_kernel, training_data_sets, dimensions=dimensions, bounds_domain=bounds_domain,
+               thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out,
+               random_seed=random_seed, problem_name=problem_name, training_name=training_name,
+               **kernel_parameters)
+
+    return gp
