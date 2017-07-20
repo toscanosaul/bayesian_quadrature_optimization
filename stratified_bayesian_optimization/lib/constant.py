@@ -13,6 +13,7 @@ DOMAIN_DIR = 'domain'
 
 # Directory of diagnostics kernel
 DIAGNOSTIC_KERNEL_DIR = 'results/diagnostic_kernel'
+RESULTS_DIR = 'results/'
 
 # Directory of GP models
 GP_DIR = 'data/gp_models'

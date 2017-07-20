@@ -22,6 +22,7 @@ from stratified_bayesian_optimization.lib.constant import (
     SCALED_KERNEL,
     LBFGS_NAME,
     SAME_CORRELATION,
+    RESULTS_DIR,
 )
 from stratified_bayesian_optimization.lib.util_gp_fitting import (
     get_kernel_default,
@@ -1331,6 +1332,8 @@ class ValidationGPModel(object):
             proportion_success = -1
             logger.info("All runs failed!!")
 
+        if not os.path.exists(RESULTS_DIR):
+            os.mkdir(RESULTS_DIR)
 
         if not os.path.exists(DIAGNOSTIC_KERNEL_DIR):
             os.mkdir(DIAGNOSTIC_KERNEL_DIR)
