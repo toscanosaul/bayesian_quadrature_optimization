@@ -1244,10 +1244,13 @@ class ValidationGPModel(object):
         }
         """
 
+        same_correlation = kernel_parameters.get(SAME_CORRELATION, False)
+
         kernel_name = ''
         for kernel in type_kernel:
             kernel_name += kernel + '_'
         kernel_name = kernel_name[0: -1]
+        kernel_name += '_same_correlation_' + str(same_correlation)
 
         n_data = len(training_data['evaluations'])
 
