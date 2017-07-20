@@ -125,9 +125,6 @@ class SBO(object):
         a = vectors['a']
         b = vectors['b']
 
-        if not np.all(np.isfinite(b)):
-            return np.zeros(point.shape[1])
-
         a, b, keep = AffineBreakPointsPrep(a, b)
         keep1, c = AffineBreakPoints(a, b)
         keep1 = keep1.astype(np.int64)
