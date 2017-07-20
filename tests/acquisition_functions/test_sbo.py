@@ -238,7 +238,7 @@ class TestSBO(unittest.TestCase):
         point_ = np.concatenate(([[88.8888888889]], [[1]]), axis=1)
         value = self.sbo_2.evaluate(point_)
 
-        npt.assert_almost_equal(values[0], evaluations[0][1])
+        npt.assert_almost_equal(values[0], evaluations[0][1], decimal=5)
         npt.assert_almost_equal(values[1], evaluations[0][2])
         npt.assert_almost_equal(values[2], evaluations[1][1])
         npt.assert_almost_equal(values[3], evaluations[1][2])

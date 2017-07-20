@@ -602,14 +602,14 @@ class TestGPFittingGaussian(unittest.TestCase):
                                                               dimensions, problem_name,
                                                               start=np.array([0.01**2, 0.0, 100.0]))
 
-        compare = 'results/diagnostic_kernel/validation_kernel_histogram_a_' + MATERN52_NAME + \
-                  '.png'
+        compare = 'results/diagnostic_kernel/a/validation_kernel_histogram_a_' + MATERN52_NAME + \
+                  '_10_None.png'
         assert result['filename_histogram'] == compare
         assert np.all(result['y_eval'] == evaluations)
         assert result['n_data'] == n_points
-        assert result['filename_plot'] == 'results/diagnostic_kernel/' \
+        assert result['filename_plot'] == 'results/diagnostic_kernel/a/' \
                                           'validation_kernel_mean_vs_observations_a_' + \
-                                          MATERN52_NAME + '.png'
+                                          MATERN52_NAME + '_10_None' + '.png'
         assert result['success_proportion'] >= 0.9
 
         noise = np.random.normal(0, 0.000001, n_points)
@@ -625,14 +625,14 @@ class TestGPFittingGaussian(unittest.TestCase):
                                                               dimensions, problem_name,
                                                               start=np.array([0.01**2, 0.0, 100.0]))
 
-        compare = 'results/diagnostic_kernel/validation_kernel_histogram_a_' + MATERN52_NAME + \
-                  '.png'
+        compare = 'results/diagnostic_kernel/a/validation_kernel_histogram_a_' + MATERN52_NAME + \
+                  '_10_None.png'
         assert result_2['filename_histogram'] == compare
         assert np.all(result_2['y_eval'] == evaluations_noisy)
         assert result_2['n_data'] == n_points
 
-        compare = 'results/diagnostic_kernel/validation_kernel_mean_vs_observations_a_' + \
-                  MATERN52_NAME + '.png'
+        compare = 'results/diagnostic_kernel/a/validation_kernel_mean_vs_observations_a_' + \
+                  MATERN52_NAME + '_10_None.png'
         assert result_2['filename_plot'] == compare
         assert result_2['success_proportion'] >= 0.9
 

@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from os import path
+import os
 
 from numpy.linalg.linalg import LinAlgError
 import numpy as np
@@ -1186,15 +1187,18 @@ class GradientGPFittingGaussian(object):
 
 
 class ValidationGPModel(object):
-    _validation_filename = 'validation_kernel_{problem}_{type_kernel}.json'.format
-    _validation_filename_plot = 'validation_kernel_mean_vs_observations_{problem}_{type_kernel}.' \
-                                'png'.format
-    _validation_filename_histogram = 'validation_kernel_histogram_{problem}_{type_kernel}.' \
-                                     'png'.format
+    _validation_filename = 'validation_kernel_{problem}_{type_kernel}_{n_training}_' \
+                           '{random_seed}.json'.format
+    _validation_filename_plot = 'validation_kernel_mean_vs_observations_{problem}_{type_kernel}_' \
+                                '{n_training}_{random_seed}.png'.format
+    _validation_filename_histogram = 'validation_kernel_histogram_{problem}_{type_kernel}_' \
+                                     '{n_training}_{random_seed}.png'.format
 
     @classmethod
     def cross_validation_mle_parameters(cls, type_kernel, training_data, dimensions, problem_name,
-                                        start=None, random_seed=None):
+                                        bounds_domain=None, thinning=0, n_burning=0,
+                                        max_steps_out=1, start=None, random_seed=None,
+                                        training_name=None, **kernel_parameters):
         """
         A json file with the percentage of success is generated. The output can be used to create
         a histogram and a diagnostic plot.
@@ -1213,8 +1217,17 @@ class ValidationGPModel(object):
         :param dimensions: [int]. It has only the n_tasks for the task_kernels, and for the
             PRODUCT_KERNELS_SEPARABLE contains the dimensions of every kernel in the product
         :param problem_name: (str)
+        :param bounds_domain: [[float, float]], lower bound and upper bound for each entry. This
+            parameter is used to compute priors in a smart way.
+        :param thinning: (int) Parameters of the MCMC. If it's 1, we take all the samples.
+        :param n_burning: (int) Number of burnings samples for the MCMC.
+        :param max_steps_out: (int) Maximum number of steps out for the stepping out  or
+                doubling procedure in slice sampling.
         :param start: (np.array(n)) starting point of the optimization of the llh.
         :param random_seed: int
+        :param training_name: (str)
+        :param kernel_parameters: additional kernel parameters,
+            - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
 
         :return: {
             'means': (np.array(n)), vector with the means of the GP at the points chosen in each of
@@ -1225,7 +1238,8 @@ class ValidationGPModel(object):
                 points.
             'n_data': int, total number of points.
             'filename_plot': str,
-            'filename_histogram': str
+            'filename_histogram': str,
+            'percentage_success': int,
         }
         """
 
@@ -1237,6 +1251,7 @@ class ValidationGPModel(object):
         n_data = len(training_data['evaluations'])
 
         noise = True
+
         if training_data.get('var_noise') is None:
             noise = False
 
@@ -1262,7 +1277,12 @@ class ValidationGPModel(object):
                 training_data_sets[i]['var_noise'] = []
                 test_points[i]['var_noise'] = []
 
-            gp_objects[i] = GPFittingGaussian(type_kernel, training_data_sets[i], dimensions)
+            gp_objects[i] = GPFittingGaussian(type_kernel, training_data_sets[i],
+                                              dimensions=dimensions, bounds_domain=bounds_domain,
+                                              thinning=thinning, n_burning=n_burning,
+                                              max_steps_out=max_steps_out, random_seed=random_seed,
+                                              problem_name=problem_name,
+                                              training_name=training_name, **kernel_parameters)
 
         kwargs = {
             'start': start,
@@ -1311,22 +1331,49 @@ class ValidationGPModel(object):
             proportion_success = -1
             logger.info("All runs failed!!")
 
-        filename = path.join(DIAGNOSTIC_KERNEL_DIR, cls._validation_filename(
+
+        if not os.path.exists(DIAGNOSTIC_KERNEL_DIR):
+            os.mkdir(DIAGNOSTIC_KERNEL_DIR)
+
+        diag_dir = path.join(DIAGNOSTIC_KERNEL_DIR, problem_name)
+
+        if not os.path.exists(diag_dir):
+            os.mkdir(diag_dir)
+
+        filename = path.join(diag_dir, cls._validation_filename(
             problem=problem_name,
             type_kernel=kernel_name,
+            n_training=n_data,
+            random_seed=random_seed,
         ))
 
-        JSONFile.write({'Percentage of success: ': proportion_success}, filename)
 
-        filename_plot = path.join(DIAGNOSTIC_KERNEL_DIR, cls._validation_filename_plot(
+        filename_plot = path.join(diag_dir, cls._validation_filename_plot(
             problem=problem_name,
             type_kernel=kernel_name,
+            n_training=n_data,
+            random_seed=random_seed,
         ))
 
-        filename_histogram = path.join(DIAGNOSTIC_KERNEL_DIR, cls._validation_filename_histogram(
+        filename_histogram = path.join(diag_dir, cls._validation_filename_histogram(
             problem=problem_name,
             type_kernel=kernel_name,
+            n_training=n_data,
+            random_seed=random_seed,
         ))
+
+        results = {
+            'means': means,
+            'std_vec': std_vec,
+            'y_eval': y_eval,
+            'n_data': n_data,
+            'success_proportion': proportion_success,
+            'filename_plot': filename_plot,
+            'filename_histogram': filename_histogram,
+            'percentage_success': proportion_success,
+        }
+
+        JSONFile.write(results, filename)
 
         return {
             'means': means,
@@ -1336,6 +1383,7 @@ class ValidationGPModel(object):
             'success_proportion': proportion_success,
             'filename_plot': filename_plot,
             'filename_histogram': filename_histogram,
+            'percentage_success': proportion_success,
         }
 
     @staticmethod

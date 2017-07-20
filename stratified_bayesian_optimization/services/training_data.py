@@ -74,7 +74,7 @@ class TrainingDataService(object):
         :param type_bounds: [0 or 1], 0 if the bounds are lower or upper bound of the respective
             entry, 1 if the bounds are all the finite options for that entry.
         :param cache: (boolean) Try to get model from cache
-        :return: {'points': [[float]], 'evaluations': [float], 'var_noise': [float] or None}
+        :return: {'points': [[float]], 'evaluations': [float], 'var_noise': [float] or []}
         """
 
         logger.info("Getting training data")
