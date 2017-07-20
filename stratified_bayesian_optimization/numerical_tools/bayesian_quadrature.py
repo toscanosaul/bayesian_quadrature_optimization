@@ -450,13 +450,13 @@ class BayesianQuadrature(object):
 
         return results
 
-    def compute_vectors_b(self, points, candidate_point, historical_points, parameters_kernel,
+    def compute_vectors_b(self, points, candidate_points, historical_points, parameters_kernel,
                           compute_vec_covs, compute_b_new, parallel):
         """
         Compute B(x, i) for ever x in points, and B(candidate_point, i) for each i.
 
         :param points: np.array(nxk)
-        :param candidate_point: np.array(1xm), (new_x, new_w)
+        :param candidate_point: np.array(kxm), (new_x, new_w)
         :param parameters_kernel: np.array(l)
         :param historical_points: np.array(txm)
         :param parameters_kernel: np.array(l)
@@ -464,14 +464,15 @@ class BayesianQuadrature(object):
         :param compute_b_new: boolean
 
         :return: {
-            'b_new': np.array(1xt),
-            'vec_covs': np.array(nxt),
+            'b_new': np.array(nxk),
+            'vec_covs': np.array(nxm),
         }
         """
 
 
         n = points.shape[0]
         m = historical_points.shape[0]
+        n_candidate_points = candidate_points.shape[0]
 
         vec_covs = None
         b_new = None
@@ -480,7 +481,7 @@ class BayesianQuadrature(object):
             vec_covs = np.zeros((n, m))
 
         if compute_b_new:
-            b_new = np.zeros((n, 1))
+            b_new = np.zeros((n, n_candidate_points))
 
         if parallel:
             point_dict = {}
@@ -488,7 +489,7 @@ class BayesianQuadrature(object):
                 point_dict[i] = points[i:i + 1, :]
 
             args = (False, None, True, compute_vec_covs, compute_b_new, historical_points,
-                    parameters_kernel, candidate_point, self,)
+                    parameters_kernel, candidate_points, self,)
 
             b_vectors = Parallel.run_function_different_arguments_parallel(
                 wrapper_compute_vector_b, point_dict, *args)
@@ -500,17 +501,110 @@ class BayesianQuadrature(object):
                 if compute_vec_covs:
                     vec_covs[i, :] = b_vectors[i]['vec_covs']
                 if compute_b_new:
-                    b_new[i, 0] = b_vectors[i]['b_new']
+                    b_new[i, :] = b_vectors[i]['b_new']
         else:
             for i in xrange(n):
                 if compute_vec_covs:
                     vec_covs[i, :] = self.evaluate_quadrature_cross_cov(
                         points[i:i + 1, :], self.gp.data['points'], parameters_kernel)
                 if compute_b_new:
-                    b_new[i, 0] = self.evaluate_quadrature_cross_cov(
-                        points[i:i + 1, :], candidate_point, parameters_kernel)
+                    b_new[i, :] = self.evaluate_quadrature_cross_cov(
+                        points[i:i + 1, :], candidate_points, parameters_kernel)
 
         return {'b_new': b_new, 'vec_covs': vec_covs}
+
+    def compute_posterior_parameters_kg_many_cp(self, points, candidate_points, cache=True,
+                                                parallel=True):
+        """
+        Compute posterior parameters of the GP after integrating out the random parameters needed
+        to compute the knowledge gradient (vectors "a" and "b" in the SBO paper).
+
+        :param points: np.array(nxk)
+        :param candidate_points: np.array(rxm), (new_x, new_w)
+        :param cache: (boolean) Use cached data and cache data if cache is True
+        :param parallel: (boolean) compute B(x, i) in parallel for all x in points
+
+        :return: {
+            'a': np.array(n),
+            'b': np.array(nxr)
+        }
+        """
+
+        var_noise = self.gp.var_noise.value[0]
+        parameters_kernel = self.gp.kernel.hypers_values_as_array
+        mean = self.gp.mean.value[0]
+
+        chol_solve = self.gp._cholesky_solve_vectors_for_posterior(
+            var_noise, mean, parameters_kernel, cache=cache)
+        chol = chol_solve['chol']
+        solve = chol_solve['solve']
+
+        n = points.shape[0]
+        m = self.gp.data['points'].shape[0]
+        n_new_points = candidate_points.shape[0]
+
+        b_new = None
+        compute_b_new = False
+        if b_new is None:
+            compute_b_new = True
+            b_new = np.zeros((n, n_new_points))
+
+        compute_vec_covs = False
+        if cache:
+            vec_covs = self._get_cached_data((tuple(parameters_kernel, )), QUADRATURES)
+        else:
+            vec_covs = None
+
+        if vec_covs is None:
+            compute_vec_covs = True
+            vec_covs = np.zeros((n, m))
+
+        if compute_vec_covs or compute_b_new:
+            computations = self.compute_vectors_b(points, candidate_points, self.gp.data['points'],
+                                                  parameters_kernel, compute_vec_covs,
+                                                  compute_b_new, parallel)
+
+            if compute_vec_covs:
+                vec_covs = computations['vec_covs']
+
+            if compute_b_new:
+                b_new = computations['b_new']
+
+        if cache:
+            if compute_vec_covs:
+                self._updated_cached_data((tuple(parameters_kernel), ), vec_covs, QUADRATURES)
+
+        if cache:
+            mu_n = self._get_cached_data((tuple(parameters_kernel),), POSTERIOR_MEAN)
+        else:
+            mu_n = None
+
+        if mu_n is None:
+            mu_n = mean + np.dot(vec_covs, solve)
+            if cache:
+                self._updated_cached_data((tuple(parameters_kernel),), mu_n, POSTERIOR_MEAN)
+
+        # TODO: CACHE SO WE DON'T COMPUTE MU_N ALL THE TIME
+        cross_cov = self.gp.evaluate_cross_cov(self.gp.data['points'], candidate_points,
+                                                parameters_kernel)
+
+        solve_2 = cho_solve(chol, cross_cov)
+
+        numerator = b_new - np.dot(vec_covs, solve_2)
+
+        new_cross_cov = np.diag(self.gp.evaluate_cross_cov(candidate_points, candidate_points,
+                                                   parameters_kernel))
+
+        denominator = new_cross_cov - np.einsum('ij,ij->j', cross_cov, solve_2)
+        denominator = np.clip(denominator, 0, None)
+        denominator = np.sqrt(denominator)
+
+        b_value = numerator / denominator[None, :]
+
+        return {
+            'a': mu_n,
+            'b': b_value,
+        }
 
 
     def compute_posterior_parameters_kg(self, points, candidate_point, var_noise=None, mean=None,

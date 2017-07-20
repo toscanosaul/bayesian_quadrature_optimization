@@ -91,6 +91,19 @@ class TestSBO(unittest.TestCase):
         self.sbo = SBO(self.gp, np.array(domain.discretization_domain_x))
 
 
+        self.spec_2 = {
+            'dim_x': 1,
+            'choose_noise': True,
+            'bounds_domain_x': [self.bounds_domain_x],
+            'number_points_each_dimension': [50],
+            'problem_name': 'a',
+        }
+
+        domain_2 = DomainService.from_dict(self.spec_2)
+
+        self.sbo_2 = SBO(self.gp, np.array(domain_2.discretization_domain_x))
+
+
         training_data_simple = {
             'evaluations': list(function[0:1]),
             'points': points[0:1, :],
@@ -211,7 +224,7 @@ class TestSBO(unittest.TestCase):
             self.sbo_med.optimize(random_seed=1, parallel=False)
 
     def test_generate_evaluations(self):
-        evaluations = self.sbo.generate_evaluations(
+        evaluations = self.sbo_2.generate_evaluations(
             "test_generate_sbo_evals", "gp_fitting_gaussian", "test", 5, 1, 0, [10])
 
         points_x = [[11.1111111111], [22.2222222222]]
@@ -220,10 +233,10 @@ class TestSBO(unittest.TestCase):
         for task in xrange(2):
             for point in points_x:
                 point_ = np.concatenate(([point], [[task]]), axis=1)
-                values.append(self.sbo.evaluate(point_))
+                values.append(self.sbo_2.evaluate(point_))
 
         point_ = np.concatenate(([[88.8888888889]], [[1]]), axis=1)
-        value = self.sbo.evaluate(point_)
+        value = self.sbo_2.evaluate(point_)
 
         npt.assert_almost_equal(values[0], evaluations[0][1])
         npt.assert_almost_equal(values[1], evaluations[0][2])

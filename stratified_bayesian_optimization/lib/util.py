@@ -14,6 +14,14 @@ from stratified_bayesian_optimization.lib.constant import(
     SCALED_KERNEL,
     SAME_CORRELATION,
 )
+from stratified_bayesian_optimization.lib.affine_break_points import (
+    AffineBreakPointsPrep,
+    AffineBreakPoints,
+)
+from stratified_bayesian_optimization.lib.parallel import Parallel
+from stratified_bayesian_optimization.initializers.log import SBOLog
+
+logger = SBOLog(__name__)
 
 
 def convert_dictionary_gradient_to_simple_dictionary(dictionary, order_keys):
@@ -381,13 +389,63 @@ def wrapper_compute_vector_b(point, compute_vec_covs, compute_b_new, historical_
     }
 
 
-def wrapper_evaluate_sbo(point, task, self):
+def wrapper_evaluate_sbo(candidate_points, task, self):
     """
 
-    :param point: np.array(1xn)
+    :param candidate_points: np.array(rxn)
     :param task: (int)
     :param self: sbo instance
-    :return: float
+    :return: np.array(r)
     """
-    point = np.concatenate((point, np.array([[task]])), axis=1)
-    return self.evaluate(point)
+    tasks =  candidate_points.shape[0] * [task]
+    tasks = np.array(tasks).reshape((len(tasks), 1))
+
+    candidate_points = np.concatenate((candidate_points, tasks), axis=1)
+
+    vectors = self.bq.compute_posterior_parameters_kg_many_cp(
+        self.discretization, candidate_points
+    )
+
+    a = vectors['a']
+    b = vectors['b']
+
+    r = candidate_points.shape[0]
+
+    values = np.zeros(r)
+
+
+    b_vectors = {}
+    for i in xrange(r):
+        b_vectors[i] = b[:, i]
+
+    args = (False, None, True, a, self,)
+    val = Parallel.run_function_different_arguments_parallel(
+        wrapper_hvoi, b_vectors, *args)
+
+    for i in xrange(r):
+        if val.get(i) is None:
+            logger.info("Computation of VOI failed for new_point %d" % i)
+            continue
+        values[i] = val[i]
+
+    return values
+
+
+def wrapper_hvoi(b, a, self):
+    """
+
+    :param b:
+    :param a:
+    :param self:
+    :return:
+    """
+
+    if not np.all(np.isfinite(b)):
+        return 0.0
+
+    a, b, keep = AffineBreakPointsPrep(a, b)
+
+    keep1, c = AffineBreakPoints(a, b)
+    keep1 = keep1.astype(np.int64)
+
+    return self.hvoi(b, c, keep1)

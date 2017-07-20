@@ -7,7 +7,6 @@ from os import path
 import os
 
 from copy import deepcopy
-from numpy import linalg as LA
 
 import itertools
 
@@ -352,26 +351,14 @@ class SBO(object):
         points = deepcopy(vectors)
         vectors = np.array(vectors)
 
-        point_dict = {}
-        for i in xrange(n):
-            point_dict[i] = vectors[i:i+1, :]
+        # point_dict = {}
+        # for i in xrange(n):
+        #     point_dict[i] = vectors[i:i+1, :]
 
         values = {}
         if self.bq.tasks:
             for task in xrange(self.bq.n_tasks):
-                vals = []
-
-                args = (False, None, True, task, self,)
-                evaluations = Parallel.run_function_different_arguments_parallel(
-                    wrapper_evaluate_sbo, point_dict, *args)
-
-                for i in xrange(n):
-                    if evaluations.get(i) is None:
-                        logger.info("Error in computing SBO at point %d and task %d" % (i, task))
-                        continue
-                    vals.append(evaluations[i])
-
-                values[task] = vals
+                values[task] = wrapper_evaluate_sbo(vectors, task, self)
 
         f_name = self._filename_voi_evaluations(iteration=iteration,
                                                 model_type=model_type,
