@@ -19,6 +19,12 @@ def plot_histogram(y_eval, means, std_vec, filename_histogram):
     :param std_vec: np.array(n)
     :param filename_histogram: str
     """
+    indices = np.where(std_vec != 0)
+
+    y_eval = y_eval[indices]
+    means = means[indices]
+    std_vec = std_vec[indices]
+
     plt.figure()
     plt.hist((y_eval - means) / std_vec, bins=15)
     plt.savefig(filename_histogram)
@@ -35,6 +41,13 @@ def plot_diagnostic_plot(y_eval, means, std_vec, n_data, filename_plot):
     :param n_data: int
     :param filename_plot: str
     """
+
+    indices = np.where(std_vec != 0)
+
+    y_eval = y_eval[indices]
+    means = means[indices]
+    std_vec = std_vec[indices]
+
     plt.figure()
     plt.ylabel('Prediction of the function')
     plt.errorbar(np.arange(n_data), means, yerr=2.0 * std_vec, fmt='o')

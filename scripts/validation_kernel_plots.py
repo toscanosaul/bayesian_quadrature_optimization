@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
 
     random_seed = 5
-    n_training = 3
+    n_training = 100
     problem_name = "movies_collaborative"
     type_kernel = [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]
     same_correlation = False
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     for kernel in type_kernel:
         kernel_name += kernel + '_'
     kernel_name = kernel_name[0: -1]
-#    kernel_name += '_same_correlation_' + str(same_correlation)
+    kernel_name += '_same_correlation_' + str(same_correlation)
 
 
     diag_dir = path.join(DIAGNOSTIC_KERNEL_DIR, problem_name)
@@ -54,5 +54,5 @@ if __name__ == '__main__':
     plot_histogram(np.array(data['y_eval']), np.array(data['means']), np.array(data['std_vec']),
                    data['filename_histogram'])
     plot_diagnostic_plot(np.array(data['y_eval']), np.array(data['means']),
-                         np.array(data['std_vec']), data['n_data'],
+                         np.array(data['std_vec']), data['number_correctly_fitted_models'],
                          data['filename_plot'])
