@@ -180,7 +180,7 @@ class TestSBO(unittest.TestCase):
             lambda point: self.sbo.evaluate(point.reshape((1, len(point)))),
             np.array([52.5, 0]), np.array([dh]))
 
-        npt.assert_almost_equal(finite_diff[1], grad[1], decimal=5)
+        npt.assert_almost_equal(finite_diff[1], grad[1], decimal=4)
         npt.assert_almost_equal(finite_diff[0], grad[0], decimal=2)
 
         point = self.points[0:1, :]

@@ -177,6 +177,9 @@ class TestGPFittingGaussian(unittest.TestCase):
             "var_noise": []
         }
 
+        st_sampler = [592.54740339691523, 32.413676860959995, 83.633554944444455,
+                      592.54740339691523]
+
         assert dict == {
             'type_kernel': [SCALED_KERNEL, MATERN52_NAME],
             'training_data': self.training_data,
@@ -195,6 +198,7 @@ class TestGPFittingGaussian(unittest.TestCase):
             'problem_name': '',
             'training_name': '',
             'same_correlation': False,
+            'start_point_sampler': st_sampler,
         }
 
         gp = GPFittingGaussian([MATERN52_NAME], self.training_data, dimensions=[1])
@@ -366,7 +370,7 @@ class TestGPFittingGaussian(unittest.TestCase):
         opt_4 = gp_gaussian.mle_parameters(start)
 
         npt.assert_almost_equal(opt_3['optimal_value'], opt_4['optimal_value'])
-        npt.assert_almost_equal(opt_3['solution'], opt_4['solution'])
+        npt.assert_almost_equal(opt_3['solution'], opt_4['solution'], decimal=4)
 
     def test_objective_llh(self):
         funct = deepcopy(self.gp_gaussian.log_likelihood)
@@ -424,7 +428,7 @@ class TestGPFittingGaussian(unittest.TestCase):
         value = gp_tk.sample_parameters(1, random_seed=1)[-1]
         gp_tk_ = GPFittingGaussian(type_kernel, training_data, dimensions, n_burning=1,
                                    random_seed=1)
-        assert np.all(gp_tk_.get_value_parameters_model == value)
+        assert np.all(gp_tk_.start_point_sampler == value)
 
         type_kernel = [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]
         training_data = {
@@ -436,18 +440,20 @@ class TestGPFittingGaussian(unittest.TestCase):
 
         gp2 = GPFittingGaussian(type_kernel, training_data, dimensions)
         value2 = gp2.sample_parameters(1, random_seed=1)[-1]
-        assert np.all(gp.get_value_parameters_model == value2)
+        assert np.all(gp.start_point_sampler == value2)
 
     def test_sample_parameters_posterior(self):
+        start = self.gp.samples_parameters[-1]
         sample = self.gp.sample_parameters_posterior(1, 1)
 
         np.random.seed(1)
-        sample2 = self.gp.sample_parameters_posterior(1)
+        sample2 = self.gp.sample_parameters_posterior(1, start_point=start)
         assert np.all(sample == sample2)
         assert sample.shape == (1, 4)
 
+        start = self.gp.samples_parameters[-1]
         sample3 = self.gp.sample_parameters_posterior(2, 1)
-        sample4 = self.gp.sample_parameters(2, random_seed=1)
+        sample4 = self.gp.sample_parameters(2, random_seed=1, start_point=start)
 
         assert np.all(sample4[0] == sample3[0, :])
         assert np.all(sample4[1] == sample3[1, :])
@@ -603,13 +609,13 @@ class TestGPFittingGaussian(unittest.TestCase):
                                                               start=np.array([0.01**2, 0.0, 100.0]))
 
         compare = 'results/diagnostic_kernel/a/validation_kernel_histogram_a_' + MATERN52_NAME + \
-                  '_10_None.png'
+                  '_same_correlation_False_10_None.png'
         assert result['filename_histogram'] == compare
         assert np.all(result['y_eval'] == evaluations)
         assert result['n_data'] == n_points
         assert result['filename_plot'] == 'results/diagnostic_kernel/a/' \
                                           'validation_kernel_mean_vs_observations_a_' + \
-                                          MATERN52_NAME + '_10_None' + '.png'
+                                          MATERN52_NAME + '_same_correlation_False_10_None' + '.png'
         assert result['success_proportion'] >= 0.9
 
         noise = np.random.normal(0, 0.000001, n_points)
@@ -626,13 +632,13 @@ class TestGPFittingGaussian(unittest.TestCase):
                                                               start=np.array([0.01**2, 0.0, 100.0]))
 
         compare = 'results/diagnostic_kernel/a/validation_kernel_histogram_a_' + MATERN52_NAME + \
-                  '_10_None.png'
+                  '_same_correlation_False_10_None.png'
         assert result_2['filename_histogram'] == compare
         assert np.all(result_2['y_eval'] == evaluations_noisy)
         assert result_2['n_data'] == n_points
 
         compare = 'results/diagnostic_kernel/a/validation_kernel_mean_vs_observations_a_' + \
-                  MATERN52_NAME + '_10_None.png'
+                  MATERN52_NAME + '_same_correlation_False_10_None.png'
         assert result_2['filename_plot'] == compare
         assert result_2['success_proportion'] >= 0.9
 

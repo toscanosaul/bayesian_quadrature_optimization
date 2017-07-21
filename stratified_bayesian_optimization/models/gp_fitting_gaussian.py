@@ -63,9 +63,9 @@ class GPFittingGaussian(object):
 
     def __init__(self, type_kernel, training_data, dimensions=None, bounds_domain=None,
                  kernel_values=None, mean_value=None, var_noise_value=None, thinning=0, n_burning=0,
-                 max_steps_out=1, data=None, random_seed=None, type_bounds=None,
-                 training_name=None, problem_name=None, name_model='gp_fitting_gaussian',
-                 **kernel_parameters):
+                 start_point_sampler=None, max_steps_out=1, data=None, random_seed=None,
+                 type_bounds=None, training_name=None, problem_name=None,
+                 name_model='gp_fitting_gaussian', **kernel_parameters):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL].
@@ -83,6 +83,8 @@ class GPFittingGaussian(object):
         :param var_noise_value: [float], It contains the variance of the noise of the model
         :param thinning: (int) Parameters of the MCMC. If it's 1, we take all the samples.
         :param n_burning: (int) Number of burnings samples for the MCMC.
+        :param start_point_sampler: [float], starting point for the MCMC sampler (we won't take
+            burning samples anymore).
         :param max_steps_out: (int) Maximum number of steps out for the stepping out  or
                 doubling procedure in slice sampling.
         :param data: {'points': ([[float]], dim=nxm), 'evaluations': ([float],dim=n),
@@ -159,6 +161,7 @@ class GPFittingGaussian(object):
         self.n_burning = n_burning
         self.samples_parameters = []
         self.slice_samplers = []
+        self.start_point_sampler = start_point_sampler
 
         self.cache_chol_cov = {}
         self.cache_sol_chol_y_unbiased = {}
@@ -187,9 +190,16 @@ class GPFittingGaussian(object):
             self.slice_samplers.append(SliceSampling(wrapper_log_prob, self.length_scale_indexes,
                                                      **slice_parameters))
 
-        if self.n_burning > 0:
-            parameters = self.sample_parameters(float(self.n_burning) / (self.thinning + 1))
-            self.update_value_parameters(parameters[-1])
+        if self.start_point_sampler is not None and len(self.start_point_sampler) > 0:
+            self.samples_parameters.append(np.array(self.start_point_sampler))
+        else:
+            self.samples_parameters.append(self.get_value_parameters_model)
+            if self.n_burning > 0:
+                parameters = self.sample_parameters(float(self.n_burning) / (self.thinning + 1))
+                self.samples_parameters.append(parameters[-1])
+                self.start_point_sampler = parameters[-1]
+            else:
+                self.start_point_sampler = self.get_value_parameters_model
 
     def sample_parameters(self, n_samples, start_point=None, random_seed=None):
         """
@@ -199,7 +209,7 @@ class GPFittingGaussian(object):
         :param start_point: np.array(n_parameters)
         :param random_seed: int
 
-        :return: n_samples * [n_parameters * [float]]
+        :return: n_samples * [np.array(float)]
         """
 
         if random_seed is not None:
@@ -208,7 +218,8 @@ class GPFittingGaussian(object):
         samples = []
 
         if start_point is None:
-            start_point = self.get_value_parameters_model
+            start_point = self.samples_parameters[-1]
+
 
         n_samples *= (self.thinning + 1)
         n_samples = int(n_samples)
@@ -225,7 +236,10 @@ class GPFittingGaussian(object):
                 points[1 - index] = slice.slice_sample(points[1 - index], points[index], *(self, ))
             start_point = combine_vectors(points[0], points[1], self.length_scale_indexes)
             samples.append(start_point)
-        return samples[::self.thinning + 1]
+        samples_return = samples[::self.thinning + 1]
+        self.samples_parameters += samples_return
+
+        return samples_return
 
     def set_parameters_kernel(self):
         """
@@ -461,6 +475,7 @@ class GPFittingGaussian(object):
             'training_name': training_name,
             'problem_name': problem_name,
             'same_correlation': same_correlation,
+            'start_point_sampler': list(self.start_point_sampler),
         }
 
     @classmethod
