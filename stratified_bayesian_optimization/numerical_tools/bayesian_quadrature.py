@@ -108,6 +108,9 @@ class BayesianQuadrature(object):
         self.cache_quadrature_with_candidate = {}
         self.optimal_solutions = [] # The optimal solutions are written here
 
+        # Cached data for the MC estimation of the SBO.
+        self.cache_sample = {}
+
     def _get_cached_data(self, index, name):
         """
         :param index: tuple. (parameters_kernel, )
@@ -202,7 +205,7 @@ class BayesianQuadrature(object):
         Evaluate the gradient respect to the point of the quadrature cross cov i.e.
             gradient(Expectation(cov((x_i,w_i), (x'_j,w'_j)))), where point = (x_i), and
             points_2 = (x'_j, w'_j).
-        This is gradient[B(x, j)] in the SBO paper.
+        This is gradient[B(x, j)] respect to x=point in the SBO paper.
 
         :param point: np.array(1xk)
         :param points_2: np.array(mxk')
@@ -230,7 +233,7 @@ class BayesianQuadrature(object):
         """
         Evaluate the gradient respect to the candidate_point of the quadrature cross cov i.e.
             gradient(Expectation(cov((x_i,w_i), candidate_point))), where point = (x_i) is in
-            points, and candidate_point = (w, w).
+            points, and candidate_point = (x, w).
         This is gradient[B(x, n+1)] respect to n+1 in the SBO paper.
 
         :param candidate_point: np.array(1xk)
@@ -456,7 +459,7 @@ class BayesianQuadrature(object):
         Compute B(x, i) for ever x in points, and B(candidate_point, i) for each i.
 
         :param points: np.array(nxk)
-        :param candidate_point: np.array(kxm), (new_x, new_w)
+        :param candidate_points: np.array(kxm), (new_x, new_w)
         :param parameters_kernel: np.array(l)
         :param historical_points: np.array(txm)
         :param parameters_kernel: np.array(l)
@@ -465,7 +468,7 @@ class BayesianQuadrature(object):
 
         :return: {
             'b_new': np.array(nxk),
-            'vec_covs': np.array(nxm),
+            'vec_covs': np.array(nxt),
         }
         """
 
@@ -605,6 +608,204 @@ class BayesianQuadrature(object):
             'a': mu_n,
             'b': b_value,
         }
+
+    def compute_parameters_for_sample(
+            self, point, candidate_point, var_noise=None, mean=None,
+            parameters_kernel=None, cache=True):
+        """
+        Compute posterior parameters of a_n+1(point) given the candidate_point. Caching is different
+        than in the other functions.
+
+        :param point: np.array(1xn)
+        :param candidate_point: np.array(1xm)
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
+        :param cache: (boolean) Use cached data and cache data if cache is True
+        :return: {'a': float, 'b': float}
+        """
+        if var_noise is None:
+            var_noise = self.gp.var_noise.value[0]
+
+        if parameters_kernel is None:
+            parameters_kernel = self.gp.kernel.hypers_values_as_array
+
+        if mean is None:
+            mean = self.gp.mean.value[0]
+
+        chol_solve = self.gp._cholesky_solve_vectors_for_posterior(
+            var_noise, mean, parameters_kernel, cache=cache)
+        chol = chol_solve['chol']
+        solve = chol_solve['solve']
+
+        if cache:
+            b_new = self._get_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :]),
+                                           tuple(point[0, :])), B_NEW)
+        else:
+            b_new = None
+
+        compute_b_new = False
+        if b_new is None:
+            compute_b_new = True
+
+        compute_vec_covs = False
+        if cache:
+            vec_covs = self._get_cached_data((tuple(parameters_kernel), tuple(point[0, :])),
+                                             QUADRATURES)
+        else:
+            vec_covs = None
+
+        if vec_covs is None:
+            compute_vec_covs = True
+
+        computations = self.compute_vectors_b(point, candidate_point, self.gp.data['points'],
+                                              parameters_kernel, compute_vec_covs, compute_b_new,
+                                              False)
+
+        b_new = computations['b_new']
+
+        vec_covs = computations['vec_covs']
+
+        if cache:
+            if compute_vec_covs:
+                self._updated_cached_data((tuple(parameters_kernel), tuple(point[0, :])), vec_covs,
+                                          QUADRATURES)
+
+            if compute_b_new:
+                self._updated_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :]),
+                                           tuple(point[0, :])), B_NEW)
+
+        mu_n = mean + np.dot(vec_covs, solve)
+
+        if len(self.cache_sample) >= 1:
+            solve_2 = self.cache_sample['solve']
+            denominator = self.cache_sample['denominator']
+        else:
+            cross_cov = self.gp.evaluate_cross_cov(self.gp.data['points'], candidate_point,
+                                                   parameters_kernel)  # cache this
+            self.cache_sample['gamma'] = cross_cov
+
+            solve_2 = cho_solve(chol, cross_cov)
+            self.cache_sample['solve_2'] = solve_2
+
+            new_cross_cov = np.diag(self.gp.evaluate_cross_cov(candidate_point, candidate_point,
+                                                       parameters_kernel))
+            denominator = new_cross_cov - np.einsum('ij,ij->j', cross_cov, solve_2)
+            denominator = np.clip(denominator, 0, None)
+            denominator = np.sqrt(denominator)
+            self.cache_sample['denominator'] = denominator
+
+
+        numerator = b_new - np.dot(vec_covs, solve_2)
+        b_value = numerator / denominator[None, :]
+
+        return {'a': mu_n, 'b': b_value}
+
+    def compute_gradient_parameters_for_sample(
+            self, point, candidate_point, var_noise=None, mean=None,
+            parameters_kernel=None, cache=True):
+        """
+        Compute the gradient of the posterior parameters of a_n+1(point) respect to point given the
+        candidate_point.
+
+        :param point: np.array(1xn)
+        :param candidate_point: np.array(1xm)
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
+        :param cache: (boolean) Use cached data and cache data if cache is True
+        :return: {'a': np.array(n), 'b': np.array(n)}
+        """
+
+        if var_noise is None:
+            var_noise = self.gp.var_noise.value[0]
+
+        if parameters_kernel is None:
+            parameters_kernel = self.gp.kernel.hypers_values_as_array
+
+        if mean is None:
+            mean = self.gp.mean.value[0]
+
+        historical_points = self.gp.data['points']
+        historical_evaluations = self.gp.data['evaluations']
+
+
+        gradient = self.evaluate_grad_quadrature_cross_cov(point, historical_points,
+                                                           parameters_kernel)
+
+        chol_solve = self.gp._cholesky_solve_vectors_for_posterior(
+            var_noise, mean, parameters_kernel, historical_points=historical_points,
+            historical_evaluations=historical_evaluations, cache=cache)
+
+        solve = chol_solve['solve']
+        chol = chol_solve['chol']
+
+        gradient_a = np.dot(gradient, solve)
+
+        if len(self.cache_sample) >= 1:
+            solve_2 = self.cache_sample['solve_2']
+            denominator = self.cache_sample['denominator']
+        else:
+            cross_cov = self.gp.evaluate_cross_cov(self.gp.data['points'], candidate_point,
+                                                   parameters_kernel)  # cache this
+            self.cache_sample['gamma'] = cross_cov
+
+            solve_2 = cho_solve(chol, cross_cov)
+            self.cache_sample['solve_2'] = solve_2
+
+            new_cross_cov = np.diag(self.gp.evaluate_cross_cov(candidate_point, candidate_point,
+                                                       parameters_kernel))
+            denominator = new_cross_cov - np.einsum('ij,ij->j', cross_cov, solve_2)
+            denominator = np.clip(denominator, 0, None)
+            denominator = np.sqrt(denominator)
+            self.cache_sample['denominator'] = denominator
+
+        gradient_new = self.evaluate_grad_quadrature_cross_cov(point, candidate_point,
+                                                           parameters_kernel)
+
+        gradient_b = (gradient_new - np.dot(gradient, solve_2)) / denominator
+
+
+
+        if cache:
+            b_new = self._get_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :]),
+                                           tuple(point[0, :])), B_NEW)
+        else:
+            b_new = None
+
+        compute_b_new = False
+        if b_new is None:
+            compute_b_new = True
+
+        compute_vec_covs = False
+
+        if cache:
+            vec_covs = self._get_cached_data((tuple(parameters_kernel), tuple(point[0, :])),
+                                             QUADRATURES)
+        else:
+            vec_covs = None
+
+        if vec_covs is None:
+            compute_vec_covs = True
+
+        # Remove repeated code and put in one function!
+
+        if compute_vec_covs or compute_b_new:
+            computations = self.compute_vectors_b(point, candidate_point, self.gp.data['points'],
+                                                  parameters_kernel, compute_vec_covs,
+                                                  compute_b_new, False)
+            if compute_vec_covs:
+                vec_covs = computations['vec_covs']
+
+            if compute_b_new:
+                b_new = computations['b_new']
+
+        numerator = b_new - np.dot(vec_covs, solve_2)
+
+        if numerator < 0:
+            gradient_b *= -1.0
+
+        return {'gradient_a': gradient_a, 'gradient_b': gradient_b}
 
 
     def compute_posterior_parameters_kg(self, points, candidate_point, var_noise=None, mean=None,

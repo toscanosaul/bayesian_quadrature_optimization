@@ -243,3 +243,6 @@ class TestSBO(unittest.TestCase):
         npt.assert_almost_equal(values[2], evaluations[1][1])
         npt.assert_almost_equal(values[3], evaluations[1][2])
         npt.assert_almost_equal(value, evaluations[1][-2])
+
+    def test_evaluate_sample(self):
+        assert 1==1

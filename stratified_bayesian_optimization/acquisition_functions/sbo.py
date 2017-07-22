@@ -29,6 +29,7 @@ from stratified_bayesian_optimization.lib.util import (
     wrapper_optimization,
     wrapper_objective_voi,
     wrapper_gradient_voi,
+    wrapper_evaluate_sbo_by_sample,
 )
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.lib.util import wrapper_evaluate_sbo
@@ -70,6 +71,145 @@ class SBO(object):
             self.opt_separing_domain = True
 
         self.optimization_results = []
+        self.max_mean = None # max_{x} a_{n} (x)
+
+    def evaluate_sample(self, point, candidate_point, sample, var_noise=None, mean=None,
+                        parameters_kernel=None, cache=True):
+        """
+        Evaluate a sample of a_{n+1}(point) given that candidate_point is chosen.
+
+        :param point: np.array(1xn)
+        :param candidate_point: np.array(1xm)
+        :param sample: (float) a sample from a standard Gaussian r.v.
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
+        :param cache: (boolean) Use cached data and cache data if cache is True
+        :return: float
+        """
+
+        vectors = self.bq.compute_parameters_for_sample(
+            point, candidate_point, var_noise=var_noise, mean=mean,
+            parameters_kernel=parameters_kernel, cache=cache)
+
+        return vectors['a'] + sample * vectors['b']
+
+    def evaluate_gradient_sample(self, point, candidate_point, sample, var_noise=None, mean=None,
+                        parameters_kernel=None, cache=True):
+        """
+        Evaluate the gradient of a sample of a_{n+1}(point) given that candidate_point is chosen.
+
+        :param point: np.array(1xn)
+        :param candidate_point: np.array(1xm)
+        :param sample: (float) a sample from a standard Gaussian r.v.
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
+        :param cache: (boolean) Use cached data and cache data if cache is True
+        :return: float
+        """
+
+        gradient_params = self.bq.compute_gradient_parameters_for_sample(
+            point, candidate_point, var_noise=var_noise, mean=mean,
+            parameters_kernel=parameters_kernel, cache=cache
+        )
+
+        grad_a = gradient_params['a']
+        grad_b = gradient_params['b']
+
+        return grad_a + sample * grad_b
+
+    def evaluate_sbo_by_sample(self, candidate_point, sample, start=None, var_noise=None,
+                               mean=None, parameters_kernel=None):
+        """
+        Optimize a_{n+1}(x)  given the candidate_point and the sample of the Gaussian r.v.
+
+        :param candidate_point: np.array(1xn)
+        :param sample: float
+        :param start: np.array(m)
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
+        :return: float
+        """
+
+        bounds_x = [self.bounds_opt[i] for i in xrange(len(self.bounds_opt)) if i in
+                    self.bq.x_domain]
+
+        if start is None:
+            if len(self.bq.optimal_solutions) > 0:
+                start = self.bq.optimal_solutions[-1]['solution']
+            else:
+                start = DomainService.get_points_domain(1, bounds_x,
+                                                        type_bounds=len(bounds_x) * [0])
+                start = np.array(start[0])
+
+        bounds_x = [tuple(bound) for bound in bounds_x]
+
+        objective_function = self.evaluate_sample
+        grad_function = self.evaluate_gradient_sample
+
+        optimization = Optimization(
+            LBFGS_NAME,
+            objective_function,
+            bounds_x,
+            grad_function,
+            minimize=False)
+
+        args = (candidate_point, sample, var_noise, mean, parameters_kernel)
+        results = optimization.optimize(start, *args)
+
+        return results['optimal_value']
+
+    def evaluate_mc(self, candidate_point,  n_samples, var_noise=None, mean=None,
+                    parameters_kernel=None, random_seed=None, parallel=True):
+        """
+        Evaluate SBO policy by a MC estimation.
+
+        :param candidate_point: np.array(1xn)
+        :param n_samples: int
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
+        :param random_seed: int
+        :param parallel: boolean
+        :return: {'value': float, 'std': float}
+        """
+
+        if self.max_mean is not None:
+            max_mean = self.max_mean
+        else:
+            max_mean = self.bq.optimize_posterior_mean(random_seed)
+            self.max_mean = max_mean
+
+        samples = np.random.normal(0, 1, n_samples)
+        max_values = []
+
+        if parallel:
+            point_dict = {}
+            for i in xrange(n_samples):
+                point_dict[i] = samples[i]
+            args = (False, None, True, self, candidate_point, None, var_noise, mean,
+                    parameters_kernel)
+
+            simulated_values = Parallel.run_function_different_arguments_parallel(
+                wrapper_evaluate_sbo_by_sample, point_dict, *args)
+
+            for i in xrange(n_samples):
+                if simulated_values.get(i) is None:
+                    logger.info("Error in computing simulated value at sample %d" % i)
+                    continue
+                max_values.append(simulated_values[i])
+        else:
+            for i in xrange(n_samples):
+                max_value = self.evaluate_sbo_by_sample(
+                    candidate_point, samples[i], start=None, var_noise=var_noise, mean=mean,
+                    parameters_kernel=parameters_kernel)
+                max_values.append(max_value)
+
+        self.bq.cache_sample = {}
+
+        return {'value': np.mean(max_values) - max_mean, 'std': np.std(max_values) / n_samples}
 
     def evaluate(self, point, var_noise=None, mean=None, parameters_kernel=None, cache=True):
         """
@@ -246,6 +386,7 @@ class SBO(object):
         Cleans the cache
         """
         self.bq.clean_cache()
+        self.max_mean = None
 
     def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed):
         """
@@ -371,3 +512,4 @@ class SBO(object):
         JSONFile.write({'points': points, 'evaluations': values}, debug_path)
 
         return values
+
