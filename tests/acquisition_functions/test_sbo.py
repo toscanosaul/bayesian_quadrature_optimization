@@ -346,29 +346,51 @@ class TestSBO(unittest.TestCase):
 
     def test_evaluate_sbo_mc(self):
         warnings.filterwarnings("ignore")
-        point = np.array([[52.5, 0]])
+
         spec = {
             'dim_x': 1,
             'choose_noise': True,
             'bounds_domain_x': [self.bounds_domain_x],
-            'number_points_each_dimension': [10000],
+            'number_points_each_dimension': [1000],
             'problem_name': 'a',
         }
 
         domain = DomainService.from_dict(spec)
         sbo = SBO(self.gp, np.array(domain.discretization_domain_x))
-        value = sbo.evaluate(point)
-        np.random.seed(1)
-        n_samples = 40
-        n_restarts=5
 
-        value_2 = sbo.evaluate_mc(point, n_samples, n_restarts=n_restarts,random_seed=1,
-                                       parallel=True)
+        np.random.seed(1)
+        point = np.array([[52.5, 0]])
+        n_samples = 50
+        n_restarts = 5
+
+        value = sbo.evaluate(point)
+
+        value_2 = sbo.evaluate_mc(point, n_samples, n_restarts=n_restarts, random_seed=1,
+                                  parallel=True)
 
         assert value <= value_2['value'] + 1.96 * value_2['std']
         assert value >= value_2['value'] - 1.96 * value_2['std']
 
-    # def test_evaluate_sbo_mc_2(self):
+
+        np.random.seed(1)
+
+        n_samples = 30
+        n_restarts = 2
+
+        point = np.array([[48.5, 0]])
+        value_2 = sbo.evaluate_mc(point, n_samples, n_restarts=n_restarts, random_seed=1,
+                                  parallel=True)
+        value = sbo.evaluate(point)
+
+        assert value <= value_2['value'] + 1.96 * value_2['std']
+        assert value >= value_2['value'] - 1.96 * value_2['std']
+
+
+
+
+
+
+        # def test_evaluate_sbo_mc_2(self):
     #     dim_x = 4
     #     bounds_domain_x = [(0.01, 1.01), (0.1, 2.1), (1, 21), (1, 201)]
     #     problem_name = 'movies_collaborative'

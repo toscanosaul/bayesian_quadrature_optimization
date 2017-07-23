@@ -516,6 +516,7 @@ class BayesianQuadrature(object):
 
         return {'b_new': b_new, 'vec_covs': vec_covs}
 
+
     def compute_posterior_parameters_kg_many_cp(self, points, candidate_points, cache=True,
                                                 parallel=True):
         """
@@ -609,6 +610,74 @@ class BayesianQuadrature(object):
             'b': b_value,
         }
 
+    def get_parameters_for_samples(self, cache, candidate_point, parameters_kernel,
+                                           var_noise, mean):
+        """
+        Computes additional parameters needed for sample of SBO.
+
+        :param cache: (boolean)
+        :param candidate_point: np.array(1xm)
+        :param parameters_kernel: np.array(l)
+        :param var_noise: float
+        :param mean: float
+        :return: {
+            'gamma': cov(historical_points, candidate_point),
+            'solve_2': cov(historical_points)^-1 * gamma,
+            'denominator': np.sqrt(cov(candidate_point) - np.diag(gamma, solve_2)),
+            'chol': chol(cov(historical_points)),
+            'solve': cov(historical_points)^-1 * (y_historical),
+        }
+        """
+
+        if var_noise is None:
+            var_noise = self.gp.var_noise.value[0]
+
+        if parameters_kernel is None:
+            parameters_kernel = self.gp.kernel.hypers_values_as_array
+
+        if mean is None:
+            mean = self.gp.mean.value[0]
+
+        chol_solve = self.gp._cholesky_solve_vectors_for_posterior(
+            var_noise, mean, parameters_kernel, cache=cache)
+        chol = chol_solve['chol']
+        solve = chol_solve['solve']
+
+        if cache and tuple(candidate_point[0, :]) in self.cache_sample:
+            solve_2 = self.cache_sample[tuple(candidate_point[0, :])]['solve_2']
+            denominator = self.cache_sample[tuple(candidate_point[0, :])]['denominator']
+            cross_cov = self.cache_sample[tuple(candidate_point[0, :])]['gamma']
+        else:
+
+            cross_cov = self.gp.evaluate_cross_cov(self.gp.data['points'], candidate_point,
+                                                   parameters_kernel)  # cache this
+
+            solve_2 = cho_solve(chol, cross_cov)
+
+            new_cross_cov = np.diag(self.gp.evaluate_cross_cov(candidate_point, candidate_point,
+                                                       parameters_kernel))
+            denominator = new_cross_cov - np.einsum('ij,ij->j', cross_cov, solve_2)
+            denominator = np.clip(denominator, 0, None)
+            denominator = np.sqrt(denominator)
+            if cache:
+                self.cache_sample = {}
+                self.cache_sample[tuple(candidate_point[0, :])] = {}
+                self.cache_sample[tuple(candidate_point[0, :])]['denominator'] = denominator
+                self.cache_sample[tuple(candidate_point[0, :])]['solve_2'] = solve_2
+                self.cache_sample[tuple(candidate_point[0, :])]['gamma'] = cross_cov
+
+        return {
+            'gamma': cross_cov,
+            'solve_2': solve_2,
+            'denominator': denominator,
+            'chol': chol,
+            'solve': solve,
+            'parameters_kernel': parameters_kernel,
+            'var_noise': var_noise,
+            'mean': mean,
+        }
+
+
     def compute_parameters_for_sample(
             self, point, candidate_point, var_noise=None, mean=None,
             parameters_kernel=None, cache=True):
@@ -624,19 +693,16 @@ class BayesianQuadrature(object):
         :param cache: (boolean) Use cached data and cache data if cache is True
         :return: {'a': float, 'b': float}
         """
-        if var_noise is None:
-            var_noise = self.gp.var_noise.value[0]
 
-        if parameters_kernel is None:
-            parameters_kernel = self.gp.kernel.hypers_values_as_array
+        additional_parameters = self.get_parameters_for_samples(
+            cache, candidate_point, parameters_kernel, var_noise, mean)
 
-        if mean is None:
-            mean = self.gp.mean.value[0]
 
-        chol_solve = self.gp._cholesky_solve_vectors_for_posterior(
-            var_noise, mean, parameters_kernel, cache=cache)
-        chol = chol_solve['chol']
-        solve = chol_solve['solve']
+        chol = additional_parameters.get('chol')
+        solve = additional_parameters.get('solve')
+        parameters_kernel = additional_parameters.get('parameters_kernel')
+        mean = additional_parameters.get('mean')
+        var_noise = additional_parameters.get('var_noise')
 
         if cache:
             b_new = self._get_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :]),
@@ -680,24 +746,8 @@ class BayesianQuadrature(object):
 
         mu_n = mean + np.dot(vec_covs, solve)
 
-        if len(self.cache_sample) >= 1:
-            solve_2 = self.cache_sample['solve_2']
-            denominator = self.cache_sample['denominator']
-        else:
-            cross_cov = self.gp.evaluate_cross_cov(self.gp.data['points'], candidate_point,
-                                                   parameters_kernel)  # cache this
-            self.cache_sample['gamma'] = cross_cov
-
-            solve_2 = cho_solve(chol, cross_cov)
-            self.cache_sample['solve_2'] = solve_2
-
-            new_cross_cov = np.diag(self.gp.evaluate_cross_cov(candidate_point, candidate_point,
-                                                       parameters_kernel))
-            denominator = new_cross_cov - np.einsum('ij,ij->j', cross_cov, solve_2)
-            denominator = np.clip(denominator, 0, None)
-            denominator = np.sqrt(denominator)
-            self.cache_sample['denominator'] = denominator
-
+        solve_2 = additional_parameters.get('solve_2')
+        denominator = additional_parameters['denominator']
 
         numerator = b_new - np.dot(vec_covs, solve_2)
         b_value = numerator / denominator[None, :]
@@ -719,14 +769,16 @@ class BayesianQuadrature(object):
         :param cache: (boolean) Use cached data and cache data if cache is True
         :return: {'a': np.array(n), 'b': np.array(n)}
         """
-        if var_noise is None:
-            var_noise = self.gp.var_noise.value[0]
 
-        if parameters_kernel is None:
-            parameters_kernel = self.gp.kernel.hypers_values_as_array
+        additional_parameters = self.get_parameters_for_samples(
+            cache, candidate_point, parameters_kernel, var_noise, mean)
 
-        if mean is None:
-            mean = self.gp.mean.value[0]
+        chol = additional_parameters.get('chol')
+        solve = additional_parameters.get('solve')
+        parameters_kernel = additional_parameters.get('parameters_kernel')
+        mean = additional_parameters.get('mean')
+        var_noise = additional_parameters.get('var_noise')
+
 
         historical_points = self.gp.data['points']
         historical_evaluations = self.gp.data['evaluations']
@@ -735,32 +787,10 @@ class BayesianQuadrature(object):
         gradient = self.evaluate_grad_quadrature_cross_cov(point, historical_points,
                                                            parameters_kernel)
 
-        chol_solve = self.gp._cholesky_solve_vectors_for_posterior(
-            var_noise, mean, parameters_kernel, historical_points=historical_points,
-            historical_evaluations=historical_evaluations, cache=cache)
-
-        solve = chol_solve['solve']
-        chol = chol_solve['chol']
-
         gradient_a = np.dot(gradient, solve)
 
-        if len(self.cache_sample) >= 1:
-            solve_2 = self.cache_sample['solve_2']
-            denominator = self.cache_sample['denominator']
-        else:
-            cross_cov = self.gp.evaluate_cross_cov(self.gp.data['points'], candidate_point,
-                                                   parameters_kernel)  # cache this
-            self.cache_sample['gamma'] = cross_cov
-
-            solve_2 = cho_solve(chol, cross_cov)
-            self.cache_sample['solve_2'] = solve_2
-
-            new_cross_cov = np.diag(self.gp.evaluate_cross_cov(candidate_point, candidate_point,
-                                                       parameters_kernel))
-            denominator = new_cross_cov - np.einsum('ij,ij->j', cross_cov, solve_2)
-            denominator = np.clip(denominator, 0, None)
-            denominator = np.sqrt(denominator)
-            self.cache_sample['denominator'] = denominator
+        denominator = additional_parameters.get('denominator')
+        solve_2 = additional_parameters.get('solve_2')
 
         gradient_new = self.evaluate_grad_quadrature_cross_cov(point, candidate_point,
                                                            parameters_kernel)
