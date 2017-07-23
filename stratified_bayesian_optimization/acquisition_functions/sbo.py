@@ -97,8 +97,8 @@ class SBO(object):
         vectors = self.bq.compute_parameters_for_sample(
             point, candidate_point, var_noise=var_noise, mean=mean,
             parameters_kernel=parameters_kernel, cache=cache)
-
-        return vectors['a'] + sample * vectors['b']
+        value = vectors['a'] + sample * vectors['b']
+        return value[0, 0]
 
     def evaluate_gradient_sample(self, point, candidate_point, sample, var_noise=None, mean=None,
                         parameters_kernel=None, cache=True):
@@ -112,7 +112,7 @@ class SBO(object):
         :param mean: float
         :param parameters_kernel: np.array(l)
         :param cache: (boolean) Use cached data and cache data if cache is True
-        :return: float
+        :return: np.array(n)
         """
 
         if len(point.shape) == 1:
@@ -125,8 +125,9 @@ class SBO(object):
 
         grad_a = gradient_params['a']
         grad_b = gradient_params['b']
+        grad = grad_a + sample * grad_b
 
-        return grad_a + sample * grad_b
+        return grad
 
     def evaluate_sbo_by_sample(self, candidate_point, sample, start=None,
                                var_noise=None, mean=None, parameters_kernel=None, n_restarts=5,
@@ -253,7 +254,7 @@ class SBO(object):
             for i in xrange(n_samples):
                 max_value = self.evaluate_sbo_by_sample(
                     candidate_point, samples[i], start=None, var_noise=var_noise, mean=mean,
-                    parameters_kernel=parameters_kernel, n_restarts=n_restarts)
+                    parameters_kernel=parameters_kernel, n_restarts=n_restarts, parallel=parallel)
                 max_values.append(max_value)
 
         self.bq.cache_sample = {}

@@ -719,7 +719,6 @@ class BayesianQuadrature(object):
         :param cache: (boolean) Use cached data and cache data if cache is True
         :return: {'a': np.array(n), 'b': np.array(n)}
         """
-
         if var_noise is None:
             var_noise = self.gp.var_noise.value[0]
 
@@ -765,49 +764,8 @@ class BayesianQuadrature(object):
 
         gradient_new = self.evaluate_grad_quadrature_cross_cov(point, candidate_point,
                                                            parameters_kernel)
-
         gradient_b = (gradient_new - np.dot(gradient, solve_2)) / denominator
-
-
-        #
-        # if cache:
-        #     b_new = self._get_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :]),
-        #                                    tuple(point[0, :])), B_NEW)
-        # else:
-        #     b_new = None
-        #
-        # compute_b_new = False
-        # if b_new is None:
-        #     compute_b_new = True
-        #
-        # compute_vec_covs = False
-        #
-        # if cache:
-        #     vec_covs = self._get_cached_data((tuple(parameters_kernel), tuple(point[0, :])),
-        #                                      QUADRATURES)
-        # else:
-        #     vec_covs = None
-        #
-        # if vec_covs is None:
-        #     compute_vec_covs = True
-        #
-        # # Remove repeated code and put in one function!
-        #
-        # if compute_vec_covs or compute_b_new:
-        #     computations = self.compute_vectors_b(point, candidate_point, self.gp.data['points'],
-        #                                           parameters_kernel, compute_vec_covs,
-        #                                           compute_b_new, False)
-        #     if compute_vec_covs:
-        #         vec_covs = computations['vec_covs']
-        #
-        #     if compute_b_new:
-        #         b_new = computations['b_new']
-        #
-        # numerator = b_new - np.dot(vec_covs, solve_2)
-        #
-        # if numerator < 0:
-        #     gradient_b *= -1.0
-
+        gradient_b = gradient_b[:, 0]
         return {'a': gradient_a, 'b': gradient_b}
 
 
