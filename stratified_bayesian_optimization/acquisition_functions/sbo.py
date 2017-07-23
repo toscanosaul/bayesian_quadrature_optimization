@@ -30,6 +30,9 @@ from stratified_bayesian_optimization.lib.util import (
     wrapper_objective_voi,
     wrapper_gradient_voi,
     wrapper_evaluate_sbo_by_sample,
+    wrapper_opimize,
+    wrapper_evaluate_sample,
+    wrapper_evaluate_gradient_sample,
 )
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.lib.util import wrapper_evaluate_sbo
@@ -88,6 +91,9 @@ class SBO(object):
         :return: float
         """
 
+        if len(point.shape) == 1:
+            point = point.reshape((1, len(point)))
+
         vectors = self.bq.compute_parameters_for_sample(
             point, candidate_point, var_noise=var_noise, mean=mean,
             parameters_kernel=parameters_kernel, cache=cache)
@@ -109,6 +115,9 @@ class SBO(object):
         :return: float
         """
 
+        if len(point.shape) == 1:
+            point = point.reshape((1, len(point)))
+
         gradient_params = self.bq.compute_gradient_parameters_for_sample(
             point, candidate_point, var_noise=var_noise, mean=mean,
             parameters_kernel=parameters_kernel, cache=cache
@@ -119,17 +128,20 @@ class SBO(object):
 
         return grad_a + sample * grad_b
 
-    def evaluate_sbo_by_sample(self, candidate_point, sample, start=None, var_noise=None,
-                               mean=None, parameters_kernel=None):
+    def evaluate_sbo_by_sample(self, candidate_point, sample, start=None,
+                               var_noise=None, mean=None, parameters_kernel=None, n_restarts=5,
+                               parallel=True):
         """
         Optimize a_{n+1}(x)  given the candidate_point and the sample of the Gaussian r.v.
 
         :param candidate_point: np.array(1xn)
         :param sample: float
         :param start: np.array(m)
+        :param n_restarts: (int) Number of restarts of the optimization algorithm.
         :param var_noise: float
         :param mean: float
         :param parameters_kernel: np.array(l)
+        :param parallel: (boolean) Multi-start optimization in parallel if it's True
         :return: float
         """
 
@@ -137,17 +149,26 @@ class SBO(object):
                     self.bq.x_domain]
 
         if start is None:
+            start_points =  DomainService.get_points_domain(n_restarts + 1, bounds_x,
+                                                        type_bounds=len(bounds_x) * [0])
             if len(self.bq.optimal_solutions) > 0:
                 start = self.bq.optimal_solutions[-1]['solution']
+
+                start = [start] + start_points[0 : -1]
+                start = np.array(start)
             else:
-                start = DomainService.get_points_domain(1, bounds_x,
-                                                        type_bounds=len(bounds_x) * [0])
-                start = np.array(start[0])
+                start = np.array(start_points)
+        else:
+            n_restarts = 0
 
         bounds_x = [tuple(bound) for bound in bounds_x]
 
-        objective_function = self.evaluate_sample
-        grad_function = self.evaluate_gradient_sample
+        if parallel:
+            grad_function = wrapper_evaluate_gradient_sample
+            objective_function = wrapper_evaluate_sample
+        else:
+            objective_function = self.evaluate_sample
+            grad_function = self.evaluate_gradient_sample
 
         optimization = Optimization(
             LBFGS_NAME,
@@ -156,13 +177,36 @@ class SBO(object):
             grad_function,
             minimize=False)
 
-        args = (candidate_point, sample, var_noise, mean, parameters_kernel)
-        results = optimization.optimize(start, *args)
+        if parallel:
+            solutions = []
+            point_dict = {}
+            for i in xrange(n_restarts + 1):
+                point_dict[i] = start[i, :]
 
-        return results['optimal_value']
+            args = (False, None, True, optimization, self, candidate_point, sample, var_noise, mean,
+                    parameters_kernel)
+
+            sol = Parallel.run_function_different_arguments_parallel(
+                wrapper_opimize, point_dict, *args)
+
+            for i in xrange(n_restarts + 1):
+                if sol.get(i) is None:
+                    logger.info("Error in computing optimum of a_{n+1} at one sample at point %d"
+                                % i)
+                    continue
+                solutions.append(sol.get(i)['optimal_value'])
+        else:
+            solutions = []
+            for i in xrange(n_restarts + 1):
+                start_ = start[i, :]
+                args = (candidate_point, sample, var_noise, mean, parameters_kernel)
+                results = optimization.optimize(start_, *args)
+                solutions.append(results['optimal_value'])
+
+        return np.max(solutions)
 
     def evaluate_mc(self, candidate_point,  n_samples, var_noise=None, mean=None,
-                    parameters_kernel=None, random_seed=None, parallel=True):
+                    parameters_kernel=None, random_seed=None, parallel=True, n_restarts=10):
         """
         Evaluate SBO policy by a MC estimation.
 
@@ -173,16 +217,21 @@ class SBO(object):
         :param parameters_kernel: np.array(l)
         :param random_seed: int
         :param parallel: boolean
+        :param n_restarts: (int)
         :return: {'value': float, 'std': float}
         """
+
+        if random_seed is not None:
+            np.random.seed(random_seed)
 
         if self.max_mean is not None:
             max_mean = self.max_mean
         else:
-            max_mean = self.bq.optimize_posterior_mean(random_seed)
+            max_mean = self.bq.optimize_posterior_mean(random_seed)['optimal_value']
             self.max_mean = max_mean
 
         samples = np.random.normal(0, 1, n_samples)
+
         max_values = []
 
         if parallel:
@@ -190,7 +239,7 @@ class SBO(object):
             for i in xrange(n_samples):
                 point_dict[i] = samples[i]
             args = (False, None, True, self, candidate_point, None, var_noise, mean,
-                    parameters_kernel)
+                    parameters_kernel, n_restarts)
 
             simulated_values = Parallel.run_function_different_arguments_parallel(
                 wrapper_evaluate_sbo_by_sample, point_dict, *args)
@@ -204,7 +253,7 @@ class SBO(object):
             for i in xrange(n_samples):
                 max_value = self.evaluate_sbo_by_sample(
                     candidate_point, samples[i], start=None, var_noise=var_noise, mean=mean,
-                    parameters_kernel=parameters_kernel)
+                    parameters_kernel=parameters_kernel, n_restarts=n_restarts)
                 max_values.append(max_value)
 
         self.bq.cache_sample = {}

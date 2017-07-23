@@ -5,6 +5,8 @@ import mock
 
 from doubles import expect
 
+import warnings
+
 import numpy as np
 import numpy.testing as npt
 
@@ -244,5 +246,110 @@ class TestSBO(unittest.TestCase):
         npt.assert_almost_equal(values[3], evaluations[1][2])
         npt.assert_almost_equal(value, evaluations[1][-2])
 
+
     def test_evaluate_sample(self):
-        assert 1==1
+        np.random.seed(1)
+        n_samples = 50
+        candidate_point = np.array([[52.5, 0]])
+
+        point = np.array([[49.2]])
+        samples = np.random.normal(0, 1, n_samples)
+        posterior_values = []
+        for sample in samples:
+            val = self.sbo.evaluate_sample(point, candidate_point, sample)
+            posterior_values.append(val)
+
+        values = self.sbo.bq.compute_posterior_parameters_kg(point, candidate_point, cache=False)
+        npt.assert_almost_equal(np.mean(posterior_values), values['a'], decimal=4)
+        npt.assert_almost_equal(np.std(posterior_values), abs(values['b']), decimal=4)
+
+        point_2 = np.array([[48.2]])
+        samples = np.random.normal(0, 1, n_samples)
+        posterior_values = []
+        for sample in samples:
+            val = self.sbo.evaluate_sample(point_2, candidate_point, sample)
+            posterior_values.append(val)
+
+        values = self.sbo.bq.compute_posterior_parameters_kg(point_2, candidate_point, cache=False)
+        npt.assert_almost_equal(np.mean(posterior_values), values['a'], decimal=3)
+        npt.assert_almost_equal(np.std(posterior_values), abs(values['b']), decimal=3)
+
+
+    def test_evaluate_gradient_sample(self):
+        point = np.array([[49.2]])
+        candidate_point = np.array([[52.5, 0]])
+        np.random.seed(1)
+        sample = 0.5
+
+
+        gradient = self.sbo.evaluate_gradient_sample(point, candidate_point, sample)
+
+        dh = 0.001
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda point_: self.sbo.evaluate_sample(
+                point_.reshape((1, len(point_))), candidate_point, sample),
+            np.array([49.2]), np.array([dh]))
+
+        npt.assert_almost_equal(finite_diff[0], gradient, decimal=2)
+
+        val = self.sbo.evaluate_sample(point, candidate_point, sample)
+
+
+        sample = -0.8
+        point = np.array([[10.2]])
+        gradient = self.sbo.evaluate_gradient_sample(point, candidate_point, sample)
+
+        dh = 0.001
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda point_: self.sbo.evaluate_sample(
+                point_.reshape((1, len(point_))), candidate_point, sample),
+            np.array([10.2]), np.array([dh]))
+
+        npt.assert_almost_equal(finite_diff[0], gradient, decimal=2)
+
+        sample = -5.1
+        point = np.array([[10.2]])
+        gradient = self.sbo.evaluate_gradient_sample(point, candidate_point, sample)
+
+        dh = 0.001
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda point_: self.sbo.evaluate_sample(
+                point_.reshape((1, len(point_))), candidate_point, sample),
+            np.array([10.2]), np.array([dh]))
+
+        npt.assert_almost_equal(finite_diff[0], gradient, decimal=2)
+
+    def test_evaluate_sbo_by_sample(self):
+        candidate_point = np.array([[52.5, 0]])
+        np.random.seed(1)
+        discretization = self.sbo.discretization
+
+        sample = -2.0
+        eval_2 = self.sbo.evaluate_sbo_by_sample(candidate_point, sample, n_restarts=10)
+
+        values = []
+        for point in discretization:
+            val = self.sbo.evaluate_sample(point, candidate_point, sample)
+            values.append(val)
+        assert np.max(values) <= eval_2
+
+        sample = 0.5
+        eval = self.sbo.evaluate_sbo_by_sample(candidate_point, sample)
+
+        values = []
+        for point in discretization:
+            val = self.sbo.evaluate_sample(point, candidate_point, sample)
+            values.append(val)
+
+        assert np.max(values) <= eval
+
+    def test_evaluate_sbo_mc(self):
+        warnings.filterwarnings("ignore")
+        point = np.array([[52.5, 0]])
+        value = self.sbo.evaluate(point)
+        np.random.seed(1)
+        n_samples = 30
+        value_2 = self.sbo.evaluate_mc(point, n_samples, n_restarts=5,random_seed=1, parallel=True)
+
+        assert value <= value_2['value'] + 1.96 * value_2['std']
+        assert value >= value_2['value'] - 1.96 * value_2['std']

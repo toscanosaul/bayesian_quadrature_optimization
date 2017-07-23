@@ -50,7 +50,6 @@ class Parallel(object):
             return -1
 
         results = {}
-
         for key in arguments:
             try:
                 results[key] = jobs[key].get()

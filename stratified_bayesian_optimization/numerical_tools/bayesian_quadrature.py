@@ -649,6 +649,7 @@ class BayesianQuadrature(object):
             compute_b_new = True
 
         compute_vec_covs = False
+
         if cache:
             vec_covs = self._get_cached_data((tuple(parameters_kernel), tuple(point[0, :])),
                                              QUADRATURES)
@@ -661,10 +662,11 @@ class BayesianQuadrature(object):
         computations = self.compute_vectors_b(point, candidate_point, self.gp.data['points'],
                                               parameters_kernel, compute_vec_covs, compute_b_new,
                                               False)
+        if compute_b_new:
+            b_new = computations['b_new']
 
-        b_new = computations['b_new']
-
-        vec_covs = computations['vec_covs']
+        if compute_vec_covs:
+            vec_covs = computations['vec_covs']
 
         if cache:
             if compute_vec_covs:
@@ -673,12 +675,13 @@ class BayesianQuadrature(object):
 
             if compute_b_new:
                 self._updated_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :]),
-                                           tuple(point[0, :])), B_NEW)
+                                           tuple(point[0, :])), b_new, B_NEW)
+
 
         mu_n = mean + np.dot(vec_covs, solve)
 
         if len(self.cache_sample) >= 1:
-            solve_2 = self.cache_sample['solve']
+            solve_2 = self.cache_sample['solve_2']
             denominator = self.cache_sample['denominator']
         else:
             cross_cov = self.gp.evaluate_cross_cov(self.gp.data['points'], candidate_point,
@@ -766,46 +769,46 @@ class BayesianQuadrature(object):
         gradient_b = (gradient_new - np.dot(gradient, solve_2)) / denominator
 
 
+        #
+        # if cache:
+        #     b_new = self._get_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :]),
+        #                                    tuple(point[0, :])), B_NEW)
+        # else:
+        #     b_new = None
+        #
+        # compute_b_new = False
+        # if b_new is None:
+        #     compute_b_new = True
+        #
+        # compute_vec_covs = False
+        #
+        # if cache:
+        #     vec_covs = self._get_cached_data((tuple(parameters_kernel), tuple(point[0, :])),
+        #                                      QUADRATURES)
+        # else:
+        #     vec_covs = None
+        #
+        # if vec_covs is None:
+        #     compute_vec_covs = True
+        #
+        # # Remove repeated code and put in one function!
+        #
+        # if compute_vec_covs or compute_b_new:
+        #     computations = self.compute_vectors_b(point, candidate_point, self.gp.data['points'],
+        #                                           parameters_kernel, compute_vec_covs,
+        #                                           compute_b_new, False)
+        #     if compute_vec_covs:
+        #         vec_covs = computations['vec_covs']
+        #
+        #     if compute_b_new:
+        #         b_new = computations['b_new']
+        #
+        # numerator = b_new - np.dot(vec_covs, solve_2)
+        #
+        # if numerator < 0:
+        #     gradient_b *= -1.0
 
-        if cache:
-            b_new = self._get_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :]),
-                                           tuple(point[0, :])), B_NEW)
-        else:
-            b_new = None
-
-        compute_b_new = False
-        if b_new is None:
-            compute_b_new = True
-
-        compute_vec_covs = False
-
-        if cache:
-            vec_covs = self._get_cached_data((tuple(parameters_kernel), tuple(point[0, :])),
-                                             QUADRATURES)
-        else:
-            vec_covs = None
-
-        if vec_covs is None:
-            compute_vec_covs = True
-
-        # Remove repeated code and put in one function!
-
-        if compute_vec_covs or compute_b_new:
-            computations = self.compute_vectors_b(point, candidate_point, self.gp.data['points'],
-                                                  parameters_kernel, compute_vec_covs,
-                                                  compute_b_new, False)
-            if compute_vec_covs:
-                vec_covs = computations['vec_covs']
-
-            if compute_b_new:
-                b_new = computations['b_new']
-
-        numerator = b_new - np.dot(vec_covs, solve_2)
-
-        if numerator < 0:
-            gradient_b *= -1.0
-
-        return {'gradient_a': gradient_a, 'gradient_b': gradient_b}
+        return {'a': gradient_a, 'b': gradient_b}
 
 
     def compute_posterior_parameters_kg(self, points, candidate_point, var_noise=None, mean=None,

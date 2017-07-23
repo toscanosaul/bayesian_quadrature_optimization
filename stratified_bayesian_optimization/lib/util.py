@@ -477,7 +477,7 @@ def wrapper_GPFittingGaussian(training_data_sets, model, type_kernel, dimensions
     return gp
 
 def wrapper_evaluate_sbo_by_sample(sample, self, candidate_point, start, var_noise, mean,
-                                   parameters_kernel):
+                                   parameters_kernel, n_restarts):
     """
 
     :param sample: float
@@ -487,10 +487,44 @@ def wrapper_evaluate_sbo_by_sample(sample, self, candidate_point, start, var_noi
     :param var_noise: float
     :param mean: float
     :param parameters_kernel: np.array(l)
+    :param n_restarts: (int)
     :return: float
     """
 
     return self.evaluate_sbo_by_sample(candidate_point, sample, start=start, var_noise=var_noise,
-                               mean=mean, parameters_kernel=parameters_kernel)
+                               mean=mean, parameters_kernel=parameters_kernel,
+                                       n_restarts=n_restarts)
+
+def wrapper_evaluate_sample(point, self, *args):
+    """
+
+    :param point:
+    :param self: sbo instance
+    :param args:
+    :return:
+    """
+
+    return self.evaluate_sample(point, *args)
+
+def wrapper_evaluate_gradient_sample(point, self, *args):
+    """
+
+    :param point:
+    :param self: sbo instance
+    :param args:
+    :return:
+    """
+    return self.evaluate_gradient_sample(point, *args)
+
+
+def wrapper_opimize(point, self, *args):
+    """
+    Wrapper of optimization.optimize
+    :param point: starting point
+    :param self: optimization instance
+    :param args: additional arguments for the objective and gradient functions
+    :return: optimize results
+    """
+    return self.optimize(point, *args)
 
 
