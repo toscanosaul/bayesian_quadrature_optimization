@@ -277,8 +277,6 @@ class SBO(object):
                     parameters_kernel=parameters_kernel, n_restarts=n_restarts, parallel=True)
                 max_values.append(max_value)
 
-        self.bq.cache_sample = {}
-
         return {'value': np.mean(max_values) - max_mean, 'std': np.std(max_values) / n_samples}
 
     def evaluate(self, point, var_noise=None, mean=None, parameters_kernel=None, cache=True):

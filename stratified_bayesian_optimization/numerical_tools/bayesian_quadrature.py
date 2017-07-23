@@ -666,6 +666,7 @@ class BayesianQuadrature(object):
                 self.cache_sample[tuple(candidate_point[0, :])]['solve_2'] = solve_2
                 self.cache_sample[tuple(candidate_point[0, :])]['gamma'] = cross_cov
 
+
         return {
             'gamma': cross_cov,
             'solve_2': solve_2,
