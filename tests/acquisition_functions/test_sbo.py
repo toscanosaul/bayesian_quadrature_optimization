@@ -347,12 +347,22 @@ class TestSBO(unittest.TestCase):
     def test_evaluate_sbo_mc(self):
         warnings.filterwarnings("ignore")
         point = np.array([[52.5, 0]])
-        value = self.sbo.evaluate(point)
+        spec = {
+            'dim_x': 1,
+            'choose_noise': True,
+            'bounds_domain_x': [self.bounds_domain_x],
+            'number_points_each_dimension': [10000],
+            'problem_name': 'a',
+        }
+
+        domain = DomainService.from_dict(spec)
+        sbo = SBO(self.gp, np.array(domain.discretization_domain_x))
+        value = sbo.evaluate(point)
         np.random.seed(1)
-        n_samples = 50
+        n_samples = 40
         n_restarts=5
 
-        value_2 = self.sbo.evaluate_mc(point, n_samples, n_restarts=n_restarts,random_seed=1,
+        value_2 = sbo.evaluate_mc(point, n_samples, n_restarts=n_restarts,random_seed=1,
                                        parallel=True)
 
         assert value <= value_2['value'] + 1.96 * value_2['std']
