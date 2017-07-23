@@ -76,7 +76,8 @@ bq=quadrature
 bounds_x = [bq.gp.bounds[i] for i in xrange(len(bq.gp.bounds)) if i in
          bq.x_domain]
 
-points =  DomainService.get_points_domain(11000, bounds_x,
+np.random.seed(1)
+points =  DomainService.get_points_domain(100000, bounds_x,
                                             type_bounds=len(bounds_x) * [0])
 
 sbo = SBO(quadrature, np.array(points))
