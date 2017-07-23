@@ -98,6 +98,7 @@ class SBO(object):
             point, candidate_point, var_noise=var_noise, mean=mean,
             parameters_kernel=parameters_kernel, cache=cache)
         value = vectors['a'] + sample * vectors['b']
+
         return value[0, 0]
 
     def evaluate_gradient_sample(self, point, candidate_point, sample, var_noise=None, mean=None,
@@ -137,7 +138,7 @@ class SBO(object):
 
         :param candidate_point: np.array(1xn)
         :param sample: float
-        :param start: np.array(m)
+        :param start: np.array(1xm)
         :param n_restarts: (int) Number of restarts of the optimization algorithm.
         :param var_noise: float
         :param mean: float
@@ -161,6 +162,7 @@ class SBO(object):
                 start = np.array(start_points)
         else:
             n_restarts = 0
+            parallel = False
 
         bounds_x = [tuple(bound) for bound in bounds_x]
 
@@ -225,6 +227,10 @@ class SBO(object):
         if random_seed is not None:
             np.random.seed(random_seed)
 
+        bounds_x = [self.bounds_opt[i] for i in xrange(len(self.bounds_opt)) if i in
+                 self.bq.x_domain]
+
+
         if self.max_mean is not None:
             max_mean = self.max_mean
         else:
@@ -238,23 +244,37 @@ class SBO(object):
         if parallel:
             point_dict = {}
             for i in xrange(n_samples):
-                point_dict[i] = samples[i]
-            args = (False, None, True, self, candidate_point, None, var_noise, mean,
-                    parameters_kernel, n_restarts)
+                start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
+                                                               type_bounds=len(bounds_x) * [0])
+                if len(self.bq.optimal_solutions) > 0:
+                    start = self.bq.optimal_solutions[-1]['solution']
+
+                    start = [start] + start_points[0: -1]
+                    start = np.array(start)
+                else:
+                    start = np.array(start_points)
+
+                for j in xrange(n_restarts + 1):
+                    point_dict[(j, i)] = [deepcopy(start[j:j+1,:]), samples[i]]
+            args = (False, None, True, self, candidate_point, var_noise, mean, parameters_kernel)
 
             simulated_values = Parallel.run_function_different_arguments_parallel(
                 wrapper_evaluate_sbo_by_sample, point_dict, *args)
 
             for i in xrange(n_samples):
-                if simulated_values.get(i) is None:
-                    logger.info("Error in computing simulated value at sample %d" % i)
-                    continue
-                max_values.append(simulated_values[i])
+                values = []
+                for j in xrange(n_restarts + 1):
+                    if simulated_values.get((j, i)) is None:
+                        logger.info("Error in computing simulated value at sample %d" % i)
+                        continue
+                    values.append(simulated_values[(j, i)])
+
+                max_values.append(np.max(values))
         else:
             for i in xrange(n_samples):
                 max_value = self.evaluate_sbo_by_sample(
                     candidate_point, samples[i], start=None, var_noise=var_noise, mean=mean,
-                    parameters_kernel=parameters_kernel, n_restarts=n_restarts, parallel=parallel)
+                    parameters_kernel=parameters_kernel, n_restarts=n_restarts, parallel=True)
                 max_values.append(max_value)
 
         self.bq.cache_sample = {}

@@ -476,24 +476,23 @@ def wrapper_GPFittingGaussian(training_data_sets, model, type_kernel, dimensions
 
     return gp
 
-def wrapper_evaluate_sbo_by_sample(sample, self, candidate_point, start, var_noise, mean,
-                                   parameters_kernel, n_restarts):
+def wrapper_evaluate_sbo_by_sample(start_sample, self, candidate_point, var_noise, mean,
+                                   parameters_kernel):
     """
 
-    :param sample: float
+    :param start_sample: [np.array(n), float], the first element is the starting point, and the
+        second element is the sampled element from the Gaussian r.v.
     :param self: sbo-instance
     :param candidate_point: np.array(1xm)
-    :param start: np.array(n)
     :param var_noise: float
     :param mean: float
     :param parameters_kernel: np.array(l)
-    :param n_restarts: (int)
     :return: float
     """
 
-    return self.evaluate_sbo_by_sample(candidate_point, sample, start=start, var_noise=var_noise,
-                               mean=mean, parameters_kernel=parameters_kernel,
-                                       n_restarts=n_restarts)
+    return self.evaluate_sbo_by_sample(
+        candidate_point, start_sample[1], start=start_sample[0], var_noise=var_noise, mean=mean,
+        parameters_kernel=parameters_kernel, n_restarts=0, parallel=False )
 
 def wrapper_evaluate_sample(point, self, *args):
     """

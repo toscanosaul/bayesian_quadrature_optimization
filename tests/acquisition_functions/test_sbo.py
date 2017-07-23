@@ -349,8 +349,11 @@ class TestSBO(unittest.TestCase):
         point = np.array([[52.5, 0]])
         value = self.sbo.evaluate(point)
         np.random.seed(1)
-        n_samples = 30
-        value_2 = self.sbo.evaluate_mc(point, n_samples, n_restarts=5,random_seed=1, parallel=True)
+        n_samples = 50
+        n_restarts=5
+
+        value_2 = self.sbo.evaluate_mc(point, n_samples, n_restarts=n_restarts,random_seed=1,
+                                       parallel=True)
 
         assert value <= value_2['value'] + 1.96 * value_2['std']
         assert value >= value_2['value'] - 1.96 * value_2['std']

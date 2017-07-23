@@ -50,14 +50,15 @@ class Parallel(object):
             return -1
 
         results = {}
-        for key in arguments:
+        for key in arguments.keys():
+            results[key] = jobs[key].get()
             try:
                 results[key] = jobs[key].get()
             except Exception as e:
                 if all_success:
                     raise e
                 else:
-                    logger.info("job %d failed" % key)
+                    logger.info("job failed" )
         return results
 
     @staticmethod
