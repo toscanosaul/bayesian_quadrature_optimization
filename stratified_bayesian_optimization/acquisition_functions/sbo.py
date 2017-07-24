@@ -76,6 +76,15 @@ class SBO(object):
         self.optimization_results = []
         self.max_mean = None # max_{x} a_{n} (x)
 
+        # Cached data for MC SBO
+        self.samples = {} # Samples from a standard Gaussian r.v. used to estimate SBO
+
+        # 'optimum': arg_max{a_n(x) + sigma(x, candidate_point)*sample}
+        # 'max': max{a_n(x) + sigma(x, candidate_point)*sample}
+        self.optimal_samples = {}
+
+
+
     def evaluate_sample(self, point, candidate_point, sample, var_noise=None, mean=None,
                         parameters_kernel=None, cache=True):
         """
@@ -144,7 +153,7 @@ class SBO(object):
         :param mean: float
         :param parameters_kernel: np.array(l)
         :param parallel: (boolean) Multi-start optimization in parallel if it's True
-        :return: float
+        :return: {'max': float, 'optimum': np.array(n)}
         """
 
         bounds_x = [self.bounds_opt[i] for i in xrange(len(self.bounds_opt)) if i in
@@ -182,6 +191,7 @@ class SBO(object):
 
         if parallel:
             solutions = []
+            results_opt = []
             point_dict = {}
             for i in xrange(n_restarts + 1):
                 point_dict[i] = start[i, :]
@@ -198,15 +208,19 @@ class SBO(object):
                                 % i)
                     continue
                 solutions.append(sol.get(i)['optimal_value'])
+                results_opt.append(sol.get(i))
         else:
             solutions = []
+            results_opt = []
             for i in xrange(n_restarts + 1):
                 start_ = start[i, :]
                 args = (candidate_point, sample, var_noise, mean, parameters_kernel)
                 results = optimization.optimize(start_, *args)
+                results_opt.append(results)
                 solutions.append(results['optimal_value'])
 
-        return np.max(solutions)
+        arg_max = results_opt[np.argmax(solutions)]['solution']
+        return {'max': np.max(solutions), 'optimum': arg_max}
 
     def evaluate_mc(self, candidate_point,  n_samples, var_noise=None, mean=None,
                     parameters_kernel=None, random_seed=None, parallel=True, n_restarts=10):
@@ -237,11 +251,29 @@ class SBO(object):
             max_mean = self.bq.optimize_posterior_mean(random_seed)['optimal_value']
             self.max_mean = max_mean
 
-        samples = np.random.normal(0, 1, n_samples)
+        if tuple(candidate_point[0, :]) in self.samples:
+            samples = self.samples[tuple(candidate_point)]
+        else:
+            samples = np.random.normal(0, 1, n_samples)
+            self.samples = {}
+            self.samples[tuple(candidate_point[0, :])] = samples
 
         max_values = []
 
+        if tuple(candidate_point[0, :]) in self.optimal_samples:
+            optimal_values = self.optimal_samples[tuple(candidate_point)]['max'].values()
+            return {'value': np.mean(optimal_values), 'std': np.std(max_values) / n_samples}
+
+        self.optimal_samples = {}
+        self.optimal_samples[tuple(candidate_point[0, :])] = {}
+        self.optimal_samples[tuple(candidate_point[0, :])]['max'] = {}
+        self.optimal_samples[tuple(candidate_point[0, :])]['optimum'] = {}
+
         if parallel:
+            # Cache this computation, so we don't have to do it over and over again
+            self.bq.get_parameters_for_samples(True, candidate_point, parameters_kernel, var_noise,
+                                               mean)
+
             point_dict = {}
             for i in xrange(n_samples):
                 start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
@@ -267,17 +299,28 @@ class SBO(object):
                     if simulated_values.get((j, i)) is None:
                         logger.info("Error in computing simulated value at sample %d" % i)
                         continue
-                    values.append(simulated_values[(j, i)])
-
-                max_values.append(np.max(values))
+                    values.append(simulated_values[(j, i)]['max'])
+                maximum = simulated_values[(np.argmax(values), i)]['optimum']
+                max_ = np.max(values)
+                self.optimal_samples[tuple(candidate_point[0, :])]['max'][i] = max_
+                self.optimal_samples[tuple(candidate_point[0, :])]['optimum'][i] = maximum
+                max_values.append(max_)
         else:
             for i in xrange(n_samples):
                 max_value = self.evaluate_sbo_by_sample(
                     candidate_point, samples[i], start=None, var_noise=var_noise, mean=mean,
                     parameters_kernel=parameters_kernel, n_restarts=n_restarts, parallel=True)
-                max_values.append(max_value)
+                max_values.append(max_value['max'])
+                maximum = max_value['optimum']
+                self.optimal_samples[tuple(candidate_point[0, :])]['max'][i] = max_value['max']
+                self.optimal_samples[tuple(candidate_point[0, :])]['optimum'][i] = maximum
 
         return {'value': np.mean(max_values) - max_mean, 'std': np.std(max_values) / n_samples}
+
+   # def gradient_mc(self):
+
+
+
 
     def evaluate(self, point, var_noise=None, mean=None, parameters_kernel=None, cache=True):
         """
@@ -455,6 +498,8 @@ class SBO(object):
         """
         self.bq.clean_cache()
         self.max_mean = None
+        self.samples = {}
+        self.optimal_samples = {}
 
     def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed):
         """

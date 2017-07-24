@@ -487,7 +487,7 @@ def wrapper_evaluate_sbo_by_sample(start_sample, self, candidate_point, var_nois
     :param var_noise: float
     :param mean: float
     :param parameters_kernel: np.array(l)
-    :return: float
+    :return: {'max': float, 'optimum': np.array(n)}
     """
 
     return self.evaluate_sbo_by_sample(

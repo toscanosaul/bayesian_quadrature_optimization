@@ -1039,7 +1039,6 @@ class GPFittingGaussian(object):
         chol, cov = self._chol_cov_including_noise(
             var_noise, parameters_kernel, historical_points=historical_points, cache=cache)
 
-        y_unbiased = historical_evaluations - mean
 
         if cache:
             cached_solve = self._get_cached_data((var_noise, tuple(parameters_kernel), mean),
@@ -1048,6 +1047,7 @@ class GPFittingGaussian(object):
             cached_solve = False
 
         if cached_solve is False:
+            y_unbiased = historical_evaluations - mean
             solve = cho_solve(chol, y_unbiased)
             if cache:
                 self._updated_cached_data((var_noise, tuple(parameters_kernel), mean), solve,

@@ -929,19 +929,21 @@ class BayesianQuadrature(object):
         # We assume that the gradient of cov(x, x) respect to x is equal to zero.
         # We assume that cov(x, y) = cov(y, x).
 
+        additional_parameters = self.get_parameters_for_samples(
+            cache, candidate_point, parameters_kernel, var_noise, mean)
 
-        if var_noise is None:
-            var_noise = self.gp.var_noise.value[0]
-
-        if parameters_kernel is None:
-            parameters_kernel = self.gp.kernel.hypers_values_as_array
-
-        if mean is None:
-            mean = self.gp.mean.value[0]
+        chol = additional_parameters.get('chol')
+        solve = additional_parameters.get('solve')
+        parameters_kernel = additional_parameters.get('parameters_kernel')
+        mean = additional_parameters.get('mean')
+        var_noise = additional_parameters.get('var_noise')
+        solve_1 = additional_parameters.get('solve_2')[:, 0]
+        beta_1 = additional_parameters.get('denominator') ** 2
 
         historical_points = self.gp.data['points']
 
-        gamma = self.gp.evaluate_cross_cov(historical_points, candidate_point, parameters_kernel)
+
+
         grad_gamma = self.gp.evaluate_grad_cross_cov_respect_point(candidate_point,
                                                                    historical_points,
                                                                    parameters_kernel)
@@ -949,15 +951,9 @@ class BayesianQuadrature(object):
                                                                             points,
                                                                             parameters_kernel)
 
-        chol_solve = self.gp._cholesky_solve_vectors_for_posterior(
-            var_noise, mean, parameters_kernel, cache=cache)
-        chol = chol_solve['chol']
-
-
-        solve_1 = cho_solve(chol, gamma[:, 0])
-
-        beta_1 = self.gp.evaluate_cov(candidate_point, parameters_kernel) - \
-                 np.dot(gamma.transpose(), solve_1)
+        #
+        # beta_1 = self.gp.evaluate_cov(candidate_point, parameters_kernel) - \
+        #          np.dot(gamma.transpose(), solve_1)
 
 
         n = points.shape[0]
