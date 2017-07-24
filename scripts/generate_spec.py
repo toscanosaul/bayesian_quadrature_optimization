@@ -39,7 +39,7 @@ if __name__ == '__main__':
     max_steps_out = 1000
     n_iterations = 100
     same_correlation = True
-    debug = True
+    debug = False
     number_points_each_dimension_debug = [10, 10, 10, 10]
     monte_carlo_sbo = True
     n_samples_mc = 100

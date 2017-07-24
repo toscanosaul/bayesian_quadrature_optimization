@@ -90,7 +90,7 @@
         ]
     ],
     "minimize":false,
-    "debug":true,
+    "debug":false,
     "mle":true,
     "thinning":5,
     "n_iterations":100,

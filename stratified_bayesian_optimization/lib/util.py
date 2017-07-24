@@ -421,7 +421,7 @@ def wrapper_evaluate_sbo_mc(candidate_points, task, self, n_samples, n_restarts)
     for i in xrange(r):
         points[i] = candidate_points[i, :]
 
-    args = (False, None, True, self, True, n_samples, n_restarts)
+    args = (False, None, False, self, True, n_samples, n_restarts)
     val = Parallel.run_function_different_arguments_parallel(
         wrapper_objective_voi, points, *args)
 
