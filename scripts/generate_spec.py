@@ -33,7 +33,7 @@ if __name__ == '__main__':
     number_points_each_dimension = [6, 6, 11, 6]
     mle = True
     distribution = UNIFORM_FINITE
-    parallel = False
+    parallel = True
     thinning = 5
     n_burning = 100
     max_steps_out = 1000
@@ -41,51 +41,20 @@ if __name__ == '__main__':
     same_correlation = True
     debug = True
     number_points_each_dimension_debug = [10, 10, 10, 10]
+    monte_carlo_sbo = True
+    n_samples_mc = 100
+    n_restarts_mc = 50
 
+    spec = SpecService.generate_dict_spec(
+        problem_name, dim_x, bounds_domain_x, training_name, type_kernel, dimensions,
+        bounds_domain=bounds_domain, n_training=n_training, random_seed=random_seed,
+        type_bounds=type_bounds, x_domain=x_domain, mle=mle,
+        number_points_each_dimension=number_points_each_dimension, distribution=distribution,
+        parallel=parallel, thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out,
+        n_iterations=n_iterations, same_correlation=same_correlation, debug=debug,
+        number_points_each_dimension_debug=number_points_each_dimension_debug,
+        monte_carlo_sbo=monte_carlo_sbo, n_samples_mc=n_samples_mc, n_restarts_mc=n_restarts_mc)
 
-
-    # var_noise_value = [1.00001785e-10]
-    # mean_value = [-8.81677684e+00]
-    # kernel_values = [1.07477776e+02, 9.62543469e+00, -6.71792551e+00, -7.39010376e-02]
-
-    ## Generate training data
-    # np.random.seed(5)
-    # n_points = 100
-    # points = np.linspace(0, 100, n_points)
-    # points = points.reshape([n_points, 1])
-    # tasks = np.random.randint(2, size=(n_points, 1))
-    #
-    # add = [10, -10]
-    # kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
-    # function = SampleFunctions.sample_from_gp(points, kernel)
-    #
-    # for i in xrange(n_points):
-    #     function[0, i] += add[tasks[i, 0]]
-    # points = np.concatenate((points, tasks), axis=1)
-    #
-    # function = function[0, :]
-    #
-    # points_ls = [list(points[i, :]) for i in xrange(n_points)]
-    #
-    # training_data_med = {
-    #     'evaluations': list(function[0:5]),
-    #     'points': points_ls[0:5],
-    #     "var_noise": [],
-    # }
-
-    ######
-
-    spec = SpecService.generate_dict_spec(problem_name, dim_x, bounds_domain_x, training_name,
-                                          type_kernel, dimensions, bounds_domain=bounds_domain,
-                                          n_training=n_training, random_seed=random_seed,
-                                          type_bounds=type_bounds, x_domain=x_domain, mle=mle,
-                                          number_points_each_dimension=number_points_each_dimension,
-                                          distribution=distribution, parallel=parallel,
-                                          thinning=thinning, n_burning=n_burning,
-                                          max_steps_out=max_steps_out, n_iterations=n_iterations,
-                                          same_correlation=same_correlation, debug=debug,
-                                          number_points_each_dimension_debug=
-                                          number_points_each_dimension_debug)
 
     print ujson.dumps(spec, indent=4)
 
