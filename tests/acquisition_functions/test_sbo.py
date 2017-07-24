@@ -388,32 +388,37 @@ class TestSBO(unittest.TestCase):
 
     def test_evaluate_gradient_sbo(self):
 
-        spec = {
-            'dim_x': 1,
-            'choose_noise': True,
-            'bounds_domain_x': [self.bounds_domain_x],
-            'number_points_each_dimension': [1000],
-            'problem_name': 'a',
-        }
-
-        domain = DomainService.from_dict(spec)
-        sbo = SBO(self.gp, np.array(domain.discretization_domain_x))
-
         candidate = np.array([[52.5, 0]])
-        sbo.clean_cache()
-        grad = sbo.evaluate_gradient(candidate)
 
-        n_samples = 1000
-        n_restarts = 50
+        grad = self.sbo.evaluate_gradient(candidate)
 
-        grad_mc = sbo.gradient_mc(candidate, random_seed=1, n_samples=n_samples,
+        n_samples = 400
+        n_restarts = 10
+
+        grad_mc = self.sbo.gradient_mc(candidate, random_seed=1, n_samples=n_samples,
                                        n_restarts=n_restarts)
 
-        print grad
-        print grad_mc
-        assert 1 ==2
+        npt.assert_almost_equal(grad, grad_mc['gradient'], decimal=2)
 
 
+    def test_evaluate_grad_cache(self):
+        candidate = np.array([[52.5, 0]])
+        n_samples = 10
+        n_restarts = 2
+        np.random.seed(1)
+        grad_mc = self.sbo.gradient_mc(candidate, random_seed=1, n_samples=n_samples,
+                                       n_restarts=n_restarts)
+
+        self.sbo.clean_cache()
+
+        self.sbo.evaluate_mc(candidate, n_samples, n_restarts=n_restarts, random_seed=1,
+                        parallel=True)
+        grad_mc_2 = self.sbo.gradient_mc(candidate, random_seed=1, n_samples=n_samples,
+                                       n_restarts=n_restarts)
+
+
+        npt.assert_almost_equal(grad_mc_2['gradient'], grad_mc['gradient'], decimal=4)
+        npt.assert_almost_equal(grad_mc_2['std'], grad_mc['std'], decimal=5)
 
         # def test_evaluate_sbo_mc_2(self):
     #     dim_x = 4
