@@ -421,6 +421,7 @@ class TestSBO(unittest.TestCase):
         npt.assert_almost_equal(grad_mc_2['std'], grad_mc['std'], decimal=5)
 
     def test_optimize_sbo_mc(self):
+        warnings.filterwarnings("ignore")
 
         spec = {
             'dim_x': 1,
