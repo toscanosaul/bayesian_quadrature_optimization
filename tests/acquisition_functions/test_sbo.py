@@ -426,17 +426,17 @@ class TestSBO(unittest.TestCase):
             'dim_x': 1,
             'choose_noise': True,
             'bounds_domain_x': [self.bounds_domain_x],
-            'number_points_each_dimension': [1000],
+            'number_points_each_dimension': [100],
             'problem_name': 'a',
         }
 
         domain = DomainService.from_dict(spec)
         self.sbo_med.discretization = np.array(domain.discretization_domain_x)
 
-        self.sbo_med.opt_separing_domain = False
         val = self.sbo_med.optimize(random_seed=1)
 
-        val_2 = self.sbo_med.optimize(monte_carlo=True, n_samples=50, n_restarts_mc=10)
+        val_2 = self.sbo_med.optimize(monte_carlo=True, n_samples=100, n_restarts_mc=50,
+                                      random_seed=1)
 
         print "val"
         print val
