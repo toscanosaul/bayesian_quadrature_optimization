@@ -801,7 +801,7 @@ class BayesianQuadrature(object):
         if b_new is None:
             compute_b_new = True
             b_new = np.zeros((n, 1))
-        elif not monte_carlo:
+        elif not monte_carlo and keep_indexes is not None:
             b_new = b_new[keep_indexes, :]
 
         compute_vec_covs = False
@@ -818,7 +818,7 @@ class BayesianQuadrature(object):
         if vec_covs is None:
             compute_vec_covs = True
             vec_covs = np.zeros((n, m))
-        elif not monte_carlo:
+        elif not monte_carlo and keep_indexes is not None:
             vec_covs = vec_covs[keep_indexes, :]
 
         if compute_vec_covs or compute_b_new:
