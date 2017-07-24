@@ -110,6 +110,7 @@ class BayesianQuadrature(object):
 
         # Cached data for the MC estimation of the SBO.
         self.cache_sample = {}
+        self.max_mean = None
 
     def _get_cached_data(self, index, name):
         """
@@ -450,7 +451,7 @@ class BayesianQuadrature(object):
         logger.info(results)
 
         self.optimal_solutions.append(results)
-
+        self.max_mean = results['optimal_value']
         return results
 
     def compute_vectors_b(self, points, candidate_points, historical_points, parameters_kernel,
@@ -1044,6 +1045,7 @@ class BayesianQuadrature(object):
         self.cache_posterior_mean = {}
         self.cache_quadrature_with_candidate = {}
         self.gp.clean_cache()
+        self.max_mean = None  # max_{x} a_{n} (x)
 
     def generate_evaluations(self, problem_name, model_type, training_name, n_training,
                              random_seed, iteration, n_points_by_dimension=None):

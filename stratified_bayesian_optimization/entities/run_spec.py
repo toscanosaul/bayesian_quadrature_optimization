@@ -60,6 +60,11 @@ class RunSpecEntity(Model):
 
     number_points_each_dimension_debug = ListType(IntType) #Used to debug.
 
+    # Parameter to estimate sbo by MC
+    monte_carlo_sbo = BooleanType(required=False)
+    n_samples_mc = IntType(required=False)
+    n_restarts_mc = IntType(required=False)
+
     @classmethod
     def from_json(cls, specfile):
         """
@@ -130,6 +135,10 @@ class RunSpecEntity(Model):
 
         number_points_each_dimension_debug = spec.get('number_points_each_dimension_debug')
 
+        monte_carlo_sbo = spec.get('monte_carlo_sbo', False)
+        n_samples_mc = spec.get('n_samples_mc', 100)
+        n_restarts_mc = spec.get('n_restarts_mc', 100)
+
         entry.update({
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -166,6 +175,9 @@ class RunSpecEntity(Model):
             'debug': debug,
             'same_correlation': same_correlation,
             'number_points_each_dimension_debug': number_points_each_dimension_debug,
+            'monte_carlo_sbo': monte_carlo_sbo,
+            'n_samples_mc': n_samples_mc,
+            'n_restarts_mc': n_restarts_mc,
         })
 
         return cls(entry)

@@ -420,6 +420,16 @@ class TestSBO(unittest.TestCase):
         npt.assert_almost_equal(grad_mc_2['gradient'], grad_mc['gradient'], decimal=4)
         npt.assert_almost_equal(grad_mc_2['std'], grad_mc['std'], decimal=5)
 
+    def test_optimize_sbo_mc(self):
+        self.sbo_med.opt_separing_domain = False
+        val = self.sbo_med.optimize(random_seed=1)
+
+        val_2 = self.sbo_med.optimize(monte_carlo=True, n_samples=50, n_restarts_mc=10)
+
+        print val
+        print val_2
+        assert 1 ==2
+
         # def test_evaluate_sbo_mc_2(self):
     #     dim_x = 4
     #     bounds_domain_x = [(0.01, 1.01), (0.1, 2.1), (1, 21), (1, 201)]

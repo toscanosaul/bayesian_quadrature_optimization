@@ -33,6 +33,7 @@ from stratified_bayesian_optimization.lib.util import (
     wrapper_opimize,
     wrapper_evaluate_sample,
     wrapper_evaluate_gradient_sample,
+    wrapper_evaluate_sbo_mc,
 )
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.lib.util import wrapper_evaluate_sbo
@@ -43,11 +44,11 @@ logger = SBOLog(__name__)
 class SBO(object):
 
     _filename = 'opt_sbo_{model_type}_{problem_name}_{type_kernel}_{training_name}_' \
-                '{n_training}_{random_seed}.json'.format
+                '{n_training}_{random_seed}_mc_{monte_carlo}.json'.format
 
     _filename_voi_evaluations = '{iteration}_sbo_{model_type}_{problem_name}_' \
-                                '{type_kernel}_{training_name}_{n_training}_{random_seed}.' \
-                                'json'.format
+                                '{type_kernel}_{training_name}_{n_training}_{random_seed}_mc_' \
+                                '{monte_carlo}.json'.format
 
     _filename_points_voi_evaluations = 'points_for_voi_{model_type}_{problem_name}_' \
                                 '{type_kernel}_{training_name}_{n_training}_{random_seed}.' \
@@ -74,7 +75,6 @@ class SBO(object):
             self.opt_separing_domain = True
 
         self.optimization_results = []
-        self.max_mean = None # max_{x} a_{n} (x)
 
         # Cached data for MC SBO
         self.samples = {} # Samples from a standard Gaussian r.v. used to estimate SBO
@@ -245,14 +245,13 @@ class SBO(object):
                  self.bq.x_domain]
 
 
-        if self.max_mean is not None:
-            max_mean = self.max_mean
+        if self.bq.max_mean is not None:
+            max_mean = self.bq.max_mean
         else:
             max_mean = self.bq.optimize_posterior_mean(random_seed)['optimal_value']
-            self.max_mean = max_mean
 
         if tuple(candidate_point[0, :]) in self.samples:
-            samples = self.samples[tuple(candidate_point)]
+            samples = self.samples[tuple(candidate_point[0, :])]
         else:
             samples = np.random.normal(0, 1, n_samples)
             self.samples = {}
@@ -261,7 +260,7 @@ class SBO(object):
         max_values = []
 
         if tuple(candidate_point[0, :]) in self.optimal_samples:
-            optimal_values = self.optimal_samples[tuple(candidate_point)]['max'].values()
+            optimal_values = self.optimal_samples[tuple(candidate_point[0, :])]['max'].values()
             return {'value': np.mean(optimal_values), 'std': np.std(max_values) / n_samples}
 
         self.optimal_samples = {}
@@ -437,34 +436,53 @@ class SBO(object):
 
         return gradient
 
-    def objective_voi(self, point):
+    def objective_voi(self, point, monte_carlo=False, n_samples=1, n_restarts=1):
         """
         Evaluates the VOI at point.
         :param point: np.array(n)
+        :param monte_carlo: (boolean) If True, estimates the function by MC.
+        :param n_samples: (int) Number of samples for the MC method.
+        :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
         :return: float
         """
 
         point = point.reshape((1, len(point)))
-        return self.evaluate(point)
 
-    def grad_obj_voi(self, point):
+        if not monte_carlo:
+            value = self.evaluate(point)
+        else:
+            value = self.evaluate_mc(point, n_samples=n_samples, n_restarts=n_restarts)['value']
+        return value
+
+    def grad_obj_voi(self, point, monte_carlo=False, n_samples=1, n_restarts=1):
         """
         Evaluates the gradient of VOI at point.
         :param point: np.array(n)
+        :param monte_carlo: (boolean) If True, estimates the function by MC.
+        :param n_samples: (int) Number of samples for the MC method.
+        :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
         :return: np.array(n)
         """
 
         point = point.reshape((1, len(point)))
-        grad = self.evaluate_gradient(point)
+
+        if not monte_carlo:
+            grad = self.evaluate_gradient(point)
+        else:
+            grad = self.gradient_mc(point, n_samples=n_samples, n_restarts=n_restarts)['gradient']
 
         return grad
 
-    def optimize(self, start=None, random_seed=None, parallel=True):
+    def optimize(self, start=None, random_seed=None, parallel=True, monte_carlo=False, n_samples=1,
+                 n_restarts_mc=1):
         """
         Optimize the VOI.
         :param start: np.array(n)
         :param random_seed: int
         :param parallel: (boolean) For several tasks, it's run in paralle if it's True
+        :param monte_carlo: (boolean) If True, estimates the objective function and gradient by MC.
+        :param n_samples: (int) Number of samples for the MC method.
+        :param n_restarts_mc: (int) Number of restarts to optimize a_{n+1} given a sample.
 
         :return: dictionary with the results of the optimization.
         """
@@ -496,7 +514,8 @@ class SBO(object):
             for i, w in enumerate(self.domain_w[0]):
                 starts[i] = np.concatenate((start[0, :], np.array([w])))
 
-            args = (False, None, parallel, optimization, self, )
+            args = (False, None, parallel, optimization, self, monte_carlo, n_samples,
+                    n_restarts_mc)
             opt_sol = Parallel.run_function_different_arguments_parallel(
                 wrapper_optimization, starts, *args)
 
@@ -511,7 +530,7 @@ class SBO(object):
             index_max = np.argmax(max_values)
             results = opt_sol[index_max]
         else:
-            results = optimization.optimize(start, *(self, ))
+            results = optimization.optimize(start, *(self, monte_carlo, n_samples, n_restarts_mc))
 
         self.optimization_results.append(results)
 
@@ -533,11 +552,11 @@ class SBO(object):
         Cleans the cache
         """
         self.bq.clean_cache()
-        self.max_mean = None
         self.samples = {}
         self.optimal_samples = {}
 
-    def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed):
+    def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed,
+                         monte_carlo=False):
         """
         Write the results of the optimization.
 
@@ -546,6 +565,7 @@ class SBO(object):
         :param training_name: (str)
         :param n_training: (int)
         :param random_seed: (int)
+        :param monte_carlo: (boolean)
         """
         if not os.path.exists(DEBUGGING_DIR):
             os.mkdir(DEBUGGING_DIR)
@@ -565,14 +585,16 @@ class SBO(object):
                                 type_kernel=kernel_name,
                                 training_name=training_name,
                                 n_training=n_training,
-                                random_seed=random_seed)
+                                random_seed=random_seed,
+                                monte_carlo=monte_carlo)
 
         debug_path = path.join(debug_dir, f_name)
 
         JSONFile.write(self.optimization_results, debug_path)
 
     def generate_evaluations(self, problem_name, model_type, training_name, n_training,
-                             random_seed, iteration, n_points_by_dimension=None):
+                             random_seed, iteration, n_points_by_dimension=None, monte_carlo=False,
+                             n_samples=1, n_restarts_mc=1):
         """
         Generates evaluations of the posterior mean, and write them in the debug directory.
 
@@ -583,6 +605,9 @@ class SBO(object):
         :param random_seed: (int)
         :param iteration: (int)
         :param n_points_by_dimension: [int] Number of points by dimension
+        :param monte_carlo: (boolean) If True, estimates the objective function and gradient by MC.
+        :param n_samples: (int) Number of samples for the MC method.
+        :param n_restarts_mc: (int) Number of restarts to optimize a_{n+1} given a sample.
 
         """
 
@@ -645,7 +670,12 @@ class SBO(object):
         values = {}
         if self.bq.tasks:
             for task in xrange(self.bq.n_tasks):
-                values[task] = wrapper_evaluate_sbo(vectors, task, self)
+                if not monte_carlo:
+                    values[task] = wrapper_evaluate_sbo(vectors, task, self)
+                else:
+                    values[task] = wrapper_evaluate_sbo_mc(
+                        vectors, task, self, n_samples=n_samples, n_restarts=n_restarts_mc)
+
 
         f_name = self._filename_voi_evaluations(iteration=iteration,
                                                 model_type=model_type,
@@ -653,7 +683,8 @@ class SBO(object):
                                                 type_kernel=kernel_name,
                                                 training_name=training_name,
                                                 n_training=n_training,
-                                                random_seed=random_seed)
+                                                random_seed=random_seed,
+                                                monte_carlo=monte_carlo)
 
         debug_path = path.join(debug_dir, f_name)
 

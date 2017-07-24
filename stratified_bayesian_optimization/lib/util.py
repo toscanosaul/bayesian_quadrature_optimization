@@ -320,26 +320,34 @@ def wrapper_optimization(start, *args):
     return args[0].optimize(start, *args[1:])
 
 
-def wrapper_objective_voi(point, self):
+def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restarts=1):
     """
     Wrapper of objective_voi
     :param self: instance of the acquisition function
     :param point: np.array(n)
+    :param monte_carlo: (boolean) If True, estimates the function by MC.
+    :param n_samples: (int) Number of samples for the MC method.
+    :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
 
     :return: float
     """
-    return self.objective_voi(point)
+    return self.objective_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
+                              n_restarts=n_restarts)
 
 
-def wrapper_gradient_voi(point, self):
+def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts=1):
     """
     Wrapper of objective_voi (an acquisition function)
     :param self: instance of the acquisition function
     :param point: np.array(n)
+    :param monte_carlo: (boolean) If True, estimates the function by MC.
+    :param n_samples: (int) Number of samples for the MC method.
+    :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
 
     :return: np.array(n)
     """
-    return self.grad_obj_voi(point)
+    return self.grad_obj_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
+                              n_restarts=n_restarts)
 
 def wrapper_evaluate_quadrature_cross_cov(point, historical_points, parameters_kernel, self):
     """
@@ -387,6 +395,43 @@ def wrapper_compute_vector_b(point, compute_vec_covs, compute_b_new, historical_
         'b_new': b_new,
         'vec_covs': vec_covs,
     }
+
+def wrapper_evaluate_sbo_mc(candidate_points, task, self, n_samples, n_restarts):
+    """
+
+    :param candidate_points: np.array(rxn)
+    :param task: (int)
+    :param self: sbo instance
+    :param n_samples: (int) Number of samples for the MC method.
+    :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
+
+    :return: np.array(r)
+    """
+    tasks =  candidate_points.shape[0] * [task]
+    tasks = np.array(tasks).reshape((len(tasks), 1))
+
+    candidate_points = np.concatenate((candidate_points, tasks), axis=1)
+
+
+    r = candidate_points.shape[0]
+
+    values = np.zeros(r)
+
+    points = {}
+    for i in xrange(r):
+        points[i] = candidate_points[i, :]
+
+    args = (False, None, True, self, True, n_samples, n_restarts)
+    val = Parallel.run_function_different_arguments_parallel(
+        wrapper_objective_voi, points, *args)
+
+    for i in xrange(r):
+        if val.get(i) is None:
+            logger.info("Computation of VOI failed for new_point %d" % i)
+            continue
+        values[i] = val[i]
+
+    return values
 
 
 def wrapper_evaluate_sbo(candidate_points, task, self):

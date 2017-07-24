@@ -22,7 +22,9 @@ class SpecService(object):
                            parameters_distribution=None, minimize=False, n_iterations=5,
                            kernel_values=None, mean_value=None, var_noise_value=None,
                            debug=False, same_correlation=False,
-                           number_points_each_dimension_debug=None):
+                           number_points_each_dimension_debug=None, monte_carlo_sbo=False,
+                           n_samples_mc=1, n_restarts_mc=1):
+
         """
         Generate dict that represents run spec.
 
@@ -75,6 +77,11 @@ class SpecService(object):
             kernel.
         :param number_points_each_dimension_debug: ([int]) Number of points for the discretization
             of the debug plots.
+        :param monte_carlo_sbo: (boolean) If True, estimates the objective function and gradient by
+            MC.
+        :param n_samples_mc: (int) Number of samples for the MC method.
+        :param n_restarts_mc: (int) Number of restarts to optimize a_{n+1} given a sample.
+
         :return: dict
         """
 
@@ -117,7 +124,6 @@ class SpecService(object):
         if same_correlation is None:
             same_correlation = False
 
-
         return {
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -153,6 +159,9 @@ class SpecService(object):
             'debug': debug,
             'same_correlation': same_correlation,
             'number_points_each_dimension_debug': number_points_each_dimension_debug,
+            'monte_carlo_sbo': monte_carlo_sbo,
+            'n_samples_mc': n_samples_mc,
+            'n_restarts_mc': n_restarts_mc,
         }
 
     # TODO - generate a list of runspecentities over different parameters

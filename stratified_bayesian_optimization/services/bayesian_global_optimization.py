@@ -94,13 +94,18 @@ class BGO(object):
         self.n_samples = n_samples
         self.number_points_each_dimension_debug = number_points_each_dimension_debug
 
-    def optimize(self, random_seed=None, start=None, debug=False):
+    def optimize(self, random_seed=None, start=None, debug=False, monte_carlo_sbo=False,
+                 n_samples_mc=1, n_restarts_mc=1):
         """
         Optimize objective over the domain.
         :param random_seed: int
         :param start: (np.array(n)) starting point for the optimization of VOI
         :param debug: (boolean) If true, saves evaluations of the VOI and posterior mean at each
             iteration.
+        :param monte_carlo_sbo: (boolean) If True, estimates the objective function and gradient by
+            MC.
+        :param n_samples_mc: (int) Number of samples for the MC method.
+        :param n_restarts_mc: (int) Number of restarts to optimize a_{n+1} given a sample.
 
         :return: Objective
         """
@@ -126,18 +131,23 @@ class BGO(object):
 
         for iteration in xrange(self.n_iterations):
 
-            new_point = self.acquisition_function.optimize(parallel=self.parallel,
-                                                           start=start)['solution']
+            new_point = self.acquisition_function.optimize(
+                parallel=self.parallel, start=start, monte_carlo=monte_carlo_sbo,
+                n_samples=n_samples_mc, n_restarts_mc=n_restarts_mc)['solution']
 
             self.acquisition_function.write_debug_data(self.problem_name, self.name_model,
                                                        self.training_name, self.n_training,
-                                                       self.random_seed)
+                                                       self.random_seed,
+                                                       monte_carlo=monte_carlo_sbo)
 
             if debug:
                 self.acquisition_function.generate_evaluations(
                     self.problem_name, self.name_model, self.training_name, self.n_training,
                     self.random_seed, iteration,
-                    n_points_by_dimension=self.number_points_each_dimension_debug)
+                    n_points_by_dimension=self.number_points_each_dimension_debug,
+                    monte_carlo=monte_carlo_sbo, n_samples=n_samples_mc,
+                    n_restarts_mc=n_restarts_mc)
+
 
             self.acquisition_function.clean_cache()
 
@@ -186,7 +196,12 @@ class BGO(object):
         """
         bgo = cls.from_spec(spec)
         debug = spec.get('debug')
+        monte_carlo_sbo = spec.get('monte_carlo_sbo')
+        n_samples_mc = spec.get('n_samples_mc')
+        n_restarts_mc = spec.get('n_restarts_mc')
+
 
         # WE CAN STILL ADD THE DOMAIN IF NEEDED FOR THE KG
-        result = bgo.optimize(debug=debug)
+        result = bgo.optimize(debug=debug, n_samples_mc=n_samples_mc, n_restarts_mc=n_restarts_mc,
+                              monte_carlo_sbo=monte_carlo_sbo)
         return result

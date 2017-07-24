@@ -71,6 +71,9 @@ class TestSpecService(unittest.TestCase):
             'var_noise_value': [],
             'same_correlation': False,
             'number_points_each_dimension_debug': None,
+            'monte_carlo_sbo': False,
+            'n_restarts_mc': 1,
+            'n_samples_mc': 1,
         }
 
     def test_generate_dic_specs(self):
