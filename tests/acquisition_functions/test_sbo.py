@@ -424,7 +424,7 @@ class TestSBO(unittest.TestCase):
         self.sbo_med.opt_separing_domain = False
         val = self.sbo_med.optimize(random_seed=1)
 
-        val_2 = self.sbo_med.optimize(monte_carlo=True, n_samples=100, n_restarts_mc=10)
+        val_2 = self.sbo_med.optimize(monte_carlo=True, n_samples=50, n_restarts_mc=100)
 
         print "val"
         print val
