@@ -911,7 +911,7 @@ class BayesianQuadrature(object):
 
     def gradient_vector_b(self, candidate_point, points, var_noise=None, mean=None,
                           parameters_kernel=None, cache=True, keep_indexes=None,
-                          parallel=True):
+                          parallel=True, monte_carlo=False):
         """
         Compute the gradient of the vector b(x,candidate_point) for each x in points
         (see SBO paper).
@@ -925,6 +925,8 @@ class BayesianQuadrature(object):
         :param keep_indexes: [int], indexes of the points saved of the discretization.
             They are used to get the useful elements of the cached data.
         :param parallel: (boolean)
+        :param monte_carlo: If True, we cache the data using the indexes to cache the data of the
+            monte carlo samples.
 
         :return: np.array(nxm)
         """
@@ -958,7 +960,8 @@ class BayesianQuadrature(object):
         #          np.dot(gamma.transpose(), solve_1)
 
         vec_covs, b_new =  self.get_vec_covs(cache, points, parameters_kernel, candidate_point,
-                                             parallel, keep_indexes=keep_indexes)
+                                             parallel, keep_indexes=keep_indexes,
+                                             monte_carlo=monte_carlo)
 
         solve_2 = cho_solve(chol, vec_covs.transpose())
 

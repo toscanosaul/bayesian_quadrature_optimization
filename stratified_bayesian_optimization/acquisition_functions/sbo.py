@@ -317,9 +317,44 @@ class SBO(object):
 
         return {'value': np.mean(max_values) - max_mean, 'std': np.std(max_values) / n_samples}
 
-   # def gradient_mc(self):
+    def gradient_mc(self, candidate_point, parameters_kernel=None, var_noise=None,
+                    mean=None, n_samples=None, random_seed=None, parallel=True, n_restarts=10):
+        """
+        Evaluate the gradient of SBO by using MC estimation.
 
+        :param candidate_point: np.array(1xn)
+        :param parameters_kernel: np.array(l)
+        :param var_noise: int
+        :param mean: int
+        :param n_samples: int
+        :param random_seed: int
+        :param parallel: boolean
+        :param n_restarts: int
+        :return: {'gradient': np.array(n), 'std': np.array(n)}
+        """
+        if tuple(candidate_point[0, :]) not in self.optimal_samples:
+            self.evaluate_mc(candidate_point, n_samples, var_noise=var_noise, mean=mean,
+                             parameters_kernel=parameters_kernel, random_seed=random_seed,
+                             parallel=parallel, n_restarts=n_restarts)
 
+        max_points = self.optimal_samples[tuple(candidate_point[0, :])]['optimum']
+
+        samples = self.samples[tuple(candidate_point[0, :])]
+        n_samples = len(samples)
+
+        points = np.zeros((n_samples, candidate_point.shape[1]))
+        for i in xrange(n_samples):
+            points[i, :] = max_points[i]
+
+        gradient_b = self.bq.gradient_vector_b(candidate_point, points, var_noise=var_noise,
+                                               mean=mean, parameters_kernel=parameters_kernel,
+                                               cache=True, parallel=parallel, monte_carlo=True)
+
+        gradient = gradient_b * samples.reshape((n_samples, 1))
+
+        gradient = np.mean(gradient, axis=0)
+
+        return {'gradient': gradient, 'std': np.std(gradient, axis=0) / n_samples}
 
 
     def evaluate(self, point, var_noise=None, mean=None, parameters_kernel=None, cache=True):
