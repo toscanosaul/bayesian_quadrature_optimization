@@ -434,10 +434,12 @@ class TestSBO(unittest.TestCase):
         domain = DomainService.from_dict(spec)
         self.sbo_med.discretization = np.array(domain.discretization_domain_x)
 
-        val = self.sbo_med.optimize(random_seed=1)
+        val = self.sbo_med.optimize(random_seed=1, parallel=False)
 
-        val_2 = self.sbo_med.optimize(monte_carlo=True, n_samples=100, n_restarts_mc=50,
-                                      random_seed=1)
+        val_2 = self.sbo_med.optimize(monte_carlo=True, n_samples=50, n_restarts_mc=10,
+                                      random_seed=1, parallel=False)
+
+        npt.assert_almost_equal(val['solution'], val_2['solution'], decimal=2)
 
         print "val"
         print val
