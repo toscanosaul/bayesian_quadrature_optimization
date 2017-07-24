@@ -386,6 +386,20 @@ class TestSBO(unittest.TestCase):
         assert value >= value_2['value'] - 1.96 * value_2['std']
 
 
+    def test_evaluate_gradient_sbo(self):
+        candidate = np.array([[52.5, 0]])
+        self.sbo.clean_cache()
+        grad = self.sbo.evaluate_gradient(candidate)
+
+        n_samples = 1000
+        n_restarts = 10
+
+        grad_mc = self.sbo.gradient_mc(candidate, random_seed=1, n_samples=n_samples,
+                                       n_restarts=n_restarts)
+
+        print grad
+        print grad_mc
+        assert 1 ==2
 
 
 

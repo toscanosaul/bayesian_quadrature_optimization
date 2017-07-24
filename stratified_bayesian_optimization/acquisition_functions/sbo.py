@@ -339,10 +339,11 @@ class SBO(object):
 
         max_points = self.optimal_samples[tuple(candidate_point[0, :])]['optimum']
 
+
         samples = self.samples[tuple(candidate_point[0, :])]
         n_samples = len(samples)
 
-        points = np.zeros((n_samples, candidate_point.shape[1]))
+        points = np.zeros((n_samples, len(self.bq.x_domain)))
         for i in xrange(n_samples):
             points[i, :] = max_points[i]
 
@@ -352,9 +353,9 @@ class SBO(object):
 
         gradient = gradient_b * samples.reshape((n_samples, 1))
 
-        gradient = np.mean(gradient, axis=0)
+        gradient_approx = np.mean(gradient, axis=0)
 
-        return {'gradient': gradient, 'std': np.std(gradient, axis=0) / n_samples}
+        return {'gradient': gradient_approx, 'std': np.std(gradient, axis=0) / n_samples}
 
 
     def evaluate(self, point, var_noise=None, mean=None, parameters_kernel=None, cache=True):
