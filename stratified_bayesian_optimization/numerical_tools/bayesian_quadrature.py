@@ -705,45 +705,8 @@ class BayesianQuadrature(object):
         mean = additional_parameters.get('mean')
         var_noise = additional_parameters.get('var_noise')
 
-        if cache:
-            b_new = self._get_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :]),
-                                           tuple(point[0, :])), B_NEW)
-        else:
-            b_new = None
-
-        compute_b_new = False
-        if b_new is None:
-            compute_b_new = True
-
-        compute_vec_covs = False
-
-        if cache:
-            vec_covs = self._get_cached_data((tuple(parameters_kernel), tuple(point[0, :])),
-                                             QUADRATURES)
-        else:
-            vec_covs = None
-
-        if vec_covs is None:
-            compute_vec_covs = True
-
-        computations = self.compute_vectors_b(point, candidate_point, self.gp.data['points'],
-                                              parameters_kernel, compute_vec_covs, compute_b_new,
-                                              False)
-        if compute_b_new:
-            b_new = computations['b_new']
-
-        if compute_vec_covs:
-            vec_covs = computations['vec_covs']
-
-        if cache:
-            if compute_vec_covs:
-                self._updated_cached_data((tuple(parameters_kernel), tuple(point[0, :])), vec_covs,
-                                          QUADRATURES)
-
-            if compute_b_new:
-                self._updated_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :]),
-                                           tuple(point[0, :])), b_new, B_NEW)
-
+        vec_covs, b_new = self.get_vec_covs(cache, point, parameters_kernel, candidate_point,
+                                            False, monte_carlo=True)
 
         mu_n = mean + np.dot(vec_covs, solve)
 
@@ -799,6 +762,85 @@ class BayesianQuadrature(object):
         gradient_b = gradient_b[:, 0]
         return {'a': gradient_a, 'b': gradient_b}
 
+    def get_vec_covs(self, cache, points, parameters_kernel, candidate_point, parallel,
+                     keep_indexes=None, monte_carlo=False):
+        """
+        Get vectors b from cache if possible.
+
+        :param cache: (boolean)
+        :param points: np.array(nxk)
+        :param parameters_kernel: np.array(l)
+        :param candidate_point: np.array(1xm)
+        :param parallel: boolean
+        :param keep_indexes: [int], indexes of the points saved of the discretization.
+            They are used to get the useful elements of the cached data. Monte_carlo is False.
+        :param monte_carlo: If True, we cache the data using the indexes to cache the data of the
+            monte carlo samples.
+
+        :return: (vec_covs, b_new)
+        """
+
+        if monte_carlo:
+            parallel = False
+
+        n = points.shape[0]
+        m = self.gp.data['points'].shape[0]
+
+        if cache:
+            if not monte_carlo:
+                index_b_new = (tuple(parameters_kernel), tuple(candidate_point[0, :]))
+            else:
+                index_b_new = (tuple(parameters_kernel), tuple(candidate_point[0, :]),
+                               tuple(points[0, :]))
+
+            b_new = self._get_cached_data(index_b_new, B_NEW)
+        else:
+            b_new = None
+
+        compute_b_new = False
+        if b_new is None:
+            compute_b_new = True
+            b_new = np.zeros((n, 1))
+        elif not monte_carlo:
+            b_new = b_new[keep_indexes, :]
+
+        compute_vec_covs = False
+        if cache:
+            if not monte_carlo:
+                index_vec_covs = (tuple(parameters_kernel), )
+            else:
+                index_vec_covs = (tuple(parameters_kernel), tuple(points[0, :]))
+
+            vec_covs = self._get_cached_data(index_vec_covs, QUADRATURES)
+        else:
+            vec_covs = None
+
+        if vec_covs is None:
+            compute_vec_covs = True
+            vec_covs = np.zeros((n, m))
+        elif not monte_carlo:
+            vec_covs = vec_covs[keep_indexes, :]
+
+        if compute_vec_covs or compute_b_new:
+            computations = self.compute_vectors_b(points, candidate_point, self.gp.data['points'],
+                                                  parameters_kernel, compute_vec_covs,
+                                                  compute_b_new, parallel)
+
+            if compute_vec_covs:
+                vec_covs = computations['vec_covs']
+
+            if compute_b_new:
+                b_new = computations['b_new']
+
+        if cache:
+            if compute_vec_covs:
+                self._updated_cached_data(index_vec_covs, vec_covs, QUADRATURES)
+
+            if compute_b_new:
+                self._updated_cached_data(index_b_new, b_new, B_NEW)
+
+        return vec_covs, b_new
+
 
     def compute_posterior_parameters_kg(self, points, candidate_point, var_noise=None, mean=None,
                                         parameters_kernel=None, cache=True, parallel=True):
@@ -834,48 +876,8 @@ class BayesianQuadrature(object):
         chol = chol_solve['chol']
         solve = chol_solve['solve']
 
-        n = points.shape[0]
-        m = self.gp.data['points'].shape[0]
-
-        if cache:
-            b_new = self._get_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :])),
-                                          B_NEW)
-        else:
-            b_new = None
-
-        compute_b_new = False
-        if b_new is None:
-            compute_b_new = True
-            b_new = np.zeros((n, 1))
-
-        compute_vec_covs = False
-        if cache:
-            vec_covs = self._get_cached_data((tuple(parameters_kernel, )), QUADRATURES)
-        else:
-            vec_covs = None
-
-        if vec_covs is None:
-            compute_vec_covs = True
-            vec_covs = np.zeros((n, m))
-
-        if compute_vec_covs or compute_b_new:
-            computations = self.compute_vectors_b(points, candidate_point, self.gp.data['points'],
-                                                  parameters_kernel, compute_vec_covs,
-                                                  compute_b_new, parallel)
-
-            if compute_vec_covs:
-                vec_covs = computations['vec_covs']
-
-            if compute_b_new:
-                b_new = computations['b_new']
-
-        if cache:
-            if compute_vec_covs:
-                self._updated_cached_data((tuple(parameters_kernel), ), vec_covs, QUADRATURES)
-
-            if compute_b_new:
-                self._updated_cached_data((tuple(parameters_kernel), tuple(candidate_point[0,:])),
-                                          b_new, B_NEW)
+        vec_covs, b_new =  self.get_vec_covs(cache, points, parameters_kernel, candidate_point,
+                                             parallel)
 
         if cache:
             mu_n = self._get_cached_data((tuple(parameters_kernel),), POSTERIOR_MEAN)
@@ -955,54 +957,8 @@ class BayesianQuadrature(object):
         # beta_1 = self.gp.evaluate_cov(candidate_point, parameters_kernel) - \
         #          np.dot(gamma.transpose(), solve_1)
 
-
-        n = points.shape[0]
-        m = self.gp.data['points'].shape[0]
-
-        if cache:
-            b_new = self._get_cached_data((tuple(parameters_kernel), tuple(candidate_point[0, :])),
-                                          B_NEW)
-        else:
-            b_new = None
-
-        compute_b_new = False
-        if b_new is None:
-            compute_b_new = True
-            b_new = np.zeros((n, 1))
-        else:
-            b_new = b_new[keep_indexes, :]
-
-        compute_vec_covs = False
-
-        if cache:
-            vec_covs = self._get_cached_data((tuple(parameters_kernel), ), QUADRATURES)
-        else:
-            vec_covs = None
-
-        if vec_covs is None:
-            compute_vec_covs = True
-            vec_covs = np.zeros((n, m))
-        else:
-            vec_covs = vec_covs[keep_indexes, :]
-        # Remove repeated code and put in one function!
-
-        if compute_vec_covs or compute_b_new:
-            computations = self.compute_vectors_b(points, candidate_point, self.gp.data['points'],
-                                                  parameters_kernel, compute_vec_covs,
-                                                  compute_b_new, parallel)
-            if compute_vec_covs:
-                vec_covs = computations['vec_covs']
-
-            if compute_b_new:
-                b_new = computations['b_new']
-
-        if cache:
-            if compute_vec_covs:
-                self._updated_cached_data((tuple(parameters_kernel), ), vec_covs, QUADRATURES)
-
-            if compute_b_new:
-                self._updated_cached_data((tuple(parameters_kernel), tuple(candidate_point[0,:])),
-                                          b_new, B_NEW)
+        vec_covs, b_new =  self.get_vec_covs(cache, points, parameters_kernel, candidate_point,
+                                             parallel, keep_indexes=keep_indexes)
 
         solve_2 = cho_solve(chol, vec_covs.transpose())
 
