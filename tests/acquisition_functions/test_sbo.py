@@ -387,14 +387,26 @@ class TestSBO(unittest.TestCase):
 
 
     def test_evaluate_gradient_sbo(self):
+
+        spec = {
+            'dim_x': 1,
+            'choose_noise': True,
+            'bounds_domain_x': [self.bounds_domain_x],
+            'number_points_each_dimension': [1000],
+            'problem_name': 'a',
+        }
+
+        domain = DomainService.from_dict(spec)
+        sbo = SBO(self.gp, np.array(domain.discretization_domain_x))
+
         candidate = np.array([[52.5, 0]])
-        self.sbo.clean_cache()
-        grad = self.sbo.evaluate_gradient(candidate)
+        sbo.clean_cache()
+        grad = sbo.evaluate_gradient(candidate)
 
         n_samples = 1000
-        n_restarts = 10
+        n_restarts = 50
 
-        grad_mc = self.sbo.gradient_mc(candidate, random_seed=1, n_samples=n_samples,
+        grad_mc = sbo.gradient_mc(candidate, random_seed=1, n_samples=n_samples,
                                        n_restarts=n_restarts)
 
         print grad
