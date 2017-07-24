@@ -421,10 +421,22 @@ class TestSBO(unittest.TestCase):
         npt.assert_almost_equal(grad_mc_2['std'], grad_mc['std'], decimal=5)
 
     def test_optimize_sbo_mc(self):
+
+        spec = {
+            'dim_x': 1,
+            'choose_noise': True,
+            'bounds_domain_x': [self.bounds_domain_x],
+            'number_points_each_dimension': [1000],
+            'problem_name': 'a',
+        }
+
+        domain = DomainService.from_dict(spec)
+        self.sbo_med.discretization = np.array(domain.discretization_domain_x)
+
         self.sbo_med.opt_separing_domain = False
         val = self.sbo_med.optimize(random_seed=1)
 
-        val_2 = self.sbo_med.optimize(monte_carlo=True, n_samples=50, n_restarts_mc=100)
+        val_2 = self.sbo_med.optimize(monte_carlo=True, n_samples=50, n_restarts_mc=10)
 
         print "val"
         print val
