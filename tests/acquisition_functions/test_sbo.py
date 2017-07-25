@@ -440,3 +440,8 @@ class TestSBO(unittest.TestCase):
                                       random_seed=1, parallel=False)
 
         npt.assert_almost_equal(val['solution'], val_2['solution'], decimal=2)
+
+    def test_optimize_sbo_mc_diff_parameters(self):
+        val = self.sbo_med.optimize(monte_carlo=True, n_samples=2, n_restarts_mc=2,
+                                      random_seed=1, parallel=False, **{'factr':1e12,'maxiter':100})
+        assert 1 ==2

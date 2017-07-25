@@ -64,11 +64,12 @@ class Optimization(object):
                 return -1.0 * self.function(x, *args)
             def grad(x, *args):
                 return -1.0 * self.gradient(x, *args)
+
             opt = self.optimizer(
                 f, start,
                 fprime=grad,
                 args=args,
-                bounds=self.bounds)
+                bounds=self.bounds, **self.optimization_options)
 
         return {
             'solution': opt[0],
