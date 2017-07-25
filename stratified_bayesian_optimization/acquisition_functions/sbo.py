@@ -261,7 +261,8 @@ class SBO(object):
 
         if tuple(candidate_point[0, :]) in self.optimal_samples:
             optimal_values = self.optimal_samples[tuple(candidate_point[0, :])]['max'].values()
-            return {'value': np.mean(optimal_values), 'std': np.std(max_values) / n_samples}
+            return {'value': np.mean(optimal_values) - max_mean,
+                    'std': np.std(optimal_values) / n_samples}
 
         self.optimal_samples = {}
         self.optimal_samples[tuple(candidate_point[0, :])] = {}
