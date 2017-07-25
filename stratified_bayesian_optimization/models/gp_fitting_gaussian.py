@@ -479,8 +479,19 @@ class GPFittingGaussian(object):
         }
 
     @classmethod
-    def deserialize(cls, s):
-        return cls(**s)
+    def deserialize(cls, s, use_only_training_points=True):
+        """
+
+        :param s:
+        :param use_only_training_points (boolean) If true,
+            it uses only the training points in data. Otherwise, it also includes new points
+            previously computed.
+        :return: gp-model instance
+        """
+        model = cls(**s)
+        if use_only_training_points:
+            model.data = model.convert_from_list_to_numpy(model.training_data)
+        return model
 
     @property
     def get_parameters_model(self):

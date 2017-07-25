@@ -85,7 +85,8 @@ class GPFittingService(object):
                type_bounds=None, n_training=0, noise=False, training_data=None, points=None,
                training_name=None, mle=True, thinning=0, n_burning=0, max_steps_out=1,
                n_samples=None, random_seed=DEFAULT_RANDOM_SEED, kernel_values=None, mean_value=None,
-               var_noise_value=None, cache=True, same_correlation=False):
+               var_noise_value=None, cache=True, same_correlation=False,
+               use_only_training_points=True):
         """
         Fetch a GP model from file if it exists, otherwise train a new model and save it locally.
 
@@ -121,6 +122,9 @@ class GPFittingService(object):
         :param cache: (boolean) Try to get model from cache
         :param same_correlation: (boolean) If true, it uses the same correlations for the task
             kernel.
+        :param use_only_training_points (boolean) If the model is read, and the param is true,
+            it uses only the training points in data. Otherwise, it also includes new points
+            previously computed.
 
         :return: (GPFittingGaussian) - An instance of GPFittingGaussian
         """
@@ -144,7 +148,7 @@ class GPFittingService(object):
             data = None
 
         if data is not None:
-            return model_type.deserialize(data)
+            return model_type.deserialize(data, use_only_training_points=use_only_training_points)
 
         if training_data is None or training_data == {}:
             training_data = TrainingDataService.get_training_data(problem_name, training_name,
