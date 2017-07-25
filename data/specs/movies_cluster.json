@@ -18,7 +18,8 @@
         11,
         6
     ],
-    "n_restarts_mc":50,
+    "n_restarts_mc":100,
+    "factr_mc":1000000000000.0,
     "name_model":"gp_fitting_gaussian",
     "same_correlation":true,
     "type_kernel":[
@@ -48,6 +49,7 @@
     "dim_x":4,
     "monte_carlo_sbo":true,
     "parallel":true,
+    "maxiter_mc":10,
     "dimensions":[
         5,
         4,
@@ -104,7 +106,7 @@
         0,
         1
     ],
-    "n_samples_mc":100,
+    "n_samples_mc":50,
     "n_samples":0,
     "choose_noise":true,
     "training_data":{

@@ -42,8 +42,11 @@ if __name__ == '__main__':
     debug = False
     number_points_each_dimension_debug = [10, 10, 10, 10]
     monte_carlo_sbo = True
-    n_samples_mc = 100
-    n_restarts_mc = 50
+    n_samples_mc = 50
+    n_restarts_mc = 100
+    factr_mc = 1e12
+    maxiter_mc = 10
+
 
     spec = SpecService.generate_dict_spec(
         problem_name, dim_x, bounds_domain_x, training_name, type_kernel, dimensions,
@@ -53,7 +56,8 @@ if __name__ == '__main__':
         parallel=parallel, thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out,
         n_iterations=n_iterations, same_correlation=same_correlation, debug=debug,
         number_points_each_dimension_debug=number_points_each_dimension_debug,
-        monte_carlo_sbo=monte_carlo_sbo, n_samples_mc=n_samples_mc, n_restarts_mc=n_restarts_mc)
+        monte_carlo_sbo=monte_carlo_sbo, n_samples_mc=n_samples_mc, n_restarts_mc=n_restarts_mc,
+        factr_mc=factr_mc, maxiter_mc=maxiter_mc)
 
 
     print ujson.dumps(spec, indent=4)
