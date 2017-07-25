@@ -320,7 +320,8 @@ def wrapper_optimization(start, *args):
     return args[0].optimize(start, *args[1:])
 
 
-def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restarts=1):
+def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restarts=1,
+                          opt_params_mc=None):
     """
     Wrapper of objective_voi
     :param self: instance of the acquisition function
@@ -328,14 +329,23 @@ def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restart
     :param monte_carlo: (boolean) If True, estimates the function by MC.
     :param n_samples: (int) Number of samples for the MC method.
     :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
+    :param opt_params_mc: {
+        -'factr': int
+        -'maxiter': int
+    }
 
     :return: float
     """
+
+    if opt_params_mc is None:
+        opt_params_mc = {}
+
     return self.objective_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
-                              n_restarts=n_restarts)
+                              n_restarts=n_restarts, **opt_params_mc)
 
 
-def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts=1):
+def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts=1,
+                         opt_params_mc=None):
     """
     Wrapper of objective_voi (an acquisition function)
     :param self: instance of the acquisition function
@@ -343,11 +353,17 @@ def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts
     :param monte_carlo: (boolean) If True, estimates the function by MC.
     :param n_samples: (int) Number of samples for the MC method.
     :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
-
+    :param opt_params_mc:{
+        -'factr': int
+        -'maxiter': int
+    }
     :return: np.array(n)
     """
+    if opt_params_mc is None:
+        opt_params_mc = {}
+
     return self.grad_obj_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
-                              n_restarts=n_restarts)
+                              n_restarts=n_restarts, **opt_params_mc)
 
 def wrapper_evaluate_quadrature_cross_cov(point, historical_points, parameters_kernel, self):
     """
@@ -522,7 +538,7 @@ def wrapper_GPFittingGaussian(training_data_sets, model, type_kernel, dimensions
     return gp
 
 def wrapper_evaluate_sbo_by_sample(start_sample, self, candidate_point, var_noise, mean,
-                                   parameters_kernel):
+                                   parameters_kernel, **opt_params_mc):
     """
 
     :param start_sample: [np.array(n), float], the first element is the starting point, and the
@@ -532,12 +548,15 @@ def wrapper_evaluate_sbo_by_sample(start_sample, self, candidate_point, var_nois
     :param var_noise: float
     :param mean: float
     :param parameters_kernel: np.array(l)
+    :param opt_params_mc:
+        -'factr': int
+        -'maxiter': int
     :return: {'max': float, 'optimum': np.array(n)}
     """
 
     return self.evaluate_sbo_by_sample(
         candidate_point, start_sample[1], start=start_sample[0], var_noise=var_noise, mean=mean,
-        parameters_kernel=parameters_kernel, n_restarts=0, parallel=False )
+        parameters_kernel=parameters_kernel, n_restarts=0, parallel=False, **opt_params_mc)
 
 def wrapper_evaluate_sample(point, self, *args):
     """

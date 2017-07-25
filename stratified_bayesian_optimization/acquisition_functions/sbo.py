@@ -141,7 +141,7 @@ class SBO(object):
 
     def evaluate_sbo_by_sample(self, candidate_point, sample, start=None,
                                var_noise=None, mean=None, parameters_kernel=None, n_restarts=5,
-                               parallel=True):
+                               parallel=True, **opt_params_mc):
         """
         Optimize a_{n+1}(x)  given the candidate_point and the sample of the Gaussian r.v.
 
@@ -153,6 +153,9 @@ class SBO(object):
         :param mean: float
         :param parameters_kernel: np.array(l)
         :param parallel: (boolean) Multi-start optimization in parallel if it's True
+        :param opt_params_mc:
+            -'factr': int
+            -'maxiter': int
         :return: {'max': float, 'optimum': np.array(n)}
         """
 
@@ -187,7 +190,7 @@ class SBO(object):
             objective_function,
             bounds_x,
             grad_function,
-            minimize=False)
+            minimize=False, **opt_params_mc)
 
         if parallel:
             solutions = []
@@ -223,7 +226,8 @@ class SBO(object):
         return {'max': np.max(solutions), 'optimum': arg_max}
 
     def evaluate_mc(self, candidate_point,  n_samples, var_noise=None, mean=None,
-                    parameters_kernel=None, random_seed=None, parallel=True, n_restarts=10):
+                    parameters_kernel=None, random_seed=None, parallel=True, n_restarts=10,
+                    **opt_params_mc):
         """
         Evaluate SBO policy by a MC estimation.
 
@@ -235,6 +239,9 @@ class SBO(object):
         :param random_seed: int
         :param parallel: boolean
         :param n_restarts: (int)
+        :param opt_params_mc:
+            -'factr': int
+            -'maxiter': int
         :return: {'value': float, 'std': float}
         """
 
@@ -291,7 +298,7 @@ class SBO(object):
             args = (False, None, True, self, candidate_point, var_noise, mean, parameters_kernel)
 
             simulated_values = Parallel.run_function_different_arguments_parallel(
-                wrapper_evaluate_sbo_by_sample, point_dict, *args)
+                wrapper_evaluate_sbo_by_sample, point_dict, *args, **opt_params_mc)
 
             for i in xrange(n_samples):
                 values = []
@@ -309,7 +316,8 @@ class SBO(object):
             for i in xrange(n_samples):
                 max_value = self.evaluate_sbo_by_sample(
                     candidate_point, samples[i], start=None, var_noise=var_noise, mean=mean,
-                    parameters_kernel=parameters_kernel, n_restarts=n_restarts, parallel=True)
+                    parameters_kernel=parameters_kernel, n_restarts=n_restarts, parallel=True,
+                    **opt_params_mc)
                 max_values.append(max_value['max'])
                 maximum = max_value['optimum']
                 self.optimal_samples[tuple(candidate_point[0, :])]['max'][i] = max_value['max']
@@ -318,7 +326,8 @@ class SBO(object):
         return {'value': np.mean(max_values) - max_mean, 'std': np.std(max_values) / n_samples}
 
     def gradient_mc(self, candidate_point, parameters_kernel=None, var_noise=None,
-                    mean=None, n_samples=None, random_seed=None, parallel=True, n_restarts=10):
+                    mean=None, n_samples=None, random_seed=None, parallel=True, n_restarts=10,
+                    **opt_params_mc):
         """
         Evaluate the gradient of SBO by using MC estimation.
 
@@ -330,12 +339,15 @@ class SBO(object):
         :param random_seed: int
         :param parallel: boolean
         :param n_restarts: int
+        :param opt_params_mc:
+            -'factr': int
+            -'maxiter': int
         :return: {'gradient': np.array(n), 'std': np.array(n)}
         """
         if tuple(candidate_point[0, :]) not in self.optimal_samples:
             self.evaluate_mc(candidate_point, n_samples, var_noise=var_noise, mean=mean,
                              parameters_kernel=parameters_kernel, random_seed=random_seed,
-                             parallel=parallel, n_restarts=n_restarts)
+                             parallel=parallel, n_restarts=n_restarts, **opt_params_mc)
 
         max_points = self.optimal_samples[tuple(candidate_point[0, :])]['optimum']
 
@@ -437,13 +449,16 @@ class SBO(object):
 
         return gradient
 
-    def objective_voi(self, point, monte_carlo=False, n_samples=1, n_restarts=1):
+    def objective_voi(self, point, monte_carlo=False, n_samples=1, n_restarts=1, **opt_params_mc):
         """
         Evaluates the VOI at point.
         :param point: np.array(n)
         :param monte_carlo: (boolean) If True, estimates the function by MC.
         :param n_samples: (int) Number of samples for the MC method.
         :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
+        :param opt_params_mc:
+            -'factr': int
+            -'maxiter': int
         :return: float
         """
 
@@ -452,16 +467,20 @@ class SBO(object):
         if not monte_carlo:
             value = self.evaluate(point)
         else:
-            value = self.evaluate_mc(point, n_samples=n_samples, n_restarts=n_restarts)['value']
+            value = self.evaluate_mc(point, n_samples=n_samples, n_restarts=n_restarts,
+                                     **opt_params_mc)['value']
         return value
 
-    def grad_obj_voi(self, point, monte_carlo=False, n_samples=1, n_restarts=1):
+    def grad_obj_voi(self, point, monte_carlo=False, n_samples=1, n_restarts=1, **opt_params_mc):
         """
         Evaluates the gradient of VOI at point.
         :param point: np.array(n)
         :param monte_carlo: (boolean) If True, estimates the function by MC.
         :param n_samples: (int) Number of samples for the MC method.
         :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
+        :param opt_params_mc:
+            -'factr': int
+            -'maxiter': int
         :return: np.array(n)
         """
 
@@ -470,12 +489,13 @@ class SBO(object):
         if not monte_carlo:
             grad = self.evaluate_gradient(point)
         else:
-            grad = self.gradient_mc(point, n_samples=n_samples, n_restarts=n_restarts)['gradient']
+            grad = self.gradient_mc(point, n_samples=n_samples, n_restarts=n_restarts,
+                                    **opt_params_mc)['gradient']
 
         return grad
 
     def optimize(self, start=None, random_seed=None, parallel=True, monte_carlo=False, n_samples=1,
-                 n_restarts_mc=1):
+                 n_restarts_mc=1, **opt_params_mc):
         """
         Optimize the VOI.
         :param start: np.array(n)
@@ -484,6 +504,9 @@ class SBO(object):
         :param monte_carlo: (boolean) If True, estimates the objective function and gradient by MC.
         :param n_samples: (int) Number of samples for the MC method.
         :param n_restarts_mc: (int) Number of restarts to optimize a_{n+1} given a sample.
+        :param opt_params_mc:
+            -'factr': int
+            -'maxiter': int
 
         :return: dictionary with the results of the optimization.
         """
@@ -516,7 +539,7 @@ class SBO(object):
                 starts[i] = np.concatenate((start[0, :], np.array([w])))
 
             args = (False, None, parallel, optimization, self, monte_carlo, n_samples,
-                    n_restarts_mc)
+                    n_restarts_mc, opt_params_mc)
             opt_sol = Parallel.run_function_different_arguments_parallel(
                 wrapper_optimization, starts, *args)
 
@@ -531,7 +554,8 @@ class SBO(object):
             index_max = np.argmax(max_values)
             results = opt_sol[index_max]
         else:
-            results = optimization.optimize(start, *(self, monte_carlo, n_samples, n_restarts_mc))
+            results = optimization.optimize(start, *(self, monte_carlo, n_samples, n_restarts_mc,
+                                                     opt_params_mc))
 
         self.optimization_results.append(results)
 

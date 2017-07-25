@@ -74,6 +74,8 @@ class TestSpecService(unittest.TestCase):
             'monte_carlo_sbo': False,
             'n_restarts_mc': 1,
             'n_samples_mc': 1,
+            'factr_mc': 1000000000000.0,
+            'maxiter_mc': 1000,
         }
 
     def test_generate_dic_specs(self):

@@ -9,7 +9,7 @@ class Optimization(object):
 
     _optimizers_ = [LBFGS_NAME]
 
-    def __init__(self, optimizer_name, function, bounds, grad, minimize=True):
+    def __init__(self, optimizer_name, function, bounds, grad, minimize=True, **kwargs):
         """
         Class used to minimize function.
 
@@ -18,6 +18,9 @@ class Optimization(object):
         :param bounds: [(min, max)] for each point
         :param grad:
         :param minimize: boolean
+        :param kwargs:
+            -'factr': int
+            -'maxiter': int
         """
         self.optimizer_name = optimizer_name
         self.optimizer = self._get_optimizer(optimizer_name)
@@ -26,6 +29,7 @@ class Optimization(object):
         self.bounds = bounds
         self.dim = len(self.bounds)
         self.minimize = minimize
+        self.optimization_options = kwargs
 
     @staticmethod
     def _get_optimizer(optimizer_name):
@@ -54,7 +58,7 @@ class Optimization(object):
         """
         if self.minimize:
             opt = self.optimizer(self.function, start, fprime=self.gradient, args=args,
-                                 bounds=self.bounds)
+                                 bounds=self.bounds, **self.optimization_options)
         else:
             def f(x, *args):
                 return -1.0 * self.function(x, *args)

@@ -64,6 +64,8 @@ class RunSpecEntity(Model):
     monte_carlo_sbo = BooleanType(required=False)
     n_samples_mc = IntType(required=False)
     n_restarts_mc = IntType(required=False)
+    factr_mc = FloatType(required=False)
+    maxiter_mc = IntType(required=False)
 
     @classmethod
     def from_json(cls, specfile):
@@ -139,6 +141,9 @@ class RunSpecEntity(Model):
         n_samples_mc = spec.get('n_samples_mc', 100)
         n_restarts_mc = spec.get('n_restarts_mc', 100)
 
+        factr_mc = spec.get('factr_mc', 1e12)
+        maxiter_mc = spec.get('maxiter_mc', 1000)
+
         entry.update({
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -178,6 +183,8 @@ class RunSpecEntity(Model):
             'monte_carlo_sbo': monte_carlo_sbo,
             'n_samples_mc': n_samples_mc,
             'n_restarts_mc': n_restarts_mc,
+            'factr_mc': factr_mc,
+            'maxiter_mc': maxiter_mc,
         })
 
         return cls(entry)

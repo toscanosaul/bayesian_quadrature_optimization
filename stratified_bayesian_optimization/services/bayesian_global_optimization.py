@@ -95,7 +95,7 @@ class BGO(object):
         self.number_points_each_dimension_debug = number_points_each_dimension_debug
 
     def optimize(self, random_seed=None, start=None, debug=False, monte_carlo_sbo=False,
-                 n_samples_mc=1, n_restarts_mc=1):
+                 n_samples_mc=1, n_restarts_mc=1, **opt_params_mc):
         """
         Optimize objective over the domain.
         :param random_seed: int
@@ -106,6 +106,9 @@ class BGO(object):
             MC.
         :param n_samples_mc: (int) Number of samples for the MC method.
         :param n_restarts_mc: (int) Number of restarts to optimize a_{n+1} given a sample.
+        :param opt_params_mc:
+            -'factr': int
+            -'maxiter': int
 
         :return: Objective
         """
@@ -133,7 +136,7 @@ class BGO(object):
 
             new_point = self.acquisition_function.optimize(
                 parallel=self.parallel, start=start, monte_carlo=monte_carlo_sbo,
-                n_samples=n_samples_mc, n_restarts_mc=n_restarts_mc)['solution']
+                n_samples=n_samples_mc, n_restarts_mc=n_restarts_mc, **opt_params_mc)['solution']
 
             self.acquisition_function.write_debug_data(self.problem_name, self.name_model,
                                                        self.training_name, self.n_training,
@@ -200,8 +203,17 @@ class BGO(object):
         n_samples_mc = spec.get('n_samples_mc')
         n_restarts_mc = spec.get('n_restarts_mc')
 
+        opt_params_mc = {}
+        factr = spec.get('factr_mc')
+        maxiter = spec.get('maxiter_mc')
+
+        if factr is not None:
+            opt_params_mc['factr'] = factr
+        if maxiter is not None:
+            opt_params_mc['maxiter'] = maxiter
+
 
         # WE CAN STILL ADD THE DOMAIN IF NEEDED FOR THE KG
         result = bgo.optimize(debug=debug, n_samples_mc=n_samples_mc, n_restarts_mc=n_restarts_mc,
-                              monte_carlo_sbo=monte_carlo_sbo)
+                              monte_carlo_sbo=monte_carlo_sbo, **opt_params_mc)
         return result

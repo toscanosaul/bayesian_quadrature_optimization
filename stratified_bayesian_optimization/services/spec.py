@@ -23,7 +23,7 @@ class SpecService(object):
                            kernel_values=None, mean_value=None, var_noise_value=None,
                            debug=False, same_correlation=False,
                            number_points_each_dimension_debug=None, monte_carlo_sbo=False,
-                           n_samples_mc=1, n_restarts_mc=1):
+                           n_samples_mc=1, n_restarts_mc=1, factr_mc=1e12, maxiter_mc=1000):
 
         """
         Generate dict that represents run spec.
@@ -81,6 +81,8 @@ class SpecService(object):
             MC.
         :param n_samples_mc: (int) Number of samples for the MC method.
         :param n_restarts_mc: (int) Number of restarts to optimize a_{n+1} given a sample.
+        :param factr_mc: (float) Parameter of LBFGS to optimize a sample of SBO when using MC.
+        :param maxiter_mc: (int) Max number of iterations to optimize a sample of SBO when using MC.
 
         :return: dict
         """
@@ -162,6 +164,8 @@ class SpecService(object):
             'monte_carlo_sbo': monte_carlo_sbo,
             'n_samples_mc': n_samples_mc,
             'n_restarts_mc': n_restarts_mc,
+            'factr_mc': factr_mc,
+            'maxiter_mc': maxiter_mc,
         }
 
     # TODO - generate a list of runspecentities over different parameters
