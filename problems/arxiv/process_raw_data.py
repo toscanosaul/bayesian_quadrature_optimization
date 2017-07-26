@@ -115,9 +115,13 @@ class ProcessRawData(object):
           if data is None:
                logger.info("Couldn't find category of paper %s" % arxiv_id)
 
+          cats = None
           for dicts in data['new']:
                if dicts['id'] == arxiv_id:
                     cats = [a.lower() for a in dicts["cat"].split(":")]
                     break
+
+          if cats is None:
+               logger.info("Couldn't find category of paper %s" % arxiv_id)
 
           return cats[0]
