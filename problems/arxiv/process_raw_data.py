@@ -114,11 +114,11 @@ class ProcessRawData(object):
                     with open(filename) as f:
                          data = ujson.load(f)
 
-
-               for dicts in data['new']:
-                    if dicts['id'] == arxiv_id:
-                         cats = [a.lower() for a in dicts["cat"].split(":")]
-                         break
+               if data is not None:
+                    for dicts in data['new']:
+                         if dicts['id'] == arxiv_id:
+                              cats = [a.lower() for a in dicts["cat"].split(":")]
+                              break
 
                if cats is not None:
                     return cats[0]
