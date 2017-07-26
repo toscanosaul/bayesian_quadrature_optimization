@@ -97,7 +97,7 @@ class ProcessRawData(object):
 
           """
 
-          filename = os.join(cls._papers_path, '20' + year)
+          filename = path.join(cls._papers_path, '20' + year)
           date = year + month
 
           for day in xrange(1, 32):
@@ -105,7 +105,7 @@ class ProcessRawData(object):
                     date = date + '0' + day
                else:
                     date = date + day
-          filename_ = os.join(filename, date)
+          filename_ = path.join(filename, date)
 
           data = None
           if path.exists(filename_):
