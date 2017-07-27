@@ -124,7 +124,7 @@ class ProcessRawData(object):
 
                data = None
                if path.exists(filename_):
-                    with open(filename) as f:
+                    with open(filename_) as f:
                          data = ujson.load(f)
 
                if data is not None:
@@ -141,7 +141,7 @@ class ProcessRawData(object):
                new_month = '0' + str(new_month)
           else:
                new_month = str(new_month)
-          date = year + new_month + '01'
+          date = year + new_month + '01' + '_idcat.json'
           filename_ = path.join(filename, date)
 
           data = None
