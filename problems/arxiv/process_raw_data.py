@@ -43,7 +43,14 @@ class ProcessRawData(object):
 
                for entry in entries:
                     if 'arxiv_id' in entry and 'cookie_hash' in entry:
+                         before_2007 = False
                          arxiv_id = entry['arxiv_id']
+
+                         if '/' in arxiv_id:
+                              before_2007 = True
+                              index = arxiv_id.index('/')
+                              cat = arxiv_id[0: index]
+                              arxiv_id = arxiv_id[index + 1:]
 
                          if 'v' in arxiv_id:
                              index = arxiv_id.rfind('v')
@@ -53,11 +60,7 @@ class ProcessRawData(object):
                          user = entry['cookie_hash']
 
                          if arxiv_id not in paper:
-                              if '/' in arxiv_id:
-                                   index = arxiv_id.index('/')
-                                   cat = arxiv_id[0: index]
-                                   arxiv_id = arxiv_id[index + 1 :]
-                              else:
+                              if not before_2007:
                                    cat = cls.get_cats(arxiv_id, arxiv_id[0: 2], arxiv_id[2: 4])
 
                               paper[arxiv_id] = {'views': 0, 'cat': cat}
@@ -114,7 +117,10 @@ class ProcessRawData(object):
                     date_ = date + '0' + str(day)
                else:
                     date_ = date + str(day)
+
+               date_ += '_idcat.json'
                filename_ = path.join(filename, date_)
+
 
                data = None
                if path.exists(filename_):
