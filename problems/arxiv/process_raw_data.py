@@ -146,7 +146,7 @@ class ProcessRawData(object):
 
           data = None
           if path.exists(filename_):
-               with open(filename) as f:
+               with open(filename_) as f:
                     data = ujson.load(f)
 
           if data is not None:
