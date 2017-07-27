@@ -137,10 +137,21 @@ class ProcessRawData(object):
                     return cats[0]
 
           new_month = int(month) + 1
+
+          if new_month == 13:
+               new_month = 1
+               year = int(year) + 1
+               if year < 10:
+                    year = '0' + str(year)
+               else:
+                    year = str(year)
+
           if new_month < 10:
                new_month = '0' + str(new_month)
           else:
                new_month = str(new_month)
+
+          filename = path.join(cls._papers_path, '20' + year)
 
           for day in xrange(1, 10):
                date = year + new_month + '0' + str(day) + '_idcat.json'
