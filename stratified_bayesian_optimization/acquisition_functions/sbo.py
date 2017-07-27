@@ -30,7 +30,7 @@ from stratified_bayesian_optimization.lib.util import (
     wrapper_objective_voi,
     wrapper_gradient_voi,
     wrapper_evaluate_sbo_by_sample,
-    wrapper_opimize,
+    wrapper_optimize,
     wrapper_evaluate_sample,
     wrapper_evaluate_gradient_sample,
     wrapper_evaluate_sbo_mc,
@@ -203,7 +203,7 @@ class SBO(object):
                     parameters_kernel)
 
             sol = Parallel.run_function_different_arguments_parallel(
-                wrapper_opimize, point_dict, *args)
+                wrapper_optimize, point_dict, *args)
 
             for i in xrange(n_restarts + 1):
                 if sol.get(i) is None:
@@ -255,7 +255,7 @@ class SBO(object):
         if self.bq.max_mean is not None:
             max_mean = self.bq.max_mean
         else:
-            max_mean = self.bq.optimize_posterior_mean(random_seed)['optimal_value']
+            max_mean = self.bq.optimize_posterior_mean(random_seed=random_seed)['optimal_value']
 
         if tuple(candidate_point[0, :]) in self.samples:
             samples = self.samples[tuple(candidate_point[0, :])]

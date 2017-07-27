@@ -580,7 +580,7 @@ def wrapper_evaluate_gradient_sample(point, self, *args):
     return self.evaluate_gradient_sample(point, *args)
 
 
-def wrapper_opimize(point, self, *args):
+def wrapper_optimize(point, self, *args):
     """
     Wrapper of optimization.optimize
     :param point: starting point
@@ -588,6 +588,27 @@ def wrapper_opimize(point, self, *args):
     :param args: additional arguments for the objective and gradient functions
     :return: optimize results
     """
+
     return self.optimize(point, *args)
+
+def wrapper_objective_posterior_mean_bq(point, self):
+    """
+    Wrapper of the objective posterior mean of a bq model
+    :param point: np.array(k)
+    :param self: bayesian-quadrature instance
+    :return: float
+    """
+
+    return self.objective_posterior_mean(point)
+
+def wrapper_grad_posterior_mean_bq(point, self):
+    """
+    Wrapper of the gradient of the posterior mean of a bq model
+    :param point: np.array(k)
+    :param self: bayesian-quadrature instance
+    :return: np.array(k)
+    """
+    return self.grad_posterior_mean(point)
+
 
 

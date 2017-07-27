@@ -35,6 +35,9 @@ from stratified_bayesian_optimization.lib.parallel import Parallel
 from stratified_bayesian_optimization.lib.util import (
     wrapper_evaluate_quadrature_cross_cov,
     wrapper_compute_vector_b,
+    wrapper_objective_posterior_mean_bq,
+    wrapper_grad_posterior_mean_bq,
+    wrapper_optimize,
 )
 
 logger = SBOLog(__name__)
@@ -410,13 +413,16 @@ class BayesianQuadrature(object):
         point = point.reshape((1, len(point)))
         return self.gradient_posterior_mean(point)
 
-    def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False):
+    def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False, n_restarts=10,
+                                parallel=True):
         """
         Optimize the posterior mean.
 
         :param start: np.array(n)
         :param random_seed: float
         :param minimize: boolean
+        :param n_restarts: int
+        :param parallel: (boolean)
         :return: dictionary with the results of the optimization
         """
         if random_seed is not None:
@@ -426,17 +432,23 @@ class BayesianQuadrature(object):
                     self.x_domain]
 
         if start is None:
+            start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
+                                                        type_bounds=len(self.x_domain) * [0])
             if len(self.optimal_solutions) > 0:
                 start = self.optimal_solutions[-1]['solution']
+
+                start = [start] + start_points[0: -1]
+                start = np.array(start)
             else:
-                start = DomainService.get_points_domain(1, bounds_x,
-                                                        type_bounds=len(self.x_domain)*[0])
-                start = np.array(start[0])
+                start = np.array(start_points)
+
+        start[-1, :] = np.array([1])
 
         bounds = [tuple(bound) for bound in bounds_x]
 
-        objective_function = self.objective_posterior_mean
-        grad_function = self.grad_posterior_mean
+
+        objective_function = wrapper_objective_posterior_mean_bq
+        grad_function = wrapper_grad_posterior_mean_bq
 
         optimization = Optimization(
             LBFGS_NAME,
@@ -445,14 +457,30 @@ class BayesianQuadrature(object):
             grad_function,
             minimize=minimize)
 
-        results = optimization.optimize(start)
+        point_dict = {}
+        for j in xrange(n_restarts + 1):
+            point_dict[j] = start[j, :]
+
+        args = (False, None, parallel, optimization, self)
+
+        optimal_solutions = Parallel.run_function_different_arguments_parallel(
+            wrapper_optimize, point_dict, *args)
+
+        maximum_values = []
+        for j in xrange(n_restarts + 1):
+            maximum_values.append(optimal_solutions.get(j)['optimal_value'])
+
+        max = np.max(maximum_values)
+        ind_max = np.argmax(maximum_values)
+
+     #   results = optimization.optimize(start)
 
         logger.info("Results of the optimization of the posterior mean: ")
-        logger.info(results)
+        logger.info(optimal_solutions.get(ind_max))
 
-        self.optimal_solutions.append(results)
-        self.max_mean = results['optimal_value']
-        return results
+        self.optimal_solutions.append(optimal_solutions.get(ind_max))
+        self.max_mean = max
+        return optimal_solutions.get(ind_max)
 
     def compute_vectors_b(self, points, candidate_points, historical_points, parameters_kernel,
                           compute_vec_covs, compute_b_new, parallel):

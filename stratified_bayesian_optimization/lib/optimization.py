@@ -56,11 +56,13 @@ class Optimization(object):
             'task': str
         }
         """
+
         if self.minimize:
             opt = self.optimizer(self.function, start, fprime=self.gradient, args=args,
                                  bounds=self.bounds, **self.optimization_options)
         else:
             def f(x, *args):
+
                 return -1.0 * self.function(x, *args)
             def grad(x, *args):
                 return -1.0 * self.gradient(x, *args)
