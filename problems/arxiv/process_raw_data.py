@@ -104,10 +104,10 @@ class ProcessRawData(object):
 
           for day in xrange(1, 32):
                if day < 10:
-                    date = date + '0' + str(day)
+                    date_ = date + '0' + str(day)
                else:
-                    date += str(day)
-               filename_ = path.join(filename, date)
+                    date_ = date + str(day)
+               filename_ = path.join(filename, date_)
 
                data = None
                if path.exists(filename_):
@@ -122,6 +122,28 @@ class ProcessRawData(object):
 
                if cats is not None:
                     return cats[0]
+
+          new_month = int(month) + 1
+          if new_month < 10:
+               new_month = '0' + str(new_month)
+          else:
+               new_month = str(new_month)
+          date = year + new_month + '01'
+          filename_ = path.join(filename, date)
+
+          data = None
+          if path.exists(filename_):
+               with open(filename) as f:
+                    data = ujson.load(f)
+
+          if data is not None:
+               for dicts in data['new']:
+                    if dicts['id'] == arxiv_id:
+                         cats = [a.lower() for a in dicts["cat"].split(":")]
+                         break
+
+          if cats is not None:
+               return cats[0]
 
           if cats is None:
                logger.info("Couldn't find category of paper %s" % arxiv_id)
