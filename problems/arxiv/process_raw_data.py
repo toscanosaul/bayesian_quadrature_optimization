@@ -46,14 +46,21 @@ class ProcessRawData(object):
                          arxiv_id = entry['arxiv_id']
 
                          if 'v' in arxiv_id:
-                             index = arxiv_id.index('v')
+                             index = arxiv_id.rfind('v')
                              arxiv_id = arxiv_id[0: index]
+
 
                          user = entry['cookie_hash']
 
                          if arxiv_id not in paper:
-                              paper[arxiv_id] = {'views': 0, 'cat': cls.get_cats(
-                                   arxiv_id, arxiv_id[0: 2], arxiv_id[2: 4])}
+                              if '/' in arxiv_id:
+                                   index = arxiv_id.index('/')
+                                   cat = arxiv_id[0: index]
+                                   arxiv_id = arxiv_id[index + 1 :]
+                              else:
+                                   cat = cls.get_cats(arxiv_id, arxiv_id[0: 2], arxiv_id[2: 4])
+
+                              paper[arxiv_id] = {'views': 0, 'cat': cat}
 
                          paper[arxiv_id]['views'] += 1
 
