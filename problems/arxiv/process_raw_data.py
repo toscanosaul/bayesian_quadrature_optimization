@@ -90,7 +90,7 @@ class ProcessRawData(object):
           for (dirpath, dirnames, filenames) in os.walk(data_path):
                files = filenames
 
-          files = [data_path + f for f in files]
+          files = [path.join(data_path, f) for f in files]
 
           return files
 
