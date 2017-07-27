@@ -141,22 +141,24 @@ class ProcessRawData(object):
                new_month = '0' + str(new_month)
           else:
                new_month = str(new_month)
-          date = year + new_month + '01' + '_idcat.json'
-          filename_ = path.join(filename, date)
 
-          data = None
-          if path.exists(filename_):
-               with open(filename_) as f:
-                    data = ujson.load(f)
+          for day in xrange(1, 10):
+               date = year + new_month + '0' + str(day) + '_idcat.json'
+               filename_ = path.join(filename, date)
 
-          if data is not None:
-               for dicts in data['new']:
-                    if dicts['id'] == arxiv_id:
-                         cats = [a.lower() for a in dicts["cat"].split(":")]
-                         break
+               data = None
+               if path.exists(filename_):
+                    with open(filename_) as f:
+                         data = ujson.load(f)
 
-          if cats is not None:
-               return cats[0]
+               if data is not None:
+                    for dicts in data['new']:
+                         if dicts['id'] == arxiv_id:
+                              cats = [a.lower() for a in dicts["cat"].split(":")]
+                              break
+
+               if cats is not None:
+                    return cats[0]
 
           if cats is None:
                logger.info("Couldn't find category of paper %s" % arxiv_id)
