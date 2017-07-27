@@ -371,19 +371,19 @@ class TestSBO(unittest.TestCase):
         assert value <= value_2['value'] + 1.96 * value_2['std']
         assert value >= value_2['value'] - 1.96 * value_2['std']
 
-        # np.random.seed(1)
-        #
-        # n_samples = 50
-        # n_restarts = 30
-        #
-        # point = np.array([[80.5, 0]])
-        # value_2 = sbo.evaluate_mc(point, n_samples, n_restarts=n_restarts, random_seed=1,
-        #                           parallel=True)
-        # value = sbo.evaluate(point)
-        # npt.assert_almost_equal(value_2['value'], value, decimal=3)
-        #
-        # assert value <= value_2['value'] + 1.96 * value_2['std']
-        # assert value >= value_2['value'] - 1.96 * value_2['std']
+        np.random.seed(1)
+
+        n_samples = 50
+        n_restarts = 30
+
+        point = np.array([[80.5, 0]])
+        value_2 = sbo.evaluate_mc(point, n_samples, n_restarts=n_restarts, random_seed=1,
+                                  parallel=True)
+        value = sbo.evaluate(point)
+        npt.assert_almost_equal(value_2['value'], value, decimal=3)
+
+        assert value <= value_2['value'] + 1.96 * value_2['std']
+        assert value >= value_2['value'] - 1.96 * value_2['std']
 
 
     def test_evaluate_gradient_sbo(self):

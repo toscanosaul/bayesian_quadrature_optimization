@@ -442,8 +442,6 @@ class BayesianQuadrature(object):
             else:
                 start = np.array(start_points)
 
-        start[-1, :] = np.array([1])
-
         bounds = [tuple(bound) for bound in bounds_x]
 
 
