@@ -33,6 +33,9 @@ class ProcessRawData(object):
 
           process_data = {}
 
+          process_files = []
+          store_files = "problems/arxiv/data/store_files.json"
+
           for filename in filenames:
                logger.info("Processing filename: %s" % filename)
 
@@ -46,24 +49,25 @@ class ProcessRawData(object):
                          before_2007 = False
                          arxiv_id = entry['arxiv_id']
 
-                         if '/' in arxiv_id:
-                              before_2007 = True
-                              index = arxiv_id.index('/')
-                              cat = arxiv_id[0: index]
-                              arxiv_id = arxiv_id[index + 1:]
-
-                         if 'v' in arxiv_id:
-                             index = arxiv_id.rfind('v')
-                             arxiv_id = arxiv_id[0: index]
-
-
+                         # if '/' in arxiv_id:
+                         #      before_2007 = True
+                         #      index = arxiv_id.index('/')
+                         #      cat = arxiv_id[0: index]
+                         #      arxiv_id = arxiv_id[index + 1:]
+                         #
+                         # if 'v' in arxiv_id:
+                         #     index = arxiv_id.rfind('v')
+                         #     arxiv_id = arxiv_id[0: index]
+                         #
+                         #
                          user = entry['cookie_hash']
+                         #
+                         # if arxiv_id not in paper:
+                         #      if not before_2007:
+                         #           cat = cls.get_cats(arxiv_id, arxiv_id[0: 2], arxiv_id[2: 4])
 
                          if arxiv_id not in paper:
-                              if not before_2007:
-                                   cat = cls.get_cats(arxiv_id, arxiv_id[0: 2], arxiv_id[2: 4])
-
-                              paper[arxiv_id] = {'views': 0, 'cat': cat}
+                              paper[arxiv_id] = {'views': 0}
 
                          paper[arxiv_id]['views'] += 1
 
@@ -74,7 +78,12 @@ class ProcessRawData(object):
                               process_data[user][arxiv_id] = 0
                          process_data[user][arxiv_id] += 1
 
-          JSONFile.write(process_data, store_filename)
+               process_files.append(filename[22:28])
+               JSONFile.write(process_files, store_files)
+
+               JSONFile.write([process_data, paper], store_filename)
+
+          JSONFile.write([process_data, paper], store_filename)
 
      @classmethod
      def generate_filenames_year(cls, year):
