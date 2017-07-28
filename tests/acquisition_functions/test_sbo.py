@@ -360,8 +360,8 @@ class TestSBO(unittest.TestCase):
 
         np.random.seed(1)
         point = np.array([[52.5, 0]])
-        n_samples = 50
-        n_restarts = 30
+        n_samples = 30
+        n_restarts = 100
 
         value = sbo.evaluate(point)
 
@@ -374,7 +374,7 @@ class TestSBO(unittest.TestCase):
         np.random.seed(1)
 
         n_samples = 50
-        n_restarts = 30
+        n_restarts = 50
 
         point = np.array([[80.5, 0]])
         value_2 = sbo.evaluate_mc(point, n_samples, n_restarts=n_restarts, random_seed=1,
