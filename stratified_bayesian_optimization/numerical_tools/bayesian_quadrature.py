@@ -413,7 +413,7 @@ class BayesianQuadrature(object):
         point = point.reshape((1, len(point)))
         return self.gradient_posterior_mean(point)
 
-    def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False, n_restarts=10,
+    def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False, n_restarts=100,
                                 parallel=True):
         """
         Optimize the posterior mean.
