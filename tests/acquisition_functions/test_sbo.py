@@ -312,7 +312,7 @@ class TestSBO(unittest.TestCase):
         point = np.array([[10.2]])
         gradient = self.sbo.evaluate_gradient_sample(point, candidate_point, sample)
 
-        dh = 0.0001
+        dh = 0.01
         finite_diff = FiniteDifferences.forward_difference(
             lambda point_: self.sbo.evaluate_sample(
                 point_.reshape((1, len(point_))), candidate_point, sample),
