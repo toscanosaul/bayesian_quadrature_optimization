@@ -360,16 +360,15 @@ class TestSBO(unittest.TestCase):
 
         np.random.seed(1)
         point = np.array([[52.5, 0]])
-        n_samples = 30
-        n_restarts = 100
+        n_samples = 200
+        n_restarts = 30
 
         value = sbo.evaluate(point)
 
-        value_2 = sbo.evaluate_mc(point, n_samples, n_restarts=n_restarts, random_seed=1,
+        value_2 = sbo.evaluate_mc(point, n_samples, n_restarts=n_restarts, random_seed=2,
                                   parallel=True)
 
-        assert value <= value_2['value'] + 1.96 * value_2['std']
-        assert value >= value_2['value'] - 1.96 * value_2['std']
+        npt.assert_almost_equal(value, value_2['value'], decimal=2)
 
         np.random.seed(1)
 
