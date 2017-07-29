@@ -210,14 +210,16 @@ class TestSBO(unittest.TestCase):
         assert z == 0
 
     def test_optimization(self):
-        val = self.sbo_med.optimize(random_seed=1, parallel=False)
+        val = self.sbo_med.optimize(random_seed=1, parallel=False, n_restarts=1)
         # Benchmark numbers obtained after optimizing the function manually, i.e. plot the function
         # and find the maximum.
         npt.assert_almost_equal(2018.8827643498898, val['optimal_value'], decimal=3)
         npt.assert_almost_equal([ 99.98636451, 0], val['solution'], decimal=4)
 
-        self.sbo_med.opt_separing_domain = False
-        val = self.sbo_med.optimize(random_seed=1)
+        self.sbo_med.bq.separate_tasks = False
+        self.sbo_med.bq.bounds = [[0, 100], [0, 1]]
+        self.sbo_med.bq.type_bounds = [0, 1]
+        val = self.sbo_med.optimize(random_seed=1, n_restarts=1, parallel=False)
         npt.assert_almost_equal([99.98636451, 0], val['solution'], decimal=4)
         npt.assert_almost_equal(2018.8827643498898, val['optimal_value'], decimal=3)
 
@@ -360,7 +362,7 @@ class TestSBO(unittest.TestCase):
 
         np.random.seed(1)
         point = np.array([[52.5, 0]])
-        n_samples = 200
+        n_samples = 50
         n_restarts = 30
 
         value = sbo.evaluate(point)
@@ -391,7 +393,7 @@ class TestSBO(unittest.TestCase):
 
         grad = self.sbo.evaluate_gradient(candidate)
 
-        n_samples = 400
+        n_samples = 50
         n_restarts = 10
 
         grad_mc = self.sbo.gradient_mc(candidate, random_seed=1, n_samples=n_samples,
@@ -433,14 +435,14 @@ class TestSBO(unittest.TestCase):
         domain = DomainService.from_dict(spec)
         self.sbo_med.discretization = np.array(domain.discretization_domain_x)
 
-        val = self.sbo_med.optimize(random_seed=1, parallel=False)
+        val = self.sbo_med.optimize(random_seed=1, parallel=False, n_restarts=1)
 
         val_2 = self.sbo_med.optimize(monte_carlo=True, n_samples=50, n_restarts_mc=10,
-                                      random_seed=1, parallel=False)
+                                      random_seed=1, parallel=False, n_restarts=1)
 
         npt.assert_almost_equal(val['solution'], val_2['solution'], decimal=2)
 
-    def test_optimize_sbo_mc_diff_parameters(self):
-        val = self.sbo_med.optimize(monte_carlo=True, n_samples=2, n_restarts_mc=2,
-                                      random_seed=1, parallel=False, **{'factr':1e12,'maxiter':100})
-        assert 1 ==2
+    # def test_optimize_sbo_mc_diff_parameters(self):
+    #     val = self.sbo_med.optimize(monte_carlo=True, n_samples=2, n_restarts_mc=2,
+    #                                   random_seed=1, parallel=False, **{'factr':1e12,'maxiter':100})
+    #     assert 1 ==2

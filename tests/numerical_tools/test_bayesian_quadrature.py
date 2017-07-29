@@ -214,8 +214,8 @@ class TestBayesianQuadrature(unittest.TestCase):
         gp.optimal_solutions.append({'solution': start})
 
         sol_2 = gp.optimize_posterior_mean(random_seed=random_seed)
-        assert sol_2['optimal_value'] == sol['optimal_value']
-        assert sol['solution'] == sol_2['solution']
+        npt.assert_almost_equal(sol_2['optimal_value'], sol['optimal_value'])
+        npt.assert_almost_equal(sol['solution'], sol_2['solution'], decimal=3)
 
     def test_evaluate_grad_quadrature_cross_cov_resp_candidate(self):
         candidate_point = np.array([[51.5, 0]])

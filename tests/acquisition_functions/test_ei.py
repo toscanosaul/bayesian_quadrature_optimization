@@ -73,7 +73,8 @@ class TestEI(unittest.TestCase):
 
         self.gp = gaussian_p
 
-        self.bq = BayesianQuadrature(gaussian_p, [0], UNIFORM_FINITE, {TASKS: 2})
+        self.bq = BayesianQuadrature(gaussian_p, [0], UNIFORM_FINITE, {TASKS: 2},
+                                     model_only_x=True)
 
         self.ei = EI(self.gp)
 
@@ -130,7 +131,7 @@ class TestEI(unittest.TestCase):
 
     def test_optimize(self):
         np.random.seed(2)
-        opt = self.ei.optimize(random_seed=1, n_restarts=90)
+        opt = self.ei.optimize(random_seed=1, n_restarts=120)
 
         evaluations = self.ei.generate_evaluations('1', '2', '3', 1, 1, 1, [100], 2)
         npt.assert_almost_equal(opt['optimal_value'], np.max(evaluations))

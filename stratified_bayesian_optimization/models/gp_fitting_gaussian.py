@@ -171,6 +171,7 @@ class GPFittingGaussian(object):
 
         self.set_parameters_kernel()
         self.set_samplers()
+        self.separate_tasks = False
 
     def set_samplers(self):
         """

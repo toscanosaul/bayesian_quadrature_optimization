@@ -8,7 +8,7 @@ logger = SBOLog(__name__)
 
 
 if __name__ == '__main__':
-    # python -m problems.arxiv.scripts.run_year_data --month 1
+    # python -m problems.arxiv.scripts.run_year_data '1'
     parser = argparse.ArgumentParser()
     parser.add_argument('month', help='e.g. 23')
     args = parser.parse_args()

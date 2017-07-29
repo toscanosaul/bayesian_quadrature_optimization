@@ -7,6 +7,8 @@ import itertools
 from os import path
 import os
 
+from copy import deepcopy
+
 from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.lib.constant import (
     UNIFORM_FINITE,
@@ -65,7 +67,8 @@ class BayesianQuadrature(object):
         },
     }
 
-    def __init__(self, gp_model, x_domain, distribution, parameters_distribution=None):
+    def __init__(self, gp_model, x_domain, distribution, parameters_distribution=None,
+                 model_only_x=False):
         """
 
         :param gp_model: gp_fitting_gaussian instance
@@ -74,6 +77,8 @@ class BayesianQuadrature(object):
             [UNIFORM_FINITE]
         :param parameters_distribution: (dict) dictionary with parameters of the distribution.
             -UNIFORM_FINITE: dict{TASKS: int}
+        :param model_only_x (boolean) If True, we keep only the type bounds and bounds of x. So,
+            we can use BQ with other methods like EI.
         """
         self.gp = gp_model
 
@@ -115,18 +120,31 @@ class BayesianQuadrature(object):
         self.cache_sample = {}
         self.max_mean = None
 
-        self.bounds =  None
-        if self.gp.bounds is not None:
-            self.bounds = [
-                self.gp.bounds[i] for i in xrange(len(self.gp.bounds)) if i in self.x_domain]
 
-        self.type_kernel = self.gp.type_kernel
+        self.separate_tasks = False
 
-        self.type_bounds = None
-        if self.gp.type_bounds is not None:
+        if self.gp.type_bounds != [] and self.gp.type_bounds[-1] == 1 and not model_only_x:
+            self.separate_tasks = True
+        self.model_only_x = model_only_x
+
+        if model_only_x or self.separate_tasks:
             self.type_bounds = [
                 self.gp.type_bounds[i] for i in xrange(len(self.gp.type_bounds))
                 if i in self.x_domain]
+        else:
+            self.type_bounds = deepcopy(self.gp.type_bounds)
+
+
+        self.tasks = []
+        if self.gp.bounds != [] and self.separate_tasks:
+            self.tasks = self.gp.bounds[-1]
+        if model_only_x or self.separate_tasks:
+            self.bounds = [
+                self.gp.bounds[i] for i in xrange(len(self.gp.bounds)) if i in self.x_domain]
+        else:
+            self.bounds = deepcopy(self.gp.bounds)
+
+        self.type_kernel = self.gp.type_kernel
 
         # Used to compute the best solution for EI.
         self.best_solution = None

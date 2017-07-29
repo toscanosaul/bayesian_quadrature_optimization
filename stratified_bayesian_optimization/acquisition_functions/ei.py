@@ -52,7 +52,7 @@ class EI(object):
     def __init__(self, gp, noisy_evaluations=False):
         """
 
-        :param gp: GP-model instance
+        :param gp: GP-model instance, or BQ-model instance
         :param noisy_evaluations: (boolean)
         """
 
@@ -156,8 +156,8 @@ class EI(object):
         bounds = self.gp.bounds
 
         if start is None:
-            if 1 == self.gp.type_bounds[-1]:
-                tasks = self.gp.bounds[-1]
+            if self.gp.separate_tasks:
+                tasks = self.gp.tasks
                 n_tasks = len(tasks)
                 n_restarts = int(np.ceil(n_restarts / n_tasks) * n_tasks)
 
@@ -172,7 +172,7 @@ class EI(object):
                         task_chosen[tk, 0] = i
 
                 start_points = DomainService.get_points_domain(
-                    n_restarts, bounds[0: -1], type_bounds=self.gp.type_bounds[0: -1])
+                    n_restarts, bounds, type_bounds=self.gp.type_bounds)
 
                 start_points = np.concatenate((start_points, task_chosen), axis=1)
             else:

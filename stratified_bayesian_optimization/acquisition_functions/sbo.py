@@ -495,7 +495,7 @@ class SBO(object):
         return grad
 
     def optimize(self, start=None, random_seed=None, parallel=True, monte_carlo=False, n_samples=1,
-                 n_restarts_mc=1, **opt_params_mc):
+                 n_restarts_mc=1, n_restarts=10, **opt_params_mc):
         """
         Optimizes the VOI.
         :param start: np.array(n)
@@ -504,6 +504,7 @@ class SBO(object):
         :param monte_carlo: (boolean) If True, estimates the objective function and gradient by MC.
         :param n_samples: (int) Number of samples for the MC method.
         :param n_restarts_mc: (int) Number of restarts to optimize a_{n+1} given a sample.
+        :param n_restarts: (int)
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -514,14 +515,41 @@ class SBO(object):
         if random_seed is not None:
             np.random.seed(random_seed)
 
+        bounds = self.bq.bounds
+
         if start is None:
-            start = DomainService.get_points_domain(1, self.bounds_opt,
-                                                    type_bounds=self.bq.gp.type_bounds)
+            if self.bq.separate_tasks:
+                tasks = self.bq.tasks
+                n_tasks = len(tasks)
+
+                n_restarts = int(np.ceil(float(n_restarts) / n_tasks) * n_tasks)
+
+                ind = [[i] for i in range(n_restarts)]
+                np.random.shuffle(ind)
+                task_chosen = np.zeros((n_restarts, 1))
+                n_task_per_group = n_restarts / n_tasks
+
+                for i in xrange(n_tasks):
+                    for j in xrange(n_task_per_group):
+                        tk = ind[j + i * n_task_per_group]
+                        task_chosen[tk, 0] = i
+
+                start_points = DomainService.get_points_domain(
+                    n_restarts, bounds, type_bounds=self.bq.type_bounds)
+
+                start_points = np.concatenate((start_points, task_chosen), axis=1)
+            else:
+                start_points = DomainService.get_points_domain(
+                    n_restarts, bounds, type_bounds=self.bq.type_bounds)
+
+            start = np.array(start_points)
+        else:
+            n_restarts = 1
 
         bounds = [tuple(bound) for bound in self.bounds_opt]
 
-        for i in self.bq.w_domain:
-            bounds[i] = (None, None)
+        # for i in self.bq.w_domain:
+        #     bounds[i] = (None, None)
 
         optimization = Optimization(
             LBFGS_NAME,
@@ -530,36 +558,28 @@ class SBO(object):
             wrapper_gradient_voi,
             minimize=False)
 
-        if self.opt_separing_domain:
-            start = np.array(start)[:, self.bq.x_domain]
-            starts = {}
+        point_dict = {}
+        for j in xrange(n_restarts):
+            point_dict[j] = start[j, :]
 
-            max_values = []
-            for i, w in enumerate(self.domain_w[0]):
-                starts[i] = np.concatenate((start[0, :], np.array([w])))
-
-            args = (False, None, parallel, optimization, self, monte_carlo, n_samples,
+        args = (False, None, parallel, optimization, self, monte_carlo, n_samples,
                     n_restarts_mc, opt_params_mc)
-            opt_sol = Parallel.run_function_different_arguments_parallel(
-                wrapper_optimization, starts, *args)
 
-            for i in xrange(len(self.domain_w[0])):
-                if opt_sol.get(i) is None:
-                    logger.info("It wasn't possible to optimize for task %d" % i)
-                    continue
-                max_values.append(opt_sol[i]['optimal_value'])
+        optimal_solutions = Parallel.run_function_different_arguments_parallel(
+            wrapper_optimize, point_dict, *args)
 
-            if len(max_values) == 0:
-                raise Exception("Optimization failed for all the tasks!")
-            index_max = np.argmax(max_values)
-            results = opt_sol[index_max]
-        else:
-            results = optimization.optimize(start, *(self, monte_carlo, n_samples, n_restarts_mc,
-                                                     opt_params_mc))
+        maximum_values = []
+        for j in xrange(n_restarts):
+            maximum_values.append(optimal_solutions.get(j)['optimal_value'])
 
-        self.optimization_results.append(results)
+        ind_max = np.argmax(maximum_values)
 
-        return results
+        logger.info("Results of the optimization of the SBO: ")
+        logger.info(optimal_solutions.get(ind_max))
+
+        self.optimization_results.append(optimal_solutions.get(ind_max))
+
+        return optimal_solutions.get(ind_max)
 
     @staticmethod
     def hvoi (b,c,keep):

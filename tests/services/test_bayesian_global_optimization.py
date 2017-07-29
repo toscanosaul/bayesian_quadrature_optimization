@@ -188,7 +188,7 @@ class TestBGOService(unittest.TestCase):
 
     def test_optimize_2(self):
         bgo_2 = BGO.from_spec(self.spec_2)
-        sol = bgo_2.optimize(random_seed=1)
+        sol = bgo_2.optimize(random_seed=1, n_restarts=1)
         #
         # # test that after the first iterations the new points are added correctly
         training_data = deepcopy(self.training_data)
@@ -208,9 +208,5 @@ class TestBGOService(unittest.TestCase):
 
         npt.assert_almost_equal(point['optimal_value'], 542.4598435381, decimal=4)
         npt.assert_almost_equal(point['solution'], np.array([61.58743036, 0]))
-        # print "with other way"
-        # print point
-        # print "new"
-        # print sol
-        assert 1 == 1
+
 
