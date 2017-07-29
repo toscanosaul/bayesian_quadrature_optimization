@@ -115,9 +115,16 @@ class BayesianQuadrature(object):
         self.cache_sample = {}
         self.max_mean = None
 
-        self.bounds = [self.gp.bounds[i] for i in xrange(len(self.gp.bounds)) if i in self.x_domain]
+        self.bounds =  None
+        if self.gp.bounds is not None:
+            self.bounds = [
+                self.gp.bounds[i] for i in xrange(len(self.gp.bounds)) if i in self.x_domain]
+
         self.type_kernel = self.gp.type_kernel
         self.type_bounds = self.gp.type_bounds
+
+        # Used to compute the best solution for EI.
+        self.best_solution = None
 
 
     def _get_cached_data(self, index, name):
@@ -161,7 +168,7 @@ class BayesianQuadrature(object):
     def evaluate_quadrate_cov(self, point, parameters_kernel):
         """
         Evaluate the quadrature cov, i.e.
-            Expectation(cov((point,w_i), (point,w'_j))) respect to w_i, w_j.
+            Expectation(cov((point, W))) respect to W.
 
         :param point: np.array(1xk)
         :param parameters_kernel: np.array(l)
@@ -282,8 +289,8 @@ class BayesianQuadrature(object):
         :param historical_evaluations: np.array(n)
         :param cache: (boolean) get cached data only if cache is True
         :param only_mean: (boolean) computes only the mean if it's True.
-        :param parallel: (boolean) computes the vector B(x, i) in parallel for all the points
-            of the discretization.
+        :param parallel: (boolean) computes the vector B(x, i) in parallel for every point in
+            points
 
         :return: {
             'mean': np.array(t),
@@ -316,26 +323,28 @@ class BayesianQuadrature(object):
         n = points.shape[0]
         m = historical_points.shape[0]
 
-        vec_covs = np.zeros((n, m))
-
-        if parallel:
-            point_dict = {}
-            for i in xrange(n):
-                point_dict[i] = points[i:i+1, :]
-            args = (False, None, True, historical_points, parameters_kernel, self, )
-
-            b_vector = Parallel.run_function_different_arguments_parallel(
-                wrapper_evaluate_quadrature_cross_cov, point_dict, *args)
-
-            for i in xrange(n):
-                if b_vector.get(i) is None:
-                    logger.info("Error in computing B at point %d" % i)
-                    continue
-                vec_covs[i, :] = b_vector[i]
+        compute_vec_covs = False
+        if cache and points.shape[0] == 1:
+            vec_covs = self._get_cached_data(
+                (tuple(parameters_kernel), tuple(points[0, :])), QUADRATURES)
         else:
-            for i in xrange(n):
-                vec_covs[i, :] = self.evaluate_quadrature_cross_cov(
-                    points[i:i+1,:], historical_points, parameters_kernel)
+            vec_covs = None
+
+        if vec_covs is None:
+            compute_vec_covs = True
+            vec_covs = np.zeros((n, m))
+
+        if compute_vec_covs:
+            computations = self.compute_vectors_b(points, None, historical_points,
+                                                  parameters_kernel, compute_vec_covs,
+                                                  False, parallel)
+
+            vec_covs = computations['vec_covs']
+
+        if cache and compute_vec_covs and points.shape[0] == 1:
+            self._updated_cached_data(
+                (tuple(parameters_kernel), tuple(points[0, :])), vec_covs, QUADRATURES)
+
 
         mu_n = mean + np.dot(vec_covs, solve)
 
@@ -395,6 +404,69 @@ class BayesianQuadrature(object):
         solve = chol_solve['solve']
 
         return np.dot(gradient, solve)
+
+    def gradient_posterior_parameters(self, point, var_noise=None, mean=None,
+                                      parameters_kernel=None, cache=True):
+        """
+        Computes the gradient of the posterior parameters of the GP on g(x).
+
+        :param point: np.array(1xn)
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
+        :param cache: boolean
+
+        :return: {'mean': np.array(n), 'cov': np.array(n)}
+        """
+
+        # We assume that cov(x, x) is constant respect to x (it's a radial kernel)
+        # TODO: WE CAN CACHE VEC_COV
+
+        if var_noise is None:
+            var_noise = self.var_noise.value[0]
+
+        if parameters_kernel is None:
+            parameters_kernel = self.kernel.hypers_values_as_array
+
+        if mean is None:
+            mean = self.mean.value[0]
+
+        gradient = self.evaluate_grad_quadrature_cross_cov(point, self.gp.data['points'],
+                                                           parameters_kernel)
+
+        chol_solve = self.gp._cholesky_solve_vectors_for_posterior(
+            var_noise, mean, parameters_kernel, cache=True)
+
+        compute_vec_covs = False
+        if cache:
+            vec_covs = self._get_cached_data(
+                (tuple(parameters_kernel), tuple(point[0, :])), QUADRATURES)
+        else:
+            vec_covs = None
+
+        if vec_covs is None:
+            compute_vec_covs = True
+
+        if compute_vec_covs:
+            computations = self.compute_vectors_b(point, None, self.gp.data['points'],
+                                                  parameters_kernel, compute_vec_covs,
+                                                  False, True)
+
+            if compute_vec_covs:
+                vec_covs = computations['vec_covs']
+
+        if cache and compute_vec_covs:
+            self._updated_cached_data(
+                (tuple(parameters_kernel), tuple(point[0, :])), vec_covs, QUADRATURES)
+
+        solve = chol_solve['solve']
+        chol = chol_solve['chol']
+
+        grad_mu = np.dot(gradient, solve)
+        solve_3 = cho_solve(chol, gradient)
+        grad_cov = - 2.0 * np.dot(vec_covs, solve_3)
+
+        return {'mean': grad_mu, 'cov': grad_cov}
 
     def objective_posterior_mean(self, point):
         """
@@ -505,7 +577,7 @@ class BayesianQuadrature(object):
 
         n = points.shape[0]
         m = historical_points.shape[0]
-        n_candidate_points = candidate_points.shape[0]
+
 
         vec_covs = None
         b_new = None
@@ -514,6 +586,7 @@ class BayesianQuadrature(object):
             vec_covs = np.zeros((n, m))
 
         if compute_b_new:
+            n_candidate_points = candidate_points.shape[0]
             b_new = np.zeros((n, n_candidate_points))
 
         if parallel:
@@ -539,7 +612,7 @@ class BayesianQuadrature(object):
             for i in xrange(n):
                 if compute_vec_covs:
                     vec_covs[i, :] = self.evaluate_quadrature_cross_cov(
-                        points[i:i + 1, :], self.gp.data['points'], parameters_kernel)
+                        points[i:i + 1, :], historical_points, parameters_kernel)
                 if compute_b_new:
                     b_new[i, :] = self.evaluate_quadrature_cross_cov(
                         points[i:i + 1, :], candidate_points, parameters_kernel)
@@ -1031,6 +1104,33 @@ class BayesianQuadrature(object):
 
         return samples
 
+    def get_historical_best_solution(self, var_noise=None, mean=None, parameters_kernel=None,
+                                     noisy_evaluations=False):
+        """
+        Computes the best solution so far based on the GP on the objective function
+            g(x) = E[f(x, w)]
+
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
+        :param noisy_evaluations: boolean
+        :return: float
+        """
+        if self.best_solution is not None:
+            best = self.best_solution
+            return best
+
+
+        points = self.gp.data['points']
+        evaluations = self.compute_posterior_parameters(
+            points, var_noise, mean, parameters_kernel, only_mean=True
+        )['mean']
+
+        best = np.max(evaluations)
+        self.best_solution = best
+
+        return best
+
     def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed):
         """
         Write information about the different optimizations realized.
@@ -1075,6 +1175,7 @@ class BayesianQuadrature(object):
         self.cache_quadrature_with_candidate = {}
         self.gp.clean_cache()
         self.max_mean = None  # max_{x} a_{n} (x)
+        self.best_solution = None
 
     def generate_evaluations(self, problem_name, model_type, training_name, n_training,
                              random_seed, iteration, n_points_by_dimension=None):

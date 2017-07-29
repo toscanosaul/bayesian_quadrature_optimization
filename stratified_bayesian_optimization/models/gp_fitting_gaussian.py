@@ -1134,6 +1134,7 @@ class GPFittingGaussian(object):
     def gradient_posterior_parameters(self, point, var_noise=None, mean=None,
                                       parameters_kernel=None):
         """
+        Computes the gradient of the posterior parameters of the GP.
 
         :param point: np.array(1xn)
         :param var_noise: float

@@ -68,6 +68,7 @@ def gradient_uniform_finite(f, point, index_points, domain_random, index_random,
 
     return gradient
 
+
 def gradient_uniform_finite_resp_candidate(f, candidate_point, index_points, domain_random,
                                            index_random, points, parameters_kernel):
     """
