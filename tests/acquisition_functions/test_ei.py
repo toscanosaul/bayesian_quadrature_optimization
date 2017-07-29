@@ -77,6 +77,8 @@ class TestEI(unittest.TestCase):
 
         self.ei = EI(self.gp)
 
+        self.ei_2 = EI(self.bq)
+
 
     def test_evaluate(self):
         point = np.array([[97.5, 0]])
@@ -91,6 +93,17 @@ class TestEI(unittest.TestCase):
 
         npt.assert_almost_equal(val, np.mean(evals), decimal=2)
 
+    def test_evaluate_bq(self):
+        point =  np.array([[97.5]])
+        val = self.ei_2.evaluate(point)
+
+        maximum = 0.831339057477
+        n_samples = 10000
+        samples = self.bq.sample_new_observations(point, n_samples, random_seed=1)
+
+        evals = np.clip(samples - maximum, 0, None)
+        npt.assert_almost_equal(val, np.mean(evals), decimal=2)
+
     def test_evaluate_gradient(self):
         point = np.array([[91.5, 0]])
         grad = self.ei.evaluate_gradient(point)
@@ -103,9 +116,29 @@ class TestEI(unittest.TestCase):
         npt.assert_almost_equal(finite_diff[0], grad[0], decimal=2)
         npt.assert_almost_equal(finite_diff[1], grad[1])
 
+    def test_evaluate_gradient_bq(self):
+        point =  np.array([[91.5]])
+        grad = self.ei_2.evaluate_gradient(point)
+
+        dh = 0.0001
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda point: self.ei_2.evaluate(point.reshape((1, len(point)))),
+            np.array([91.5]), np.array([dh]))
+
+        npt.assert_almost_equal(finite_diff[0], grad[0], decimal=2)
+
+
     def test_optimize(self):
         np.random.seed(2)
         opt = self.ei.optimize(random_seed=1, n_restarts=90)
 
         evaluations = self.ei.generate_evaluations('1', '2', '3', 1, 1, 1, [100], 2)
+        npt.assert_almost_equal(opt['optimal_value'], np.max(evaluations))
+
+    def test_optimize_bq(self):
+        np.random.seed(2)
+        opt = self.ei_2.optimize(random_seed=1, n_restarts=50)
+
+        evaluations = self.ei_2.generate_evaluations('1', '2', '3', 1, 1, 1, [100], 0)
+
         npt.assert_almost_equal(opt['optimal_value'], np.max(evaluations))

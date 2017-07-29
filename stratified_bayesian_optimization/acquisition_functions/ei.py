@@ -90,7 +90,12 @@ class EI(object):
 
         evaluation = first_term + second_term
 
-        return evaluation[0, 0]
+        if len(evaluation.shape) == 2:
+            evaluation = evaluation[0, 0]
+        else:
+            evaluation = evaluation[0]
+
+        return evaluation
 
     def evaluate_gradient(self, point, var_noise=None, mean=None, parameters_kernel=None):
         """

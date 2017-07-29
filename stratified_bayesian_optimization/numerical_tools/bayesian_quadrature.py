@@ -121,7 +121,12 @@ class BayesianQuadrature(object):
                 self.gp.bounds[i] for i in xrange(len(self.gp.bounds)) if i in self.x_domain]
 
         self.type_kernel = self.gp.type_kernel
-        self.type_bounds = self.gp.type_bounds
+
+        self.type_bounds = None
+        if self.gp.type_bounds is not None:
+            self.type_bounds = [
+                self.gp.type_bounds[i] for i in xrange(len(self.gp.type_bounds))
+                if i in self.x_domain]
 
         # Used to compute the best solution for EI.
         self.best_solution = None
@@ -320,6 +325,7 @@ class BayesianQuadrature(object):
         solve = chol_solve['solve']
         chol = chol_solve['chol']
 
+
         n = points.shape[0]
         m = historical_points.shape[0]
 
@@ -344,7 +350,6 @@ class BayesianQuadrature(object):
         if cache and compute_vec_covs and points.shape[0] == 1:
             self._updated_cached_data(
                 (tuple(parameters_kernel), tuple(points[0, :])), vec_covs, QUADRATURES)
-
 
         mu_n = mean + np.dot(vec_covs, solve)
 
@@ -423,13 +428,13 @@ class BayesianQuadrature(object):
         # TODO: WE CAN CACHE VEC_COV
 
         if var_noise is None:
-            var_noise = self.var_noise.value[0]
+            var_noise = self.gp.var_noise.value[0]
 
         if parameters_kernel is None:
-            parameters_kernel = self.kernel.hypers_values_as_array
+            parameters_kernel = self.gp.kernel.hypers_values_as_array
 
         if mean is None:
-            mean = self.mean.value[0]
+            mean = self.gp.mean.value[0]
 
         gradient = self.evaluate_grad_quadrature_cross_cov(point, self.gp.data['points'],
                                                            parameters_kernel)
@@ -463,7 +468,7 @@ class BayesianQuadrature(object):
         chol = chol_solve['chol']
 
         grad_mu = np.dot(gradient, solve)
-        solve_3 = cho_solve(chol, gradient)
+        solve_3 = cho_solve(chol, gradient.transpose())
         grad_cov = - 2.0 * np.dot(vec_covs, solve_3)
 
         return {'mean': grad_mu, 'cov': grad_cov}
@@ -1121,7 +1126,7 @@ class BayesianQuadrature(object):
             return best
 
 
-        points = self.gp.data['points']
+        points = self.gp.data['points'][:, self.x_domain]
         evaluations = self.compute_posterior_parameters(
             points, var_noise, mean, parameters_kernel, only_mean=True
         )['mean']
