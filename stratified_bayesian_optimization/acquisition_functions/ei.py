@@ -61,6 +61,10 @@ class EI(object):
         self.noisy_evaluations = noisy_evaluations
         self.optimization_results = []
 
+        self.bounds_opt = self.gp.bounds
+        if self.gp.separate_tasks:
+            self.bounds_opt.append([None, None])
+
     def evaluate(self, point, var_noise=None, mean=None, parameters_kernel=None):
         """
         Compute the EI acquisition function.
@@ -181,7 +185,7 @@ class EI(object):
 
             start = np.array(start_points)
 
-        bounds = [tuple(bound) for bound in bounds]
+        bounds = [tuple(bound) for bound in self.bounds_opt]
 
         objective_function = wrapper_objective_acquisition_function
         grad_function = wrapper_gradient_acquisition_function

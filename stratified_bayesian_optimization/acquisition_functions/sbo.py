@@ -66,6 +66,8 @@ class SBO(object):
         self.discretization = discretization_domain
 
         self.bounds_opt = self.bq.bounds
+        if self.separate_tasks:
+            self.bounds_opt.append([None, None])
         self.opt_separing_domain = False
 
         # Bounds or list of number of points of the domain
