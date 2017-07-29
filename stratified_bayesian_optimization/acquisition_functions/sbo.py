@@ -65,7 +65,7 @@ class SBO(object):
         self.bq = bayesian_quadrature
         self.discretization = discretization_domain
 
-        self.bounds_opt = self.bq.bounds
+        self.bounds_opt = deepcopy(self.bq.bounds)
         if self.bq.separate_tasks:
             self.bounds_opt.append([None, None])
         self.opt_separing_domain = False

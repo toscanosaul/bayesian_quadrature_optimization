@@ -61,7 +61,7 @@ class EI(object):
         self.noisy_evaluations = noisy_evaluations
         self.optimization_results = []
 
-        self.bounds_opt = self.gp.bounds
+        self.bounds_opt = deepcopy(self.gp.bounds)
         if self.gp.separate_tasks:
             self.bounds_opt.append([None, None])
 
