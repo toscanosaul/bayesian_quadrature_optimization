@@ -65,7 +65,7 @@ class SBO(object):
         self.bq = bayesian_quadrature
         self.discretization = discretization_domain
 
-        self.bounds_opt = self.bq.gp.bounds
+        self.bounds_opt = self.bq.bounds
         self.opt_separing_domain = False
 
         # Bounds or list of number of points of the domain
