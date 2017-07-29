@@ -103,6 +103,30 @@ class ProcessRawData(object):
 
           return files
 
+     @classmethod
+     def generate_filenames_month(cls, year, month):
+          """
+          Generate all file names of one year
+          :param year: (int)
+          :param month: (int)
+          :return: [str]
+          """
+
+          if month <= 9:
+               month = '0' + str(month)
+          else:
+               month = str(month)
+          data_path = path.join(cls._data_path, str(year))
+
+          files = []
+
+          for (dirpath, dirnames, filenames) in os.walk(data_path):
+               files = filenames
+
+          files = [path.join(data_path, f) for f in files if f[2:4] == month]
+
+          return files
+
 
      @classmethod
      def get_cats(cls, arxiv_id, year, month):

@@ -714,3 +714,33 @@ class TestGPFittingGaussian(unittest.TestCase):
                                                        np.array([[39.0], [38.0]]), 1)
 
         assert np.all(value == value_2)
+
+    def test_get_historical_best_solution(self):
+        max_ = self.gp.get_historical_best_solution()
+        assert max_ == 72.3121248508
+
+        max_ = self.gp_3.get_historical_best_solution(noisy_evaluations=True)
+
+        assert max_ == self.gp_3.compute_posterior_parameters(
+                np.array([[72.3121248508]]), only_mean=True)['mean']
+
+    def test_gradient_posterior_parameters(self):
+        point = np.array([[49.5]])
+        grad = self.gp_gaussian.gradient_posterior_parameters(point)
+
+        dh = 0.0000001
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda x: self.gp_gaussian.compute_posterior_parameters(
+                x.reshape((1, len(x))), only_mean=True)['mean'],
+            np.array([49.5]), np.array([dh]))
+
+        npt.assert_almost_equal(grad['mean'], finite_diff[0])
+
+        dh = 0.0000001
+        finite_diff = FiniteDifferences.forward_difference(
+            lambda x: self.gp_gaussian.compute_posterior_parameters(
+                x.reshape((1, len(x))))['cov'],
+            np.array([49.5]), np.array([dh]))
+
+        npt.assert_almost_equal(grad['cov'], finite_diff[0])
+

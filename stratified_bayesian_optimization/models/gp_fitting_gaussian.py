@@ -166,6 +166,9 @@ class GPFittingGaussian(object):
         self.cache_chol_cov = {}
         self.cache_sol_chol_y_unbiased = {}
 
+        self.best_solution = None # Historical best solution for EI.
+        self.cache_cov_n = {} # Cache computations of the cov_n
+
         self.set_parameters_kernel()
         self.set_samplers()
 
@@ -1072,7 +1075,7 @@ class GPFittingGaussian(object):
         }
 
     def compute_posterior_parameters(self, points, var_noise=None, mean=None,
-                                     parameters_kernel=None):
+                                     parameters_kernel=None, only_mean=False):
         """
         Compute the posterior mean and cov of the GP at points:
             f(points) ~ GP(mu_n(points), cov_n(points, points))
@@ -1081,6 +1084,7 @@ class GPFittingGaussian(object):
         :param var_noise: float
         :param mean: float
         :param parameters_kernel: np.array(k)
+        :param only_mean: boolean
         :return: {
             'mean': np.array(n),
             'cov': np.array(nxn)
@@ -1106,14 +1110,64 @@ class GPFittingGaussian(object):
 
         mu_n = mean + np.dot(vec_cov, solve)
 
-        solve_2 = cho_solve(chol, vec_cov.transpose())
+        if only_mean:
+            return {
+                'mean': mu_n,
+                'cov': None,
+            }
 
-        cov_n = self.evaluate_cov(points, parameters_kernel) - np.dot(vec_cov, solve_2)
+        if points.shape[0] == 1 and tuple(points[0, :]) in self.cache_cov_n:
+            cov_n = self.cache_cov_n[tuple(points[0, :])]
+        else:
+            solve_2 = cho_solve(chol, vec_cov.transpose())
+            cov_n = self.evaluate_cov(points, parameters_kernel) - np.dot(vec_cov, solve_2)
+
+            if points.shape[0] == 1:
+                self.cache_cov_n = {}
+                self.cache_cov_n[tuple(points[0, :])] = cov_n
 
         return {
             'mean': mu_n,
             'cov': cov_n,
         }
+
+    def gradient_posterior_parameters(self, point, var_noise=None, mean=None,
+                                      parameters_kernel=None):
+        """
+
+        :param point: np.array(1xn)
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
+
+        :return: {'mean': np.array(n), 'cov': np.array(n)}
+        """
+
+        # We assume that cov(x, x) is constant respect to x (it's a radial kernel)
+        # TODO: WE CAN CACHE VEC_COV
+
+        if var_noise is None:
+            var_noise = self.var_noise.value[0]
+
+        if parameters_kernel is None:
+            parameters_kernel = self.kernel.hypers_values_as_array
+
+        if mean is None:
+            mean = self.mean.value[0]
+
+        chol_solve = self._cholesky_solve_vectors_for_posterior(var_noise, mean, parameters_kernel)
+        chol = chol_solve['chol']
+        solve = chol_solve['solve']
+
+        grad_cross_cov = self.evaluate_grad_cross_cov_respect_point(point, self.data['points'],
+                                                                    parameters_kernel)
+        grad_mu = np.dot(grad_cross_cov.transpose(), solve)
+
+        vec_cov = self.evaluate_cross_cov(point, self.data['points'], parameters_kernel)
+        solve_2 = cho_solve(chol, grad_cross_cov)
+        grad_cov = -2.0 * np.dot(vec_cov, solve_2)
+
+        return {'mean': grad_mu, 'cov': grad_cov}
 
     def log_prob_parameters(self, parameters):
         """
@@ -1160,12 +1214,42 @@ class GPFittingGaussian(object):
 
         return samples
 
+    def get_historical_best_solution(self, var_noise=None, mean=None, parameters_kernel=None,
+                                     noisy_evaluations=False):
+        """
+        Computes the best solution so far.
+
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
+        :param noisy_evaluations: boolean
+        :return: float
+        """
+        if self.best_solution is not None:
+            best = self.best_solution
+            return best
+
+        if not noisy_evaluations:
+            evaluations = self.data['evaluations']
+        else:
+            points = self.data['points']
+            evaluations = self.compute_posterior_parameters(
+                points, var_noise, mean, parameters_kernel, only_mean=True
+            )['mean']
+
+        best = np.max(evaluations)
+        self.best_solution = best
+
+        return best
+
     def clean_cache(self):
         """
         Cleans the cache
         """
         self.cache_chol_cov = {}
         self.cache_sol_chol_y_unbiased = {}
+        self.best_solution = None
+        self.cache_cov_n = {}
 
 
 class GradientGPFittingGaussian(object):

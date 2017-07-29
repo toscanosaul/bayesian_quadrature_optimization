@@ -115,6 +115,11 @@ class BayesianQuadrature(object):
         self.cache_sample = {}
         self.max_mean = None
 
+        self.bounds = [self.gp.bounds[i] for i in xrange(len(self.gp.bounds)) if i in self.x_domain]
+        self.type_kernel = self.gp.type_kernel
+        self.type_bounds = self.gp.type_bounds
+
+
     def _get_cached_data(self, index, name):
         """
         :param index: tuple. (parameters_kernel, )
@@ -266,7 +271,8 @@ class BayesianQuadrature(object):
                                      historical_evaluations=None, only_mean=False, cache=True,
                                      parallel=False):
         """
-        Compute posterior mean and covariance of the GP on G(x) = E[F(x, w)].
+        Compute posterior mean and covariance of the GP on G(x) = E[F(x, w)] evaluated at each point
+        of points.
 
         :param points: np.array(txk) More than one point only if only_mean is True!
         :param var_noise: float
@@ -444,7 +450,6 @@ class BayesianQuadrature(object):
 
         bounds = [tuple(bound) for bound in bounds_x]
 
-
         objective_function = wrapper_objective_posterior_mean_bq
         grad_function = wrapper_grad_posterior_mean_bq
 
@@ -468,16 +473,14 @@ class BayesianQuadrature(object):
         for j in xrange(n_restarts + 1):
             maximum_values.append(optimal_solutions.get(j)['optimal_value'])
 
-        max = np.max(maximum_values)
+        max_ = np.max(maximum_values)
         ind_max = np.argmax(maximum_values)
-
-     #   results = optimization.optimize(start)
 
         logger.info("Results of the optimization of the posterior mean: ")
         logger.info(optimal_solutions.get(ind_max))
 
         self.optimal_solutions.append(optimal_solutions.get(ind_max))
-        self.max_mean = max
+        self.max_mean = max_
         return optimal_solutions.get(ind_max)
 
     def compute_vectors_b(self, points, candidate_points, historical_points, parameters_kernel,

@@ -610,5 +610,30 @@ def wrapper_grad_posterior_mean_bq(point, self):
     """
     return self.grad_posterior_mean(point)
 
+def wrapper_objective_acquisition_function(point, self, *params):
+    """
+    Wrapper of an acquisition function that's not SBO or KG.
+
+    :param point: np.array(n)
+    :param self: acquisition function instance
+    :param params: additional parameters of the function
+    :return: float
+    """
+    point = point.reshape((1, len(point)))
+    return self.evaluate(point, *params)
+
+def wrapper_gradient_acquisition_function(point, self, *params):
+    """
+    Wrapper of the gradient of an acquisition function that's not SBO or KG.
+
+    :param point: np.array(n)
+    :param self: acquisition function instance
+    :param params: additional parameters of the function
+    :return: float
+    """
+    point = point.reshape((1, len(point)))
+    return self.evaluate_gradient(point, *params)
+
+
 
 

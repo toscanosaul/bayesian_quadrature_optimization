@@ -497,7 +497,7 @@ class SBO(object):
     def optimize(self, start=None, random_seed=None, parallel=True, monte_carlo=False, n_samples=1,
                  n_restarts_mc=1, **opt_params_mc):
         """
-        Optimize the VOI.
+        Optimizes the VOI.
         :param start: np.array(n)
         :param random_seed: int
         :param parallel: (boolean) For several tasks, it's run in paralle if it's True
@@ -621,7 +621,7 @@ class SBO(object):
                              random_seed, iteration, n_points_by_dimension=None, monte_carlo=False,
                              n_samples=1, n_restarts_mc=1):
         """
-        Generates evaluations of the posterior mean, and write them in the debug directory.
+        Generates evaluations of SBO, and write them in the debug directory.
 
         :param problem_name: (str)
         :param model_type: (str)
