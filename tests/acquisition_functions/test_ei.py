@@ -104,8 +104,8 @@ class TestEI(unittest.TestCase):
         npt.assert_almost_equal(finite_diff[1], grad[1])
 
     def test_optimize(self):
-        opt = self.ei.optimize(random_seed=1)
+        np.random.seed(2)
+        opt = self.ei.optimize(random_seed=1, n_restarts=90)
 
-        print opt
-
-        assert 1==2
+        evaluations = self.ei.generate_evaluations('1', '2', '3', 1, 1, 1, [100], 2)
+        npt.assert_almost_equal(opt['optimal_value'], np.max(evaluations))

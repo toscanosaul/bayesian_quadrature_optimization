@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import multiprocessing as mp
 import multiprocessing.pool
 
+
 from stratified_bayesian_optimization.initializers.log import SBOLog
 
 logger = SBOLog(__name__)

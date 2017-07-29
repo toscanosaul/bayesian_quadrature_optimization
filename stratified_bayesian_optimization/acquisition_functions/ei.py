@@ -7,6 +7,7 @@ from os import path
 import os
 
 from scipy.stats import norm
+from random import shuffle
 
 from copy import deepcopy
 
@@ -77,6 +78,8 @@ class EI(object):
         mu = post_parameters['mean']
         cov = post_parameters['cov']
 
+        cov = np.clip(cov, 0, None)
+
         best = self.gp.get_historical_best_solution(
             var_noise, mean, parameters_kernel, self.noisy_evaluations)
 
@@ -105,6 +108,8 @@ class EI(object):
 
         mu = post_parameters['mean']
         cov = post_parameters['cov']
+
+        cov = np.clip(cov, 0, None)
 
         best = self.gp.get_historical_best_solution(
             var_noise, mean, parameters_kernel, self.noisy_evaluations)
@@ -146,8 +151,28 @@ class EI(object):
         bounds = self.gp.bounds
 
         if start is None:
-            start_points = DomainService.get_points_domain(
-                n_restarts, bounds, type_bounds=self.gp.type_bounds)
+            if 1 == self.gp.type_bounds[-1]:
+                tasks = self.gp.bounds[-1]
+                n_tasks = len(tasks)
+                n_restarts = int(np.ceil(n_restarts / n_tasks) * n_tasks)
+
+                ind = [[i] for i in range(n_restarts)]
+                np.random.shuffle(ind)
+                task_chosen = np.zeros((n_restarts, 1))
+                n_task_per_group = n_restarts / n_tasks
+
+                for i in xrange(n_tasks):
+                    for j in xrange(n_task_per_group):
+                        tk = ind[j + i * n_task_per_group]
+                        task_chosen[tk, 0] = i
+
+                start_points = DomainService.get_points_domain(
+                    n_restarts, bounds[0: -1], type_bounds=self.gp.type_bounds[0: -1])
+
+                start_points = np.concatenate((start_points, task_chosen), axis=1)
+            else:
+                start_points = DomainService.get_points_domain(
+                    n_restarts, bounds, type_bounds=self.gp.type_bounds)
 
             start = np.array(start_points)
 
@@ -269,7 +294,7 @@ class EI(object):
 
             if n_tasks > 0:
                 bounds_x = [bounds[i] for i in xrange(len(bounds) - 1)]
-                n_points_x = [n_points[i] for i in xrange(len(n_points) - 1)]
+                n_points_x = [n_points[i] for i in xrange(len(n_points))]
             else:
                 n_points_x = n_points
                 bounds_x = bounds
@@ -284,24 +309,41 @@ class EI(object):
 
             JSONFile.write(vectors, debug_path)
 
-
-        # TODO: extend to the case where w can be continuous
         n = len(vectors)
-        points = deepcopy(vectors)
+        points_ = deepcopy(vectors)
+
         vectors = np.array(vectors)
 
-        # point_dict = {}
-        # for i in xrange(n):
-        #     point_dict[i] = vectors[i:i+1, :]
+        if n_tasks > 0:
+            vectors_ = None
+            for i in xrange(n_tasks):
+                task_vector = np.zeros(n) + i
+                task_vector = task_vector.reshape((n, 1))
+                points_ = np.concatenate((vectors, task_vector), axis=1)
 
-        values = {}
-        if self.bq.tasks:
-            for task in xrange(self.bq.n_tasks):
-                if not monte_carlo:
-                    values[task] = wrapper_evaluate_sbo(vectors, task, self)
+                if vectors_ is not None:
+                    vectors_ = np.concatenate((vectors_, points_), axis=0)
                 else:
-                    values[task] = wrapper_evaluate_sbo_mc(
-                        vectors, task, self, n_samples=n_samples, n_restarts=n_restarts_mc)
+                    vectors_ = points_
+            vectors = vectors_
+
+
+        # TODO: extend to the case where w can be continuous
+
+        n = vectors.shape[0]
+
+        points = {}
+        for i in xrange(n):
+            points[i] = vectors[i, :]
+
+        args = (False, None, False, self,)
+        val = Parallel.run_function_different_arguments_parallel(
+            wrapper_objective_acquisition_function, points, *args)
+
+        values = np.zeros(n)
+        for i in xrange(n):
+            values[i] = val.get(i)
+
 
 
         f_name = self._filename_ei_evaluations(iteration=iteration,
@@ -314,7 +356,7 @@ class EI(object):
 
         debug_path = path.join(debug_dir, f_name)
 
-        JSONFile.write({'points': points, 'evaluations': values}, debug_path)
+        JSONFile.write({'points': points_, 'evaluations': values}, debug_path)
 
         return values
 

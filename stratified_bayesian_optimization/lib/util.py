@@ -619,7 +619,9 @@ def wrapper_objective_acquisition_function(point, self, *params):
     :param params: additional parameters of the function
     :return: float
     """
+
     point = point.reshape((1, len(point)))
+
     return self.evaluate(point, *params)
 
 def wrapper_gradient_acquisition_function(point, self, *params):
