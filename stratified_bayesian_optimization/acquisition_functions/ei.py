@@ -185,6 +185,9 @@ class EI(object):
 
             start = np.array(start_points)
 
+        print "st"
+        print start
+
         bounds = [tuple(bound) for bound in self.bounds_opt]
 
         objective_function = wrapper_objective_acquisition_function

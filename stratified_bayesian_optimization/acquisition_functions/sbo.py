@@ -516,7 +516,7 @@ class SBO(object):
         return grad
 
     def optimize(self, start=None, random_seed=None, parallel=True, monte_carlo=False, n_samples=1,
-                 n_restarts_mc=1, n_restarts=10, start_ei=True, **opt_params_mc):
+                 n_restarts_mc=1, n_restarts=10, start_ei=False, **opt_params_mc):
         """
         Optimizes the VOI.
         :param start: np.array(n)

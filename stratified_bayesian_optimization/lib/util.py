@@ -626,6 +626,8 @@ def wrapper_objective_acquisition_function(point, self, *params):
     :param params: additional parameters of the function
     :return: float
     """
+    print "boj"
+    print point
 
     point = point.reshape((1, len(point)))
 
