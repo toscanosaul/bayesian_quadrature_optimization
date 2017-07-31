@@ -56,7 +56,9 @@ class Optimization(object):
             'task': str
         }
         """
-
+        print "ver"
+        print args
+        print start
         if self.minimize:
             opt = self.optimizer(self.function, start, fprime=self.gradient, args=args,
                                  bounds=self.bounds, **self.optimization_options)
