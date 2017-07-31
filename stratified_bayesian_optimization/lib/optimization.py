@@ -67,8 +67,14 @@ class Optimization(object):
                 print "aqui"
                 return -1.0 * self.function(x, *args)
             def grad(x, *args):
+                print "grad"
                 return -1.0 * self.gradient(x, *args)
-
+            print f
+            print start
+            print grad
+            print args
+            print self.bounds
+            print self.optimization_options
             opt = self.optimizer(
                 f, start,
                 fprime=grad,
