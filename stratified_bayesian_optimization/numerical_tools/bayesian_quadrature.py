@@ -519,7 +519,7 @@ class BayesianQuadrature(object):
         return self.gradient_posterior_mean(point)
 
     def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False, n_restarts=100,
-                                parallel=True):
+                                parallel=True, n_treads=0):
         """
         Optimize the posterior mean.
 
@@ -528,6 +528,7 @@ class BayesianQuadrature(object):
         :param minimize: boolean
         :param n_restarts: int
         :param parallel: (boolean)
+        :param n_treads: (int)
         :return: dictionary with the results of the optimization
         """
         if random_seed is not None:
@@ -563,7 +564,7 @@ class BayesianQuadrature(object):
         for j in xrange(n_restarts + 1):
             point_dict[j] = start[j, :]
 
-        args = (False, None, parallel, 0, optimization, self)
+        args = (False, None, parallel, n_treads, optimization, self)
 
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
             wrapper_optimize, point_dict, *args)
@@ -761,7 +762,6 @@ class BayesianQuadrature(object):
         }
         """
 
-        print "get_samples"
 
         if var_noise is None:
             var_noise = self.gp.var_noise.value[0]
@@ -778,7 +778,7 @@ class BayesianQuadrature(object):
         solve = chol_solve['solve']
 
         if cache and tuple(candidate_point[0, :]) in self.cache_sample:
-            print "get_samples"
+
             solve_2 = self.cache_sample[tuple(candidate_point[0, :])]['solve_2']
             denominator = self.cache_sample[tuple(candidate_point[0, :])]['denominator']
             cross_cov = self.cache_sample[tuple(candidate_point[0, :])]['gamma']
@@ -801,7 +801,7 @@ class BayesianQuadrature(object):
                 self.cache_sample[tuple(candidate_point[0, :])]['solve_2'] = solve_2
                 self.cache_sample[tuple(candidate_point[0, :])]['gamma'] = cross_cov
 
-        print "get_samples"
+
         return {
             'gamma': cross_cov,
             'solve_2': solve_2,
