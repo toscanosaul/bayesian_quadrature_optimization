@@ -251,6 +251,8 @@ class SBO(object):
             -'maxiter': int
         :return: {'value': float, 'std': float}
         """
+        print "threads"
+        print n_threads
 
         if random_seed is not None:
             np.random.seed(random_seed)
@@ -286,7 +288,7 @@ class SBO(object):
             # Cache this computation, so we don't have to do it over and over again
             self.bq.get_parameters_for_samples(True, candidate_point, parameters_kernel, var_noise,
                                                mean)
-
+            print "bienw"
             point_dict = {}
             for i in xrange(n_samples):
                 start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
@@ -303,10 +305,10 @@ class SBO(object):
                     point_dict[(j, i)] = [deepcopy(start[j:j+1,:]), samples[i]]
             args = (False, None, True, n_threads, self, candidate_point, var_noise, mean,
                     parameters_kernel, n_threads)
-
+            print "aqui"
             simulated_values = Parallel.run_function_different_arguments_parallel(
                 wrapper_evaluate_sbo_by_sample, point_dict, *args, **opt_params_mc)
-
+            print "fail"
             for i in xrange(n_samples):
                 values = []
                 for j in xrange(n_restarts + 1):
