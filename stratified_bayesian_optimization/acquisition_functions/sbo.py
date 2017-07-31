@@ -8,6 +8,8 @@ import os
 
 from copy import deepcopy
 
+import multiprocessing as mp
+
 import itertools
 
 from stratified_bayesian_optimization.lib.constant import (
@@ -88,7 +90,7 @@ class SBO(object):
 
 
     def evaluate_sample(self, point, candidate_point, sample, var_noise=None, mean=None,
-                        parameters_kernel=None, cache=True):
+                        parameters_kernel=None, cache=True, n_threads=0):
         """
         Evaluate a sample of a_{n+1}(point) given that candidate_point is chosen.
 
@@ -99,6 +101,7 @@ class SBO(object):
         :param mean: float
         :param parameters_kernel: np.array(l)
         :param cache: (boolean) Use cached data and cache data if cache is True
+        :param n_threads: (int)
         :return: float
         """
 
@@ -107,7 +110,7 @@ class SBO(object):
 
         vectors = self.bq.compute_parameters_for_sample(
             point, candidate_point, var_noise=var_noise, mean=mean,
-            parameters_kernel=parameters_kernel, cache=cache)
+            parameters_kernel=parameters_kernel, cache=cache, n_threads=n_threads)
         value = vectors['a'] + sample * vectors['b']
 
         return value[0, 0]
@@ -143,7 +146,7 @@ class SBO(object):
 
     def evaluate_sbo_by_sample(self, candidate_point, sample, start=None,
                                var_noise=None, mean=None, parameters_kernel=None, n_restarts=5,
-                               parallel=True, **opt_params_mc):
+                               parallel=True, n_threads=0, **opt_params_mc):
         """
         Optimize a_{n+1}(x)  given the candidate_point and the sample of the Gaussian r.v.
 
@@ -155,6 +158,7 @@ class SBO(object):
         :param mean: float
         :param parameters_kernel: np.array(l)
         :param parallel: (boolean) Multi-start optimization in parallel if it's True
+        :param n_threads: (int)
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -201,8 +205,8 @@ class SBO(object):
             for i in xrange(n_restarts + 1):
                 point_dict[i] = start[i, :]
 
-            args = (False, None, True, optimization, self, candidate_point, sample, var_noise, mean,
-                    parameters_kernel)
+            args = (False, None, True, n_threads, optimization, self, candidate_point, sample,
+                    var_noise, mean, parameters_kernel)
 
             sol = Parallel.run_function_different_arguments_parallel(
                 wrapper_optimize, point_dict, *args)
@@ -229,7 +233,7 @@ class SBO(object):
 
     def evaluate_mc(self, candidate_point,  n_samples, var_noise=None, mean=None,
                     parameters_kernel=None, random_seed=None, parallel=True, n_restarts=10,
-                    **opt_params_mc):
+                    n_threads=0, **opt_params_mc):
         """
         Evaluate SBO policy by a MC estimation.
 
@@ -241,6 +245,7 @@ class SBO(object):
         :param random_seed: int
         :param parallel: boolean
         :param n_restarts: (int)
+        :param n_threads: (int)
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -252,7 +257,6 @@ class SBO(object):
 
         bounds_x = [self.bounds_opt[i] for i in xrange(len(self.bounds_opt)) if i in
                  self.bq.x_domain]
-
 
         if self.bq.max_mean is not None:
             max_mean = self.bq.max_mean
@@ -273,7 +277,7 @@ class SBO(object):
             return {'value': np.mean(optimal_values) - max_mean,
                     'std': np.std(optimal_values) / n_samples}
 
-        self.optimal_samples = {}
+#        self.optimal_samples = {}
         self.optimal_samples[tuple(candidate_point[0, :])] = {}
         self.optimal_samples[tuple(candidate_point[0, :])]['max'] = {}
         self.optimal_samples[tuple(candidate_point[0, :])]['optimum'] = {}
@@ -297,7 +301,8 @@ class SBO(object):
 
                 for j in xrange(n_restarts + 1):
                     point_dict[(j, i)] = [deepcopy(start[j:j+1,:]), samples[i]]
-            args = (False, None, True, self, candidate_point, var_noise, mean, parameters_kernel)
+            args = (False, None, True, n_threads, self, candidate_point, var_noise, mean,
+                    parameters_kernel, n_threads)
 
             simulated_values = Parallel.run_function_different_arguments_parallel(
                 wrapper_evaluate_sbo_by_sample, point_dict, *args, **opt_params_mc)
@@ -329,7 +334,7 @@ class SBO(object):
 
     def gradient_mc(self, candidate_point, parameters_kernel=None, var_noise=None,
                     mean=None, n_samples=None, random_seed=None, parallel=True, n_restarts=10,
-                    **opt_params_mc):
+                    n_threads=0, **opt_params_mc):
         """
         Evaluate the gradient of SBO by using MC estimation.
 
@@ -341,6 +346,7 @@ class SBO(object):
         :param random_seed: int
         :param parallel: boolean
         :param n_restarts: int
+        :param n_threads: int
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -349,7 +355,8 @@ class SBO(object):
         if tuple(candidate_point[0, :]) not in self.optimal_samples:
             self.evaluate_mc(candidate_point, n_samples, var_noise=var_noise, mean=mean,
                              parameters_kernel=parameters_kernel, random_seed=random_seed,
-                             parallel=parallel, n_restarts=n_restarts, **opt_params_mc)
+                             parallel=parallel, n_restarts=n_restarts, n_threads=n_threads,
+                             **opt_params_mc)
 
         max_points = self.optimal_samples[tuple(candidate_point[0, :])]['optimum']
 
@@ -363,7 +370,8 @@ class SBO(object):
 
         gradient_b = self.bq.gradient_vector_b(candidate_point, points, var_noise=var_noise,
                                                mean=mean, parameters_kernel=parameters_kernel,
-                                               cache=True, parallel=parallel, monte_carlo=True)
+                                               cache=True, parallel=parallel, monte_carlo=True,
+                                               n_threads=n_threads)
 
         gradient = gradient_b * samples.reshape((n_samples, 1))
 
@@ -372,7 +380,8 @@ class SBO(object):
         return {'gradient': gradient_approx, 'std': np.std(gradient, axis=0) / n_samples}
 
 
-    def evaluate(self, point, var_noise=None, mean=None, parameters_kernel=None, cache=True):
+    def evaluate(self, point, var_noise=None, mean=None, parameters_kernel=None, cache=True,
+                 n_threads=0):
         """
         Evaluate the acquisition function at the point.
 
@@ -381,6 +390,7 @@ class SBO(object):
         :param mean: float
         :param parameters_kernel: np.array(l)
         :param cache: (boolean) Use cached data and cache data if cache is True
+        :param n_threads: (int)
 
         :return: float
         """
@@ -388,7 +398,7 @@ class SBO(object):
         vectors = self.bq.compute_posterior_parameters_kg(self.discretization, point,
                                                           var_noise=var_noise, mean=mean,
                                                           parameters_kernel=parameters_kernel,
-                                                          cache=cache)
+                                                          cache=cache, n_threads=n_threads)
 
         a = vectors['a']
         b = vectors['b']
@@ -405,7 +415,7 @@ class SBO(object):
 
 
     def evaluate_gradient(self, point, var_noise=None, mean=None, parameters_kernel=None,
-                          cache=True):
+                          cache=True, n_threads=0):
         """
         Evaluate the acquisition function at the point.
 
@@ -414,6 +424,7 @@ class SBO(object):
         :param mean: float
         :param parameters_kernel: np.array(l)
         :param cache: (boolean) Use cached data and cache data if cache is True
+        :param n_threads: int
 
         :return: np.array(n)
         """
@@ -421,7 +432,7 @@ class SBO(object):
         vectors = self.bq.compute_posterior_parameters_kg(self.discretization, point,
                                                           var_noise=var_noise, mean=mean,
                                                           parameters_kernel=parameters_kernel,
-                                                          cache=cache)
+                                                          cache=cache, n_threads=n_threads)
 
         a = vectors['a']
         b = vectors['b']
@@ -443,7 +454,7 @@ class SBO(object):
         gradients = self.bq.gradient_vector_b(point, self.discretization[keep, :],
                                               var_noise=var_noise, mean=mean,
                                               parameters_kernel=parameters_kernel, cache=cache,
-                                              keep_indexes=keep)
+                                              keep_indexes=keep, n_threads=n_threads)
 
         gradient = np.zeros(point.shape[1])
         for i in xrange(point.shape[1]):
@@ -451,13 +462,15 @@ class SBO(object):
 
         return gradient
 
-    def objective_voi(self, point, monte_carlo=False, n_samples=1, n_restarts=1, **opt_params_mc):
+    def objective_voi(self, point, monte_carlo=False, n_samples=1, n_restarts=1, n_threads=0,
+                      **opt_params_mc):
         """
         Evaluates the VOI at point.
         :param point: np.array(n)
         :param monte_carlo: (boolean) If True, estimates the function by MC.
         :param n_samples: (int) Number of samples for the MC method.
         :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
+        :param n_threads: (int)
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -467,19 +480,21 @@ class SBO(object):
         point = point.reshape((1, len(point)))
 
         if not monte_carlo:
-            value = self.evaluate(point)
+            value = self.evaluate(point, n_threads=n_threads)
         else:
             value = self.evaluate_mc(point, n_samples=n_samples, n_restarts=n_restarts,
-                                     **opt_params_mc)['value']
+                                     n_threads=n_threads, **opt_params_mc)['value']
         return value
 
-    def grad_obj_voi(self, point, monte_carlo=False, n_samples=1, n_restarts=1, **opt_params_mc):
+    def grad_obj_voi(self, point, monte_carlo=False, n_samples=1, n_restarts=1, n_threads=0,
+                     **opt_params_mc):
         """
         Evaluates the gradient of VOI at point.
         :param point: np.array(n)
         :param monte_carlo: (boolean) If True, estimates the function by MC.
         :param n_samples: (int) Number of samples for the MC method.
         :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
+        :param n_threads: (int)
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -489,10 +504,10 @@ class SBO(object):
         point = point.reshape((1, len(point)))
 
         if not monte_carlo:
-            grad = self.evaluate_gradient(point)
+            grad = self.evaluate_gradient(point, n_threads=n_threads)
         else:
             grad = self.gradient_mc(point, n_samples=n_samples, n_restarts=n_restarts,
-                                    **opt_params_mc)['gradient']
+                                    n_threads=n_threads, **opt_params_mc)['gradient']
 
         return grad
 
@@ -564,8 +579,11 @@ class SBO(object):
         for j in xrange(n_restarts):
             point_dict[j] = start[j, :]
 
-        args = (False, None, parallel, optimization, self, monte_carlo, n_samples,
-                    n_restarts_mc, opt_params_mc)
+        n_jobs = min(n_restarts, mp.cpu_count())
+        n_threads = max(int((mp.cpu_count() - n_jobs) / n_jobs), 1)
+
+        args = (False, None, parallel, 0, optimization, self, monte_carlo, n_samples,
+                    n_restarts_mc, opt_params_mc, n_threads)
 
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
             wrapper_optimize, point_dict, *args)

@@ -1393,7 +1393,7 @@ class ValidationGPModel(object):
                 training_data_sets[i]['var_noise'] = []
                 test_points[i]['var_noise'] = []
 
-        args = (False, None, True, GPFittingGaussian, type_kernel, dimensions, bounds_domain,
+        args = (False, None, True, 0, GPFittingGaussian, type_kernel, dimensions, bounds_domain,
                 thinning, n_burning, max_steps_out, random_seed, problem_name, training_name)
         gp_results = Parallel.run_function_different_arguments_parallel(
             wrapper_GPFittingGaussian, training_data_sets, *args, **kernel_parameters

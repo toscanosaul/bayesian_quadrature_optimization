@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import multiprocessing as mp
 import multiprocessing.pool
+from multiprocessing.pool import ThreadPool
 
 
 from stratified_bayesian_optimization.initializers.log import SBOLog
@@ -13,7 +14,8 @@ class Parallel(object):
 
     @classmethod
     def run_function_different_arguments_parallel(cls, function, arguments, all_success=False,
-                                                  signal=None, parallel=True, *args, **kwargs):
+                                                  signal=None, parallel=True, threads=0,
+                                                  *args, **kwargs):
         """
         Call functions in parallel
         :param function: f(argument, **kwargs)
@@ -23,18 +25,26 @@ class Parallel(object):
         :param signal: (function) calls this function after generating the jobs. It's used to test
             KeyboardInterrupt, and the signal is a mock of KeyboardInterrupt.
         :param parallel: (boolean) The code is run in parallel only if it's True.
+        :param threads: (int) Uses threads instead of processes if threads > 0
         :param args: additional arguments of function
         :param kwargs: additional arguments of function
         :return: {int: output of f(arguments[i])}
         """
+        # Maybe later we enable this feature.
+        #thread = False
+
         jobs = {}
 
         if not parallel:
             return cls.run_function_different_arguments_sequentially(function, arguments, *args,
                                                                      **kwargs)
+
         n_jobs = min(len(arguments), mp.cpu_count())
 
-        pool = MyPool(processes=n_jobs)
+        if threads > 0:
+            pool = ThreadPool(threads)
+        else:
+            pool = MyPool(processes=n_jobs)
 
         try:
             for key, argument in arguments.iteritems():

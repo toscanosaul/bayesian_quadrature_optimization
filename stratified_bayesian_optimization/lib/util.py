@@ -321,7 +321,7 @@ def wrapper_optimization(start, *args):
 
 
 def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restarts=1,
-                          opt_params_mc=None):
+                          opt_params_mc=None, n_threads=0):
     """
     Wrapper of objective_voi
     :param self: instance of the acquisition function
@@ -333,6 +333,7 @@ def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restart
         -'factr': int
         -'maxiter': int
     }
+    :param n_threads: (int)
 
     :return: float
     """
@@ -341,11 +342,12 @@ def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restart
         opt_params_mc = {}
 
     return self.objective_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
-                              n_restarts=n_restarts, **opt_params_mc)
+                              n_restarts=n_restarts, n_threads=n_threads,
+                              **opt_params_mc)
 
 
 def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts=1,
-                         opt_params_mc=None):
+                         opt_params_mc=None, n_threads=0):
     """
     Wrapper of objective_voi (an acquisition function)
     :param self: instance of the acquisition function
@@ -357,13 +359,15 @@ def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts
         -'factr': int
         -'maxiter': int
     }
+    :param n_threads: (int)
     :return: np.array(n)
     """
     if opt_params_mc is None:
         opt_params_mc = {}
 
     return self.grad_obj_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
-                              n_restarts=n_restarts, **opt_params_mc)
+                              n_restarts=n_restarts, n_threads=n_threads,
+                             **opt_params_mc)
 
 def wrapper_evaluate_quadrature_cross_cov(point, historical_points, parameters_kernel, self):
     """
@@ -437,7 +441,7 @@ def wrapper_evaluate_sbo_mc(candidate_points, task, self, n_samples, n_restarts)
     for i in xrange(r):
         points[i] = candidate_points[i, :]
 
-    args = (False, None, False, self, True, n_samples, n_restarts)
+    args = (False, None, False, 0, self, True, n_samples, n_restarts)
     val = Parallel.run_function_different_arguments_parallel(
         wrapper_objective_voi, points, *args)
 
@@ -479,7 +483,7 @@ def wrapper_evaluate_sbo(candidate_points, task, self):
     for i in xrange(r):
         b_vectors[i] = b[:, i]
 
-    args = (False, None, True, a, self,)
+    args = (False, None, True, 0, a, self,)
     val = Parallel.run_function_different_arguments_parallel(
         wrapper_hvoi, b_vectors, *args)
 
@@ -538,7 +542,7 @@ def wrapper_GPFittingGaussian(training_data_sets, model, type_kernel, dimensions
     return gp
 
 def wrapper_evaluate_sbo_by_sample(start_sample, self, candidate_point, var_noise, mean,
-                                   parameters_kernel, **opt_params_mc):
+                                   parameters_kernel, n_threads, **opt_params_mc):
     """
 
     :param start_sample: [np.array(n), float], the first element is the starting point, and the
@@ -551,12 +555,14 @@ def wrapper_evaluate_sbo_by_sample(start_sample, self, candidate_point, var_nois
     :param opt_params_mc:
         -'factr': int
         -'maxiter': int
+    :param n_threads: int
     :return: {'max': float, 'optimum': np.array(n)}
     """
 
     return self.evaluate_sbo_by_sample(
         candidate_point, start_sample[1], start=start_sample[0], var_noise=var_noise, mean=mean,
-        parameters_kernel=parameters_kernel, n_restarts=0, parallel=False, **opt_params_mc)
+        parameters_kernel=parameters_kernel, n_restarts=0, parallel=False, n_threads=n_threads,
+        **opt_params_mc)
 
 def wrapper_evaluate_sample(point, self, *args):
     """

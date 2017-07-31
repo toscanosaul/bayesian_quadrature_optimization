@@ -169,23 +169,27 @@ class BayesianQuadrature(object):
                 return self.cache_quadrature_with_candidate[index]
         return None
 
-    def _updated_cached_data(self, index, value, name):
+    def _updated_cached_data(self, index, value, name, thread=False):
         """
 
         :param index: tuple. (parameters_kernel, )
         :param value: value to be cached
         :param name: (str) QUADRATURES or POSTERIOR_MEAN or B_NEW
+        :param thread: (boolean) True if memory is shared between threads.
 
         """
 
         if name == QUADRATURES:
-            self.cache_quadratures = {}
+            if not thread:
+                self.cache_quadratures = {}
             self.cache_quadratures[index] = value
         if name == POSTERIOR_MEAN:
-            self.cache_posterior_mean = {}
+            if not thread:
+                self.cache_posterior_mean = {}
             self.cache_posterior_mean[index] = value
         if name == B_NEW:
-            self.cache_quadrature_with_candidate = {}
+            if not thread:
+                self.cache_quadrature_with_candidate = {}
             self.cache_quadrature_with_candidate[index] = value
 
     def evaluate_quadrate_cov(self, point, parameters_kernel):
@@ -559,7 +563,7 @@ class BayesianQuadrature(object):
         for j in xrange(n_restarts + 1):
             point_dict[j] = start[j, :]
 
-        args = (False, None, parallel, optimization, self)
+        args = (False, None, parallel, 0, optimization, self)
 
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
             wrapper_optimize, point_dict, *args)
@@ -579,7 +583,7 @@ class BayesianQuadrature(object):
         return optimal_solutions.get(ind_max)
 
     def compute_vectors_b(self, points, candidate_points, historical_points, parameters_kernel,
-                          compute_vec_covs, compute_b_new, parallel):
+                          compute_vec_covs, compute_b_new, parallel, n_threads=0):
         """
         Compute B(x, i) for ever x in points, and B(candidate_point, i) for each i.
 
@@ -590,6 +594,8 @@ class BayesianQuadrature(object):
         :param parameters_kernel: np.array(l)
         :param compute_vec_covs: boolean
         :param compute_b_new: boolean
+        :param parallel: boolean
+        :param n_threads: (int)
 
         :return: {
             'b_new': np.array(nxk),
@@ -617,8 +623,8 @@ class BayesianQuadrature(object):
             for i in xrange(n):
                 point_dict[i] = points[i:i + 1, :]
 
-            args = (False, None, True, compute_vec_covs, compute_b_new, historical_points,
-                    parameters_kernel, candidate_points, self,)
+            args = (False, None, True, n_threads, compute_vec_covs, compute_b_new,
+                    historical_points, parameters_kernel, candidate_points, self,)
 
             b_vectors = Parallel.run_function_different_arguments_parallel(
                 wrapper_compute_vector_b, point_dict, *args)
@@ -807,7 +813,7 @@ class BayesianQuadrature(object):
 
     def compute_parameters_for_sample(
             self, point, candidate_point, var_noise=None, mean=None,
-            parameters_kernel=None, cache=True):
+            parameters_kernel=None, cache=True, n_threads=0):
         """
         Compute posterior parameters of a_n+1(point) given the candidate_point. Caching is different
         than in the other functions.
@@ -818,6 +824,7 @@ class BayesianQuadrature(object):
         :param mean: float
         :param parameters_kernel: np.array(l)
         :param cache: (boolean) Use cached data and cache data if cache is True
+        :param n_threads: (int) Threads are used if n_threads > 0
         :return: {'a': float, 'b': float}
         """
 
@@ -832,7 +839,7 @@ class BayesianQuadrature(object):
         var_noise = additional_parameters.get('var_noise')
 
         vec_covs, b_new = self.get_vec_covs(cache, point, parameters_kernel, candidate_point,
-                                            False, monte_carlo=True)
+                                            False, monte_carlo=True, n_threads=n_threads)
 
         mu_n = mean + np.dot(vec_covs, solve)
 
@@ -889,7 +896,7 @@ class BayesianQuadrature(object):
         return {'a': gradient_a, 'b': gradient_b}
 
     def get_vec_covs(self, cache, points, parameters_kernel, candidate_point, parallel,
-                     keep_indexes=None, monte_carlo=False):
+                     keep_indexes=None, monte_carlo=False, n_threads=0):
         """
         Get vectors b from cache if possible.
 
@@ -902,6 +909,7 @@ class BayesianQuadrature(object):
             They are used to get the useful elements of the cached data. Monte_carlo is False.
         :param monte_carlo: If True, we cache the data using the indexes to cache the data of the
             monte carlo samples.
+        :param n_threads: (int) If n_threads > 0, memory is shared between threads
 
         :return: (vec_covs, b_new)
         """
@@ -950,7 +958,7 @@ class BayesianQuadrature(object):
         if compute_vec_covs or compute_b_new:
             computations = self.compute_vectors_b(points, candidate_point, self.gp.data['points'],
                                                   parameters_kernel, compute_vec_covs,
-                                                  compute_b_new, parallel)
+                                                  compute_b_new, parallel, n_threads=n_threads)
 
             if compute_vec_covs:
                 vec_covs = computations['vec_covs']
@@ -959,17 +967,23 @@ class BayesianQuadrature(object):
                 b_new = computations['b_new']
 
         if cache:
+            if n_threads > 0 and monte_carlo:
+                thread = True
+            else:
+                thread = False
+
             if compute_vec_covs:
-                self._updated_cached_data(index_vec_covs, vec_covs, QUADRATURES)
+                self._updated_cached_data(index_vec_covs, vec_covs, QUADRATURES, thread=thread)
 
             if compute_b_new:
-                self._updated_cached_data(index_b_new, b_new, B_NEW)
+                self._updated_cached_data(index_b_new, b_new, B_NEW, thread=thread)
 
         return vec_covs, b_new
 
 
     def compute_posterior_parameters_kg(self, points, candidate_point, var_noise=None, mean=None,
-                                        parameters_kernel=None, cache=True, parallel=True):
+                                        parameters_kernel=None, cache=True, parallel=True,
+                                        n_threads=0):
         """
         Compute posterior parameters of the GP after integrating out the random parameters needed
         to compute the knowledge gradient (vectors "a" and "b" in the SBO paper).
@@ -981,6 +995,7 @@ class BayesianQuadrature(object):
         :param parameters_kernel: np.array(l)
         :param cache: (boolean) Use cached data and cache data if cache is True
         :param parallel: (boolean) compute B(x, i) in parallel for all x in points
+        :param n_threads: (int)
 
         :return: {
             'a': np.array(n),
@@ -1003,7 +1018,7 @@ class BayesianQuadrature(object):
         solve = chol_solve['solve']
 
         vec_covs, b_new =  self.get_vec_covs(cache, points, parameters_kernel, candidate_point,
-                                             parallel)
+                                             parallel, n_threads=n_threads)
 
         if cache:
             mu_n = self._get_cached_data((tuple(parameters_kernel),), POSTERIOR_MEAN)
@@ -1037,7 +1052,7 @@ class BayesianQuadrature(object):
 
     def gradient_vector_b(self, candidate_point, points, var_noise=None, mean=None,
                           parameters_kernel=None, cache=True, keep_indexes=None,
-                          parallel=True, monte_carlo=False):
+                          parallel=True, monte_carlo=False, n_threads=0):
         """
         Compute the gradient of the vector b(x,candidate_point) for each x in points
         (see SBO paper).
@@ -1053,6 +1068,7 @@ class BayesianQuadrature(object):
         :param parallel: (boolean)
         :param monte_carlo: If True, we cache the data using the indexes to cache the data of the
             monte carlo samples.
+        :param n_threads: (int)
 
         :return: np.array(nxm)
         """
@@ -1087,7 +1103,7 @@ class BayesianQuadrature(object):
 
         vec_covs, b_new =  self.get_vec_covs(cache, points, parameters_kernel, candidate_point,
                                              parallel, keep_indexes=keep_indexes,
-                                             monte_carlo=monte_carlo)
+                                             monte_carlo=monte_carlo, n_threads=n_threads)
 
         solve_2 = cho_solve(chol, vec_covs.transpose())
 

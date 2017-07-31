@@ -447,4 +447,4 @@ class TestSBO(unittest.TestCase):
                                random_seed=1, parallel=False, n_restarts=1,
                                     **{'factr':1e12,'maxiter':100})
         print val
-        assert 1 ==2
+        # assert 1 ==2

@@ -201,7 +201,7 @@ class EI(object):
         for j in xrange(n_restarts):
             point_dict[j] = start[j, :]
 
-        args = (False, None, parallel, optimization, self)
+        args = (False, None, parallel, 0, optimization, self)
 
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
             wrapper_optimize, point_dict, *args)
@@ -345,7 +345,7 @@ class EI(object):
         for i in xrange(n):
             points[i] = vectors[i, :]
 
-        args = (False, None, False, self,)
+        args = (False, None, False, 0, self,)
         val = Parallel.run_function_different_arguments_parallel(
             wrapper_objective_acquisition_function, points, *args)
 
