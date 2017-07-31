@@ -761,6 +761,8 @@ class BayesianQuadrature(object):
         }
         """
 
+        print "get_samples"
+
         if var_noise is None:
             var_noise = self.gp.var_noise.value[0]
 
@@ -776,6 +778,7 @@ class BayesianQuadrature(object):
         solve = chol_solve['solve']
 
         if cache and tuple(candidate_point[0, :]) in self.cache_sample:
+            print "get_samples"
             solve_2 = self.cache_sample[tuple(candidate_point[0, :])]['solve_2']
             denominator = self.cache_sample[tuple(candidate_point[0, :])]['denominator']
             cross_cov = self.cache_sample[tuple(candidate_point[0, :])]['gamma']
@@ -798,7 +801,7 @@ class BayesianQuadrature(object):
                 self.cache_sample[tuple(candidate_point[0, :])]['solve_2'] = solve_2
                 self.cache_sample[tuple(candidate_point[0, :])]['gamma'] = cross_cov
 
-
+        print "get_samples"
         return {
             'gamma': cross_cov,
             'solve_2': solve_2,
