@@ -64,7 +64,7 @@ class Optimization(object):
                                  bounds=self.bounds, **self.optimization_options)
         else:
             def f(x, *args):
-
+                print "aqui"
                 return -1.0 * self.function(x, *args)
             def grad(x, *args):
                 return -1.0 * self.gradient(x, *args)
@@ -74,7 +74,8 @@ class Optimization(object):
                 fprime=grad,
                 args=args,
                 bounds=self.bounds, **self.optimization_options)
-
+            print "fail"
+            print opt
         return {
             'solution': opt[0],
             'optimal_value': opt[1] if self.minimize else -1.0 * opt[1],
