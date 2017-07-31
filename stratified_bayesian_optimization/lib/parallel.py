@@ -44,7 +44,7 @@ class Parallel(object):
         if threads > 0:
             pool = ThreadPool(threads)
         else:
-            pool = MyPool(processes=n_jobs)
+            pool = mp.Pool(processes=n_jobs)
 
         try:
             for key, argument in arguments.iteritems():
