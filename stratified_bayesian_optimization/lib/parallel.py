@@ -42,6 +42,7 @@ class Parallel(object):
         n_jobs = min(len(arguments), mp.cpu_count())
 
         if threads > 0:
+            print "aqui"
             pool = ThreadPool(threads)
         else:
             pool = mp.Pool(processes=n_jobs)
