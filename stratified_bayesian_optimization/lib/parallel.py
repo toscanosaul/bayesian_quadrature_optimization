@@ -62,6 +62,7 @@ class Parallel(object):
 
         results = {}
         for key in arguments.keys():
+            results[key] = jobs[key].get()
             try:
                 results[key] = jobs[key].get()
             except Exception as e:
