@@ -337,7 +337,8 @@ def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restart
 
     :return: float
     """
-
+    print "treads"
+    print n_threads
     if opt_params_mc is None:
         opt_params_mc = {}
 
@@ -362,6 +363,8 @@ def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts
     :param n_threads: (int)
     :return: np.array(n)
     """
+    print "treads"
+    print n_threads
     if opt_params_mc is None:
         opt_params_mc = {}
 
