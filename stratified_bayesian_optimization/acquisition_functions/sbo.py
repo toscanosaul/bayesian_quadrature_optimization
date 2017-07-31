@@ -39,6 +39,8 @@ from stratified_bayesian_optimization.lib.util import (
 )
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.lib.util import wrapper_evaluate_sbo
+from stratified_bayesian_optimization.acquisition_functions.ei import EI
+
 
 logger = SBOLog(__name__)
 
@@ -514,7 +516,7 @@ class SBO(object):
         return grad
 
     def optimize(self, start=None, random_seed=None, parallel=True, monte_carlo=False, n_samples=1,
-                 n_restarts_mc=1, n_restarts=10, **opt_params_mc):
+                 n_restarts_mc=1, n_restarts=10, start_ei=True, **opt_params_mc):
         """
         Optimizes the VOI.
         :param start: np.array(n)
@@ -524,6 +526,7 @@ class SBO(object):
         :param n_samples: (int) Number of samples for the MC method.
         :param n_restarts_mc: (int) Number of restarts to optimize a_{n+1} given a sample.
         :param n_restarts: (int)
+        :param start_ei: (boolean) If True, we choose starting points using EI.
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -535,6 +538,14 @@ class SBO(object):
             np.random.seed(random_seed)
 
         bounds = self.bq.bounds
+
+        if start_ei:
+            ei = EI(self.gp)
+            opt_ei = ei.optimize(n_restarts=100, parallel=parallel)
+            st_ei = opt_ei['solution']
+            print "ver"
+            print st_ei
+            n_restarts -= 1
 
         if start is None:
             if self.bq.separate_tasks:
@@ -562,8 +573,14 @@ class SBO(object):
                     n_restarts, bounds, type_bounds=self.bq.type_bounds)
 
             start = np.array(start_points)
+            if start_ei:
+                start_points = np.concatenate(
+                    (start_points, st_ei.respahe(1, len(st_ei))), axis=0)
         else:
             n_restarts = 1
+
+        print "cool"
+        print start_points
 
         bounds = [tuple(bound) for bound in self.bounds_opt]
 
