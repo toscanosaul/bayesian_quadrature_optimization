@@ -45,6 +45,7 @@ class Parallel(object):
             print "aqui"
             pool = ThreadPool(threads)
         else:
+            print "siempre"
             pool = mp.Pool(processes=n_jobs)
 
         try:
