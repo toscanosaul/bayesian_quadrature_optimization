@@ -540,7 +540,7 @@ class SBO(object):
         bounds = self.bq.bounds
 
         if start_ei:
-            ei = EI(self.gp)
+            ei = EI(self.bq.gp)
             opt_ei = ei.optimize(n_restarts=100, parallel=parallel)
             st_ei = opt_ei['solution']
             print "ver"
