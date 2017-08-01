@@ -575,13 +575,15 @@ class SBO(object):
 
             if n_restarts > 0:
                 start = np.array(start_points)
-            if start_ei and n_restarts > 0:
-                start_points = np.concatenate(
-                    (start_points, st_ei), axis=0)
+                if start_ei:
+                    start = np.concatenate((start, st_ei), axis=0)
             else:
-                start_points = st_ei
+                start = st_ei
+
+            n_restarts = start.shape[0]
         else:
             n_restarts = 1
+
 
         print "cool"
         print start_points
