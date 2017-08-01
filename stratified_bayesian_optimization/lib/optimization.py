@@ -56,32 +56,21 @@ class Optimization(object):
             'task': str
         }
         """
-        print "ver"
-        print args
-        print start
+
         if self.minimize:
             opt = self.optimizer(self.function, start, fprime=self.gradient, args=args,
                                  bounds=self.bounds, **self.optimization_options)
         else:
             def f(x, *args):
-                print "aqui"
                 return -1.0 * self.function(x, *args)
             def grad(x, *args):
-                print "grad"
                 return -1.0 * self.gradient(x, *args)
-            print f
-            print start
-            print grad
-            print args
-            print self.bounds
-            print self.optimization_options
             opt = self.optimizer(
                 f, start,
                 fprime=grad,
                 args=args,
                 bounds=self.bounds, **self.optimization_options)
-            print "fail"
-            print opt
+
         return {
             'solution': opt[0],
             'optimal_value': opt[1] if self.minimize else -1.0 * opt[1],

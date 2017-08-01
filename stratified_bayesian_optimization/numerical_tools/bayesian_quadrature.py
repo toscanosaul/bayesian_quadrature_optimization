@@ -19,6 +19,7 @@ from stratified_bayesian_optimization.lib.constant import (
     LBFGS_NAME,
     DEBUGGING_DIR,
     B_NEW,
+    BAYESIAN_QUADRATURE,
 )
 from stratified_bayesian_optimization.lib.la_functions import (
     cho_solve,
@@ -81,7 +82,7 @@ class BayesianQuadrature(object):
             we can use BQ with other methods like EI.
         """
         self.gp = gp_model
-
+        self.name_model = BAYESIAN_QUADRATURE
         if parameters_distribution == {}:
             parameters_distribution = None
 

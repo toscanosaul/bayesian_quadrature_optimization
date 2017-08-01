@@ -71,3 +71,5 @@ PARTIAL_RESULTS = 'partial_results'
 
 #Directory of debugging
 DEBUGGING_DIR = 'data/debugging'
+
+BAYESIAN_QUADRATURE = 'bayesian_quadrature'

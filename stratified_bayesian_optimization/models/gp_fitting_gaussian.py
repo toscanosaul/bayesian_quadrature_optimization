@@ -171,7 +171,12 @@ class GPFittingGaussian(object):
 
         self.set_parameters_kernel()
         self.set_samplers()
-        self.separate_tasks = False
+
+        if type_bounds is not None and len(type_bounds) > 0 and type_bounds[-1] == 1:
+            self.separate_tasks = True
+        else:
+            self.separate_tasks = False
+        self.model_only_x = False
 
     def set_samplers(self):
         """

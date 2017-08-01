@@ -25,6 +25,7 @@ from stratified_bayesian_optimization.lib.util import (
 from stratified_bayesian_optimization.lib.constant import (
     LBFGS_NAME,
     DEBUGGING_DIR,
+    BAYESIAN_QUADRATURE,
 )
 from stratified_bayesian_optimization.services.domain import (
     DomainService,
@@ -62,8 +63,11 @@ class EI(object):
         self.optimization_results = []
 
         self.bounds_opt = deepcopy(self.gp.bounds)
-        if self.gp.separate_tasks:
+        if self.gp.separate_tasks and not self.gp.model_only_x:
             self.bounds_opt.append([None, None])
+        elif self.gp.separate_tasks and self.gp.name_model != BAYESIAN_QUADRATURE:
+            self.bounds_opt = self.bounds_opt[0: -1]
+
 
     def evaluate(self, point, var_noise=None, mean=None, parameters_kernel=None):
         """
@@ -184,9 +188,6 @@ class EI(object):
                     n_restarts, bounds, type_bounds=self.gp.type_bounds)
 
             start = np.array(start_points)
-
-        print "st"
-        print start
 
         bounds = [tuple(bound) for bound in self.bounds_opt]
 
