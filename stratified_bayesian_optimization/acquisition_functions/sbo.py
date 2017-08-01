@@ -548,7 +548,7 @@ class SBO(object):
             n_restarts -= 1
 
         if start is None:
-            if self.bq.separate_tasks:
+            if self.bq.separate_tasks and n_restarts > 0:
                 tasks = self.bq.tasks
                 n_tasks = len(tasks)
 
@@ -568,7 +568,7 @@ class SBO(object):
                     n_restarts, bounds, type_bounds=self.bq.type_bounds)
 
                 start_points = np.concatenate((start_points, task_chosen), axis=1)
-            else:
+            elif n_restarts > 0:
                 start_points = DomainService.get_points_domain(
                     n_restarts, bounds, type_bounds=self.bq.type_bounds)
 
