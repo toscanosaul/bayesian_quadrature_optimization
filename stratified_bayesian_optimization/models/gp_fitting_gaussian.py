@@ -174,6 +174,7 @@ class GPFittingGaussian(object):
 
         if type_bounds is not None and len(type_bounds) > 0 and type_bounds[-1] == 1:
             self.separate_tasks = True
+            self.tasks = self.bounds[-1]
         else:
             self.separate_tasks = False
         self.model_only_x = False
