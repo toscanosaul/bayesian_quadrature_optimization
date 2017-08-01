@@ -584,7 +584,6 @@ class SBO(object):
         else:
             n_restarts = 1
 
-
         print "cool"
         print start
 
@@ -607,8 +606,12 @@ class SBO(object):
         n_jobs = min(n_restarts, mp.cpu_count())
         n_threads = max(int((mp.cpu_count() - n_jobs) / n_jobs), 1)
 
-        args = (False, None, parallel, 0, optimization, self, monte_carlo, n_samples,
-                    n_restarts_mc, opt_params_mc, n_threads)
+        if n_restarts > 10:
+            args = (False, None, parallel, 0, optimization, self, monte_carlo, n_samples,
+                        n_restarts_mc, opt_params_mc, n_threads)
+        else:
+            args = (False, None, False, 0, optimization, self, monte_carlo, n_samples,
+                        n_restarts_mc, opt_params_mc, 0)
 
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
             wrapper_optimize, point_dict, *args)
