@@ -63,10 +63,13 @@ class EI(object):
         self.optimization_results = []
 
         self.bounds_opt = deepcopy(self.gp.bounds)
-        if self.gp.separate_tasks and not self.gp.model_only_x:
+
+        if self.gp.separate_tasks and not self.gp.model_only_x and \
+                        self.gp.name_model == BAYESIAN_QUADRATURE:
             self.bounds_opt.append([None, None])
         elif self.gp.separate_tasks and self.gp.name_model != BAYESIAN_QUADRATURE:
             self.bounds_opt = self.bounds_opt[0: -1]
+            self.bounds_opt.append([None, None])
 
 
     def evaluate(self, point, var_noise=None, mean=None, parameters_kernel=None):
@@ -164,7 +167,7 @@ class EI(object):
         bounds = self.gp.bounds
 
         if start is None:
-            if self.gp.separate_tasks:
+            if self.gp.separate_tasks and self.gp.name_model == BAYESIAN_QUADRATURE:
                 tasks = self.gp.tasks
                 n_tasks = len(tasks)
                 n_restarts = int(np.ceil(n_restarts / n_tasks) * n_tasks)
