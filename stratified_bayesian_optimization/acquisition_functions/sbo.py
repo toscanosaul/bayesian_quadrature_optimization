@@ -543,6 +543,7 @@ class SBO(object):
             ei = EI(self.bq.gp)
             opt_ei = ei.optimize(n_restarts=100, parallel=parallel)
             st_ei = opt_ei['solution']
+            st_ei = st_ei.respahe(1, len(st_ei))
             print "ver"
             print st_ei
             n_restarts -= 1
@@ -572,10 +573,13 @@ class SBO(object):
                 start_points = DomainService.get_points_domain(
                     n_restarts, bounds, type_bounds=self.bq.type_bounds)
 
-            start = np.array(start_points)
-            if start_ei:
+            if n_restarts > 0:
+                start = np.array(start_points)
+            if start_ei and n_restarts > 0:
                 start_points = np.concatenate(
-                    (start_points, st_ei.respahe(1, len(st_ei))), axis=0)
+                    (start_points, st_ei), axis=0)
+            else:
+                start_points = st_ei
         else:
             n_restarts = 1
 
