@@ -606,7 +606,7 @@ class SBO(object):
         n_jobs = min(n_restarts, mp.cpu_count())
         n_threads = max(int((mp.cpu_count() - n_jobs) / n_jobs), 1)
 
-        if n_restarts > 10:
+        if n_restarts > int( mp.cpu_count() / 2):
             args = (False, None, parallel, 0, optimization, self, monte_carlo, n_samples,
                         n_restarts_mc, opt_params_mc, n_threads)
         else:
