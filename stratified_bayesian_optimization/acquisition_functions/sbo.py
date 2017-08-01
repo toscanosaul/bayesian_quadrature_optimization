@@ -543,7 +543,7 @@ class SBO(object):
             ei = EI(self.bq.gp)
             opt_ei = ei.optimize(n_restarts=100, parallel=parallel)
             st_ei = opt_ei['solution']
-            st_ei = st_ei.respahe(1, len(st_ei))
+            st_ei = st_ei.reshape((1, len(st_ei)))
             print "ver"
             print st_ei
             n_restarts -= 1
