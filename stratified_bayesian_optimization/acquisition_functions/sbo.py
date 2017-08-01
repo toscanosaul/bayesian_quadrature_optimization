@@ -586,7 +586,7 @@ class SBO(object):
 
 
         print "cool"
-        print start_points
+        print start
 
         bounds = [tuple(bound) for bound in self.bounds_opt]
 
