@@ -544,8 +544,6 @@ class SBO(object):
             opt_ei = ei.optimize(n_restarts=100, parallel=parallel)
             st_ei = opt_ei['solution']
             st_ei = st_ei.reshape((1, len(st_ei)))
-            print "ver"
-            print st_ei
             n_restarts -= 1
 
         if start is None:
@@ -583,9 +581,6 @@ class SBO(object):
             n_restarts = start.shape[0]
         else:
             n_restarts = 1
-
-        print "cool"
-        print start
 
         bounds = [tuple(bound) for bound in self.bounds_opt]
 
