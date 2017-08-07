@@ -78,7 +78,7 @@ class StatisticstProcessedData(object):
             rank_user[user] = {'stats': (n, n_diff), 'diff_papers': diff_papers}
 
         file_name = cls._name_file_final(year=year, month=month)
-        JSONFile.write(file_name)
+        JSONFile.write([rank_papers, rank_user], file_name)
 
         return [rank_papers, rank_user]
 
