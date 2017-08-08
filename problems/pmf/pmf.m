@@ -17,6 +17,9 @@ mean_rating = mean(train_vec(:,3));
 pairs_tr = length(train_vec); % training data
 pairs_pr = length(probe_vec); % validation data
 
+N = pairs_tr / numbatches;
+N = int16(N);
+
 for epoch = epoch:maxepoch
   rr = randperm(pairs_tr);
   train_vec = train_vec(rr,:);
@@ -24,7 +27,6 @@ for epoch = epoch:maxepoch
 
   for batch = 1:numbatches
     fprintf(1,'epoch %d batch %d \r',epoch,batch);
-    N=100000; % number training triplets per batch
 
     aa_p   = double(train_vec((batch-1)*N+1:batch*N,1));
     aa_m   = double(train_vec((batch-1)*N+1:batch*N,2));
