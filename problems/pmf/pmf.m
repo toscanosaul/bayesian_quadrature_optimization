@@ -5,6 +5,7 @@ randn('state',0);
 
 momentum = 0.8;
 num_batches = 9;
+epoch=1;
 
 w1_M1 = 0.1*randn(num_m, num_feat);
 w1_P1 = 0.1*randn(num_p, num_feat);
