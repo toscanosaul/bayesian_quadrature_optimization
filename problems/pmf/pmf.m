@@ -28,9 +28,9 @@ for epoch = epoch:maxepoch
   for batch = 1:numbatches
     fprintf(1,'epoch %d batch %d \r',epoch,batch);
 
-    aa_p   = double(train_vec((batch-1)*N_int+1:batch*N,1));
-    aa_m   = double(train_vec((batch-1)*N_int+1:batch*N,2));
-    rating = double(train_vec((batch-1)*N_int+1:batch*N,3));
+    aa_p   = double(train_vec((batch-1)*N_int+1:batch*N_int,1));
+    aa_m   = double(train_vec((batch-1)*N_int+1:batch*N_int,2));
+    rating = double(train_vec((batch-1)*N_int+1:batch*N_int,3));
 
     rating = rating-mean_rating; % Default prediction is the mean rating.
 
