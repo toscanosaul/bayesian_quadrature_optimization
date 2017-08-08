@@ -16,8 +16,6 @@ mean_rating = mean(train_vec(:,3));
 pairs_tr = length(train_vec); % training data
 pairs_pr = length(probe_vec); % validation data
 
-error = mean_rating
-
 for epoch = epoch:maxepoch
   rr = randperm(pairs_tr);
   train_vec = train_vec(rr,:);
