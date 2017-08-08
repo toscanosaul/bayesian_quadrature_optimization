@@ -18,7 +18,9 @@ pairs_tr = length(train_vec); % training data
 pairs_pr = length(probe_vec); % validation data
 
 N = pairs_tr / numbatches;
-N_int = int16(N);
+N_int = int64(N);
+
+[n1,n2]= size(train_vec);
 
 for epoch = epoch:maxepoch
   rr = randperm(pairs_tr);
@@ -28,9 +30,21 @@ for epoch = epoch:maxepoch
   for batch = 1:numbatches
     fprintf(1,'epoch %d batch %d \r',epoch,batch);
 
-    aa_p   = double(train_vec((batch-1)*N_int+1:batch*N_int,1));
-    aa_m   = double(train_vec((batch-1)*N_int+1:batch*N_int,2));
-    rating = double(train_vec((batch-1)*N_int+1:batch*N_int,3));
+    next = min(batch*N_int, n1)
+    aa_p   = double(train_vec((batch-1)*N_int+1:next,1));
+    aa_m   = double(train_vec((batch-1)*N_int+1:next,2));
+    rating = double(train_vec((batch-1)*N_int+1:next,3));
+
+    if batch*N_int > n1
+        [size1, size2]= size(aa_p);
+        size_2 = N_int - size1;
+        aa_p_2   = double(train_vec(1:size_2,1));
+        aa_m_2   = double(train_vec(1:size_2,2));
+        rating_2 = double(train_vec(1:size_2,3));
+        aa_p = cat(1, aa_p, aa_p_2);
+        aa_m = cat(1, aa_m, aa_m_2);
+        rating = cat(1, rating, rating_2);
+    end
 
     rating = rating-mean_rating; % Default prediction is the mean rating.
 
