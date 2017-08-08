@@ -1,4 +1,4 @@
-function [error] = pmf(num_p, num_m, epsilon, lambda, maxepoch, num_feat, train_vec, probe_vec);
+function [error] = pmf(num_p, num_m, train_vec, probe_vec, epsilon, lambda, maxepoch, num_feat);
 
 rand('state',0);
 randn('state',0);
@@ -12,4 +12,4 @@ w1_M1_inc = zeros(num_m, num_feat);
 w1_P1_inc = zeros(num_p, num_feat);
 
 mean_rating = mean(train_vec(:,3));
-error mean_rating
+error = mean_rating
