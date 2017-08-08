@@ -34,17 +34,6 @@ for epoch = epoch:maxepoch
     aa_m   = double(train_vec((batch-1)*N_int+1:next,2));
     rating = double(train_vec((batch-1)*N_int+1:next,3));
 
-    if batch*N_int > n1
-        [size1, size2]= size(aa_p);
-        size_2 = N_int - size1;
-        aa_p_2   = double(train_vec(1:size_2,1));
-        aa_m_2   = double(train_vec(1:size_2,2));
-        rating_2 = double(train_vec(1:size_2,3));
-        aa_p = cat(1, aa_p, aa_p_2);
-        aa_m = cat(1, aa_m, aa_m_2);
-        rating = cat(1, rating, rating_2);
-    end
-
     rating = rating-mean_rating; % Default prediction is the mean rating.
 
     %%%%%%%%%%%%%% Compute Predictions %%%%%%%%%%%%%%%%%
@@ -60,7 +49,14 @@ for epoch = epoch:maxepoch
     dw1_M1 = zeros(num_m,num_feat);
     dw1_P1 = zeros(num_p,num_feat);
 
-    for ii=1:N_int
+    loop = N_int
+
+    if batch*N_int > n1
+        [size1, size2]= size(aa_p);
+        loop = size1;
+    end
+
+    for ii=1:loop
       dw1_M1(aa_m(ii),:) =  dw1_M1(aa_m(ii),:) +  Ix_m(ii,:);
       dw1_P1(aa_p(ii),:) =  dw1_P1(aa_p(ii),:) +  Ix_p(ii,:);
     end
