@@ -49,7 +49,7 @@ for epoch = epoch:maxepoch
     dw1_M1 = zeros(num_m,num_feat);
     dw1_P1 = zeros(num_p,num_feat);
 
-    loop = N_int
+    loop = N_int;
 
     if batch*N_int > n1
         [size1, size2]= size(aa_p);
