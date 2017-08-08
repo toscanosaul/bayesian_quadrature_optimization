@@ -28,7 +28,6 @@ for epoch = epoch:maxepoch
   clear rr
 
   for batch = 1:numbatches
-    fprintf(1,'epoch %d batch %d \r',epoch,batch);
 
     next = min(batch*N_int, n1)
     aa_p   = double(train_vec((batch-1)*N_int+1:next,1));
@@ -89,7 +88,6 @@ ff = find(pred_out>u_rating); pred_out(ff)=u_rating; % Clip predictions
 ff = find(pred_out<l_rating); pred_out(ff)=l_rating;
 
 err_valid(epoch) = sqrt(sum((pred_out- rating).^2)/NN);
-fprintf(1, 'epoch %4i batch %4i Training RMSE %6.4f  Test RMSE %6.4f  \n', ...
-          epoch, batch, err_train(epoch), err_valid(epoch));
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 error = err_valid(epoch);
