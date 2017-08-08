@@ -1,4 +1,4 @@
-function [error] = pmf(num_p, num_m, train_vec, probe_vec, epsilon, lambda, maxepoch, num_feat);
+function [error] = pmf(num_p, num_m, train_vec, probe_vec, epsilon, lambda, maxepoch, num_feat, l_rating, u_rating);
 
 rand('state',0);
 randn('state',0);
@@ -85,8 +85,8 @@ aa_m = double(probe_vec(:,2));
 rating = double(probe_vec(:,3));
 
 pred_out = sum(w1_M1(aa_m,:).*w1_P1(aa_p,:),2) + mean_rating;
-ff = find(pred_out>5); pred_out(ff)=5; % Clip predictions
-ff = find(pred_out<1); pred_out(ff)=1;
+ff = find(pred_out>u_rating); pred_out(ff)=u_rating; % Clip predictions
+ff = find(pred_out<l_rating); pred_out(ff)=l_rating;
 
 err_valid(epoch) = sqrt(sum((pred_out- rating).^2)/NN);
 fprintf(1, 'epoch %4i batch %4i Training RMSE %6.4f  Test RMSE %6.4f  \n', ...
