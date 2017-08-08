@@ -18,7 +18,7 @@ pairs_tr = length(train_vec); % training data
 pairs_pr = length(probe_vec); % validation data
 
 N = pairs_tr / numbatches;
-N = int16(N);
+N_int = int16(N);
 
 for epoch = epoch:maxepoch
   rr = randperm(pairs_tr);
@@ -28,9 +28,9 @@ for epoch = epoch:maxepoch
   for batch = 1:numbatches
     fprintf(1,'epoch %d batch %d \r',epoch,batch);
 
-    aa_p   = double(train_vec((batch-1)*N+1:batch*N,1));
-    aa_m   = double(train_vec((batch-1)*N+1:batch*N,2));
-    rating = double(train_vec((batch-1)*N+1:batch*N,3));
+    aa_p   = double(train_vec((batch-1)*N_int+1:batch*N,1));
+    aa_m   = double(train_vec((batch-1)*N_int+1:batch*N,2));
+    rating = double(train_vec((batch-1)*N_int+1:batch*N,3));
 
     rating = rating-mean_rating; % Default prediction is the mean rating.
 
@@ -47,7 +47,7 @@ for epoch = epoch:maxepoch
     dw1_M1 = zeros(num_m,num_feat);
     dw1_P1 = zeros(num_p,num_feat);
 
-    for ii=1:N
+    for ii=1:N_int
       dw1_M1(aa_m(ii),:) =  dw1_M1(aa_m(ii),:) +  Ix_m(ii,:);
       dw1_P1(aa_p(ii),:) =  dw1_P1(aa_p(ii),:) +  Ix_p(ii,:);
     end
@@ -62,13 +62,7 @@ for epoch = epoch:maxepoch
   end
 end
 
-%%%%%%%%%%%%%% Compute Predictions after Paramete Updates %%%%%%%%%%%%%%%%%
-pred_out = sum(w1_M1(aa_m,:).*w1_P1(aa_p,:),2);
-f_s = sum( (pred_out - rating).^2 + ...
-    0.5*lambda*( sum( (w1_M1(aa_m,:).^2 + w1_P1(aa_p,:).^2),2)));
-err_train(epoch) = sqrt(f_s/N);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Compute predictions on the validation set %%%%%%%%%%%%%%%%%%%%%%
 NN=pairs_pr;
 
