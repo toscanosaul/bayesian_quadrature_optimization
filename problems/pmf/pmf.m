@@ -29,7 +29,7 @@ for epoch = epoch:maxepoch
 
   for batch = 1:numbatches
 
-    next = min(batch*N_int, n1)
+    next = min(batch*N_int, n1);
     aa_p   = double(train_vec((batch-1)*N_int+1:next,1));
     aa_m   = double(train_vec((batch-1)*N_int+1:next,2));
     rating = double(train_vec((batch-1)*N_int+1:next,3));
