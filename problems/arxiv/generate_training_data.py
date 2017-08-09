@@ -7,6 +7,7 @@ from stratified_bayesian_optimization.initializers.log import SBOLog
 import ujson
 from bisect import bisect_left
 import numpy as np
+import random
 
 logger = SBOLog(__name__)
 
@@ -14,6 +15,11 @@ logger = SBOLog(__name__)
 class TrainingData(object):
     _name_file_final = 'problems/arxiv/data/{year}_{month}_top_users.json'.format
     _name_training_data = 'problems/arxiv/data/{year}_{month}_training_data.json'.format
+    _name_fold_data_training = 'problems/arxiv/data/{year}_{month}_fold_{}_training_data' \
+                               '.json'.format
+    _name_fold_data_validation = 'problems/arxiv/data/{year}_{month}_fold_{}_validation_data' \
+                               '.json'.format
+
 
     @classmethod
     def get_training_data(cls, year, month):
@@ -48,3 +54,45 @@ class TrainingData(object):
 
         file_name = cls._name_training_data(year=year, month=month)
         JSONFile.write(training_data, file_name)
+
+    @classmethod
+    def cv_data_sets(cls, year, month, n_folds=5, random_seed=1):
+        """
+        Creates n_folds files with pairs of datasets: (training_data, validation_data).
+
+        :param year: str
+        :param month: str (e.g. '1', '12')
+
+        """
+        random.seed(random_seed)
+
+        file_name = cls._name_training_data(year=year, month=month)
+        data = JSONFile.read(file_name)
+
+        indexes_data = range(data.shape[0])
+        random.shuffle(indexes_data)
+
+        n_batch = len(indexes_data) / n_folds
+        random_indexes = [indexes_data[i * n_batch: n_batch + i * n_batch] for i in xrange(n_folds)]
+
+        extra = 0
+        for j in xrange(len(indexes_data) % n_folds):
+            random_indexes[j].append(indexes_data[n_batch + extra + (n_folds - 1) * n_batch])
+            extra += 1
+
+        for i in xrange(n_folds):
+            validation = data[random_indexes[i]]
+
+            training_indexes = []
+            for j in xrange(n_folds):
+                if j != i:
+                    training_indexes += random_indexes[j]
+
+            training = data[training_indexes]
+
+            file_name = cls._name_fold_data_training(year=year, month=month, fold=i)
+            JSONFile.write(training, file_name)
+
+            file_name = cls._name_fold_data_validation(year=year, month=month, fold=i)
+            JSONFile.write(validation, file_name)
+
