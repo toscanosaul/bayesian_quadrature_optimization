@@ -10,7 +10,7 @@ from bisect import bisect_left
 logger = SBOLog(__name__)
 
 
-class StatisticstProcessedData(object):
+class StatisticsProcessedData(object):
 
     _name_file_ = 'problems/arxiv/data/{year}_{month}_processed_data.json'.format
     _name_file_final = 'problems/arxiv/data/{year}_{month}_top_users.json'.format

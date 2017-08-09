@@ -1,4 +1,4 @@
-from problems.arxiv.statistics_processed_data import StatisticsProcessedData
+from problems.arxiv.generate_training_data import TrainingData
 
 import argparse
 
@@ -8,11 +8,11 @@ logger = SBOLog(__name__)
 
 
 if __name__ == '__main__':
-    # python -m problems.arxiv.scripts.top_papers_users '1'
+    # python -m problems.arxiv.scripts.run_training_data '1'
     parser = argparse.ArgumentParser()
     parser.add_argument('month', help='e.g. 23, 1')
     args = parser.parse_args()
     month = args.month
     year = '2016'
 
-    StatisticsProcessedData.top_users_papers(year, month)
+    TrainingData.get_training_data(year, month)
