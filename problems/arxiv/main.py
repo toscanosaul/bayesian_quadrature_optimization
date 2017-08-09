@@ -17,15 +17,20 @@ num_user = 4815
 train=[]
 validate=[]
 
+file_name = TrainingData._name_fold_indexes(year=year, month=month)
+random_indexes = JSONFile.read(file_name)
 
-for i in range(n_folds):
-    file_name = TrainingData._name_fold_data_training(year=year, month=month, fold=i)
-    training = JSONFile.read(file_name)
-    train.append(matlab.double(training))
+file_name = TrainingData._name_training_data(year=year, month=month)
+training_data = JSONFile.read(file_name)
 
-    file_name = TrainingData._name_fold_data_validation(year=year, month=month, fold=i)
-    validation = JSONFile.read(file_name)
-    validate.append(matlab.double(validation))
+# for i in range(n_folds):
+#     file_name = TrainingData._name_fold_data_training(year=year, month=month, fold=i)
+#     training = JSONFile.read(file_name)
+#     train.append(matlab.double(training))
+#
+#     file_name = TrainingData._name_fold_data_validation(year=year, month=month, fold=i)
+#     validation = JSONFile.read(file_name)
+#     validate.append(matlab.double(validation))
 
 def toy_example(x):
     """
@@ -39,7 +44,18 @@ def toy_example(x):
     num_feat = int(x[2])
     task = int(x[4])
 
-    val = PMF(num_user, num_item, train[task], validate[task], epsilon, lamb, maxepoch, num_feat,
+    validation = [training_data[index] for index in random_indexes[task]]
+    validation = matlab.double(validation)
+
+    training_indexes = []
+    for j in xrange(n_folds):
+        if j != task:
+            training_indexes += random_indexes[j]
+
+    training = [training_data[index] for index in training_indexes]
+    training = matlab.double(training)
+
+    val = PMF(num_user, num_item, training, validation, epsilon, lamb, maxepoch, num_feat,
               l_rating=1, u_rating=2)
     return [-1.0 * val ** 2]
 
