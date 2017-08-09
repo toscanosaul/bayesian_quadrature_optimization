@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 import numpy as np
-
+import matlab.engine
 from copy import deepcopy
 
 from problems.pmf.pmf_matlab import PMF
@@ -21,11 +21,11 @@ validate=[]
 for i in range(n_folds):
     file_name = TrainingData._name_fold_data_training(year=year, month=month, fold=i)
     training = JSONFile.read(file_name)
-    train.append(training)
+    train.append(matlab.double(training))
 
     file_name = TrainingData._name_fold_data_validation(year=year, month=month, fold=i)
     validation = JSONFile.read(file_name)
-    validate.append(validation)
+    validate.append(matlab.double(validation))
 
 def toy_example(x):
     """
@@ -41,7 +41,7 @@ def toy_example(x):
 
     val = PMF(num_user, num_item, train[task], validate[task], epsilon, lamb, maxepoch, num_feat,
               l_rating=1, u_rating=2)
-    return [val]
+    return [-1.0 * val ** 2]
 
 def integrate_toy_example(x):
     """
@@ -54,9 +54,9 @@ def integrate_toy_example(x):
         point = deepcopy(x)
         point.append(task)
         val = toy_example(point)
-        values.append(val[0] ** 2)
+        values.append(val[0])
 
-    return [np.sqrt(np.mean(np.array(values)))]
+    return [np.mean(np.array(values))]
 
 def main(*params):
 #    print 'Anything printed here will end up in the output directory for job #:', str(2)

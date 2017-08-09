@@ -11,5 +11,5 @@ def PMF(num_user, num_item, train, val, epsilon=50, lamb=0.01, maxepoch=50, num_
     # train = matlab.double(train)
     # val =  matlab.double(val)
 
-    return -1.0 * eng.pmf(
+    return eng.pmf(
         num_user, num_item, train, val, epsilon, lamb,  maxepoch, num_feat, l_rating, u_rating)
