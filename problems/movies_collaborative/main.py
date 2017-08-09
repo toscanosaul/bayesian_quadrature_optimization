@@ -41,7 +41,7 @@ def integrate_toy_example(x):
     :return: [float]
     """
     values = []
-    for task in xrange(4):
+    for task in xrange(5):
         point = deepcopy(x)
         point.append(task)
         val = toy_example(point)
