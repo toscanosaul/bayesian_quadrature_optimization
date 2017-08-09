@@ -69,7 +69,7 @@ class TrainingData(object):
         file_name = cls._name_training_data(year=year, month=month)
         data = JSONFile.read(file_name)
 
-        indexes_data = range(data.shape[0])
+        indexes_data = range(len(data))
         random.shuffle(indexes_data)
 
         n_batch = len(indexes_data) / n_folds
