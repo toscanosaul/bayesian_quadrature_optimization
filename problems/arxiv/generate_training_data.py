@@ -15,9 +15,9 @@ logger = SBOLog(__name__)
 class TrainingData(object):
     _name_file_final = 'problems/arxiv/data/{year}_{month}_top_users.json'.format
     _name_training_data = 'problems/arxiv/data/{year}_{month}_training_data.json'.format
-    _name_fold_data_training = 'problems/arxiv/data/{year}_{month}_fold_{}_training_data' \
+    _name_fold_data_training = 'problems/arxiv/data/{year}_{month}_fold_{fold}_training_data' \
                                '.json'.format
-    _name_fold_data_validation = 'problems/arxiv/data/{year}_{month}_fold_{}_validation_data' \
+    _name_fold_data_validation = 'problems/arxiv/data/{year}_{month}_fold_{fold}_validation_data' \
                                '.json'.format
 
 
