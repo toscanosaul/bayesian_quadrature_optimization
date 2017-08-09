@@ -81,14 +81,14 @@ class TrainingData(object):
             extra += 1
 
         for i in xrange(n_folds):
-            validation = data[random_indexes[i]]
+            validation = [data[index] for index in random_indexes[i]]
 
             training_indexes = []
             for j in xrange(n_folds):
                 if j != i:
                     training_indexes += random_indexes[j]
 
-            training = data[training_indexes]
+            training = [data[index] for index in training_indexes]
 
             file_name = cls._name_fold_data_training(year=year, month=month, fold=i)
             JSONFile.write(training, file_name)
