@@ -57,7 +57,7 @@ class TrainingData(object):
 
             other_papers = list(set(papers) - set(users_data[user]['diff_papers']))
             index_papers = range(len(other_papers))
-            random.shuttle(index_papers)
+            random.shuffle(index_papers)
 
             index = min(len(users_data[user]['diff_papers']), len(index_papers))
             keep_index_papers = index_papers[0: index]
