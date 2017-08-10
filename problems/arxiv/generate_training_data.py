@@ -86,19 +86,19 @@ class TrainingData(object):
         file_name = cls._name_fold_indexes(year=year, month=month)
         JSONFile.write(random_indexes, file_name)
 
-        # for i in xrange(n_folds):
-        #     validation = [data[index] for index in random_indexes[i]]
-        #
-        #     training_indexes = []
-        #     for j in xrange(n_folds):
-        #         if j != i:
-        #             training_indexes += random_indexes[j]
-        #
-        #     training = [data[index] for index in training_indexes]
-        #
-        #     file_name = cls._name_fold_data_training(year=year, month=month, fold=i)
-        #     JSONFile.write(training, file_name)
-        #
-        #     file_name = cls._name_fold_data_validation(year=year, month=month, fold=i)
-        #     JSONFile.write(validation, file_name)
+        for i in xrange(n_folds):
+            validation = [data[index] for index in random_indexes[i]]
+
+            training_indexes = []
+            for j in xrange(n_folds):
+                if j != i:
+                    training_indexes += random_indexes[j]
+
+            training = [data[index] for index in training_indexes]
+
+            file_name = cls._name_fold_data_training(year=year, month=month, fold=i)
+            JSONFile.write(training, file_name)
+
+            file_name = cls._name_fold_data_validation(year=year, month=month, fold=i)
+            JSONFile.write(validation, file_name)
 
