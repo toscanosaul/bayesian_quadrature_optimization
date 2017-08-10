@@ -25,7 +25,7 @@ class TrainingData(object):
 
 
     @classmethod
-    def get_training_data(cls, year, month):
+    def get_training_data(cls, year, month, random_seed=1):
         """
         Creates a file with the training data:
             [[user_id, paper_id, rating]], where rating is 1 if the paper wasn't seen by the user,
@@ -33,8 +33,10 @@ class TrainingData(object):
 
         :param year: str
         :param month: str (e.g. '1', '12')
+        :param random_seed: int
 
         """
+        random.seed(random_seed)
         file_name = cls._name_file_final(year=year, month=month)
         data = JSONFile.read(file_name)
 
@@ -52,8 +54,15 @@ class TrainingData(object):
         for i, user in enumerate(users):
             for paper in users_data[user]['diff_papers']:
                 training_data.append([i + 1, key_paper[paper], 2])
-            for paper in (set(papers) - set(users_data[user]['diff_papers'])):
-                training_data.append([i + 1, key_paper[paper], 1])
+
+            other_papers = list(set(papers) - set(users_data[user]['diff_papers']))
+            index_papers = range(len(other_papers))
+            random.shuttle(index_papers)
+
+            index = min(len(users_data[user]['diff_papers']), len(index_papers))
+            keep_index_papers = index_papers[0: index]
+            for index in keep_index_papers:
+                training_data.append([i + 1, key_paper[other_papers[index]], 1])
 
         file_name = cls._name_training_data(year=year, month=month)
         JSONFile.write(training_data, file_name)
@@ -65,6 +74,8 @@ class TrainingData(object):
 
         :param year: str
         :param month: str (e.g. '1', '12')
+        :param n_folds: int
+        :param random_seed: int
 
         """
         random.seed(random_seed)
