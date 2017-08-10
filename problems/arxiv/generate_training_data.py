@@ -47,13 +47,13 @@ class TrainingData(object):
 
         key_paper = {}
         for i, paper in enumerate(papers):
-            key_paper[paper] = i
+            key_paper[paper] = i + 1
 
         for i, user in enumerate(users):
             for paper in users_data[user]['diff_papers']:
-                training_data.append([i, key_paper[paper], 2])
+                training_data.append([i + 1, key_paper[paper], 2])
             for paper in (set(papers) - set(users_data[user]['diff_papers'])):
-                training_data.append([i, key_paper[paper], 1])
+                training_data.append([i + 1, key_paper[paper], 1])
 
         file_name = cls._name_training_data(year=year, month=month)
         JSONFile.write(training_data, file_name)

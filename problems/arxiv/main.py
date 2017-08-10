@@ -11,8 +11,8 @@ from stratified_bayesian_optimization.util.json_file import JSONFile
 year = '2016'
 month = '1'
 n_folds = 5
-num_item = 5000
-num_user = 4815
+num_item = 2000
+num_user = 1000
 
 train=[]
 validate=[]
@@ -20,8 +20,8 @@ validate=[]
 file_name = TrainingData._name_fold_indexes(year=year, month=month)
 random_indexes = JSONFile.read(file_name)
 
-file_name = TrainingData._name_training_data(year=year, month=month)
-training_data = JSONFile.read(file_name)
+# file_name = TrainingData._name_training_data(year=year, month=month)
+# training_data = JSONFile.read(file_name)
 
 for i in range(n_folds):
     file_name = TrainingData._name_fold_data_training(year=year, month=month, fold=i)
