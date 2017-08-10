@@ -17,7 +17,7 @@ class StatisticsProcessedData(object):
 
     @classmethod
     def top_users_papers(cls, year, month, n_entries=100, different_papers=20, top_n=2000,
-                         n_users=1000):
+                         n_users=None):
         """
         Returns the users that accessed to at least n_entries papers, and at least different_papers
         were different and were in the top_n papers in the month of the year.
@@ -87,7 +87,7 @@ class StatisticsProcessedData(object):
 
         index_top_users = sorted(range(len(final_users)), key=lambda k: metric_users[k])
 
-        if len(index_top_users) > n_users:
+        if n_users is not None and len(index_top_users) > n_users:
             index_top_users = index_top_users[-n_users:]
 
             rank_user_final = {}
