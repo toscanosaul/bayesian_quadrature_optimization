@@ -16,7 +16,8 @@ class StatisticsProcessedData(object):
     _name_file_final = 'problems/arxiv/data/{year}_{month}_top_users.json'.format
 
     @classmethod
-    def top_users_papers(cls, year, month, n_entries=100, different_papers=20, top_n=5000):
+    def top_users_papers(cls, year, month, n_entries=100, different_papers=20, top_n=2000,
+                         n_users=1000):
         """
         Returns the users that accessed to at least n_entries papers, and at least different_papers
         were different and were in the top_n papers in the month of the year.
@@ -25,7 +26,10 @@ class StatisticsProcessedData(object):
 
         :param year: (str)
         :param month: (str) e.g. '1', '12'
-        :param n_entries: (int) n_
+        :param n_entries: (int)
+        :param different_papers: int
+        :param top_n: int
+        :param n_users: (int) Maximum number of users allowed
         :return: [ {'paper': (int) number of times seen},
             {'user': {'stats': ((int) # entries, (int) # different papers in the top_n papers),
                       'diff_papers': [str]
@@ -70,12 +74,26 @@ class StatisticsProcessedData(object):
         users_ls = users_ls[ind_bis:]
         n_entries_ls = n_entries_ls[ind_bis:]
 
+        final_users = []
+        metric_users = []
         for user, n in zip(users_ls, n_entries_ls):
             diff_papers = set(users[user].keys()).intersection(set(paper_ls))
             n_diff = len(diff_papers)
             if n_diff < different_papers:
                 continue
+            final_users.append(user)
+            metric_users.append(n_diff)
             rank_user[user] = {'stats': (n, n_diff), 'diff_papers': diff_papers}
+
+        index_top_users = sorted(range(len(final_users)), key=lambda k: metric_users[k])
+
+        if len(index_top_users) > n_users:
+            index_top_users = index_top_users[-n_users:]
+
+            rank_user_final = {}
+            for ind in index_top_users:
+                rank_user_final[final_users[ind]] = rank_user[final_users[ind]]
+            rank_user = rank_user_final
 
         file_name = cls._name_file_final(year=year, month=month)
         JSONFile.write([rank_papers, rank_user], file_name)
