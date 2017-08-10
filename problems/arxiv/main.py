@@ -7,6 +7,7 @@ from copy import deepcopy
 from problems.pmf.pmf_matlab import PMF
 from problems.arxiv.generate_training_data import TrainingData
 from stratified_bayesian_optimization.util.json_file import JSONFile
+import scipy.io as sio
 
 year = '2016'
 month = '1'
@@ -24,12 +25,13 @@ random_indexes = JSONFile.read(file_name)
 # training_data = JSONFile.read(file_name)
 
 for i in range(n_folds):
-    file_name = TrainingData._name_fold_data_training(year=year, month=month, fold=i)
-    training = JSONFile.read(file_name)
+    file_name = TrainingData._name_fold_data_training_matlab(year=year, month=month, fold=i)
+    training = sio.loadmat(file_name)['training']
+#    training = JSONFile.read(file_name)
     train.append(matlab.double(training))
 
-    file_name = TrainingData._name_fold_data_validation(year=year, month=month, fold=i)
-    validation = JSONFile.read(file_name)
+    file_name = TrainingData._name_fold_data_validation_matlab(year=year, month=month, fold=i)
+    validation = sio.loadmat(file_name)['validation']
     validate.append(matlab.double(validation))
 
 def toy_example(x):

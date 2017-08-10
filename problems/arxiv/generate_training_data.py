@@ -8,6 +8,7 @@ import ujson
 from bisect import bisect_left
 import numpy as np
 import random
+import scipy.io as sio
 
 logger = SBOLog(__name__)
 
@@ -17,8 +18,12 @@ class TrainingData(object):
     _name_training_data = 'problems/arxiv/data/{year}_{month}_training_data.json'.format
     _name_fold_data_training = 'problems/arxiv/data/{year}_{month}_fold_{fold}_training_data' \
                                '.json'.format
+    _name_fold_data_training_matlab = 'problems/arxiv/data/{year}_{month}_fold_{fold}_' \
+                                      'training_data.mat'.format
     _name_fold_data_validation = 'problems/arxiv/data/{year}_{month}_fold_{fold}_validation_data' \
                                '.json'.format
+    _name_fold_data_validation_matlab = 'problems/arxiv/data/{year}_{month}_fold_{fold}_' \
+                                        'validation_data.mat'.format
     _name_fold_indexes = 'problems/arxiv/data/{year}_{month}_fold_indexes' \
                                '.json'.format
 
@@ -110,6 +115,11 @@ class TrainingData(object):
             file_name = cls._name_fold_data_training(year=year, month=month, fold=i)
             JSONFile.write(training, file_name)
 
+            file_name = cls._name_fold_data_training_matlab(year=year, month=month, fold=i)
+            sio.savemat(file_name, {'training': training})
+
             file_name = cls._name_fold_data_validation(year=year, month=month, fold=i)
             JSONFile.write(validation, file_name)
 
+            file_name = cls._name_fold_data_validation_matlab(year=year, month=month, fold=i)
+            sio.savemat(file_name, {'validation': validation})
