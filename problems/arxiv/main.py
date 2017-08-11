@@ -1,10 +1,9 @@
 from __future__ import absolute_import
 
 import numpy as np
-import matlab.engine
 from copy import deepcopy
 
-from problems.pmf.pmf_matlab import PMF
+from problems.pmf.pmf import PMF
 from problems.arxiv.generate_training_data import TrainingData
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.lib.parallel import Parallel
@@ -32,11 +31,11 @@ random_indexes = JSONFile.read(file_name)
 for i in range(n_folds):
     file_name = TrainingData._name_fold_data_training(year=year, month=month, fold=i)
     training = JSONFile.read(file_name)
-    train.append(matlab.double(training))
+    train.append(np.array(training))
 
     file_name = TrainingData._name_fold_data_validation(year=year, month=month, fold=i)
     validation = JSONFile.read(file_name)
-    validate.append(matlab.double(validation))
+    validate.append(np.array(validation))
 
 def toy_example(x):
     """
@@ -66,7 +65,7 @@ def toy_example(x):
 
     val = PMF(num_user, num_item, training, validation, epsilon, lamb, maxepoch, num_feat,
               l_rating=1, u_rating=2)
-    return [-1.0 * val ** 2]
+    return [val]
 
 def integrate_toy_example(x):
     """
