@@ -16,7 +16,7 @@ class StatisticsProcessedData(object):
     _name_file_final = 'problems/arxiv/data/{year}_{month}_top_users.json'.format
 
     @classmethod
-    def top_users_papers(cls, year, month, n_entries=100, different_papers=20, top_n=2000,
+    def top_users_papers(cls, year, month, n_entries=100, different_papers=20, top_n=5000,
                          n_users=None):
         """
         Returns the users that accessed to at least n_entries papers, and at least different_papers
@@ -97,6 +97,9 @@ class StatisticsProcessedData(object):
 
         file_name = cls._name_file_final(year=year, month=month)
         JSONFile.write([rank_papers, rank_user], file_name)
+
+        logger.info('Number of papers is %d' % len(rank_papers))
+        logger.info('Number of users is %d' % len(rank_user))
 
         return [rank_papers, rank_user]
 
