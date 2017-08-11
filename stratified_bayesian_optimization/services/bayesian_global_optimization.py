@@ -95,7 +95,7 @@ class BGO(object):
         self.number_points_each_dimension_debug = number_points_each_dimension_debug
 
     def optimize(self, random_seed=None, start=None, debug=False, monte_carlo_sbo=False,
-                 n_samples_mc=1, n_restarts_mc=1, n_restarts=10, **opt_params_mc):
+                 n_samples_mc=1, n_restarts_mc=1, n_restarts=2, **opt_params_mc):
         """
         Optimize objective over the domain.
         :param random_seed: int
@@ -106,7 +106,7 @@ class BGO(object):
             MC.
         :param n_samples_mc: (int) Number of samples for the MC method.
         :param n_restarts_mc: (int) Number of restarts to optimize a_{n+1} given a sample.
-        :param n_restarts: (int) Number of restars of the VOI
+        :param n_restarts: (int) Number of restarts of the VOI
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
