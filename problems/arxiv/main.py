@@ -8,11 +8,12 @@ from problems.pmf.pmf_matlab import PMF
 from problems.arxiv.generate_training_data import TrainingData
 from stratified_bayesian_optimization.util.json_file import JSONFile
 
+# 508496 observations
 year = '2016'
 month = '1'
 n_folds = 5
-num_item = 2000
-num_user = 1000
+num_item = 5000
+num_user = 4815
 
 train=[]
 validate=[]
