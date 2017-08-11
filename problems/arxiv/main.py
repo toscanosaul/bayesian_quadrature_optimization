@@ -7,6 +7,11 @@ from copy import deepcopy
 from problems.pmf.pmf_matlab import PMF
 from problems.arxiv.generate_training_data import TrainingData
 from stratified_bayesian_optimization.util.json_file import JSONFile
+from stratified_bayesian_optimization.lib.parallel import Parallel
+from stratified_bayesian_optimization.lib.util import (
+    convert_dictionary_to_list,
+)
+
 
 # 508496 observations
 year = '2016'
@@ -69,12 +74,19 @@ def integrate_toy_example(x):
     :param x: [float, float, int, int]
     :return: [float]
     """
-    values = []
+
+    points = {}
     for task in xrange(n_folds):
         point = deepcopy(x)
         point.append(task)
-        val = toy_example(point)
-        values.append(val[0])
+        points[task] = point
+        # val = toy_example(point)
+        # values.append(val[0])
+
+    errors = Parallel.run_function_different_arguments_parallel(
+        toy_example, points)
+
+    values = convert_dictionary_to_list(errors)
 
     return [np.mean(np.array(values))]
 
