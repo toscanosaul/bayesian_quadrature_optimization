@@ -16,7 +16,7 @@ if __name__ == '__main__':
     # python -m scripts.run_validate_gp_model
 
     type_kernel = [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]
-    n_training = 3
+    n_training = 50
     problem_name = "movies_collaborative"
     bounds_domain = [[0.01, 1.01], [0.1, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
     type_bounds = [0, 0, 0, 0, 1]
