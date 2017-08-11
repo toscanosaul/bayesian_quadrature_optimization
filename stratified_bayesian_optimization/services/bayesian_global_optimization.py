@@ -95,7 +95,7 @@ class BGO(object):
         self.number_points_each_dimension_debug = number_points_each_dimension_debug
 
     def optimize(self, random_seed=None, start=None, debug=False, monte_carlo_sbo=False,
-                 n_samples_mc=1, n_restarts_mc=1, n_restarts=2, **opt_params_mc):
+                 n_samples_mc=1, n_restarts_mc=1, n_restarts=10, **opt_params_mc):
         """
         Optimize objective over the domain.
         :param random_seed: int
