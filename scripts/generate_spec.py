@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     dim_x = 4
     bounds_domain_x = [(0.01, 1.01), (0.1, 2.1), (1, 21), (1, 201)]
-    problem_name = 'arxiv'
+    problem_name = 'movies_collaborative'
     training_name = None
     type_kernel = [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]
     dimensions = [5, 4, 5]
