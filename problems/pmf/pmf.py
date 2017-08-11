@@ -3,13 +3,17 @@ import numpy as np
 from math import *
 
 
-def PMF(num_user, num_item, train, val, epsilon=50, lamb=0.01, maxepoch=50, num_feat=10):
+def PMF(num_user, num_item, train, val, epsilon=50, lamb=0.01, maxepoch=50, num_feat=10, l_rating=1,
+        u_rating=5):
     """
+    Ids of users and items start from one!
+
     epsilon: learning rate
     lamb: l2-regularizer
     num_feat : the matrix rank
     maxepoch: number of epochs
     """
+    np.random.seed(1)
     momentum = 0.8
     epoch = 1
     mean_rating = np.mean(train[:, 2])
@@ -30,8 +34,8 @@ def PMF(num_user, num_item, train, val, epsilon=50, lamb=0.01, maxepoch=50, num_
         np.random.shuffle(shuffled_order)
 
         for batch in range(num_batches):
-            batch_idx = np.mod(np.arange(batch_size * batch, batch_size * (batch + 1)),
-                               train.shape[0])
+            next_ = min(batch_size * (batch + 1), pairs_tr)
+            batch_idx = np.arange(batch_size * batch, next_)
 
             batch_uID = np.array(train[shuffled_order[batch_idx], 0] - 1, dtype='int32')  # userID
             batch_itID = np.array(train[shuffled_order[batch_idx], 1] - 1, dtype='int32')  # itemID
@@ -53,7 +57,12 @@ def PMF(num_user, num_item, train, val, epsilon=50, lamb=0.01, maxepoch=50, num_
             dw_m = np.zeros((num_item, num_feat))
             dw_p = np.zeros((num_user, num_feat))
 
-            for i in range(batch_size):
+            loop = batch_size
+
+            if batch_size * (batch + 1) > pairs_tr:
+                loop = len(batch_itID)
+
+            for i in range(loop):
                 dw_m[batch_itID[i], :] += IX_m[i, :]
                 dw_p[batch_uID[i], :] += IX_p[i, :]
 
@@ -70,8 +79,8 @@ def PMF(num_user, num_item, train, val, epsilon=50, lamb=0.01, maxepoch=50, num_
     pred_out = np.sum(np.multiply(w1_P1[np.array(val[:, 0] - 1, dtype='int32')],
                                   w1_M1[np.array(val[:, 1] - 1, dtype='int32')]), axis=1)
     pred_out = pred_out + mean_rating
-    pred_out[pred_out > 5] = 5
-    pred_out[pred_out < 1] = 1
+    pred_out[pred_out > u_rating] = u_rating
+    pred_out[pred_out < l_rating] = l_rating
 
     rawErr = pred_out - val[:, 2]
     return -1.0 * np.sum(rawErr ** 2) / float(pairs_va)
