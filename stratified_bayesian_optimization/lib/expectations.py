@@ -9,7 +9,7 @@ def uniform_finite(f, point, index_points, domain_random, index_random, double=F
         mean(f((point, x)): x in domain_random), where
     z[index_points[i]] = point[i].
 
-    If double is True, it computes the mean over all the points.
+    If double is True, it computes the mean over all the points. Used for the variance.
 
     :param f: function
     :param point: np.array(1xk)

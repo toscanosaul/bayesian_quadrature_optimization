@@ -376,3 +376,10 @@ class EI(object):
 
         return values
 
+    def clean_cache(self):
+        """
+        Cleans the cache
+        """
+        self.gp.clean_cache()
+        self.best_solution = None
+

@@ -65,6 +65,7 @@ B_NEW = 'quadratures_with_candidate'
 
 #BGO methods
 SBO_METHOD = 'sbo'
+MULTI_TASK_METHOD = 'multi_task'
 
 #Directory of solutions of BGO in the different iterations
 PARTIAL_RESULTS = 'partial_results'

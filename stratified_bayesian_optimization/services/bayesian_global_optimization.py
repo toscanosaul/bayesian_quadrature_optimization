@@ -10,9 +10,12 @@ from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.numerical_tools.bayesian_quadrature import BayesianQuadrature
 from stratified_bayesian_optimization.lib.constant import (
     SBO_METHOD,
+    MULTI_TASK_METHOD,
+    TASKS,
 )
 from stratified_bayesian_optimization.entities.objective import Objective
 from stratified_bayesian_optimization.acquisition_functions.sbo import SBO
+from stratified_bayesian_optimization.acquisition_functions.multi_task import MultiTaks
 from stratified_bayesian_optimization.services.training_data import TrainingDataService
 
 logger = SBOLog(__name__)
@@ -51,6 +54,16 @@ class BGO(object):
                                             parameters_distribution=parameters_distribution)
 
             acquisition_function = SBO(quadrature, np.array(domain.discretization_domain_x))
+        elif method_optimization == MULTI_TASK_METHOD:
+            x_domain = spec.get('x_domain')
+            distribution = spec.get('distribution')
+            parameters_distribution = spec.get('parameters_distribution')
+            quadrature = BayesianQuadrature(gp_model, x_domain, distribution,
+                                            parameters_distribution=parameters_distribution,
+                                            model_only_x=True)
+            acquisition_function = MultiTaks(quadrature,
+                                             quadrature.parameters_distribution.get(TASKS))
+
 
         problem_name = spec.get('problem_name')
         training_name = spec.get('training_name')
