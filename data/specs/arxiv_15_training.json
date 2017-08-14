@@ -4,7 +4,7 @@
     },
     "max_steps_out":1000,
     "noise":false,
-    "random_seed":7,
+    "random_seed":6,
     "number_points_each_dimension_debug":[
         10,
         10,
@@ -65,6 +65,7 @@
         2,
         3
     ],
+    "use_only_training_points":true,
     "problem_name":"arxiv",
     "bounds_domain":[
         [
@@ -113,6 +114,7 @@
 
     },
     "distribution":"uniform_finite",
+    "n_restarts":1,
     "kernel_values":[
 
     ],

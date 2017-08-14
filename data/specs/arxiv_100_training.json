@@ -58,7 +58,7 @@
     "mean_value":[
 
     ],
-    "n_training":50,
+    "n_training":100,
     "x_domain":[
         0,
         1,
