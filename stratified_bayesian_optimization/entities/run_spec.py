@@ -67,6 +67,9 @@ class RunSpecEntity(Model):
     factr_mc = FloatType(required=False)
     maxiter_mc = IntType(required=False)
 
+    # We use only training points when reading GP model from cache
+    use_only_training_points = BooleanType(required=False)
+
     @classmethod
     def from_json(cls, specfile):
         """
@@ -144,6 +147,8 @@ class RunSpecEntity(Model):
         factr_mc = spec.get('factr_mc', 1e12)
         maxiter_mc = spec.get('maxiter_mc', 1000)
 
+        use_only_training_points = spec.get('use_only_training_points', True)
+
         entry.update({
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -185,6 +190,7 @@ class RunSpecEntity(Model):
             'n_restarts_mc': n_restarts_mc,
             'factr_mc': factr_mc,
             'maxiter_mc': maxiter_mc,
+            'use_only_training_points': use_only_training_points,
         })
 
         return cls(entry)
