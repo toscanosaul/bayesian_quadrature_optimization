@@ -51,7 +51,7 @@ logger = SBOLog(__name__)
 class SBO(object):
 
     _filename = 'opt_sbo_{model_type}_{problem_name}_{type_kernel}_{training_name}_' \
-                '{n_training}_{random_seed}_mc_{monte_carlo}.json'.format
+                '{n_training}_{random_seed}_mc_{monte_carlo}_sbo.json'.format
 
     _filename_voi_evaluations = '{iteration}_sbo_{model_type}_{problem_name}_' \
                                 '{type_kernel}_{training_name}_{n_training}_{random_seed}_mc_' \
