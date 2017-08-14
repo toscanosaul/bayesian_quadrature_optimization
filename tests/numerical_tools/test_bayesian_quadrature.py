@@ -211,7 +211,15 @@ class TestBayesianQuadrature(unittest.TestCase):
         start = DomainService.get_points_domain(1, bounds_x,
                                                 type_bounds=len(gp.x_domain) * [0])
         start = np.array(start[0])
-        gp.optimal_solutions.append({'solution': start})
+
+        var_noise = gp.gp.var_noise.value[0]
+        parameters_kernel = gp.gp.kernel.hypers_values_as_array
+        mean = gp.gp.mean.value[0]
+
+        index_cache = (var_noise, mean, tuple(parameters_kernel))
+        if index_cache not in gp.optimal_solutions:
+            gp.optimal_solutions[index_cache] = []
+        gp.optimal_solutions[index_cache].append({'solution': start})
 
         sol_2 = gp.optimize_posterior_mean(random_seed=random_seed)
         npt.assert_almost_equal(sol_2['optimal_value'], sol['optimal_value'])

@@ -76,6 +76,8 @@ class TestSpecService(unittest.TestCase):
             'n_samples_mc': 1,
             'factr_mc': 1000000000000.0,
             'maxiter_mc': 1000,
+            'n_restarts': 10,
+            'use_only_training_points': True,
         }
 
     def test_generate_dic_specs(self):

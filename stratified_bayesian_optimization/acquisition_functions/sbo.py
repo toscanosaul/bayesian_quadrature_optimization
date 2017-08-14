@@ -275,7 +275,7 @@ class SBO(object):
 
         index_cache = (var_noise, mean, tuple(parameters_kernel))
 
-        if self.bq.max_mean[index_cache] is not None:
+        if index_cache in self.bq.max_mean:
             max_mean = self.bq.max_mean[index_cache]
         else:
             max_mean = self.bq.optimize_posterior_mean(

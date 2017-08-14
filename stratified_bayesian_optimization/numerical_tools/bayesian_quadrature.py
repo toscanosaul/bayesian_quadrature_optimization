@@ -566,7 +566,8 @@ class BayesianQuadrature(object):
         if start is None:
             start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
                                                         type_bounds=len(self.x_domain) * [0])
-            if len(self.optimal_solutions[index_cache]) > 0:
+            if index_cache in self.optimal_solutions and \
+                            len(self.optimal_solutions[index_cache]) > 0:
                 start = self.optimal_solutions[index_cache][-1]['solution']
 
                 start = [start] + start_points[0: -1]
@@ -605,6 +606,9 @@ class BayesianQuadrature(object):
 
         logger.info("Results of the optimization of the posterior mean: ")
         logger.info(optimal_solutions.get(ind_max))
+
+        if index_cache not in self.optimal_solutions:
+            self.optimal_solutions[index_cache] = []
 
         self.optimal_solutions[index_cache].append(optimal_solutions.get(ind_max))
         self.max_mean[index_cache] = max_
