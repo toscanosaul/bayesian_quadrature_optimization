@@ -116,11 +116,11 @@ class BayesianQuadrature(object):
         self.cache_quadratures = {}
         self.cache_posterior_mean = {}
         self.cache_quadrature_with_candidate = {}
-        self.optimal_solutions = [] # The optimal solutions are written here
+        self.optimal_solutions = {} # The optimal solutions are written here
 
         # Cached data for the MC estimation of the SBO.
         self.cache_sample = {}
-        self.max_mean = None
+        self.max_mean = {}
 
 
         self.separate_tasks = False
@@ -497,31 +497,41 @@ class BayesianQuadrature(object):
 
         return {'mean': grad_mu, 'cov': grad_cov}
 
-    def objective_posterior_mean(self, point):
+    def objective_posterior_mean(self, point, var_noise=None, mean=None, parameters_kernel=None):
         """
         Computes the posterior mean evaluated on point.
 
         :param point: np.array(k)
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
         :return: float
         """
 
         point = point.reshape((1, len(point)))
 
-        return self.compute_posterior_parameters(point, only_mean=True)['mean']
+        return self.compute_posterior_parameters(point, var_noise=var_noise, mean=mean,
+                                                 parameters_kernel=parameters_kernel,
+                                                 only_mean=True)['mean']
 
-    def grad_posterior_mean(self, point):
+    def grad_posterior_mean(self, point, var_noise=None, mean=None, parameters_kernel=None):
         """
         Computes the gradient of the posterior mean evaluated on point.
 
         :param point: np.array(k)
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
         :return: np.array(k)
         """
 
         point = point.reshape((1, len(point)))
-        return self.gradient_posterior_mean(point)
+        return self.gradient_posterior_mean(point, var_noise=var_noise, mean=mean,
+                                            parameters_kernel=parameters_kernel)
 
     def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False, n_restarts=1000,
-                                parallel=True, n_treads=0):
+                                parallel=True, n_treads=0, var_noise=None, mean=None,
+                                parameters_kernel=None):
         """
         Optimize the posterior mean.
 
@@ -531,6 +541,9 @@ class BayesianQuadrature(object):
         :param n_restarts: int
         :param parallel: (boolean)
         :param n_treads: (int)
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
         :return: dictionary with the results of the optimization
         """
         if random_seed is not None:
@@ -539,11 +552,22 @@ class BayesianQuadrature(object):
         bounds_x = [self.gp.bounds[i] for i in xrange(len(self.gp.bounds)) if i in
                     self.x_domain]
 
+        if var_noise is None:
+            var_noise = self.gp.var_noise.value[0]
+
+        if parameters_kernel is None:
+            parameters_kernel = self.gp.kernel.hypers_values_as_array
+
+        if mean is None:
+            mean = self.gp.mean.value[0]
+
+        index_cache = (var_noise, mean, tuple(parameters_kernel))
+
         if start is None:
             start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
                                                         type_bounds=len(self.x_domain) * [0])
-            if len(self.optimal_solutions) > 0:
-                start = self.optimal_solutions[-1]['solution']
+            if len(self.optimal_solutions[index_cache]) > 0:
+                start = self.optimal_solutions[index_cache][-1]['solution']
 
                 start = [start] + start_points[0: -1]
                 start = np.array(start)
@@ -566,7 +590,8 @@ class BayesianQuadrature(object):
         for j in xrange(n_restarts + 1):
             point_dict[j] = start[j, :]
 
-        args = (False, None, parallel, n_treads, optimization, self)
+        args = (False, None, parallel, n_treads, optimization, self, var_noise, mean,
+                parameters_kernel)
 
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
             wrapper_optimize, point_dict, *args)
@@ -581,8 +606,8 @@ class BayesianQuadrature(object):
         logger.info("Results of the optimization of the posterior mean: ")
         logger.info(optimal_solutions.get(ind_max))
 
-        self.optimal_solutions.append(optimal_solutions.get(ind_max))
-        self.max_mean = max_
+        self.optimal_solutions[index_cache].append(optimal_solutions.get(ind_max))
+        self.max_mean[index_cache] = max_
         return optimal_solutions.get(ind_max)
 
     def compute_vectors_b(self, points, candidate_points, historical_points, parameters_kernel,
@@ -779,11 +804,11 @@ class BayesianQuadrature(object):
         chol = chol_solve['chol']
         solve = chol_solve['solve']
 
-        if cache and tuple(candidate_point[0, :]) in self.cache_sample:
-
-            solve_2 = self.cache_sample[tuple(candidate_point[0, :])]['solve_2']
-            denominator = self.cache_sample[tuple(candidate_point[0, :])]['denominator']
-            cross_cov = self.cache_sample[tuple(candidate_point[0, :])]['gamma']
+        index_cache = (tuple(candidate_point[0, :]), tuple(parameters_kernel))
+        if cache and index_cache in self.cache_sample:
+            solve_2 = self.cache_sample[index_cache]['solve_2']
+            denominator = self.cache_sample[index_cache]['denominator']
+            cross_cov = self.cache_sample[index_cache]['gamma']
         else:
 
             cross_cov = self.gp.evaluate_cross_cov(self.gp.data['points'], candidate_point,
@@ -798,11 +823,10 @@ class BayesianQuadrature(object):
             denominator = np.sqrt(denominator)
             if cache:
                 self.cache_sample = {}
-                self.cache_sample[tuple(candidate_point[0, :])] = {}
-                self.cache_sample[tuple(candidate_point[0, :])]['denominator'] = denominator
-                self.cache_sample[tuple(candidate_point[0, :])]['solve_2'] = solve_2
-                self.cache_sample[tuple(candidate_point[0, :])]['gamma'] = cross_cov
-
+                self.cache_sample[index_cache] = {}
+                self.cache_sample[index_cache]['denominator'] = denominator
+                self.cache_sample[index_cache]['solve_2'] = solve_2
+                self.cache_sample[index_cache]['gamma'] = cross_cov
 
         return {
             'gamma': cross_cov,
@@ -1022,18 +1046,18 @@ class BayesianQuadrature(object):
         chol = chol_solve['chol']
         solve = chol_solve['solve']
 
-        vec_covs, b_new =  self.get_vec_covs(cache, points, parameters_kernel, candidate_point,
-                                             parallel, n_threads=n_threads)
+        vec_covs, b_new = self.get_vec_covs(cache, points, parameters_kernel, candidate_point,
+                                            parallel, n_threads=n_threads)
 
         if cache:
-            mu_n = self._get_cached_data((tuple(parameters_kernel),), POSTERIOR_MEAN)
+            mu_n = self._get_cached_data((tuple(parameters_kernel), mean), POSTERIOR_MEAN)
         else:
             mu_n = None
 
         if mu_n is None:
             mu_n = mean + np.dot(vec_covs, solve)
             if cache:
-                self._updated_cached_data((tuple(parameters_kernel),), mu_n, POSTERIOR_MEAN)
+                self._updated_cached_data((tuple(parameters_kernel), mean), mu_n, POSTERIOR_MEAN)
 
         # TODO: CACHE SO WE DON'T COMPUTE MU_N ALL THE TIME
         cross_cov = self.gp.evaluate_cross_cov(candidate_point, self.gp.data['points'],
@@ -1221,7 +1245,8 @@ class BayesianQuadrature(object):
         self.cache_posterior_mean = {}
         self.cache_quadrature_with_candidate = {}
         self.gp.clean_cache()
-        self.max_mean = None  # max_{x} a_{n} (x)
+        self.max_mean = {}  # max_{x} a_{n} (x)
+        # (a solution for every set of parameters of the model)
         self.best_solution = None
 
     def generate_evaluations(self, problem_name, model_type, training_name, n_training,

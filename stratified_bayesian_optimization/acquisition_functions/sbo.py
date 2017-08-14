@@ -264,11 +264,23 @@ class SBO(object):
         bounds_x = [self.bounds_opt[i] for i in xrange(len(self.bounds_opt)) if i in
                  self.bq.x_domain]
 
-        if self.bq.max_mean is not None:
-            max_mean = self.bq.max_mean
+        if var_noise is None:
+            var_noise = self.bq.gp.var_noise.value[0]
+
+        if parameters_kernel is None:
+            parameters_kernel = self.bq.gp.kernel.hypers_values_as_array
+
+        if mean is None:
+            mean = self.bq.gp.mean.value[0]
+
+        index_cache = (var_noise, mean, tuple(parameters_kernel))
+
+        if self.bq.max_mean[index_cache] is not None:
+            max_mean = self.bq.max_mean[index_cache]
         else:
             max_mean = self.bq.optimize_posterior_mean(
-                random_seed=random_seed, n_treads=n_threads)['optimal_value']
+                random_seed=random_seed, n_treads=n_threads, var_noise=var_noise,
+                parameters_kernel=parameters_kernel, mean=mean)['optimal_value']
 
         if tuple(candidate_point[0, :]) in self.samples:
             samples = self.samples[tuple(candidate_point[0, :])]
@@ -279,15 +291,16 @@ class SBO(object):
 
         max_values = []
 
-        if tuple(candidate_point[0, :]) in self.optimal_samples:
-            optimal_values = self.optimal_samples[tuple(candidate_point[0, :])]['max'].values()
+        index_cache_2 = (tuple(candidate_point[0, :]), var_noise, mean, tuple(parameters_kernel))
+        if index_cache_2 in self.optimal_samples:
+            optimal_values = self.optimal_samples[index_cache_2]['max'].values()
             return {'value': np.mean(optimal_values) - max_mean,
                     'std': np.std(optimal_values) / n_samples}
 
 #        self.optimal_samples = {}
-        self.optimal_samples[tuple(candidate_point[0, :])] = {}
-        self.optimal_samples[tuple(candidate_point[0, :])]['max'] = {}
-        self.optimal_samples[tuple(candidate_point[0, :])]['optimum'] = {}
+        self.optimal_samples[index_cache_2] = {}
+        self.optimal_samples[index_cache_2]['max'] = {}
+        self.optimal_samples[index_cache_2]['optimum'] = {}
 
         if parallel:
             # Cache this computation, so we don't have to do it over and over again
@@ -298,8 +311,8 @@ class SBO(object):
             for i in xrange(n_samples):
                 start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
                                                                type_bounds=len(bounds_x) * [0])
-                if len(self.bq.optimal_solutions) > 0:
-                    start = self.bq.optimal_solutions[-1]['solution']
+                if len(self.bq.optimal_solutions[index_cache]) > 0:
+                    start = self.bq.optimal_solutions[index_cache][-1]['solution']
 
                     start = [start] + start_points[0: -1]
                     start = np.array(start)
@@ -323,8 +336,8 @@ class SBO(object):
                     values.append(simulated_values[(j, i)]['max'])
                 maximum = simulated_values[(np.argmax(values), i)]['optimum']
                 max_ = np.max(values)
-                self.optimal_samples[tuple(candidate_point[0, :])]['max'][i] = max_
-                self.optimal_samples[tuple(candidate_point[0, :])]['optimum'][i] = maximum
+                self.optimal_samples[index_cache_2]['max'][i] = max_
+                self.optimal_samples[index_cache_2]['optimum'][i] = maximum
                 max_values.append(max_)
         else:
             for i in xrange(n_samples):
@@ -334,13 +347,13 @@ class SBO(object):
                     **opt_params_mc)
                 max_values.append(max_value['max'])
                 maximum = max_value['optimum']
-                self.optimal_samples[tuple(candidate_point[0, :])]['max'][i] = max_value['max']
-                self.optimal_samples[tuple(candidate_point[0, :])]['optimum'][i] = maximum
+                self.optimal_samples[index_cache_2]['max'][i] = max_value['max']
+                self.optimal_samples[index_cache_2]['optimum'][i] = maximum
 
         return {'value': np.mean(max_values) - max_mean, 'std': np.std(max_values) / n_samples}
 
-    def gradient_mc(self, candidate_point, parameters_kernel=None, var_noise=None,
-                    mean=None, n_samples=None, random_seed=None, parallel=True, n_restarts=10,
+    def gradient_mc(self, candidate_point, var_noise=None, mean=None, parameters_kernel=None,
+                    n_samples=None, random_seed=None, parallel=True, n_restarts=10,
                     n_threads=0, **opt_params_mc):
         """
         Evaluate the gradient of SBO by using MC estimation.
@@ -359,14 +372,24 @@ class SBO(object):
             -'maxiter': int
         :return: {'gradient': np.array(n), 'std': np.array(n)}
         """
-        if tuple(candidate_point[0, :]) not in self.optimal_samples:
+        if var_noise is None:
+            var_noise = self.bq.gp.var_noise.value[0]
+
+        if parameters_kernel is None:
+            parameters_kernel = self.bq.gp.kernel.hypers_values_as_array
+
+        if mean is None:
+            mean = self.bq.gp.mean.value[0]
+
+        index_cache_2 = (tuple(candidate_point[0, :]), var_noise, mean, tuple(parameters_kernel))
+
+        if index_cache_2 not in self.optimal_samples:
             self.evaluate_mc(candidate_point, n_samples, var_noise=var_noise, mean=mean,
                              parameters_kernel=parameters_kernel, random_seed=random_seed,
                              parallel=parallel, n_restarts=n_restarts, n_threads=n_threads,
                              **opt_params_mc)
 
-        max_points = self.optimal_samples[tuple(candidate_point[0, :])]['optimum']
-
+        max_points = self.optimal_samples[index_cache_2]['optimum']
 
         samples = self.samples[tuple(candidate_point[0, :])]
         n_samples = len(samples)
@@ -470,7 +493,7 @@ class SBO(object):
         return gradient
 
     def objective_voi(self, point, monte_carlo=False, n_samples=1, n_restarts=1, n_threads=0,
-                      **opt_params_mc):
+                      *model_params, **opt_params_mc):
         """
         Evaluates the VOI at point.
         :param point: np.array(n)
@@ -478,6 +501,7 @@ class SBO(object):
         :param n_samples: (int) Number of samples for the MC method.
         :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
         :param n_threads: (int)
+        :param model_params: (var_noise, mean, parameters_kernel)
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -487,14 +511,16 @@ class SBO(object):
         point = point.reshape((1, len(point)))
 
         if not monte_carlo:
-            value = self.evaluate(point, n_threads=n_threads)
+            value = self.evaluate(point, *model_params, n_threads=n_threads)
         else:
-            value = self.evaluate_mc(point, n_samples=n_samples, n_restarts=n_restarts,
-                                     n_threads=n_threads, **opt_params_mc)['value']
+            value = self.evaluate_mc(point, n_samples, *model_params,
+                                     n_restarts=n_restarts, n_threads=n_threads,
+                                     **opt_params_mc)['value']
+
         return value
 
     def grad_obj_voi(self, point, monte_carlo=False, n_samples=1, n_restarts=1, n_threads=0,
-                     **opt_params_mc):
+                     *model_params, **opt_params_mc):
         """
         Evaluates the gradient of VOI at point.
         :param point: np.array(n)
@@ -502,6 +528,7 @@ class SBO(object):
         :param n_samples: (int) Number of samples for the MC method.
         :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
         :param n_threads: (int)
+        :param model_params: (var_noise, mean, parameters_kernel)
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -511,10 +538,11 @@ class SBO(object):
         point = point.reshape((1, len(point)))
 
         if not monte_carlo:
-            grad = self.evaluate_gradient(point, n_threads=n_threads)
+            grad = self.evaluate_gradient(point, *model_params, n_threads=n_threads)
         else:
-            grad = self.gradient_mc(point, n_samples=n_samples, n_restarts=n_restarts,
-                                    n_threads=n_threads, **opt_params_mc)['gradient']
+            grad = self.gradient_mc(point, *model_params, n_samples=n_samples,
+                                    n_restarts=n_restarts, n_threads=n_threads,
+                                    **opt_params_mc)['gradient']
 
         return grad
 

@@ -211,11 +211,29 @@ class GPFittingGaussian(object):
             else:
                 self.start_point_sampler = self.get_value_parameters_model
 
+    def start_new_chain(self, random_seed=None):
+        """
+        Starts a new chain of sampled parameters.
+
+        :param random_seed: int
+        """
+        if random_seed is not None:
+            np.random.seed(random_seed)
+
+        if self.n_burning > 0:
+            parameters = self.sample_parameters(float(self.n_burning) / (self.thinning + 1))
+        else:
+            parameters = [self.samples_parameters.append[-1]]
+
+        self.samples_parameters = []
+        self.samples_parameters.append(parameters[-1])
+        self.start_point_sampler = parameters[-1]
+
     def sample_parameters(self, n_samples, start_point=None, random_seed=None):
         """
-        Sample parameters of the model from the posterior without considering burning or thinning.
+        Sample parameters of the model from the posterior without considering burning.
 
-        :param n_samples: int
+        :param n_samples: (int)
         :param start_point: np.array(n_parameters)
         :param random_seed: int
 

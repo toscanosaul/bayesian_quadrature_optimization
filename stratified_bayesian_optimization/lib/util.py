@@ -598,7 +598,8 @@ def wrapper_optimize(point, self, *args):
 
     return self.optimize(point, *args)
 
-def wrapper_objective_posterior_mean_bq(point, self):
+def wrapper_objective_posterior_mean_bq(point, self, var_noise=None, mean=None,
+                                        parameters_kernel=None):
     """
     Wrapper of the objective posterior mean of a bq model
     :param point: np.array(k)
@@ -606,16 +607,18 @@ def wrapper_objective_posterior_mean_bq(point, self):
     :return: float
     """
 
-    return self.objective_posterior_mean(point)
+    return self.objective_posterior_mean(point, var_noise=var_noise, mean=mean,
+                                         parameters_kernel=parameters_kernel)
 
-def wrapper_grad_posterior_mean_bq(point, self):
+def wrapper_grad_posterior_mean_bq(point, self, var_noise=None, mean=None, parameters_kernel=None):
     """
     Wrapper of the gradient of the posterior mean of a bq model
     :param point: np.array(k)
     :param self: bayesian-quadrature instance
     :return: np.array(k)
     """
-    return self.grad_posterior_mean(point)
+    return self.grad_posterior_mean(point, var_noise=var_noise, mean=mean,
+                                    parameters_kernel=parameters_kernel)
 
 def wrapper_objective_acquisition_function(point, self, *params):
     """
