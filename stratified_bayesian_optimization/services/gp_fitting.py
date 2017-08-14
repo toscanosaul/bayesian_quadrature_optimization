@@ -52,6 +52,7 @@ class GPFittingService(object):
             'var_noise_value': spec.get('var_noise_value'),
             'cache': spec.get('cache', True),
             'same_correlation': spec.get('same_correlation', False),
+            'use_only_training_points': spec.get('use_only_training_points', True),
         }
 
         return cls.get_gp(**entry)
