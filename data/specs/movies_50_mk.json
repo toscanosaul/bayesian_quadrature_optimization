@@ -114,7 +114,7 @@
 
     },
     "distribution":"uniform_finite",
-    "n_restarts":1,
+    "n_restarts":100,
     "kernel_values":[
 
     ],

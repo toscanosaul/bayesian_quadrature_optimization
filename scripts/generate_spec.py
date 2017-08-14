@@ -48,7 +48,7 @@ if __name__ == '__main__':
     n_restarts_mc = 100
     factr_mc = 1e12
     maxiter_mc = 10
-    n_restarts = 1
+    n_restarts = 100
     use_only_training_points = True
     method_optimization = MULTI_TASK_METHOD
 
