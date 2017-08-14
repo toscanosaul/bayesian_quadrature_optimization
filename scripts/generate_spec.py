@@ -21,13 +21,13 @@ if __name__ == '__main__':
 
     dim_x = 4
     bounds_domain_x = [(0.01, 1.01), (0.1, 2.1), (1, 21), (1, 201)]
-    problem_name = 'arxiv'
+    problem_name = 'movies_collaborative'
     training_name = None
     type_kernel = [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]
     dimensions = [5, 4, 5]
     bounds_domain = [[0.01, 1.01], [0.1, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
-    n_training = 200
-    random_seed = 5
+    n_training = 50
+    random_seed = 7
     type_bounds = [0, 0, 0, 0, 1]
     x_domain = [0, 1, 2, 3]
     number_points_each_dimension = [6, 6, 11, 6]
@@ -46,6 +46,8 @@ if __name__ == '__main__':
     n_restarts_mc = 100
     factr_mc = 1e12
     maxiter_mc = 10
+    n_restarts = 1
+    use_only_training_points = True
 
 
     spec = SpecService.generate_dict_spec(
@@ -57,7 +59,8 @@ if __name__ == '__main__':
         n_iterations=n_iterations, same_correlation=same_correlation, debug=debug,
         number_points_each_dimension_debug=number_points_each_dimension_debug,
         monte_carlo_sbo=monte_carlo_sbo, n_samples_mc=n_samples_mc, n_restarts_mc=n_restarts_mc,
-        factr_mc=factr_mc, maxiter_mc=maxiter_mc)
+        factr_mc=factr_mc, maxiter_mc=maxiter_mc, n_restarts=n_restarts,
+        use_only_training_points=use_only_training_points)
 
 
     print ujson.dumps(spec, indent=4)

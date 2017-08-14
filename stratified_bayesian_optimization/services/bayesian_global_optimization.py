@@ -221,6 +221,7 @@ class BGO(object):
         opt_params_mc = {}
         factr = spec.get('factr_mc')
         maxiter = spec.get('maxiter_mc')
+        n_restarts = spec.get('n_restarts', 10)
 
         if factr is not None:
             opt_params_mc['factr'] = factr
@@ -230,5 +231,6 @@ class BGO(object):
 
         # WE CAN STILL ADD THE DOMAIN IF NEEDED FOR THE KG
         result = bgo.optimize(debug=debug, n_samples_mc=n_samples_mc, n_restarts_mc=n_restarts_mc,
-                              monte_carlo_sbo=monte_carlo_sbo, **opt_params_mc)
+                              monte_carlo_sbo=monte_carlo_sbo, n_restarts=n_restarts,
+                              **opt_params_mc)
         return result

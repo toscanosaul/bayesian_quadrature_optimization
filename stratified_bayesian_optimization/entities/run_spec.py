@@ -67,6 +67,9 @@ class RunSpecEntity(Model):
     factr_mc = FloatType(required=False)
     maxiter_mc = IntType(required=False)
 
+    #Acquistion function parameters
+    n_restarts = IntType(required=False)
+
     # We use only training points when reading GP model from cache
     use_only_training_points = BooleanType(required=False)
 
@@ -148,6 +151,7 @@ class RunSpecEntity(Model):
         maxiter_mc = spec.get('maxiter_mc', 1000)
 
         use_only_training_points = spec.get('use_only_training_points', True)
+        n_restarts = spec.get('n_restarts', 10)
 
         entry.update({
             'problem_name': problem_name,
@@ -191,6 +195,7 @@ class RunSpecEntity(Model):
             'factr_mc': factr_mc,
             'maxiter_mc': maxiter_mc,
             'use_only_training_points': use_only_training_points,
+            'n_restarts': n_restarts,
         })
 
         return cls(entry)

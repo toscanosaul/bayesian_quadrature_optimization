@@ -16,6 +16,7 @@ from stratified_bayesian_optimization.lib.constant import (
     UNIFORM_FINITE,
     LBFGS_NAME,
     DEBUGGING_DIR,
+    TASKS,
 )
 from stratified_bayesian_optimization.lib.affine_break_points import (
     AffineBreakPointsPrep,
@@ -40,6 +41,8 @@ from stratified_bayesian_optimization.lib.util import (
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.lib.util import wrapper_evaluate_sbo
 from stratified_bayesian_optimization.acquisition_functions.ei import EI
+from stratified_bayesian_optimization.acquisition_functions.multi_task import MultiTasks
+from stratified_bayesian_optimization.numerical_tools.bayesian_quadrature import BayesianQuadrature
 
 
 logger = SBOLog(__name__)
@@ -394,7 +397,7 @@ class SBO(object):
         :param mean: float
         :param parameters_kernel: np.array(l)
         :param cache: (boolean) Use cached data and cache data if cache is True
-        :param n_threads: (int)
+        :param n_threads: (int) If n_threads > 0, it uses threads instead of processes.
 
         :return: float
         """
@@ -519,7 +522,7 @@ class SBO(object):
                  n_restarts_mc=1, n_restarts=1, start_ei=True, **opt_params_mc):
         """
         Optimizes the VOI.
-        :param start: np.array(n)
+        :param start: np.array(1xn)
         :param random_seed: int
         :param parallel: (boolean) For several tasks, it's run in paralle if it's True
         :param monte_carlo: (boolean) If True, estimates the objective function and gradient by MC.
@@ -539,10 +542,19 @@ class SBO(object):
 
         bounds = self.bq.bounds
 
-        if start_ei:
+        if start_ei and not self.bq.separate_tasks:
             ei = EI(self.bq.gp)
             opt_ei = ei.optimize(n_restarts=100, parallel=parallel)
             st_ei = opt_ei['solution']
+            st_ei = st_ei.reshape((1, len(st_ei)))
+            n_restarts -= 1
+        elif start_ei:
+            quadrature_2 = BayesianQuadrature(self.bp.gp, self.bq.x_domain, self.bq.distribution,
+                                            parameters_distribution=self.bq.parameters_distribution,
+                                            model_only_x=True)
+            mk = MultiTasks(quadrature_2, quadrature_2.parameters_distribution.get(TASKS))
+            st_ei = mk.optimize(
+                parallel=True, start=None, n_restarts=100, **opt_params_mc)['solution']
             st_ei = st_ei.reshape((1, len(st_ei)))
             n_restarts -= 1
 

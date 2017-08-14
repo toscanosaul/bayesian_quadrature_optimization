@@ -65,6 +65,7 @@
         2,
         3
     ],
+    "use_only_training_points":true,
     "problem_name":"movies_collaborative",
     "bounds_domain":[
         [
@@ -113,6 +114,7 @@
 
     },
     "distribution":"uniform_finite",
+    "n_restarts":1,
     "kernel_values":[
 
     ],

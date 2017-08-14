@@ -24,7 +24,7 @@ class SpecService(object):
                            debug=False, same_correlation=False,
                            number_points_each_dimension_debug=None, monte_carlo_sbo=False,
                            n_samples_mc=1, n_restarts_mc=1, factr_mc=1e12, maxiter_mc=1000,
-                           use_only_training_points=True):
+                           use_only_training_points=True, n_restarts=10):
 
         """
         Generate dict that represents run spec.
@@ -86,6 +86,7 @@ class SpecService(object):
         :param maxiter_mc: (int) Max number of iterations to optimize a sample of SBO when using MC.
         :param use_only_training_points: (boolean) Uses only training points in the cached gp model
             if it's True.
+        :param n_restarts: (int) Number of starting points to optimize the acquisition function
 
         :return: dict
         """
@@ -170,6 +171,7 @@ class SpecService(object):
             'factr_mc': factr_mc,
             'maxiter_mc': maxiter_mc,
             'use_only_training_points': use_only_training_points,
+            'n_restarts': n_restarts,
         }
 
     # TODO - generate a list of runspecentities over different parameters
