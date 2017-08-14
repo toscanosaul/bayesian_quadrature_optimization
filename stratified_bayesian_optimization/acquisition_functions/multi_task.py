@@ -92,7 +92,8 @@ class MultiTasks(object):
 
         return {'solution': solution}
 
-    def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed):
+    def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed,
+                         **kwargs):
         self.ei.write_debug_data(problem_name, model_type, training_name, n_training, random_seed)
 
     def clean_cache(self):

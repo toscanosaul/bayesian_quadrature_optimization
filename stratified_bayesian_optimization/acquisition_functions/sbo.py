@@ -544,7 +544,7 @@ class SBO(object):
 
         if start_ei and not self.bq.separate_tasks:
             ei = EI(self.bq.gp)
-            opt_ei = ei.optimize(n_restarts=100, parallel=parallel)
+            opt_ei = ei.optimize(n_restarts=1000, parallel=parallel)
             st_ei = opt_ei['solution']
             st_ei = st_ei.reshape((1, len(st_ei)))
             n_restarts -= 1
@@ -553,7 +553,16 @@ class SBO(object):
                                             parameters_distribution=self.bq.parameters_distribution,
                                             model_only_x=True)
             mk = MultiTasks(quadrature_2, quadrature_2.parameters_distribution.get(TASKS))
-            st_ei = mk.optimize(parallel=True, start=None, n_restarts=100)['solution']
+            st_ei = mk.optimize(parallel=True, start=None, n_restarts=1000)['solution']
+            st_ei = st_ei[0:-1]
+            values = []
+            for i in xrange(len(self.bq.tasks)):
+                point = np.concatenate((st_ei, np.array([i])))
+                val = self.objective_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
+                              n_restarts=n_restarts_mc, n_threads=0, **opt_params_mc)
+                values.append(val)
+            tk = np.argmax(values)
+            st_ei = np.concatenate((st_ei, np.array([tk])))
             st_ei = st_ei.reshape((1, len(st_ei)))
             n_restarts -= 1
 

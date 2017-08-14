@@ -15,7 +15,7 @@ logger = SBOLog(__name__)
 
 class GPFittingService(object):
     _filename = 'gp_{model_type}_{problem_name}_{type_kernel}_{training_name}.json'.format
-    _get_filename_modified = 'gp_{model_type}_{problem_name}_{type_kernel}_{training_name}_' \
+    _get_filename_mod = 'gp_{model_type}_{problem_name}_{type_kernel}_{training_name}_' \
                               '{method}.json'.format
 
     _model_map = {
@@ -81,6 +81,32 @@ class GPFittingService(object):
             problem_name=problem_name,
             type_kernel=kernel_name,
             training_name=training_name,
+        )
+
+    @classmethod
+    def _get_filename_modified(cls, model_type, problem_name, type_kernel, training_name, method):
+        """
+
+        :param model_type:
+        :param problem_name: str
+        :param type_kernel: [(str)] Must be in possible_kernels
+        :param training_name: (str), prefix used to save the training data
+        :param method: (str)
+
+        :return: str
+        """
+
+        kernel_name = ''
+        for kernel in type_kernel:
+            kernel_name += kernel + '_'
+        kernel_name = kernel_name[0: -1]
+
+        return cls._get_filename_mod(
+            model_type=model_type.__name__,
+            problem_name=problem_name,
+            type_kernel=kernel_name,
+            training_name=training_name,
+            method=method,
         )
 
     @classmethod
