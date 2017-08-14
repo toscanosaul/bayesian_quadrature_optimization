@@ -28,8 +28,8 @@ if __name__ == '__main__':
     type_kernel = [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]
     dimensions = [5, 4, 5]
     bounds_domain = [[0.01, 1.01], [0.1, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
-    n_training = 50
-    random_seed = 7
+    n_training = 100
+    random_seed = 5
     type_bounds = [0, 0, 0, 0, 1]
     x_domain = [0, 1, 2, 3]
     number_points_each_dimension = [6, 6, 11, 6]
@@ -44,13 +44,13 @@ if __name__ == '__main__':
     debug = False
     number_points_each_dimension_debug = [10, 10, 10, 10]
     monte_carlo_sbo = True
-    n_samples_mc = 50
-    n_restarts_mc = 100
+    n_samples_mc = 20
+    n_restarts_mc = 500
     factr_mc = 1e12
     maxiter_mc = 10
-    n_restarts = 100
+    n_restarts = 1
     use_only_training_points = True
-    method_optimization = MULTI_TASK_METHOD
+    method_optimization = SBO_METHOD
 
 
     spec = SpecService.generate_dict_spec(
