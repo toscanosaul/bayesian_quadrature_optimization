@@ -20,6 +20,7 @@ from stratified_bayesian_optimization.lib.constant import (
     DEBUGGING_DIR,
     B_NEW,
     BAYESIAN_QUADRATURE,
+    SBO_METHOD,
 )
 from stratified_bayesian_optimization.lib.la_functions import (
     cho_solve,
@@ -48,7 +49,7 @@ logger = SBOLog(__name__)
 
 class BayesianQuadrature(object):
     _filename = 'opt_post_mean_gp_{model_type}_{problem_name}_{type_kernel}_{training_name}_' \
-                '{n_training}_{random_seed}.json'.format
+                '{n_training}_{random_seed}_{method}.json'.format
 
     _filename_mu_evaluations = '{iteration}_post_mean_gp_{model_type}_{problem_name}_' \
                                 '{type_kernel}_{training_name}_{n_training}_{random_seed}.' \
@@ -1174,7 +1175,8 @@ class BayesianQuadrature(object):
 
         return best
 
-    def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed):
+    def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed,
+                         method=SBO_METHOD):
         """
         Write information about the different optimizations realized.
 
@@ -1183,6 +1185,7 @@ class BayesianQuadrature(object):
         :param training_name: (str)
         :param n_training: (int)
         :param random_seed: (int)
+        :param method: (str)
         """
 
         if not os.path.exists(DEBUGGING_DIR):
@@ -1203,7 +1206,8 @@ class BayesianQuadrature(object):
                                 type_kernel=kernel_name,
                                 training_name=training_name,
                                 n_training=n_training,
-                                random_seed=random_seed)
+                                random_seed=random_seed,
+                                method=method)
 
         debug_path = path.join(debug_dir, f_name)
 

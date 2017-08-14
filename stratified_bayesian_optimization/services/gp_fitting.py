@@ -8,13 +8,15 @@ from stratified_bayesian_optimization.lib.constant import GP_DIR
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.models.gp_fitting_gaussian import GPFittingGaussian
 from stratified_bayesian_optimization.services.training_data import TrainingDataService
-from stratified_bayesian_optimization.lib.constant import DEFAULT_RANDOM_SEED
+from stratified_bayesian_optimization.lib.constant import DEFAULT_RANDOM_SEED, SBO_METHOD
 
 logger = SBOLog(__name__)
 
 
 class GPFittingService(object):
     _filename = 'gp_{model_type}_{problem_name}_{type_kernel}_{training_name}.json'.format
+    _get_filename_modified = 'gp_{model_type}_{problem_name}_{type_kernel}_{training_name}_' \
+                              '{method}.json'.format
 
     _model_map = {
         'gp_fitting_gaussian': GPFittingGaussian,
@@ -177,18 +179,19 @@ class GPFittingService(object):
         return gp_model
 
     @classmethod
-    def write_gp_model(cls, gp_model, name_model='gp_fitting_gaussian'):
+    def write_gp_model(cls, gp_model, method=SBO_METHOD, name_model='gp_fitting_gaussian'):
         """
-        Write the gp_model
+        Write the gp_model after new points are added.
 
         :param gp_model: gp model instance
+        :param method: (str)
         :param name_model: (str)
         """
         model_type = cls._model_map[name_model]
 
 
-        f_name = cls._get_filename(model_type, gp_model.problem_name, gp_model.type_kernel,
-                                   gp_model.training_name)
+        f_name = cls._get_filename_modified(model_type, gp_model.problem_name, gp_model.type_kernel,
+                                            gp_model.training_name, method)
 
         gp_dir = path.join(GP_DIR, gp_model.problem_name)
 

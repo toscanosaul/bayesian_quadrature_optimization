@@ -98,7 +98,7 @@ class BGO(object):
         self.training_name = training_name
         self.name_model = name_model
         self.objective = Objective(problem_name, training_name, random_seed, n_training, n_samples,
-                                   noise)
+                                   noise, self.method_optimization)
         self.n_iterations = n_iterations
         self.minimize = minimize
         self.parallel = parallel
@@ -139,7 +139,7 @@ class BGO(object):
             self.objective.add_point(optimize_mean['solution'], optimize_mean['optimal_value'][0])
 
         model.write_debug_data(self.problem_name, self.name_model, self.training_name,
-                               self.n_training, self.random_seed)
+                               self.n_training, self.random_seed, self.method_optimization)
 
         if debug:
             model.generate_evaluations(
@@ -179,7 +179,7 @@ class BGO(object):
                                                  np.array([evaluation[0]]),
                                                  var_noise_eval=noise)
 
-            GPFittingService.write_gp_model(self.gp_model)
+            GPFittingService.write_gp_model(self.gp_model, method=self.method_optimization)
 
             optimize_mean = model.optimize_posterior_mean(minimize=self.minimize)
             optimal_value = \
@@ -187,7 +187,7 @@ class BGO(object):
                                          optimize_mean['optimal_value'][0])
 
             model.write_debug_data(self.problem_name, self.name_model, self.training_name,
-                                   self.n_training, self.random_seed)
+                                   self.n_training, self.random_seed, self.method_optimization)
 
             if debug:
                 model.generate_evaluations(
