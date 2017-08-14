@@ -549,12 +549,11 @@ class SBO(object):
             st_ei = st_ei.reshape((1, len(st_ei)))
             n_restarts -= 1
         elif start_ei:
-            quadrature_2 = BayesianQuadrature(self.bp.gp, self.bq.x_domain, self.bq.distribution,
+            quadrature_2 = BayesianQuadrature(self.bq.gp, self.bq.x_domain, self.bq.distribution,
                                             parameters_distribution=self.bq.parameters_distribution,
                                             model_only_x=True)
             mk = MultiTasks(quadrature_2, quadrature_2.parameters_distribution.get(TASKS))
-            st_ei = mk.optimize(
-                parallel=True, start=None, n_restarts=100, **opt_params_mc)['solution']
+            st_ei = mk.optimize(parallel=True, start=None, n_restarts=100)['solution']
             st_ei = st_ei.reshape((1, len(st_ei)))
             n_restarts -= 1
 
