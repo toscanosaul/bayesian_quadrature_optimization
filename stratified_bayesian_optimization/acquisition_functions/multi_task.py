@@ -22,7 +22,7 @@ from stratified_bayesian_optimization.initializers.log import SBOLog
 logger = SBOLog(__name__)
 
 
-class MultiTaks(object):
+class MultiTasks(object):
 
     def __init__(self, bq, n_tasks):
         self.bq = bq # Don't forget that we should have that self.bq.model_only_x = True

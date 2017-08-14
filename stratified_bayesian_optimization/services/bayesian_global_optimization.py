@@ -15,7 +15,7 @@ from stratified_bayesian_optimization.lib.constant import (
 )
 from stratified_bayesian_optimization.entities.objective import Objective
 from stratified_bayesian_optimization.acquisition_functions.sbo import SBO
-from stratified_bayesian_optimization.acquisition_functions.multi_task import MultiTaks
+from stratified_bayesian_optimization.acquisition_functions.multi_task import MultiTasks
 from stratified_bayesian_optimization.services.training_data import TrainingDataService
 
 logger = SBOLog(__name__)
@@ -61,7 +61,7 @@ class BGO(object):
             quadrature = BayesianQuadrature(gp_model, x_domain, distribution,
                                             parameters_distribution=parameters_distribution,
                                             model_only_x=True)
-            acquisition_function = MultiTaks(quadrature,
+            acquisition_function = MultiTasks(quadrature,
                                              quadrature.parameters_distribution.get(TASKS))
 
 
