@@ -129,7 +129,7 @@ class BGO(object):
         if random_seed is not None:
             np.random.seed(random_seed)
 
-        if self.method_optimization == SBO_METHOD:
+        if self.method_optimization == SBO_METHOD or self.method_optimization == MULTI_TASK_METHOD:
             model = self.quadrature
 
         noise = None
