@@ -448,3 +448,142 @@ class TestSBO(unittest.TestCase):
                                     **{'factr':1e12,'maxiter':100})
         print val
         # assert 1 ==2
+
+    def test_objective_voi_model_params(self):
+        warnings.filterwarnings("ignore")
+
+        spec = {
+            'dim_x': 1,
+            'choose_noise': True,
+            'bounds_domain_x': [self.bounds_domain_x],
+            'number_points_each_dimension': [1000],
+            'problem_name': 'a',
+        }
+
+        domain = DomainService.from_dict(spec)
+        sbo = SBO(self.gp, np.array(domain.discretization_domain_x))
+
+        np.random.seed(1)
+        point = np.array([[52.5, 0]])
+        n_samples = 50
+        n_restarts = 30
+
+        value = sbo.evaluate(point)
+
+        point = np.array([[52.5, 0]])
+
+
+
+        value_2 = sbo.objective_voi(point[0, :], False, 1, 1, 0,
+                                    *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
+
+        self.gp.gp.var_noise.value[0] = 1.0
+        self.gp.gp.mean.value[0] = 5.0
+        self.gp.gp.kernel.update_value_parameters(np.array([50.0, 9.6, -3.0, -0.1]))
+
+        value_3 = sbo.evaluate(point)
+
+        assert value_2 == value_3
+
+
+    def test_objective_voi_model_params_mc(self):
+        warnings.filterwarnings("ignore")
+
+        spec = {
+            'dim_x': 1,
+            'choose_noise': True,
+            'bounds_domain_x': [self.bounds_domain_x],
+            'number_points_each_dimension': [1000],
+            'problem_name': 'a',
+        }
+
+        domain = DomainService.from_dict(spec)
+        sbo = SBO(self.gp, np.array(domain.discretization_domain_x))
+
+        np.random.seed(1)
+        point = np.array([[52.5, 0]])
+        n_samples = 50
+        n_restarts = 30
+
+        value = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0,
+                                  *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])),
+                                  **{'factr':1e12,'maxiter':10})
+
+        value_1 = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0,
+                                    **{'factr':1e12,'maxiter':10})
+
+
+        self.gp.gp.var_noise.value[0] = 1.0
+        self.gp.gp.mean.value[0] = 5.0
+        self.gp.gp.kernel.update_value_parameters(np.array([50.0, 9.6, -3.0, -0.1]))
+
+        np.random.seed(1)
+        value_2 = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0,
+                                    **{'factr':1e12,'maxiter':10})
+
+        assert value_2 == value
+
+    def test_evaluate_gradient_sbo_params(self):
+
+        candidate = np.array([[52.5, 0]])
+
+        grad_1 = self.sbo.grad_obj_voi(candidate[0, :], False, 1, 1, 0,
+                                    *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
+
+        grad = self.sbo.grad_obj_voi(candidate[0, :])
+
+        self.gp.gp.var_noise.value[0] = 1.0
+        self.gp.gp.mean.value[0] = 5.0
+        self.gp.gp.kernel.update_value_parameters(np.array([50.0, 9.6, -3.0, -0.1]))
+
+        grad_2 = self.sbo.grad_obj_voi(candidate[0, :])
+
+
+        assert np.all(grad_1 == grad_2)
+
+    def test_evaluate_gradient_sbo_params_mc(self):
+        warnings.filterwarnings("ignore")
+        n_samples = 50
+        n_restarts = 10
+
+        candidate = np.array([[52.5, 0]])
+
+        np.random.seed(1)
+        grad_1 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0,
+                                    *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
+
+        grad = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0)
+
+        np.random.seed(1)
+
+        self.gp.gp.var_noise.value[0] = 1.0
+        self.gp.gp.mean.value[0] = 5.0
+        self.gp.gp.kernel.update_value_parameters(np.array([50.0, 9.6, -3.0, -0.1]))
+
+        np.random.seed(1)
+        grad_2 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0)
+
+        assert np.all(grad_1 == grad_2)
+
+
+    def test_combine_sbo_gradient(self):
+
+        warnings.filterwarnings("ignore")
+        n_samples = 50
+        n_restarts = 10
+
+        candidate = np.array([[52.5, 0]])
+
+        np.random.seed(1)
+
+        obj = self.sbo.objective_voi(candidate[0, :], True, n_samples, n_restarts, 0,
+                                    *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
+
+        grad = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0,
+                                    *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
+
+        self.sbo.clean_cache()
+        np.random.seed(1)
+        grad_2 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0,
+                                    *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
+        npt.assert_almost_equal(grad, grad_2, decimal=5)

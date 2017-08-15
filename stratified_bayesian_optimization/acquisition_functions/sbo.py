@@ -501,7 +501,7 @@ class SBO(object):
         :param n_samples: (int) Number of samples for the MC method.
         :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
         :param n_threads: (int)
-        :param model_params: (var_noise, mean, parameters_kernel)
+        :param model_params: (var_noise (float), mean (float), parameters_kernel np.array(l))
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
