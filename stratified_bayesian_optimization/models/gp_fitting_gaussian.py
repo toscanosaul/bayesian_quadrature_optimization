@@ -166,7 +166,7 @@ class GPFittingGaussian(object):
         self.cache_chol_cov = {}
         self.cache_sol_chol_y_unbiased = {}
 
-        self.best_solution = None # Historical best solution for EI.
+        self.best_solution = {} # Historical best solution for EI.
         self.cache_cov_n = {} # Cache computations of the cov_n
 
         self.set_parameters_kernel()
@@ -223,7 +223,7 @@ class GPFittingGaussian(object):
         if self.n_burning > 0:
             parameters = self.sample_parameters(float(self.n_burning) / (self.thinning + 1))
         else:
-            parameters = [self.samples_parameters.append[-1]]
+            parameters = [self.samples_parameters[-1]]
 
         self.samples_parameters = []
         self.samples_parameters.append(parameters[-1])
@@ -1141,15 +1141,18 @@ class GPFittingGaussian(object):
                 'cov': None,
             }
 
-        if points.shape[0] == 1 and tuple(points[0, :]) in self.cache_cov_n:
-            cov_n = self.cache_cov_n[tuple(points[0, :])]
+        if points.shape[0] == 1:
+            index = (tuple(points[0, :]), tuple(parameters_kernel))
+
+        if points.shape[0] == 1 and index in self.cache_cov_n:
+            cov_n = self.cache_cov_n[index]
         else:
             solve_2 = cho_solve(chol, vec_cov.transpose())
             cov_n = self.evaluate_cov(points, parameters_kernel) - np.dot(vec_cov, solve_2)
 
             if points.shape[0] == 1:
                 self.cache_cov_n = {}
-                self.cache_cov_n[tuple(points[0, :])] = cov_n
+                self.cache_cov_n[index] = cov_n
 
         return {
             'mean': mu_n,
@@ -1251,8 +1254,18 @@ class GPFittingGaussian(object):
         :param noisy_evaluations: boolean
         :return: float
         """
-        if self.best_solution is not None:
-            best = self.best_solution
+        if var_noise is None:
+            var_noise = self.var_noise.value[0]
+
+        if parameters_kernel is None:
+            parameters_kernel = self.kernel.hypers_values_as_array
+
+        if mean is None:
+            mean = self.mean.value[0]
+
+        index = (var_noise, mean, tuple(parameters_kernel))
+        if index in self.best_solution:
+            best = self.best_solution[index]
             return best
 
         if not noisy_evaluations:
@@ -1264,7 +1277,7 @@ class GPFittingGaussian(object):
             )['mean']
 
         best = np.max(evaluations)
-        self.best_solution = best
+        self.best_solution[index] = best
 
         return best
 
@@ -1274,7 +1287,7 @@ class GPFittingGaussian(object):
         """
         self.cache_chol_cov = {}
         self.cache_sol_chol_y_unbiased = {}
-        self.best_solution = None
+        self.best_solution = {}
         self.cache_cov_n = {}
 
 

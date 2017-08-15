@@ -77,3 +77,16 @@ class TestMultiTask(unittest.TestCase):
 
         final_sol = self.mt.optimize(random_seed=1)
 
+        assert np.all(final_sol['solution'] == np.array([100, 0]))
+
+        assert 1 ==2
+
+    def test_optimize_samples(self):
+        self.mt.bq.gp.thinning = 5
+        self.mt.bq.gp.n_burning = 100
+        self.mt.bq.gp.max_steps_out = 1000
+        sol = self.mt.optimize(random_seed=1, n_samples_parameters=15, n_restarts=1000)
+       # assert np.all(sol['solution'] == np.array([100, 1]))
+        print sol
+        assert 1==2
+

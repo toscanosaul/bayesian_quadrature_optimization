@@ -36,6 +36,10 @@ from stratified_bayesian_optimization.lib.affine_break_points import (
     AffineBreakPoints,
 )
 from stratified_bayesian_optimization.lib.parallel import Parallel
+from stratified_bayesian_optimization.lib.util import (
+    wrapper_objective_voi,
+    wrapper_gradient_voi,
+)
 
 
 def simple_affine_break_points(a, b):
@@ -587,3 +591,32 @@ class TestSBO(unittest.TestCase):
         grad_2 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
         npt.assert_almost_equal(grad, grad_2, decimal=5)
+
+    def test_evaluate_sbo_sample_parameters(self):
+
+        warnings.filterwarnings("ignore")
+        n_samples = 50
+        n_restarts = 10
+        opt_params_mc = {'factr':1e12, 'maxiter':10}
+        candidate = np.array([[52.5, 0]])
+        n_samples_parameters = 2
+        monte_carlo = True
+
+        np.random.seed(1)
+        self.sbo.bq.gp.sample_parameters(n_samples_parameters)
+
+        args = (self.sbo, monte_carlo, n_samples, n_restarts, opt_params_mc, 0,
+                n_samples_parameters)
+        # TODO: THINK IN A GOOD TEST. NOW IT ONLY TESTS THAT IT RUNS
+        obj = wrapper_objective_voi(candidate[0, :], *args)
+
+        grad = wrapper_gradient_voi(candidate[0, :], *args)
+
+        answer = self.sbo.optimize(start=None, random_seed=1, parallel=True, monte_carlo=True,
+                                   n_samples=2, n_restarts_mc=2, n_restarts=1, start_ei=False,
+                                   n_samples_parameters=2, **{'factr': 1e12, 'maxiter': 10})
+
+        print answer
+        assert 1 ==2
+
+

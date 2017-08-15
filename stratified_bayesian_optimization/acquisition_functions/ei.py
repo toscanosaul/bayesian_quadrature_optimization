@@ -58,7 +58,6 @@ class EI(object):
         """
 
         self.gp = gp
-        self.best_solution = None
         self.noisy_evaluations = noisy_evaluations
         self.optimization_results = []
 
@@ -151,7 +150,8 @@ class EI(object):
         return gradient[0, :]
 
 
-    def optimize(self, start=None, random_seed=None, parallel=True, n_restarts=10):
+    def optimize(self, start=None, random_seed=None, parallel=True, n_restarts=10,
+                 n_samples_parameters=0, start_new_chain=False):
         """
         Optimizes EI
 
@@ -159,10 +159,22 @@ class EI(object):
         :param random_seed: int
         :param parallel: boolean
         :param n_restarts: int
+        :param n_samples_parameters: int
+        :param start_new_chain: (boolean) If True, we start a new chain with n_samples_parameters
+            samples of the parameters of the GP model.
         :return:
         """
+
         if random_seed is not None:
             np.random.seed(random_seed)
+
+        if start_new_chain:
+            if self.gp.name_model == BAYESIAN_QUADRATURE:
+                self.gp.gp.start_new_chain()
+                self.gp.gp.sample_parameters(n_samples_parameters)
+            else:
+                self.gp.start_new_chain()
+                self.gp.sample_parameters(n_samples_parameters)
 
         bounds = self.gp.bounds
 
@@ -208,7 +220,7 @@ class EI(object):
         for j in xrange(n_restarts):
             point_dict[j] = start[j, :]
 
-        args = (False, None, parallel, 0, optimization, self)
+        args = (False, None, parallel, 0, optimization, self, n_samples_parameters)
 
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
             wrapper_optimize, point_dict, *args)
@@ -381,5 +393,3 @@ class EI(object):
         Cleans the cache
         """
         self.gp.clean_cache()
-        self.best_solution = None
-

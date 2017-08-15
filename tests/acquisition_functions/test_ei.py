@@ -37,6 +37,10 @@ from stratified_bayesian_optimization.lib.affine_break_points import (
 )
 from stratified_bayesian_optimization.lib.parallel import Parallel
 from stratified_bayesian_optimization.acquisition_functions.ei import EI
+from stratified_bayesian_optimization.lib.util import (
+    wrapper_objective_acquisition_function,
+    wrapper_gradient_acquisition_function,
+)
 
 
 class TestEI(unittest.TestCase):
@@ -143,3 +147,103 @@ class TestEI(unittest.TestCase):
         evaluations = self.ei_2.generate_evaluations('1', '2', '3', 1, 1, 1, [100], 0)
 
         npt.assert_almost_equal(opt['optimal_value'], np.max(evaluations))
+
+    def test_evaluate_parameters(self):
+        point = np.array([[97.5, 0]])
+
+        np.random.seed(1)
+        val_2 = self.ei.evaluate(point, 1.0, 5.0, np.array([50.0, 8.6, -3.0, -0.1]))
+
+        val = self.ei.evaluate(point)
+
+        self.gp.var_noise.value[0] = 1.0
+        self.gp.mean.value[0] = 5.0
+        self.gp.kernel.update_value_parameters(np.array([50.0, 8.6, -3.0, -0.1]))
+
+        np.random.seed(1)
+        val_1 = self.ei.evaluate(point)
+
+        npt.assert_almost_equal(val_1, val_2)
+
+    def test_evaluate_bq_parameters(self):
+        point =  np.array([[97.5]])
+
+        np.random.seed(1)
+        val_2 = self.ei_2.evaluate(point, 1.0, 5.0, np.array([50.0, 8.6, -3.0, -0.1]))
+        val = self.ei_2.evaluate(point)
+
+        self.bq.gp.var_noise.value[0] = 1.0
+        self.bq.gp.mean.value[0] = 5.0
+        self.bq.gp.kernel.update_value_parameters(np.array([50.0, 8.6, -3.0, -0.1]))
+
+        np.random.seed(1)
+        val_1 = self.ei_2.evaluate(point)
+
+        npt.assert_almost_equal(val_1, val_2)
+
+    def test_gradient_parameters(self):
+        point = np.array([[91.5, 0]])
+
+        np.random.seed(1)
+        grad_2 = self.ei.evaluate_gradient(point, *(1.0, 5.0, np.array([50.0, 8.6, -3.0, -0.1])))
+        grad = self.ei.evaluate_gradient(point)
+
+        self.gp.var_noise.value[0] = 1.0
+        self.gp.mean.value[0] = 5.0
+        self.gp.kernel.update_value_parameters(np.array([50.0, 8.6, -3.0, -0.1]))
+
+        np.random.seed(1)
+        grad_1 = self.ei.evaluate_gradient(point)
+
+        npt.assert_almost_equal(grad_1, grad_2)
+
+    def test_gradient_bq_parameters(self):
+        point =  np.array([[91.5]])
+        np.random.seed(1)
+        grad_2 = self.ei_2.evaluate_gradient(point, *(1.0, 5.0, np.array([50.0, 8.6, -3.0, -0.1])))
+
+        grad = self.ei_2.evaluate_gradient(point)
+        self.bq.gp.var_noise.value[0] = 1.0
+        self.bq.gp.mean.value[0] = 5.0
+        self.bq.gp.kernel.update_value_parameters(np.array([50.0, 8.6, -3.0, -0.1]))
+
+        np.random.seed(1)
+        grad_1 = self.ei_2.evaluate_gradient(point)
+
+        npt.assert_almost_equal(grad_2, grad_1)
+
+    def test_combine_ei_gradient(self):
+        point = np.array([[91.5, 0]])
+
+        np.random.seed(1)
+
+        val = self.ei.evaluate(point, *(1.0, 5.0, np.array([50.0, 8.6, -3.0, -0.1])))
+
+
+        grad =  self.ei.evaluate_gradient(point, *(1.0, 5.0, np.array([50.0, 8.6, -3.0, -0.1])))
+
+        self.ei.clean_cache()
+        np.random.seed(1)
+        grad_1 =  self.ei.evaluate_gradient(point, *(1.0, 5.0, np.array([50.0, 8.6, -3.0, -0.1])))
+
+        npt.assert_almost_equal(grad, grad_1)
+
+    def test_evaluate_ei_sample_parameters(self):
+        point = np.array([91.5, 0])
+        self.ei.gp.thinning = 5
+        self.ei.gp.n_burning = 100
+
+        n_samples_parameters = 15
+        np.random.seed(1)
+        self.gp.start_new_chain()
+        self.gp.sample_parameters(n_samples_parameters)
+        value = wrapper_objective_acquisition_function(point, self.ei, n_samples_parameters)
+
+
+        gradient = wrapper_gradient_acquisition_function(point, self.ei, n_samples_parameters)
+        np.random.seed(1)
+        sol = self.ei.optimize(None, 1, True, 10,
+                                    n_samples_parameters=n_samples_parameters)
+        npt.assert_almost_equal(value, 0.297100121625)
+        npt.assert_almost_equal(gradient, np.array([0.00058253, 0]))
+        npt.assert_almost_equal(sol['optimal_value'], 0.30205775381169897)

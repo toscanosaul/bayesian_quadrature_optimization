@@ -13,6 +13,7 @@ from stratified_bayesian_optimization.lib.constant import(
     LOWER_TRIANG_NAME,
     SCALED_KERNEL,
     SAME_CORRELATION,
+    BAYESIAN_QUADRATURE,
 )
 from stratified_bayesian_optimization.lib.affine_break_points import (
     AffineBreakPointsPrep,
@@ -20,6 +21,7 @@ from stratified_bayesian_optimization.lib.affine_break_points import (
 )
 from stratified_bayesian_optimization.lib.parallel import Parallel
 from stratified_bayesian_optimization.initializers.log import SBOLog
+from stratified_bayesian_optimization.bayesian.bayesian_evaluations import BayesianEvaluations
 
 logger = SBOLog(__name__)
 
@@ -321,7 +323,7 @@ def wrapper_optimization(start, *args):
 
 
 def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restarts=1,
-                          opt_params_mc=None, n_threads=0):
+                          opt_params_mc=None, n_threads=0, n_samples_parameters=0):
     """
     Wrapper of objective_voi
     :param self: instance of the acquisition function
@@ -334,6 +336,7 @@ def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restart
         -'maxiter': int
     }
     :param n_threads: (int)
+    :param n_samples_parameters: (int)
 
     :return: float
     """
@@ -341,13 +344,19 @@ def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restart
     if opt_params_mc is None:
         opt_params_mc = {}
 
-    return self.objective_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
-                              n_restarts=n_restarts, n_threads=n_threads,
-                              **opt_params_mc)
 
+    if n_samples_parameters == 0:
+        value = self.objective_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
+                                   n_restarts=n_restarts, n_threads=n_threads, **opt_params_mc)
+    else:
+        args = (monte_carlo, n_samples, n_restarts, n_threads)
+        value = BayesianEvaluations.evaluate(self.objective_voi, point, self.bq.gp,
+                                             n_samples_parameters, None, *args, **opt_params_mc)[0]
+
+    return value
 
 def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts=1,
-                         opt_params_mc=None, n_threads=0):
+                         opt_params_mc=None, n_threads=0, n_samples_parameters=0):
     """
     Wrapper of objective_voi (an acquisition function)
     :param self: instance of the acquisition function
@@ -360,15 +369,22 @@ def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts
         -'maxiter': int
     }
     :param n_threads: (int)
+    :param n_samples_parameters: (int)
     :return: np.array(n)
     """
 
     if opt_params_mc is None:
         opt_params_mc = {}
 
-    return self.grad_obj_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
-                              n_restarts=n_restarts, n_threads=n_threads,
-                             **opt_params_mc)
+    if n_samples_parameters == 0:
+        value = self.grad_obj_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
+                                  n_restarts=n_restarts, n_threads=n_threads, **opt_params_mc)
+    else:
+        args = (monte_carlo, n_samples, n_restarts, n_threads)
+        value = BayesianEvaluations.evaluate(self.grad_obj_voi, point, self.bq.gp,
+                                             n_samples_parameters, None, *args, **opt_params_mc)[0]
+
+    return value
 
 def wrapper_evaluate_quadrature_cross_cov(point, historical_points, parameters_kernel, self):
     """
@@ -620,31 +636,56 @@ def wrapper_grad_posterior_mean_bq(point, self, var_noise=None, mean=None, param
     return self.grad_posterior_mean(point, var_noise=var_noise, mean=mean,
                                     parameters_kernel=parameters_kernel)
 
-def wrapper_objective_acquisition_function(point, self, *params):
+def wrapper_objective_acquisition_function(point, self, n_samples_parameters=0, *params):
     """
     Wrapper of an acquisition function that's not SBO or KG.
 
     :param point: np.array(n)
     :param self: acquisition function instance
+    :param n_samples_parameters: int
     :param params: additional parameters of the function
     :return: float
     """
 
     point = point.reshape((1, len(point)))
 
-    return self.evaluate(point, *params)
+    if n_samples_parameters == 0:
+        value = self.evaluate(point, *params)
+    else:
+        if self.gp.name_model == BAYESIAN_QUADRATURE:
+            gp_model = self.gp.gp
+        else:
+            gp_model = self.gp
 
-def wrapper_gradient_acquisition_function(point, self, *params):
+        value = BayesianEvaluations.evaluate(self.evaluate, point, gp_model, n_samples_parameters,
+                                             None, *params)[0]
+
+    return value
+
+def wrapper_gradient_acquisition_function(point, self, n_samples_parameters=0, *params):
     """
     Wrapper of the gradient of an acquisition function that's not SBO or KG.
 
     :param point: np.array(n)
     :param self: acquisition function instance
+    :param n_samples_parameters: int
     :param params: additional parameters of the function
     :return: float
     """
     point = point.reshape((1, len(point)))
-    return self.evaluate_gradient(point, *params)
+
+    if n_samples_parameters == 0:
+        value = self.evaluate_gradient(point, *params)
+    else:
+        if self.gp.name_model == BAYESIAN_QUADRATURE:
+            gp_model = self.gp.gp
+        else:
+            gp_model = self.gp
+
+        value = BayesianEvaluations.evaluate(self.evaluate_gradient, point, gp_model,
+                                             n_samples_parameters, None, *params)[0]
+
+    return value
 
 
 

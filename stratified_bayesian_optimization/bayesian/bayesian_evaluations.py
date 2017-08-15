@@ -6,7 +6,8 @@ import numpy as np
 class BayesianEvaluations(object):
 
     @classmethod
-    def evaluate(cls, function, point, gp_model, number_samples=20, random_seed=None, **kwargs):
+    def evaluate(cls, function, point, gp_model, number_samples=20, random_seed=None, *args,
+                 **kwargs):
         """
         Estimates E[function(point | parameters)] where the expectation is over the parameters of
         the gp_model.
@@ -16,19 +17,28 @@ class BayesianEvaluations(object):
         :param gp_model: GP-model
         :param number_samples: int
         :param random_seed: int
+        :param args: additional arguments for the function
         :param kwargs: additional arguments for the function
         :return: float
         """
 
         if random_seed is not None:
             np.random.seed(random_seed)
-        # TODO: BEFORE CALLING THIS FUNCTIONS WE SHOULD START A NEW CHAIN WITH ENOUGH SAMPLES.
+        # TODO: BEFORE CALLING THIS FUNCTION WE SHOULD START A NEW CHAIN WITH ENOUGH SAMPLES.
 
         parameters = gp_model.samples_parameters[-number_samples:]
 
         values = []
 
         for parameter in parameters:
-            values.append(function(point, parameter, **kwargs))
+            parameter = [parameter[0], parameter[1], parameter[2:]]
+            values.append(function(point, *(args + tuple(parameter)), **kwargs))
 
-        return np.mean(values)
+        if type(values[0]) == float:
+            value = np.mean(values)
+            std = np.std(values)
+        else:
+            value = np.mean(values, axis=0)
+            std = np.std(values, axis=0)
+
+        return value, std

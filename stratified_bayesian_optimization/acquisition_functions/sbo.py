@@ -547,7 +547,8 @@ class SBO(object):
         return grad
 
     def optimize(self, start=None, random_seed=None, parallel=True, monte_carlo=False, n_samples=1,
-                 n_restarts_mc=1, n_restarts=1, start_ei=True, **opt_params_mc):
+                 n_restarts_mc=1, n_restarts=1, start_ei=True, n_samples_parameters=0,
+                 **opt_params_mc):
         """
         Optimizes the VOI.
         :param start: np.array(1xn)
@@ -558,6 +559,8 @@ class SBO(object):
         :param n_restarts_mc: (int) Number of restarts to optimize a_{n+1} given a sample.
         :param n_restarts: (int)
         :param start_ei: (boolean) If True, we choose starting points using EI.
+        :param n_samples_parameters: (int) Number of samples of the parameters of the model. If
+            n_samples_parameters = 0, we optimize SBO with the MLE parameters.
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -568,8 +571,16 @@ class SBO(object):
         if random_seed is not None:
             np.random.seed(random_seed)
 
+        n_jobs = min(n_restarts, mp.cpu_count())
+        n_threads = max(int((mp.cpu_count() - n_jobs) / n_jobs), 1)
+
+        if n_samples_parameters > 0:
+            self.bq.gp.start_new_chain()
+            self.bq.gp.sample_parameters(n_samples_parameters)
+
         bounds = self.bq.bounds
 
+        #TODO: CHANGE ei.optimize with n_samples_parameters
         if start_ei and not self.bq.separate_tasks:
             ei = EI(self.bq.gp)
             opt_ei = ei.optimize(n_restarts=1000, parallel=parallel)
@@ -581,13 +592,15 @@ class SBO(object):
                                             parameters_distribution=self.bq.parameters_distribution,
                                             model_only_x=True)
             mk = MultiTasks(quadrature_2, quadrature_2.parameters_distribution.get(TASKS))
-            st_ei = mk.optimize(parallel=True, start=None, n_restarts=1000)['solution']
-            st_ei = st_ei[0:-1]
+            st_ei = mk.optimize_first(parallel=True, start=None, n_restarts=1000,
+                                      n_samples_parameters=n_samples_parameters)
+
             values = []
             for i in xrange(len(self.bq.tasks)):
                 point = np.concatenate((st_ei, np.array([i])))
-                val = self.objective_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
-                              n_restarts=n_restarts_mc, n_threads=0, **opt_params_mc)
+                args = (self, monte_carlo, n_samples, n_restarts_mc, opt_params_mc, 0,
+                        n_samples_parameters)
+                val = wrapper_objective_voi(point, *args)
                 values.append(val)
             tk = np.argmax(values)
             st_ei = np.concatenate((st_ei, np.array([tk])))
@@ -632,9 +645,6 @@ class SBO(object):
 
         bounds = [tuple(bound) for bound in self.bounds_opt]
 
-        # for i in self.bq.w_domain:
-        #     bounds[i] = (None, None)
-
         optimization = Optimization(
             LBFGS_NAME,
             wrapper_objective_voi,
@@ -646,15 +656,12 @@ class SBO(object):
         for j in xrange(n_restarts):
             point_dict[j] = start[j, :]
 
-        n_jobs = min(n_restarts, mp.cpu_count())
-        n_threads = max(int((mp.cpu_count() - n_jobs) / n_jobs), 1)
-
         if n_restarts > int( mp.cpu_count() / 2):
             args = (False, None, parallel, 0, optimization, self, monte_carlo, n_samples,
-                        n_restarts_mc, opt_params_mc, n_threads)
+                        n_restarts_mc, opt_params_mc, n_threads, n_samples_parameters)
         else:
             args = (False, None, False, 0, optimization, self, monte_carlo, n_samples,
-                        n_restarts_mc, opt_params_mc, 0)
+                        n_restarts_mc, opt_params_mc, 0, n_samples_parameters)
 
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
             wrapper_optimize, point_dict, *args)

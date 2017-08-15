@@ -18,6 +18,9 @@ from stratified_bayesian_optimization.lib.optimization import Optimization
 from stratified_bayesian_optimization.lib.parallel import Parallel
 from stratified_bayesian_optimization.acquisition_functions.ei import EI
 from stratified_bayesian_optimization.initializers.log import SBOLog
+from stratified_bayesian_optimization.lib.util import (
+    wrapper_objective_acquisition_function,
+)
 
 logger = SBOLog(__name__)
 
@@ -42,7 +45,8 @@ class MultiTasks(object):
         """
         return self.ei.evaluate(point, var_noise, mean, parameters_kernel)
 
-    def optimize_first(self, start=None, random_seed=None, parallel=True, n_restarts=100):
+    def optimize_first(self, start=None, random_seed=None, parallel=True, n_restarts=100,
+                       n_samples_parameters=0):
         """
         Optimizes EI
 
@@ -50,43 +54,53 @@ class MultiTasks(object):
         :param random_seed: int
         :param parallel: boolean
         :param n_restarts: int
+        :param n_samples_parameters int
 
         :return np.array(n)
         """
 
-        solution = self.ei.optimize(start, random_seed, parallel, n_restarts)
+        solution = self.ei.optimize(start, random_seed, parallel, n_restarts,
+                                    n_samples_parameters=n_samples_parameters)
 
         return solution['solution']
 
-    def choose_best_task_given_x(self, x, var_noise=None, mean=None, parameters_kernel=None):
+    def choose_best_task_given_x(self, x, n_samples_parameters=0):
         """
 
         :param x: np.array(n)
+        :param n_samples_parameters: int
         :return: int
         """
         values = []
         for i in xrange(self.n_tasks):
             point = np.concatenate((x, np.array([i])))
-            point = point.reshape((1, len(point)))
-            val = self.ei_tasks.evaluate(point, var_noise, mean, parameters_kernel)
+            val = wrapper_objective_acquisition_function(point, self.ei_tasks, n_samples_parameters)
             values.append(val)
+
         return np.argmax(values)
 
-    def optimize(self, random_seed=None, parallel=True, n_restarts=100, **kwargs):
+    def optimize(self, random_seed=None, parallel=True, n_restarts=100, n_samples_parameters=0,
+                 **kwargs):
         """
         Optimizes EI
 
         :param random_seed: int
         :param parallel: boolean
         :param n_restarts: int
+        :param n_samples_parameters: int
 
         :return {'solution': np.array(n)}
         """
 
-        point = self.optimize_first(random_seed=random_seed, parallel=parallel,
-                                    n_restarts=n_restarts)
+        if n_samples_parameters > 0:
+            self.bq.gp.start_new_chain()
+            self.bq.gp.sample_parameters(n_samples_parameters)
 
-        task = self.choose_best_task_given_x(point)
+        point = self.optimize_first(random_seed=random_seed, parallel=parallel,
+                                    n_restarts=n_restarts,
+                                    n_samples_parameters=n_samples_parameters)
+
+        task = self.choose_best_task_given_x(point, n_samples_parameters=n_samples_parameters)
 
         solution = np.concatenate((point, np.array([task])))
 

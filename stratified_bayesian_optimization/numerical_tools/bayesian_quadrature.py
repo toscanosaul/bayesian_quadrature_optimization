@@ -149,7 +149,7 @@ class BayesianQuadrature(object):
         self.type_kernel = self.gp.type_kernel
 
         # Used to compute the best solution for EI.
-        self.best_solution = None
+        self.best_solution = {}
 
 
     def _get_cached_data(self, index, name):
@@ -1188,10 +1188,20 @@ class BayesianQuadrature(object):
         :param noisy_evaluations: boolean
         :return: float
         """
-        if self.best_solution is not None:
-            best = self.best_solution
-            return best
+        if var_noise is None:
+            var_noise = self.gp.var_noise.value[0]
 
+        if parameters_kernel is None:
+            parameters_kernel = self.gp.kernel.hypers_values_as_array
+
+        if mean is None:
+            mean = self.gp.mean.value[0]
+
+        index = (var_noise, mean, tuple(parameters_kernel))
+
+        if index in self.best_solution:
+            best = self.best_solution[index]
+            return best
 
         points = self.gp.data['points'][:, self.x_domain]
         evaluations = self.compute_posterior_parameters(
@@ -1199,7 +1209,7 @@ class BayesianQuadrature(object):
         )['mean']
 
         best = np.max(evaluations)
-        self.best_solution = best
+        self.best_solution[index] = best
 
         return best
 
@@ -1251,7 +1261,7 @@ class BayesianQuadrature(object):
         self.gp.clean_cache()
         self.max_mean = {}  # max_{x} a_{n} (x)
         # (a solution for every set of parameters of the model)
-        self.best_solution = None
+        self.best_solution = {}
 
     def generate_evaluations(self, problem_name, model_type, training_name, n_training,
                              random_seed, iteration, n_points_by_dimension=None):
