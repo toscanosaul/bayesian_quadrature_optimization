@@ -19,7 +19,7 @@ n_folds = 5
 train=[]
 validate=[]
 
-for i in range(1,6):
+for i in range(1, 6):
     data = np.loadtxt("problems/movies_collaborative/ml-100k/u%d.base"%i)
     test = np.loadtxt("problems/movies_collaborative/ml-100k/u%d.test"%i)
     train.append(data)
