@@ -1,32 +1,10 @@
 {
-    "parameters_distribution":{
-
-    },
     "max_steps_out":1000,
-    "noise":false,
-    "random_seed":7,
-    "number_points_each_dimension_debug":[
-        10,
-        10,
-        10,
-        10
+    "n_best_restarts_mc":10,
+    "mean_value":[
+
     ],
-    "n_burning":100,
-    "number_points_each_dimension":[
-        6,
-        6,
-        11,
-        6
-    ],
-    "n_restarts_mc":500,
-    "factr_mc":1000000000000.0,
-    "name_model":"gp_fitting_gaussian",
     "same_correlation":true,
-    "type_kernel":[
-        "Product_of_kernels_with_separable_domain",
-        "Matern52",
-        "Tasks_Kernel"
-    ],
     "bounds_domain_x":[
         [
             0.01,
@@ -45,27 +23,71 @@
             201
         ]
     ],
-    "training_name":null,
-    "dim_x":4,
-    "monte_carlo_sbo":true,
-    "parallel":true,
-    "maxiter_mc":10,
-    "dimensions":[
-        5,
-        4,
-        5
+    "use_only_training_points":true,
+    "n_best_restarts":5,
+    "type_bounds":[
+        0,
+        0,
+        0,
+        0,
+        1
     ],
-    "mean_value":[
-
-    ],
-    "n_training":50,
+    "n_burning":100,
+    "method_optimization":"sbo",
+    "random_seed":7,
+    "n_samples":0,
+    "name_model":"gp_fitting_gaussian",
     "x_domain":[
         0,
         1,
         2,
         3
     ],
-    "use_only_training_points":true,
+    "training_data":{
+
+    },
+    "dim_x":4,
+    "monte_carlo_sbo":true,
+    "n_training":50,
+    "n_samples_parameters":15,
+    "mle":true,
+    "n_iterations":100,
+    "type_kernel":[
+        "Product_of_kernels_with_separable_domain",
+        "Matern52",
+        "Tasks_Kernel"
+    ],
+    "debug":false,
+    "distribution":"uniform_finite",
+    "n_restarts":50,
+    "dimensions":[
+        5,
+        4,
+        5
+    ],
+    "n_restarts_mc":500,
+    "n_best_restarts_mean":100,
+    "thinning":5,
+    "n_restarts_mean":1000,
+    "noise":false,
+    "number_points_each_dimension":[
+        6,
+        6,
+        11,
+        6
+    ],
+    "factr_mc":1000000000000.0,
+    "kernel_values":[
+
+    ],
+    "number_points_each_dimension_debug":[
+        10,
+        10,
+        10,
+        10
+    ],
+    "training_name":null,
+    "parallel":true,
     "problem_name":"movies_collaborative",
     "bounds_domain":[
         [
@@ -93,33 +115,16 @@
         ]
     ],
     "minimize":false,
-    "debug":false,
-    "mle":true,
-    "thinning":5,
-    "n_iterations":100,
+    "n_samples_mc":20,
     "points":[
 
     ],
-    "type_bounds":[
-        0,
-        0,
-        0,
-        0,
-        1
-    ],
-    "n_samples_mc":20,
-    "n_samples":0,
-    "choose_noise":true,
-    "training_data":{
-
-    },
-    "distribution":"uniform_finite",
-    "n_restarts":1,
-    "kernel_values":[
-
-    ],
-    "method_optimization":"sbo",
     "var_noise_value":[
 
-    ]
+    ],
+    "maxiter_mc":10,
+    "choose_noise":true,
+    "parameters_distribution":{
+
+    }
 }

@@ -81,6 +81,8 @@ class TestSpecService(unittest.TestCase):
             'n_best_restarts': 10,
             'n_samples_parameters': 0,
             'n_best_restarts_mc': 1,
+            'n_best_restarts_mean': 100,
+            'n_restarts_mean': 1000,
         }
 
     def test_generate_dic_specs(self):
