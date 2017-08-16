@@ -595,8 +595,12 @@ def wrapper_evaluate_sample(point, self, *args):
     :param args:
     :return:
     """
+    if type(point) == list:
+        val = self.evaluate_sample(point[0], point[1], point[2], *args)
+    else:
+        val = self.evaluate_sample(point, *args)
 
-    return self.evaluate_sample(point, *args)
+    return val
 
 def wrapper_evaluate_gradient_sample(point, self, *args):
     """

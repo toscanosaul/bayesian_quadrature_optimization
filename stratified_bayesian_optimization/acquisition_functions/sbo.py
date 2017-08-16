@@ -310,6 +310,7 @@ class SBO(object):
                                                mean)
 
             point_dict = {}
+            point_start = {}
             for i in xrange(n_samples):
                 start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
                                                                type_bounds=len(bounds_x) * [0])
@@ -321,35 +322,33 @@ class SBO(object):
                 else:
                     start = np.array(start_points)
 
-                if n_best_restarts > 0 and n_best_restarts < n_restarts:
-                    point_dict_ = {}
-                    for j in xrange(start.shape[0]):
-                        point_dict_[j] = start[j:j+1, :]
+                for j in xrange(n_restarts):
+                    point_dict[(j, i)] = [deepcopy(start[j:j+1,:]), samples[i]]
+                    point_start[(j, i)] = [deepcopy(start[j:j+1,:]), candidate_point, samples[i]]
+            n_restarts_ = n_restarts
 
-                    args = (False, None, True, n_threads, self, candidate_point, samples[i],
-                            var_noise, mean, parameters_kernel, True, n_threads)
-                    values_candidates = Parallel.run_function_different_arguments_parallel(
-                        wrapper_evaluate_sample, point_dict_, *args)
+            if n_best_restarts > 0 and n_best_restarts < n_restarts:
+                point_dict = {}
+                args = (False, None, True, n_threads, self, var_noise, mean, parameters_kernel,
+                        True, n_threads)
+                values_candidates = Parallel.run_function_different_arguments_parallel(
+                    wrapper_evaluate_sample, point_start, *args)
 
-                    values = [values_candidates[j] for j in values_candidates]
+                for i in xrange(n_samples):
+                    values = [values_candidates[(j, i)] for j in xrange(n_restarts)]
                     values_index = sorted(range(len(values)), key=lambda k: values[k])
                     values_index = values_index[-n_best_restarts:]
-                    start = []
 
-                    for j in values_index:
-                        start.append(point_dict_[j][0, :])
-                    start = np.array(start)
-
-                n_restarts_ = start.shape[0]
-                for j in xrange(n_restarts_):
-                    point_dict[(j, i)] = [deepcopy(start[j:j+1,:]), samples[i]]
+                    for j in xrange(len(values_index)):
+                        index_p = values_index[j]
+                        point_dict[(j, i)] = [point_start[(index_p, i)][0], samples[i]]
+                n_restarts_ = len(values_index)
 
             args = (False, None, True, n_threads, self, candidate_point, var_noise, mean,
                     parameters_kernel, n_threads)
 
             simulated_values = Parallel.run_function_different_arguments_parallel(
                 wrapper_evaluate_sbo_by_sample, point_dict, *args, **opt_params_mc)
-
             for i in xrange(n_samples):
                 values = []
                 for j in xrange(n_restarts_):

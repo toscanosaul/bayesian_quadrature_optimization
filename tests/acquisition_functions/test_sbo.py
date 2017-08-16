@@ -39,6 +39,7 @@ from stratified_bayesian_optimization.lib.parallel import Parallel
 from stratified_bayesian_optimization.lib.util import (
     wrapper_objective_voi,
     wrapper_gradient_voi,
+    wrapper_evaluate_sample,
 )
 
 
@@ -592,6 +593,15 @@ class TestSBO(unittest.TestCase):
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
         npt.assert_almost_equal(grad, grad_2, decimal=5)
 
+    def test_evaluate_sample_sbo_with_best_restarts(self):
+        args = (self.sbo, )
+        point = [np.array([[ 9.76619979]]),np.array([[52.5, 0]]), -1.2831193615780914]
+        val = wrapper_evaluate_sample(point, *args)
+        self.sbo.clean_cache()
+        val_2 = self.sbo.evaluate_sample(np.array([[ 9.76619979]]), np.array([[52.5, 0]]),
+                                         -1.2831193615780914)
+        assert val == val_2
+
     def test_evaluate_sbo_sample_parameters(self):
 
         warnings.filterwarnings("ignore")
@@ -615,12 +625,13 @@ class TestSBO(unittest.TestCase):
         np.random.seed(1)
         grad = wrapper_gradient_voi(candidate[0, :], *args)
         np.random.seed(1)
+
         answer = self.sbo.optimize(start=None, random_seed=1, parallel=True, monte_carlo=True,
                                    n_samples=2, n_restarts_mc=10, n_best_restarts_mc=2,
                                    n_restarts=5, n_best_restarts=2, start_ei=True,
                                    n_samples_parameters=2, **{'factr': 1e12, 'maxiter': 10})
-        npt.assert_almost_equal(obj, np.array([ 0.0956093]), decimal=5)
-        npt.assert_almost_equal(grad, np.array([ 0.00039734, 0]))
+        npt.assert_almost_equal(obj, np.array([ 0.09515]), decimal=5)
+        npt.assert_almost_equal(grad, np.array([ 0.0003254, 0]))
         npt.assert_almost_equal(answer['optimal_value'], 0.67576666571448896)
 
 
