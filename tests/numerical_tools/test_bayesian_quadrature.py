@@ -64,7 +64,10 @@ class TestBayesianQuadrature(unittest.TestCase):
         add = [10, -10]
         kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
         function = SampleFunctions.sample_from_gp(points, kernel)
+        self.original_function = function
 
+        self.max_value = function[0, np.argmax(function)]
+        self.max_point = points[np.argmax(function), 0]
         for i in xrange(n_points):
             function[0, i] += add[tasks[i, 0]]
         points = np.concatenate((points, tasks), axis=1)
@@ -323,4 +326,87 @@ class TestBayesianQuadrature(unittest.TestCase):
             self.gp.write_debug_data("a", "b", "c", "d", "e")
             JSONFile.write([], "a")
         mock_mkdir.assert_called_with('data/debugging/a')
+
+    def test_evaluate_posterior_mean_params(self):
+        point = np.array([[97.5]])
+
+        np.random.seed(1)
+        val_2 = self.gp_complete.objective_posterior_mean(point[0, :], 1.0, 5.0,
+                                                 np.array([50.0, 8.6, -3.0, -0.1]))
+
+        val = self.gp_complete.objective_posterior_mean(point[0, :])
+
+        self.gp_complete.gp.var_noise.value[0] = 1.0
+        self.gp_complete.gp.mean.value[0] = 5.0
+        self.gp_complete.gp.kernel.update_value_parameters(np.array([50.0, 8.6, -3.0, -0.1]))
+
+        np.random.seed(1)
+        val_1 = self.gp_complete.objective_posterior_mean(point[0, :])
+
+        npt.assert_almost_equal(val_1, val_2)
+
+    def test_evaluate_grad_posterior_mean_params(self):
+        point = np.array([[97.5]])
+
+        np.random.seed(1)
+        val_2 = self.gp_complete.grad_posterior_mean(point[0, :], 1.0, 5.0,
+                                                 np.array([50.0, 8.6, -3.0, -0.1]))
+
+        val = self.gp_complete.grad_posterior_mean(point[0, :])
+
+        self.gp_complete.gp.var_noise.value[0] = 1.0
+        self.gp_complete.gp.mean.value[0] = 5.0
+        self.gp_complete.gp.kernel.update_value_parameters(np.array([50.0, 8.6, -3.0, -0.1]))
+
+        np.random.seed(1)
+        val_1 = self.gp_complete.grad_posterior_mean(point[0, :])
+
+        npt.assert_almost_equal(val_1, val_2)
+
+    def test_optimize_posterior_mean_samples(self):
+        np.random.seed(5)
+        n_points = 100
+        points = np.linspace(0, 100, n_points)
+        points = points.reshape([n_points, 1])
+        tasks = np.random.randint(2, size=(n_points, 1))
+
+        add = [10, -10]
+        kernel = Matern52.define_kernel_from_array(1, np.array([100.0, 1.0]))
+        function = SampleFunctions.sample_from_gp(points, kernel)
+        max_value = function[0, np.argmax(function)]
+        max_point = points[np.argmax(function), 0]
+
+        for i in xrange(n_points):
+            function[0, i] += add[tasks[i, 0]]
+        points = np.concatenate((points, tasks), axis=1)
+
+        function = function[0, :]
+
+        training_data = {
+            'evaluations': list(function),
+            'points': points,
+            "var_noise": [],
+        }
+
+        gaussian_p = GPFittingGaussian(
+            [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
+            training_data, [2, 1, 2], bounds_domain=[[0, 100]], max_steps_out=1000)
+        gaussian_p = gaussian_p.fit_gp_regression(random_seed=1314938)
+        gp = BayesianQuadrature(gaussian_p, [0], UNIFORM_FINITE, {TASKS: 2})
+
+
+        random_seed = 10
+
+        n_samples_parameters = 15
+        gp.gp.thinning = 10
+        gp.gp.n_burning = 500
+
+        sol_2 = gp.optimize_posterior_mean(random_seed=random_seed, n_best_restarts=10,
+                                           n_samples_parameters=n_samples_parameters,
+                                           start_new_chain=True)
+
+        assert max_point == sol_2['solution']
+        npt.assert_almost_equal(max_value, sol_2['optimal_value'], decimal=3)
+
+
 

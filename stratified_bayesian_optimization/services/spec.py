@@ -24,7 +24,8 @@ class SpecService(object):
                            debug=False, same_correlation=False,
                            number_points_each_dimension_debug=None, monte_carlo_sbo=False,
                            n_samples_mc=1, n_restarts_mc=1, factr_mc=1e12, maxiter_mc=1000,
-                           use_only_training_points=True, n_restarts=10):
+                           use_only_training_points=True, n_restarts=10, n_best_restarts=10,
+                           n_best_restarts_mc=1, n_samples_parameters=0):
 
         """
         Generate dict that represents run spec.
@@ -87,6 +88,12 @@ class SpecService(object):
         :param use_only_training_points: (boolean) Uses only training points in the cached gp model
             if it's True.
         :param n_restarts: (int) Number of starting points to optimize the acquisition function
+        :param n_best_restarts: (int) Number of best starting points chosen from the n_restart
+            points.
+        :param n_best_restarts_mc: (int) Number of best restarting points used to optimize a_{n+1}
+            given a sample.
+        :param n_samples_parameters: (int) Number of samples of the parameter to compute the VOI
+            using a Bayesian approach.
 
         :return: dict
         """
@@ -172,6 +179,9 @@ class SpecService(object):
             'maxiter_mc': maxiter_mc,
             'use_only_training_points': use_only_training_points,
             'n_restarts': n_restarts,
+            'n_best_restarts': n_best_restarts,
+            'n_best_restarts_mc': n_best_restarts_mc,
+            'n_samples_parameters': n_samples_parameters,
         }
 
     # TODO - generate a list of runspecentities over different parameters

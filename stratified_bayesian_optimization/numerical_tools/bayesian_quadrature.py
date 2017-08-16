@@ -530,8 +530,9 @@ class BayesianQuadrature(object):
                                             parameters_kernel=parameters_kernel)
 
     def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False, n_restarts=1000,
-                                parallel=True, n_treads=0, var_noise=None, mean=None,
-                                parameters_kernel=None):
+                                n_best_restarts=100, parallel=True, n_treads=0, var_noise=None,
+                                mean=None, parameters_kernel=None, n_samples_parameters=0,
+                                start_new_chain=False):
         """
         Optimize the posterior mean.
 
@@ -539,29 +540,39 @@ class BayesianQuadrature(object):
         :param random_seed: float
         :param minimize: boolean
         :param n_restarts: int
+        :param n_best_restarts: int
         :param parallel: (boolean)
         :param n_treads: (int)
         :param var_noise: float
         :param mean: float
         :param parameters_kernel: np.array(l)
+        :param n_samples_parameters: int
+        :param start_new_chain: boolean
         :return: dictionary with the results of the optimization
         """
         if random_seed is not None:
             np.random.seed(random_seed)
 
+        if start_new_chain and n_samples_parameters > 0:
+            self.gp.start_new_chain()
+            self.gp.sample_parameters(n_samples_parameters)
+
         bounds_x = [self.gp.bounds[i] for i in xrange(len(self.gp.bounds)) if i in
                     self.x_domain]
 
-        if var_noise is None:
-            var_noise = self.gp.var_noise.value[0]
+        if n_samples_parameters == 0:
+            if var_noise is None:
+                var_noise = self.gp.var_noise.value[0]
 
-        if parameters_kernel is None:
-            parameters_kernel = self.gp.kernel.hypers_values_as_array
+            if parameters_kernel is None:
+                parameters_kernel = self.gp.kernel.hypers_values_as_array
 
-        if mean is None:
-            mean = self.gp.mean.value[0]
+            if mean is None:
+                mean = self.gp.mean.value[0]
 
-        index_cache = (var_noise, mean, tuple(parameters_kernel))
+            index_cache = (var_noise, mean, tuple(parameters_kernel))
+        else:
+            index_cache = 'mc_mean'
 
         if start is None:
             start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
@@ -574,7 +585,26 @@ class BayesianQuadrature(object):
                 start = np.array(start)
             else:
                 start = np.array(start_points)
+            n_restart_ = start.shape[0]
 
+            if n_restart_ > n_best_restarts and n_best_restarts > 0:
+                values = []
+                point_dict = {}
+                args = (False, None, True, 0, self, var_noise, mean, parameters_kernel,
+                        n_samples_parameters)
+                for j in xrange(n_restart_):
+                    point_dict[j] = start[j, :]
+                values = Parallel.run_function_different_arguments_parallel(
+                    wrapper_objective_posterior_mean_bq, point_dict, *args)
+                values_index = sorted(range(len(values)), key=lambda k: values[k])
+                values_index = values_index[-n_best_restarts:]
+                start_ = []
+                for i in values_index:
+                    start_.append(start[i, :])
+                start = np.array(start_)
+                n_restart_ = start.shape[0]
+        else:
+            n_restart_ = 1
         bounds = [tuple(bound) for bound in bounds_x]
 
         objective_function = wrapper_objective_posterior_mean_bq
@@ -588,17 +618,18 @@ class BayesianQuadrature(object):
             minimize=minimize)
 
         point_dict = {}
-        for j in xrange(n_restarts + 1):
+
+        for j in xrange(n_restart_):
             point_dict[j] = start[j, :]
 
         args = (False, None, parallel, n_treads, optimization, self, var_noise, mean,
-                parameters_kernel)
+                parameters_kernel, n_samples_parameters)
 
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
             wrapper_optimize, point_dict, *args)
 
         maximum_values = []
-        for j in xrange(n_restarts + 1):
+        for j in xrange(n_restart_):
             maximum_values.append(optimal_solutions.get(j)['optimal_value'])
 
         max_ = np.max(maximum_values)

@@ -478,7 +478,7 @@ class TestSBO(unittest.TestCase):
 
 
 
-        value_2 = sbo.objective_voi(point[0, :], False, 1, 1, 0,
+        value_2 = sbo.objective_voi(point[0, :], False, 1, 1, 0, 0,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
 
         self.gp.gp.var_noise.value[0] = 1.0
@@ -509,11 +509,11 @@ class TestSBO(unittest.TestCase):
         n_samples = 50
         n_restarts = 30
 
-        value = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0,
+        value = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0, 0,
                                   *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])),
                                   **{'factr':1e12,'maxiter':10})
 
-        value_1 = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0,
+        value_1 = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0, 0,
                                     **{'factr':1e12,'maxiter':10})
 
 
@@ -522,7 +522,7 @@ class TestSBO(unittest.TestCase):
         self.gp.gp.kernel.update_value_parameters(np.array([50.0, 9.6, -3.0, -0.1]))
 
         np.random.seed(1)
-        value_2 = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0,
+        value_2 = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0, 0,
                                     **{'factr':1e12,'maxiter':10})
 
         assert value_2 == value
@@ -531,7 +531,7 @@ class TestSBO(unittest.TestCase):
 
         candidate = np.array([[52.5, 0]])
 
-        grad_1 = self.sbo.grad_obj_voi(candidate[0, :], False, 1, 1, 0,
+        grad_1 = self.sbo.grad_obj_voi(candidate[0, :], False, 1, 1, 0, 0,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
 
         grad = self.sbo.grad_obj_voi(candidate[0, :])
@@ -553,10 +553,10 @@ class TestSBO(unittest.TestCase):
         candidate = np.array([[52.5, 0]])
 
         np.random.seed(1)
-        grad_1 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0,
+        grad_1 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
 
-        grad = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0)
+        grad = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0)
 
         np.random.seed(1)
 
@@ -565,7 +565,7 @@ class TestSBO(unittest.TestCase):
         self.gp.gp.kernel.update_value_parameters(np.array([50.0, 9.6, -3.0, -0.1]))
 
         np.random.seed(1)
-        grad_2 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0)
+        grad_2 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0)
 
         assert np.all(grad_1 == grad_2)
 
@@ -580,15 +580,15 @@ class TestSBO(unittest.TestCase):
 
         np.random.seed(1)
 
-        obj = self.sbo.objective_voi(candidate[0, :], True, n_samples, n_restarts, 0,
+        obj = self.sbo.objective_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
 
-        grad = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0,
+        grad = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
 
         self.sbo.clean_cache()
         np.random.seed(1)
-        grad_2 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0,
+        grad_2 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
         npt.assert_almost_equal(grad, grad_2, decimal=5)
 
@@ -597,6 +597,7 @@ class TestSBO(unittest.TestCase):
         warnings.filterwarnings("ignore")
         n_samples = 50
         n_restarts = 10
+        n_best_restarts_mc = 2
         opt_params_mc = {'factr':1e12, 'maxiter':10}
         candidate = np.array([[52.5, 0]])
         n_samples_parameters = 2
@@ -605,18 +606,23 @@ class TestSBO(unittest.TestCase):
         np.random.seed(1)
         self.sbo.bq.gp.sample_parameters(n_samples_parameters)
 
-        args = (self.sbo, monte_carlo, n_samples, n_restarts, opt_params_mc, 0,
+        args = (self.sbo, monte_carlo, n_samples, n_restarts, n_best_restarts_mc, opt_params_mc, 0,
                 n_samples_parameters)
         # TODO: THINK IN A GOOD TEST. NOW IT ONLY TESTS THAT IT RUNS
+        np.random.seed(1)
         obj = wrapper_objective_voi(candidate[0, :], *args)
 
+        np.random.seed(1)
         grad = wrapper_gradient_voi(candidate[0, :], *args)
-
+        np.random.seed(1)
         answer = self.sbo.optimize(start=None, random_seed=1, parallel=True, monte_carlo=True,
-                                   n_samples=2, n_restarts_mc=2, n_restarts=1, start_ei=False,
+                                   n_samples=2, n_restarts_mc=10, n_best_restarts_mc=2,
+                                   n_restarts=5, n_best_restarts=2, start_ei=True,
                                    n_samples_parameters=2, **{'factr': 1e12, 'maxiter': 10})
+        npt.assert_almost_equal(obj, np.array([ 0.0956093]), decimal=5)
+        npt.assert_almost_equal(grad, np.array([ 0.00039734, 0]))
+        npt.assert_almost_equal(answer['optimal_value'], 0.67576666571448896)
 
-        print answer
-        assert 1 ==2
+
 
 

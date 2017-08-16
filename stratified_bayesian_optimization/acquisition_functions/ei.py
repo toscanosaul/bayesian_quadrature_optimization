@@ -75,11 +75,11 @@ class EI(object):
         """
         Compute the EI acquisition function.
 
-        :param point: np.array(1xn)
+        :param point: np.array(kxn)
         :param var_noise: float
         :param mean: float
         :param parameters_kernel: np.array(l)
-        :return: float
+        :return: np.array(k)
         """
 
         post_parameters = self.gp.compute_posterior_parameters(
@@ -99,11 +99,8 @@ class EI(object):
         second_term = np.sqrt(cov) * norm.pdf(normalized_factor)
 
         evaluation = first_term + second_term
-
         if len(evaluation.shape) == 2:
-            evaluation = evaluation[0, 0]
-        else:
-            evaluation = evaluation[0]
+            evaluation = evaluation[0, :]
 
         return evaluation
 
@@ -151,7 +148,7 @@ class EI(object):
 
 
     def optimize(self, start=None, random_seed=None, parallel=True, n_restarts=10,
-                 n_samples_parameters=0, start_new_chain=False):
+                 n_best_restarts=0, n_samples_parameters=0, start_new_chain=False):
         """
         Optimizes EI
 
@@ -159,6 +156,7 @@ class EI(object):
         :param random_seed: int
         :param parallel: boolean
         :param n_restarts: int
+        :param n_best_restarts: (int) Chooses the best n_best_restarts based on EI
         :param n_samples_parameters: int
         :param start_new_chain: (boolean) If True, we start a new chain with n_samples_parameters
             samples of the parameters of the GP model.
@@ -204,6 +202,22 @@ class EI(object):
 
             start = np.array(start_points)
 
+        if n_best_restarts > 0 and n_best_restarts < n_restarts:
+            point_dict = {}
+            for j in xrange(start.shape[0]):
+                point_dict[j] = start[j, :]
+            args = (False, None, True, 0, self, n_samples_parameters)
+            ei_values = Parallel.run_function_different_arguments_parallel(
+                wrapper_objective_acquisition_function, point_dict, *args)
+            values = [ei_values[i] for i in ei_values]
+            values_index = sorted(range(len(values)), key=lambda k: values[k])
+            values_index = values_index[-n_best_restarts:]
+            start = []
+            for j in values_index:
+                start.append(point_dict[j])
+            start = np.array(start)
+
+        n_restarts = start.shape[0]
         bounds = [tuple(bound) for bound in self.bounds_opt]
 
         objective_function = wrapper_objective_acquisition_function

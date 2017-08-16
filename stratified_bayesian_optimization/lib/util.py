@@ -323,7 +323,8 @@ def wrapper_optimization(start, *args):
 
 
 def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restarts=1,
-                          opt_params_mc=None, n_threads=0, n_samples_parameters=0):
+                          n_best_restarts=0, opt_params_mc=None, n_threads=0,
+                          n_samples_parameters=0):
     """
     Wrapper of objective_voi
     :param self: instance of the acquisition function
@@ -331,6 +332,7 @@ def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restart
     :param monte_carlo: (boolean) If True, estimates the function by MC.
     :param n_samples: (int) Number of samples for the MC method.
     :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
+    :param n_best_restarts: (int)
     :param opt_params_mc: {
         -'factr': int
         -'maxiter': int
@@ -347,16 +349,18 @@ def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restart
 
     if n_samples_parameters == 0:
         value = self.objective_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
-                                   n_restarts=n_restarts, n_threads=n_threads, **opt_params_mc)
+                                   n_restarts=n_restarts, n_best_restarts=n_best_restarts,
+                                   n_threads=n_threads, **opt_params_mc)
     else:
-        args = (monte_carlo, n_samples, n_restarts, n_threads)
+        args = (monte_carlo, n_samples, n_restarts, n_best_restarts, n_threads)
         value = BayesianEvaluations.evaluate(self.objective_voi, point, self.bq.gp,
                                              n_samples_parameters, None, *args, **opt_params_mc)[0]
 
     return value
 
 def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts=1,
-                         opt_params_mc=None, n_threads=0, n_samples_parameters=0):
+                         n_best_restarts=0, opt_params_mc=None, n_threads=0,
+                         n_samples_parameters=0):
     """
     Wrapper of objective_voi (an acquisition function)
     :param self: instance of the acquisition function
@@ -364,6 +368,7 @@ def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts
     :param monte_carlo: (boolean) If True, estimates the function by MC.
     :param n_samples: (int) Number of samples for the MC method.
     :param n_restarts: (int) Number of restarts to optimize a_{n+1} given a sample.
+    :param n_best_restarts: (int)
     :param opt_params_mc:{
         -'factr': int
         -'maxiter': int
@@ -378,9 +383,10 @@ def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts
 
     if n_samples_parameters == 0:
         value = self.grad_obj_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
-                                  n_restarts=n_restarts, n_threads=n_threads, **opt_params_mc)
+                                  n_restarts=n_restarts, n_best_restarts=n_best_restarts,
+                                  n_threads=n_threads, **opt_params_mc)
     else:
-        args = (monte_carlo, n_samples, n_restarts, n_threads)
+        args = (monte_carlo, n_samples, n_restarts, n_best_restarts, n_threads)
         value = BayesianEvaluations.evaluate(self.grad_obj_voi, point, self.bq.gp,
                                              n_samples_parameters, None, *args, **opt_params_mc)[0]
 
@@ -615,26 +621,41 @@ def wrapper_optimize(point, self, *args):
     return self.optimize(point, *args)
 
 def wrapper_objective_posterior_mean_bq(point, self, var_noise=None, mean=None,
-                                        parameters_kernel=None):
+                                        parameters_kernel=None, n_samples_parameters=0):
     """
     Wrapper of the objective posterior mean of a bq model
     :param point: np.array(k)
     :param self: bayesian-quadrature instance
+    :param n_samples_parameters: int
     :return: float
     """
+    if n_samples_parameters == 0:
+        val = self.objective_posterior_mean(point, var_noise=var_noise, mean=mean,
+                                            parameters_kernel=parameters_kernel)
+    else:
+        val = BayesianEvaluations.evaluate(self.objective_posterior_mean, point, self.gp,
+                                           n_samples_parameters, None)[0]
 
-    return self.objective_posterior_mean(point, var_noise=var_noise, mean=mean,
-                                         parameters_kernel=parameters_kernel)
+    return val
 
-def wrapper_grad_posterior_mean_bq(point, self, var_noise=None, mean=None, parameters_kernel=None):
+def wrapper_grad_posterior_mean_bq(point, self, var_noise=None, mean=None, parameters_kernel=None,
+                                   n_samples_parameters=0):
     """
     Wrapper of the gradient of the posterior mean of a bq model
     :param point: np.array(k)
     :param self: bayesian-quadrature instance
+    :param n_samples_parameters: int
     :return: np.array(k)
     """
-    return self.grad_posterior_mean(point, var_noise=var_noise, mean=mean,
-                                    parameters_kernel=parameters_kernel)
+
+    if n_samples_parameters == 0:
+        val = self.grad_posterior_mean(point, var_noise=var_noise, mean=mean,
+                                       parameters_kernel=parameters_kernel)
+    else:
+        val = BayesianEvaluations.evaluate(self.grad_posterior_mean, point, self.gp,
+                                           n_samples_parameters, None)[0]
+
+    return val
 
 def wrapper_objective_acquisition_function(point, self, n_samples_parameters=0, *params):
     """

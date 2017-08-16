@@ -46,7 +46,7 @@ class MultiTasks(object):
         return self.ei.evaluate(point, var_noise, mean, parameters_kernel)
 
     def optimize_first(self, start=None, random_seed=None, parallel=True, n_restarts=100,
-                       n_samples_parameters=0):
+                       n_samples_parameters=0, n_best_restarts=0):
         """
         Optimizes EI
 
@@ -55,11 +55,13 @@ class MultiTasks(object):
         :param parallel: boolean
         :param n_restarts: int
         :param n_samples_parameters int
+        :param n_best_restarts: int
 
         :return np.array(n)
         """
 
         solution = self.ei.optimize(start, random_seed, parallel, n_restarts,
+                                    n_best_restarts=n_best_restarts,
                                     n_samples_parameters=n_samples_parameters)
 
         return solution['solution']
@@ -79,26 +81,29 @@ class MultiTasks(object):
 
         return np.argmax(values)
 
-    def optimize(self, random_seed=None, parallel=True, n_restarts=100, n_samples_parameters=0,
-                 **kwargs):
+    def optimize(self, random_seed=None, parallel=True, n_restarts=100, n_best_restarts=0,
+                 n_samples_parameters=0, start_new_chain=True, **kwargs):
         """
         Optimizes EI
 
         :param random_seed: int
         :param parallel: boolean
         :param n_restarts: int
+        :param n_best_restarts: int
         :param n_samples_parameters: int
+        :param start_new_chain: boolean
 
         :return {'solution': np.array(n)}
         """
 
-        if n_samples_parameters > 0:
+        if n_samples_parameters > 0 and start_new_chain:
             self.bq.gp.start_new_chain()
             self.bq.gp.sample_parameters(n_samples_parameters)
 
         point = self.optimize_first(random_seed=random_seed, parallel=parallel,
                                     n_restarts=n_restarts,
-                                    n_samples_parameters=n_samples_parameters)
+                                    n_samples_parameters=n_samples_parameters,
+                                    n_best_restarts=n_best_restarts)
 
         task = self.choose_best_task_given_x(point, n_samples_parameters=n_samples_parameters)
 

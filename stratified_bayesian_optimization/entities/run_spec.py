@@ -66,12 +66,18 @@ class RunSpecEntity(Model):
     n_restarts_mc = IntType(required=False)
     factr_mc = FloatType(required=False)
     maxiter_mc = IntType(required=False)
+    n_best_restarts_mc = IntType(required=False)
 
     #Acquistion function parameters
     n_restarts = IntType(required=False)
+    n_best_restarts = IntType(required=False)
+
 
     # We use only training points when reading GP model from cache
     use_only_training_points = BooleanType(required=False)
+
+    # Computes everything using samples of the parameters if n_samples_parameters > 0
+    n_samples_parameters = IntType(required=False)
 
     @classmethod
     def from_json(cls, specfile):
@@ -152,6 +158,12 @@ class RunSpecEntity(Model):
 
         use_only_training_points = spec.get('use_only_training_points', True)
         n_restarts = spec.get('n_restarts', 10)
+        n_best_restarts = spec.get('n_best_restarts', 10)
+
+        n_best_restarts_mc = spec.get('n_best_restarts_mc', 10)
+
+        n_samples_parameters = spec.get('n_samples_parameters', 0)
+
 
         entry.update({
             'problem_name': problem_name,
@@ -196,6 +208,9 @@ class RunSpecEntity(Model):
             'maxiter_mc': maxiter_mc,
             'use_only_training_points': use_only_training_points,
             'n_restarts': n_restarts,
+            'n_best_restarts_mc': n_best_restarts_mc,
+            'n_best_restarts': n_best_restarts,
+            'n_samples_parameters': n_samples_parameters,
         })
 
         return cls(entry)
