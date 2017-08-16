@@ -79,6 +79,9 @@ class RunSpecEntity(Model):
     # Computes everything using samples of the parameters if n_samples_parameters > 0
     n_samples_parameters = IntType(required=False)
 
+    n_restarts_mean = IntType(required=False)
+    n_best_restarts_mean = IntType(required=False)
+
     @classmethod
     def from_json(cls, specfile):
         """
@@ -164,6 +167,8 @@ class RunSpecEntity(Model):
 
         n_samples_parameters = spec.get('n_samples_parameters', 0)
 
+        n_restarts_mean = spec.get('n_restarts_mean', 1000)
+        n_best_restarts_mean = spec.get('n_best_restarts_mean', 100)
 
         entry.update({
             'problem_name': problem_name,
@@ -211,6 +216,8 @@ class RunSpecEntity(Model):
             'n_best_restarts_mc': n_best_restarts_mc,
             'n_best_restarts': n_best_restarts,
             'n_samples_parameters': n_samples_parameters,
+            'n_best_restarts_mean': n_best_restarts_mean,
+            'n_restarts_mean': n_restarts_mean,
         })
 
         return cls(entry)

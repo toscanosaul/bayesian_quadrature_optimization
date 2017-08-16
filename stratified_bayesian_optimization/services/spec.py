@@ -25,7 +25,8 @@ class SpecService(object):
                            number_points_each_dimension_debug=None, monte_carlo_sbo=False,
                            n_samples_mc=1, n_restarts_mc=1, factr_mc=1e12, maxiter_mc=1000,
                            use_only_training_points=True, n_restarts=10, n_best_restarts=10,
-                           n_best_restarts_mc=1, n_samples_parameters=0):
+                           n_best_restarts_mc=1, n_samples_parameters=0, n_restarts_mean=1000,
+                           n_best_restarts_mean=100):
 
         """
         Generate dict that represents run spec.
@@ -94,6 +95,8 @@ class SpecService(object):
             given a sample.
         :param n_samples_parameters: (int) Number of samples of the parameter to compute the VOI
             using a Bayesian approach.
+        :param n_restarts_mean: (int) Number of starting points to optimize the posterior mean.
+        :param n_best_restarts_mean: (int)
 
         :return: dict
         """
@@ -182,6 +185,8 @@ class SpecService(object):
             'n_best_restarts': n_best_restarts,
             'n_best_restarts_mc': n_best_restarts_mc,
             'n_samples_parameters': n_samples_parameters,
+            'n_restarts_mean': n_restarts_mean,
+            'n_best_restarts_mean': n_best_restarts_mean,
         }
 
     # TODO - generate a list of runspecentities over different parameters

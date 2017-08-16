@@ -109,7 +109,8 @@ class BGO(object):
 
     def optimize(self, random_seed=None, start=None, debug=False, monte_carlo_sbo=False,
                  n_samples_mc=1, n_restarts_mc=1, n_best_restarts_mc=0,
-                 n_restarts=10, n_best_restarts=0, n_samples_parameters=0, **opt_params_mc):
+                 n_restarts=10, n_best_restarts=0, n_samples_parameters=0, n_restarts_mean=1000,
+                 n_best_restarts_mean=100, **opt_params_mc):
         """
         Optimize objective over the domain.
         :param random_seed: int
@@ -125,6 +126,8 @@ class BGO(object):
         :param n_restarts: (int) Number of restarts of the VOI
         :param n_best_restarts: (int) Number of best restarting points chosen to optimize the VOI
         :param n_samples_parameters: (int)
+        :param n_restarts_mean: int
+        :param n_best_restarts_mean: int
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -140,6 +143,8 @@ class BGO(object):
         noise = None
 
         optimize_mean = model.optimize_posterior_mean(minimize=self.minimize,
+                                                      n_restarts=n_restarts_mean,
+                                                      n_best_restarts=n_best_restarts_mean,
                                                       n_samples_parameters=n_samples_parameters,
                                                       start_new_chain=True)
         optimal_value = \
@@ -231,6 +236,9 @@ class BGO(object):
         n_best_restarts_mc = spec.get('n_best_restarts_mc')
         n_best_restarts = spec.get('n_best_restarts')
 
+        n_restarts_mean = spec.get('n_restarts_mean', 1000)
+        n_best_restarts_mean = spec.get('n_best_restarts_mean', 100)
+
         opt_params_mc = {}
         factr = spec.get('factr_mc')
         maxiter = spec.get('maxiter_mc')
@@ -249,5 +257,8 @@ class BGO(object):
                               n_best_restarts_mc=n_best_restarts_mc,
                               monte_carlo_sbo=monte_carlo_sbo, n_restarts=n_restarts,
                               n_best_restarts=n_best_restarts,
-                              n_samples_parameters=n_samples_parameters, **opt_params_mc)
+                              n_samples_parameters=n_samples_parameters,
+                              n_restarts_mean=n_restarts_mean,
+                              n_best_restarts_mean=n_best_restarts_mean,
+                              **opt_params_mc)
         return result
