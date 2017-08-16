@@ -16,7 +16,7 @@ logger = SBOLog(__name__)
 class GPFittingService(object):
     _filename = 'gp_{model_type}_{problem_name}_{type_kernel}_{training_name}.json'.format
     _get_filename_mod = 'gp_{model_type}_{problem_name}_{type_kernel}_{training_name}_' \
-                              '{method}.json'.format
+                              '{method}_samples_parameters_{n_samples_parameters}.json'.format
 
     _model_map = {
         'gp_fitting_gaussian': GPFittingGaussian,
@@ -84,7 +84,8 @@ class GPFittingService(object):
         )
 
     @classmethod
-    def _get_filename_modified(cls, model_type, problem_name, type_kernel, training_name, method):
+    def _get_filename_modified(cls, model_type, problem_name, type_kernel, training_name, method,
+                               n_samples_parameters):
         """
 
         :param model_type:
@@ -92,6 +93,7 @@ class GPFittingService(object):
         :param type_kernel: [(str)] Must be in possible_kernels
         :param training_name: (str), prefix used to save the training data
         :param method: (str)
+        :param n_samples_parameters: int
 
         :return: str
         """
@@ -107,6 +109,7 @@ class GPFittingService(object):
             type_kernel=kernel_name,
             training_name=training_name,
             method=method,
+            n_samples_parameters=n_samples_parameters,
         )
 
     @classmethod
@@ -205,19 +208,21 @@ class GPFittingService(object):
         return gp_model
 
     @classmethod
-    def write_gp_model(cls, gp_model, method=SBO_METHOD, name_model='gp_fitting_gaussian'):
+    def write_gp_model(cls, gp_model, method=SBO_METHOD, n_samples_parameters=0,
+                       name_model='gp_fitting_gaussian'):
         """
         Write the gp_model after new points are added.
 
         :param gp_model: gp model instance
         :param method: (str)
+        :param n_samples_parameters: int
         :param name_model: (str)
         """
         model_type = cls._model_map[name_model]
 
 
         f_name = cls._get_filename_modified(model_type, gp_model.problem_name, gp_model.type_kernel,
-                                            gp_model.training_name, method)
+                                            gp_model.training_name, method, n_samples_parameters)
 
         gp_dir = path.join(GP_DIR, gp_model.problem_name)
 

@@ -49,7 +49,8 @@ logger = SBOLog(__name__)
 
 class BayesianQuadrature(object):
     _filename = 'opt_post_mean_gp_{model_type}_{problem_name}_{type_kernel}_{training_name}_' \
-                '{n_training}_{random_seed}_{method}.json'.format
+                '{n_training}_{random_seed}_{method}_sample_param_{n_samples_parameters}.' \
+                'json'.format
 
     _filename_mu_evaluations = '{iteration}_post_mean_gp_{model_type}_{problem_name}_' \
                                 '{type_kernel}_{training_name}_{n_training}_{random_seed}.' \
@@ -1245,7 +1246,7 @@ class BayesianQuadrature(object):
         return best
 
     def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed,
-                         method=SBO_METHOD):
+                         method=SBO_METHOD, n_samples_parameters=0):
         """
         Write information about the different optimizations realized.
 
@@ -1255,6 +1256,7 @@ class BayesianQuadrature(object):
         :param n_training: (int)
         :param random_seed: (int)
         :param method: (str)
+        :param n_samples_parameters: int
         """
 
         if not os.path.exists(DEBUGGING_DIR):
@@ -1276,7 +1278,8 @@ class BayesianQuadrature(object):
                                 training_name=training_name,
                                 n_training=n_training,
                                 random_seed=random_seed,
-                                method=method)
+                                method=method,
+                                n_samples_parameters=n_samples_parameters)
 
         debug_path = path.join(debug_dir, f_name)
 

@@ -39,7 +39,7 @@ logger = SBOLog(__name__)
 class EI(object):
 
     _filename = 'opt_ei_{model_type}_{problem_name}_{type_kernel}_{training_name}_' \
-                '{n_training}_{random_seed}.json'.format
+                '{n_training}_{random_seed}_samples_params_{n_samples_parameters}.json'.format
 
 
     _filename_ei_evaluations = '{iteration}_ei_{model_type}_{problem_name}_' \
@@ -252,7 +252,8 @@ class EI(object):
 
         return optimal_solutions.get(ind_max)
 
-    def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed):
+    def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed,
+                         n_samples_parameters):
         """
         Write the results of the optimization.
 
@@ -261,6 +262,7 @@ class EI(object):
         :param training_name: (str)
         :param n_training: (int)
         :param random_seed: (int)
+        :param n_samples_parameters: int
         """
         if not os.path.exists(DEBUGGING_DIR):
             os.mkdir(DEBUGGING_DIR)
@@ -280,7 +282,8 @@ class EI(object):
                                 type_kernel=kernel_name,
                                 training_name=training_name,
                                 n_training=n_training,
-                                random_seed=random_seed)
+                                random_seed=random_seed,
+                                n_samples_parameters=n_samples_parameters)
 
         debug_path = path.join(debug_dir, f_name)
 

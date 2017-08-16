@@ -51,7 +51,8 @@ logger = SBOLog(__name__)
 class SBO(object):
 
     _filename = 'opt_sbo_{model_type}_{problem_name}_{type_kernel}_{training_name}_' \
-                '{n_training}_{random_seed}_mc_{monte_carlo}_sbo.json'.format
+                '{n_training}_{random_seed}_mc_{monte_carlo}_samples_params_' \
+                '{n_samples_parameters}_sbo.json'.format
 
     _filename_voi_evaluations = '{iteration}_sbo_{model_type}_{problem_name}_' \
                                 '{type_kernel}_{training_name}_{n_training}_{random_seed}_mc_' \
@@ -767,7 +768,7 @@ class SBO(object):
         self.optimal_samples = {}
 
     def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed,
-                         monte_carlo=False):
+                         monte_carlo=False, n_samples_parameters=0):
         """
         Write the results of the optimization.
 
@@ -777,6 +778,7 @@ class SBO(object):
         :param n_training: (int)
         :param random_seed: (int)
         :param monte_carlo: (boolean)
+        :param n_samples_parameters: int
         """
         if not os.path.exists(DEBUGGING_DIR):
             os.mkdir(DEBUGGING_DIR)
@@ -797,7 +799,8 @@ class SBO(object):
                                 training_name=training_name,
                                 n_training=n_training,
                                 random_seed=random_seed,
-                                monte_carlo=monte_carlo)
+                                monte_carlo=monte_carlo,
+                                n_samples_parameters=n_samples_parameters)
 
         debug_path = path.join(debug_dir, f_name)
 

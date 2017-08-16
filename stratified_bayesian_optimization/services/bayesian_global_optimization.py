@@ -151,7 +151,8 @@ class BGO(object):
             self.objective.add_point(optimize_mean['solution'], optimize_mean['optimal_value'][0])
 
         model.write_debug_data(self.problem_name, self.name_model, self.training_name,
-                               self.n_training, self.random_seed, self.method_optimization)
+                               self.n_training, self.random_seed, self.method_optimization,
+                               n_samples_parameters)
 
         if debug:
             model.generate_evaluations(
@@ -170,6 +171,7 @@ class BGO(object):
             self.acquisition_function.write_debug_data(self.problem_name, self.name_model,
                                                        self.training_name, self.n_training,
                                                        self.random_seed,
+                                                       n_samples_parameters=n_samples_parameters,
                                                        monte_carlo=monte_carlo_sbo)
 
             if debug:
@@ -193,7 +195,8 @@ class BGO(object):
                                                  np.array([evaluation[0]]),
                                                  var_noise_eval=noise)
 
-            GPFittingService.write_gp_model(self.gp_model, method=self.method_optimization)
+            GPFittingService.write_gp_model(self.gp_model, method=self.method_optimization,
+                                            n_samples_parameters=n_samples_parameters)
 
             optimize_mean = model.optimize_posterior_mean(minimize=self.minimize,
                                                           start_new_chain=True,
@@ -203,7 +206,8 @@ class BGO(object):
                                          optimize_mean['optimal_value'][0])
 
             model.write_debug_data(self.problem_name, self.name_model, self.training_name,
-                                   self.n_training, self.random_seed, self.method_optimization)
+                                   self.n_training, self.random_seed, self.method_optimization,
+                                   n_samples_parameters)
 
             if debug:
                 model.generate_evaluations(

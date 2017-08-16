@@ -14,11 +14,11 @@ from stratified_bayesian_optimization.lib.constant import (
 
 
 class Objective(object):
-    _filename = 'results_{problem_name}_{training_name}_{n_points}_{random_seed}_{method}.json'.\
-        format
+    _filename = 'results_{problem_name}_{training_name}_{n_points}_{random_seed}_{method}_' \
+                'samples_params_{n_samples_parameters}.json'.format
 
     def __init__(self, problem_name, training_name, random_seed, n_training, n_samples=None,
-                 noise=False, method=SBO_METHOD):
+                 noise=False, method=SBO_METHOD, n_samples_parameters=0):
         """
 
         :param problem_name: (str)
@@ -28,6 +28,7 @@ class Objective(object):
         :param n_samples: (int) Take n_samples evaluations when we have noisy evaluations
         :param noise: boolean, true if the evaluations are noisy
         :param method: (str) bgo method
+        :param n_samples_parameters: int
         """
         self.evaluated_points = []
         self.objective_values = []
@@ -43,6 +44,7 @@ class Objective(object):
         name_module = TrainingDataService.get_name_module(problem_name)
         self.module = __import__(name_module, globals(), locals(), -1)
         self.method = method
+        self.n_samples_parameters = n_samples_parameters
 
         dir = path.join(PROBLEM_DIR, self.problem_name, PARTIAL_RESULTS)
 
@@ -55,6 +57,7 @@ class Objective(object):
             n_points=self.n_training,
             random_seed=self.random_seed,
             method=self.method,
+            n_samples_parameters=self.n_samples_parameters,
         )
 
         self.file_path = path.join(dir, file_name)
