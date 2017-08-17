@@ -87,7 +87,8 @@ class SBO(object):
         self.optimization_results = []
 
         # Cached data for MC SBO
-        self.samples = {} # Samples from a standard Gaussian r.v. used to estimate SBO
+        self.samples = None # Samples from a standard Gaussian r.v. used to estimate SBO
+        self.starting_points_sbo = None
 
         # 'optimum': arg_max{a_n(x) + sigma(x, candidate_point)*sample}
         # 'max': max{a_n(x) + sigma(x, candidate_point)*sample}
@@ -284,12 +285,25 @@ class SBO(object):
                 random_seed=random_seed, n_treads=n_threads, var_noise=var_noise,
                 parameters_kernel=parameters_kernel, mean=mean)['optimal_value']
 
-        if tuple(candidate_point[0, :]) in self.samples:
-            samples = self.samples[tuple(candidate_point[0, :])]
+        if self.samples is not None:
+            samples = self.samples
         else:
             samples = np.random.normal(0, 1, n_samples)
-            self.samples = {}
-            self.samples[tuple(candidate_point[0, :])] = samples
+            self.samples = samples
+
+        if self.starting_points_sbo is not None:
+            start = self.starting_points_sbo
+        elif parallel:
+            start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
+                                                           type_bounds=len(bounds_x) * [0])
+            if len(self.bq.optimal_solutions[index_cache]) > 0:
+                start = self.bq.optimal_solutions[index_cache][-1]['solution']
+
+                start = [start] + start_points[0: -1]
+                start = np.array(start)
+            else:
+                start = np.array(start_points)
+            self.starting_points_sbo = start
 
         max_values = []
 
@@ -312,15 +326,6 @@ class SBO(object):
             point_dict = {}
             point_start = {}
             for i in xrange(n_samples):
-                start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
-                                                               type_bounds=len(bounds_x) * [0])
-                if len(self.bq.optimal_solutions[index_cache]) > 0:
-                    start = self.bq.optimal_solutions[index_cache][-1]['solution']
-
-                    start = [start] + start_points[0: -1]
-                    start = np.array(start)
-                else:
-                    start = np.array(start_points)
 
                 for j in xrange(n_restarts):
                     point_dict[(j, i)] = [deepcopy(start[j:j+1,:]), samples[i]]
@@ -415,7 +420,7 @@ class SBO(object):
 
         max_points = self.optimal_samples[index_cache_2]['optimum']
 
-        samples = self.samples[tuple(candidate_point[0, :])]
+        samples = self.samples
         n_samples = len(samples)
 
         points = np.zeros((n_samples, len(self.bq.x_domain)))
@@ -638,7 +643,7 @@ class SBO(object):
                 values_ei.append(val)
             tk = np.argmax(values_ei)
             values_ei = [values_ei[t] for t in xrange(len(values_ei)) if t != tk]
-            points_st_ei = [points_st_ei[t] for t in xrange(len(values_ei)) if t != tk]
+            points_st_ei = [points_st_ei[t] for t in xrange(len(points_st_ei)) if t != tk]
             st_ei = np.concatenate((st_ei, np.array([tk])))
             st_ei = st_ei.reshape((1, len(st_ei)))
             n_restarts -= 1
@@ -688,7 +693,7 @@ class SBO(object):
                             start_.append(points_st_ei[j])
                         else:
                             start_.append(start[j - len(values_ei), :])
-                    start = np.array(start)
+                    start = np.array(start_)
                 if start_ei:
                     start = np.concatenate((start, st_ei), axis=0)
             else:
@@ -763,8 +768,9 @@ class SBO(object):
         Cleans the cache
         """
         self.bq.clean_cache()
-        self.samples = {}
+        self.samples = None
         self.optimal_samples = {}
+        self.starting_points_sbo = None
 
     def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed,
                          monte_carlo=False, n_samples_parameters=0):
