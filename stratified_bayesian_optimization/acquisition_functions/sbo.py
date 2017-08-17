@@ -18,6 +18,7 @@ from stratified_bayesian_optimization.lib.constant import (
     DEBUGGING_DIR,
     TASKS,
 )
+from stratified_bayesian_optimization.bayesian.bayesian_evaluations import BayesianEvaluations
 from stratified_bayesian_optimization.lib.affine_break_points import (
     AffineBreakPointsPrep,
     AffineBreakPoints,
@@ -430,11 +431,25 @@ class SBO(object):
 
     def objective_voi_bayesian(self, point, monte_carlo, n_samples_parameters, n_samples,
                                n_restarts, n_best_restarts, n_threads, **opt_params_mc):
+        """
+        Computes objective voi using a bayesian approach
+        :param point:
+        :param monte_carlo:
+        :param n_samples_parameters:
+        :param n_samples:
+        :param n_restarts:
+        :param n_best_restarts:
+        :param n_threads:
+        :param opt_params_mc:
+        :return:
+        """
         point = point.reshape((1, len(point)))
 
-        if not monte_carlo:
-
-            value = self.evaluate(point, *model_params, n_threads=n_threads)
+        if monte_carlo is False:
+            args = (monte_carlo, n_samples, n_restarts, n_best_restarts, n_threads)
+            value = BayesianEvaluations.evaluate(self.objective_voi, point, self.bq.gp,
+                                               n_samples_parameters, None, *args,
+                                               **opt_params_mc)[0]
         else:
             value = self.evaluate_mc_bayesian(
                 point, n_samples_parameters, n_samples, n_restarts,
