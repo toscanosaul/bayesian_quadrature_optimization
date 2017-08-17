@@ -23,12 +23,12 @@ if __name__ == '__main__':
 
     dim_x = 4
     bounds_domain_x = [(0.01, 1.01), (0.1, 2.1), (1, 21), (1, 201)]
-    problem_name = 'movies_collaborative'
+    problem_name = 'arxiv'
     training_name = None
     type_kernel = [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]
     dimensions = [5, 4, 5]
     bounds_domain = [[0.01, 1.01], [0.1, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
-    n_training = 50
+    n_training = 5
     random_seed = 7
     type_bounds = [0, 0, 0, 0, 1]
     x_domain = [0, 1, 2, 3]
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     n_restarts = 50
     n_best_restarts = 5
     use_only_training_points = True
-    method_optimization = SBO_METHOD
+    method_optimization = MULTI_TASK_METHOD
     n_samples_parameters = 15
     n_restarts_mean = 1000
     n_best_restarts_mean = 100
