@@ -183,16 +183,16 @@ class BayesianQuadrature(object):
         """
 
         if name == QUADRATURES:
-            if not thread:
-                self.cache_quadratures = {}
+            # if not thread:
+            #     self.cache_quadratures = {}
             self.cache_quadratures[index] = value
         if name == POSTERIOR_MEAN:
-            if not thread:
-                self.cache_posterior_mean = {}
+            # if not thread:
+            #     self.cache_posterior_mean = {}
             self.cache_posterior_mean[index] = value
         if name == B_NEW:
-            if not thread:
-                self.cache_quadrature_with_candidate = {}
+            # if not thread:
+            #     self.cache_quadrature_with_candidate = {}
             self.cache_quadrature_with_candidate[index] = value
 
     def evaluate_quadrate_cov(self, point, parameters_kernel):
@@ -807,7 +807,7 @@ class BayesianQuadrature(object):
         }
 
     def get_parameters_for_samples(self, cache, candidate_point, parameters_kernel,
-                                           var_noise, mean):
+                                           var_noise, mean, clear_cache=False):
         """
         Computes additional parameters needed for sample of SBO.
 
@@ -858,7 +858,8 @@ class BayesianQuadrature(object):
             denominator = np.clip(denominator, 0, None)
             denominator = np.sqrt(denominator)
             if cache:
-                self.cache_sample = {}
+                if clear_cache:
+                    self.cache_sample = {}
                 self.cache_sample[index_cache] = {}
                 self.cache_sample[index_cache]['denominator'] = denominator
                 self.cache_sample[index_cache]['solve_2'] = solve_2
@@ -1296,6 +1297,7 @@ class BayesianQuadrature(object):
         self.max_mean = {}  # max_{x} a_{n} (x)
         # (a solution for every set of parameters of the model)
         self.best_solution = {}
+        self.cache_sample = {}
 
     def generate_evaluations(self, problem_name, model_type, training_name, n_training,
                              random_seed, iteration, n_points_by_dimension=None):

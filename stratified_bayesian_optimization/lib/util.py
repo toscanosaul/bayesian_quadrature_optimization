@@ -352,9 +352,8 @@ def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restart
                                    n_restarts=n_restarts, n_best_restarts=n_best_restarts,
                                    n_threads=n_threads, **opt_params_mc)
     else:
-        args = (monte_carlo, n_samples, n_restarts, n_best_restarts, n_threads)
-        value = BayesianEvaluations.evaluate(self.objective_voi, point, self.bq.gp,
-                                             n_samples_parameters, None, *args, **opt_params_mc)[0]
+        value = self.evaluate_mc_bayesian(point, n_samples_parameters, n_samples, n_restarts,
+                                          n_best_restarts, n_threads, **opt_params_mc)
 
     return value
 
@@ -386,9 +385,9 @@ def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts
                                   n_restarts=n_restarts, n_best_restarts=n_best_restarts,
                                   n_threads=n_threads, **opt_params_mc)
     else:
-        args = (monte_carlo, n_samples, n_restarts, n_best_restarts, n_threads)
-        value = BayesianEvaluations.evaluate(self.grad_obj_voi, point, self.bq.gp,
-                                             n_samples_parameters, None, *args, **opt_params_mc)[0]
+        value = self.evaluate_gradient_mc_bayesian(
+            point, n_samples_parameters, n_samples, n_restarts,
+            n_best_restarts, n_threads, **opt_params_mc)
 
     return value
 
@@ -587,6 +586,32 @@ def wrapper_evaluate_sbo_by_sample(start_sample, self, candidate_point, var_nois
         parameters_kernel=parameters_kernel, n_restarts=0, parallel=False, n_threads=n_threads,
         **opt_params_mc)
 
+def wrapper_evaluate_sbo_by_sample_bayesian(start_sample_parameters, self, candidate_point,
+                                            n_threads, **opt_params_mc):
+    """
+
+    :param start_sample_parameters: [np.array(n), float, np.array(l)], the first element is the
+        starting point, and the second element is the sampled element from the Gaussian r.v.
+    :param self: sbo-instance
+    :param candidate_point: np.array(1xm)
+    :param var_noise: float
+    :param mean: float
+    :param parameters_kernel: np.array(l)
+    :param opt_params_mc:
+        -'factr': int
+        -'maxiter': int
+    :param n_threads: int
+    :return: {'max': float, 'optimum': np.array(n)}
+    """
+    sample = start_sample_parameters[1]
+    start = start_sample_parameters[0]
+    params = start_sample_parameters[2]
+
+    return self.evaluate_sbo_by_sample(
+        candidate_point, sample, start=start, var_noise=params[0], mean=params[1],
+        parameters_kernel=params[2:], n_restarts=0, parallel=False, n_threads=n_threads,
+        **opt_params_mc)
+
 def wrapper_evaluate_sample(point, self, *args):
     """
 
@@ -600,6 +625,16 @@ def wrapper_evaluate_sample(point, self, *args):
     else:
         val = self.evaluate_sample(point, *args)
 
+    return val
+
+def wrapper_evaluate_sample_bayesian(point, self):
+    point_ = point[0]
+    candidate_point = point[1]
+    sample = point[2]
+    params = point[3]
+
+    val = self.evaluate_sample(point_, candidate_point, sample, params[0], params[1], params[2:],
+                               True, 0)
     return val
 
 def wrapper_evaluate_gradient_sample(point, self, *args):
@@ -711,6 +746,10 @@ def wrapper_gradient_acquisition_function(point, self, n_samples_parameters=0, *
                                              n_samples_parameters, None, *params)[0]
 
     return value
+
+def wrapper_get_parameters_for_samples(parameters, point, self, *args):
+    return self.bq.get_parameters_for_samples(True, point, parameters[0], parameters[1],
+                                              parameters[2])
 
 
 

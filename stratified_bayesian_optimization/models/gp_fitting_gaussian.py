@@ -576,11 +576,11 @@ class GPFittingGaussian(object):
 
         """
         if name == CHOL_COV:
-            self.cache_chol_cov = {}
-            self.cache_sol_chol_y_unbiased = {}
+            # self.cache_chol_cov = {}
+            # self.cache_sol_chol_y_unbiased = {}
             self.cache_chol_cov[index] = value
         if name == SOL_CHOL_Y_UNBIASED:
-            self.cache_sol_chol_y_unbiased = {}
+            # self.cache_sol_chol_y_unbiased = {}
             self.cache_sol_chol_y_unbiased[index] = value
 
     def evaluate_cov(self, points, parameters_kernel):
