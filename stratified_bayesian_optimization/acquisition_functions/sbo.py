@@ -289,7 +289,9 @@ class SBO(object):
             n_restarts = start.shape[0]
         else:
             self.generate_samples_starting_points_evaluate_mc(n_samples, n_restarts)
-
+            samples = self.samples
+            start = self.starting_points_sbo
+            n_restarts = start.shape[0]
 
         if tuple(candidate_point[0,:]) in self.mc_bayesian:
             value = self.mc_bayesian[tuple(candidate_point)]
@@ -341,8 +343,10 @@ class SBO(object):
 
         values_parameters = []
         self.optimal_samples = {}
+
         for k in xrange(n_samples_parameters):
             index_cache_2 = (tuple(candidate_point[0, :]), tuple(parameters[k]))
+            self.optimal_samples[index_cache_2] = {}
             self.optimal_samples[index_cache_2]['optimum'] = {}
             for i in xrange(n_samples):
                 values = []
@@ -356,8 +360,12 @@ class SBO(object):
                 max_ = np.max(values)
                 max_values.append(max_)
 
-            params = n_samples_parameters[k]
+            params = parameters[k]
             index_cache = (params[0], params[1], tuple(params[2:]))
+
+            if index_cache not in self.bq.max_mean:
+                self.bq.optimize_posterior_mean(n_treads=0, var_noise=params[0],
+                    parameters_kernel=params[2:], mean=params[1], n_best_restarts=100)
             max_mean = self.bq.max_mean[index_cache]
             values_parameters.append(np.mean(max_values) - max_mean)
         sbo_value = np.mean(values_parameters)
