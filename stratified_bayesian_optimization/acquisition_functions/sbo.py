@@ -428,6 +428,23 @@ class SBO(object):
 
         return np.mean(gradients, axis=0)
 
+    def objective_voi_bayesian(self, point, monte_carlo, n_samples_parameters, n_samples,
+                               n_restarts, n_best_restarts, n_threads, **opt_params_mc):
+        point = point.reshape((1, len(point)))
+
+        if not monte_carlo:
+
+            value = self.evaluate(point, *model_params, n_threads=n_threads)
+        else:
+            value = self.evaluate_mc_bayesian(
+                point, n_samples_parameters, n_samples, n_restarts,
+                n_best_restarts, n_threads, **opt_params_mc)['value']
+
+        return value
+
+
+
+
     def evaluate_mc(self, candidate_point,  n_samples, var_noise=None, mean=None,
                     parameters_kernel=None, random_seed=None, parallel=True, n_restarts=10,
                     n_best_restarts=0, n_threads=0, **opt_params_mc):
