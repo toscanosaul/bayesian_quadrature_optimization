@@ -44,7 +44,7 @@ if __name__ == '__main__':
     debug = False
     number_points_each_dimension_debug = [10, 10, 10, 10]
     monte_carlo_sbo = True
-    n_samples_mc = 20
+    n_samples_mc = 50
     n_restarts_mc = 500
     n_best_restarts_mc = 10
     factr_mc = 1e12
