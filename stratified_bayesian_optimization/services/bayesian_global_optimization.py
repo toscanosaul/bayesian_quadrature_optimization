@@ -264,6 +264,6 @@ class BGO(object):
                               n_samples_parameters=n_samples_parameters,
                               n_restarts_mean=n_restarts_mean,
                               n_best_restarts_mean=n_best_restarts_mean,
-                              random_seed=bgo.random_seed
+                              random_seed=bgo.random_seed,
                               **opt_params_mc)
         return result
