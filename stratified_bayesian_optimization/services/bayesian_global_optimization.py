@@ -76,19 +76,21 @@ class BGO(object):
         parallel = spec.get('parallel')
         n_training = spec.get('n_training')
         number_points_each_dimension_debug = spec.get('number_points_each_dimension_debug')
+        n_samples_parameters = spec.get('n_samples_parameters', 0)
 
 
         bgo = cls(acquisition_function, gp_model, n_iterations, problem_name, training_name,
                   random_seed, n_training, name_model, method_optimization, minimize=minimize,
                   n_samples=n_samples, noise=noise, quadrature=quadrature, parallel=parallel,
-                  number_points_each_dimension_debug=number_points_each_dimension_debug)
+                  number_points_each_dimension_debug=number_points_each_dimension_debug,
+                  n_samples_parameters=n_samples_parameters)
 
         return bgo
 
     def __init__(self, acquisition_function, gp_model, n_iterations, problem_name, training_name,
                  random_seed, n_training, name_model, method_optimization, minimize=False,
                  n_samples=None, noise=False, quadrature=None, parallel=True,
-                 number_points_each_dimension_debug=None):
+                 number_points_each_dimension_debug=None, n_samples_parameters=0):
 
         self.acquisition_function = acquisition_function
         self.gp_model = gp_model
@@ -98,7 +100,7 @@ class BGO(object):
         self.training_name = training_name
         self.name_model = name_model
         self.objective = Objective(problem_name, training_name, random_seed, n_training, n_samples,
-                                   noise, self.method_optimization)
+                                   noise, self.method_optimization, n_samples_parameters)
         self.n_iterations = n_iterations
         self.minimize = minimize
         self.parallel = parallel
