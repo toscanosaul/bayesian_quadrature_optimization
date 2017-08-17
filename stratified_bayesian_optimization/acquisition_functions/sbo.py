@@ -348,6 +348,7 @@ class SBO(object):
             index_cache_2 = (tuple(candidate_point[0, :]), tuple(parameters[k]))
             self.optimal_samples[index_cache_2] = {}
             self.optimal_samples[index_cache_2]['optimum'] = {}
+            max_values = []
             for i in xrange(n_samples):
                 values = []
                 for j in xrange(n_restarts_):
