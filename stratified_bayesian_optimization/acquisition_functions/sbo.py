@@ -299,7 +299,7 @@ class SBO(object):
 
         arguments = {}
         for i in xrange(n_samples_parameters):
-            arguments[i] = [parameters[2:], parameters[0], parameters[1]]
+            arguments[i] = [parameters[i][2:], parameters[i][0], parameters[i][1]]
 
         args = (False, None, True, n_threads, candidate_point, self)
         Parallel.run_function_different_arguments_parallel(
@@ -325,8 +325,8 @@ class SBO(object):
 
             for k in xrange(n_samples_parameters):
                 for i in xrange(n_samples):
-                    values = [values_candidates[(j, i, k)] for j in xrange(n_restarts)]
-                    values_index = sorted(range(len(values)), key=lambda k: values[k])
+                    values = [values_candidates[(h, i, k)] for h in xrange(n_restarts)]
+                    values_index = sorted(range(len(values)), key=lambda s: values[s])
                     values_index = values_index[-n_best_restarts:]
 
                     for j in xrange(len(values_index)):
