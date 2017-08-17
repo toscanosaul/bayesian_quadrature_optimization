@@ -634,7 +634,7 @@ def wrapper_evaluate_sample_bayesian(point, self):
     params = point[3]
 
     val = self.evaluate_sample(point_, candidate_point, sample, params[0], params[1], params[2:],
-                               True, 0)
+                               True, 0, False)
     return val
 
 def wrapper_evaluate_gradient_sample(point, self, *args):
@@ -749,7 +749,7 @@ def wrapper_gradient_acquisition_function(point, self, n_samples_parameters=0, *
 
 def wrapper_get_parameters_for_samples(parameters, point, self, *args):
     return self.bq.get_parameters_for_samples(True, point, parameters[0], parameters[1],
-                                              parameters[2])
+                                              parameters[2], clear_cache=False)
 
 
 

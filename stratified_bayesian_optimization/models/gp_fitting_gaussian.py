@@ -565,7 +565,7 @@ class GPFittingGaussian(object):
                 return self.cache_sol_chol_y_unbiased[index]
         return False
 
-    def _updated_cached_data(self, index, value, name):
+    def _updated_cached_data(self, index, value, name, clear_cache=True):
         """
 
         :param index: tuple associated to the type.
@@ -576,11 +576,13 @@ class GPFittingGaussian(object):
 
         """
         if name == CHOL_COV:
-            # self.cache_chol_cov = {}
-            # self.cache_sol_chol_y_unbiased = {}
+            if clear_cache:
+                self.cache_chol_cov = {}
+                self.cache_sol_chol_y_unbiased = {}
             self.cache_chol_cov[index] = value
         if name == SOL_CHOL_Y_UNBIASED:
-            # self.cache_sol_chol_y_unbiased = {}
+            if clear_cache:
+                self.cache_sol_chol_y_unbiased = {}
             self.cache_sol_chol_y_unbiased[index] = value
 
     def evaluate_cov(self, points, parameters_kernel):
@@ -616,7 +618,7 @@ class GPFittingGaussian(object):
         return cov
 
     def _chol_cov_including_noise(self, var_noise, parameters_kernel, historical_points=None,
-                                  cache=True):
+                                  cache=True, clear_cache=True):
         """
         Compute the Cholesky decomposition of
         covariance = cov_kernel + np.diag(var_noise_observations) + np.diag(var_noise), and the
@@ -647,7 +649,8 @@ class GPFittingGaussian(object):
         chol = cholesky(cov,  max_tries=7)
 
         if cache:
-            self._updated_cached_data((var_noise, tuple(parameters_kernel)), (chol, cov), CHOL_COV)
+            self._updated_cached_data((var_noise, tuple(parameters_kernel)), (chol, cov), CHOL_COV,
+                                      clear_cache=clear_cache)
 
         return chol, cov
 
@@ -1051,7 +1054,7 @@ class GPFittingGaussian(object):
 
     def _cholesky_solve_vectors_for_posterior(self, var_noise, mean, parameters_kernel,
                                               historical_points=None, historical_evaluations=None,
-                                              cache=True):
+                                              cache=True, clear_cache=True):
         """
         Solves the system cov(historical_points) * x = historical_evaluations - mean, and returns
         the Cholesky decomposition of cov(historical_points) too.
@@ -1076,7 +1079,8 @@ class GPFittingGaussian(object):
             historical_evaluations = self.data['evaluations']
 
         chol, cov = self._chol_cov_including_noise(
-            var_noise, parameters_kernel, historical_points=historical_points, cache=cache)
+            var_noise, parameters_kernel, historical_points=historical_points, cache=cache,
+            clear_cache=clear_cache)
 
 
         if cache:
@@ -1090,7 +1094,7 @@ class GPFittingGaussian(object):
             solve = cho_solve(chol, y_unbiased)
             if cache:
                 self._updated_cached_data((var_noise, tuple(parameters_kernel), mean), solve,
-                                          SOL_CHOL_Y_UNBIASED)
+                                          SOL_CHOL_Y_UNBIASED, clear_cache=clear_cache)
         else:
             solve = cached_solve
 

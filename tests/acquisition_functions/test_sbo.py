@@ -97,6 +97,7 @@ class TestSBO(unittest.TestCase):
         domain = DomainService.from_dict(self.spec)
 
         self.sbo = SBO(self.gp, np.array(domain.discretization_domain_x))
+        self.sbo.clean_cache()
 
 
         self.spec_2 = {
@@ -110,6 +111,7 @@ class TestSBO(unittest.TestCase):
         domain_2 = DomainService.from_dict(self.spec_2)
 
         self.sbo_2 = SBO(self.gp, np.array(domain_2.discretization_domain_x))
+        self.sbo_2.clean_cache()
 
 
         training_data_simple = {
@@ -124,6 +126,7 @@ class TestSBO(unittest.TestCase):
         gp_simple = BayesianQuadrature(gaussian_p_simple, [0], UNIFORM_FINITE, {TASKS: 2})
 
         self.sbo_simple = SBO(gp_simple, np.array([[2]]))
+        self.sbo_simple.clean_cache()
 
 
         training_data_med = {
@@ -138,6 +141,7 @@ class TestSBO(unittest.TestCase):
         gp_med = BayesianQuadrature(gaussian_p_med, [0], UNIFORM_FINITE, {TASKS: 2})
 
         self.sbo_med = SBO(gp_med, np.array(domain.discretization_domain_x))
+        self.sbo_med.clean_cache()
 
 
     def test_evaluate(self):
@@ -530,7 +534,7 @@ class TestSBO(unittest.TestCase):
         value_2 = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0, 0,
                                     **{'factr':1e12,'maxiter':10})
 
-        assert value_2 == value
+        npt.assert_almost_equal(value_2, value)
 
     def test_evaluate_gradient_sbo_params(self):
 
@@ -572,7 +576,7 @@ class TestSBO(unittest.TestCase):
         np.random.seed(1)
         grad_2 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0)
 
-        assert np.all(grad_1 == grad_2)
+        npt.assert_almost_equal(grad_1, grad_2)
 
 
     def test_combine_sbo_gradient(self):

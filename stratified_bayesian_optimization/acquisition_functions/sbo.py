@@ -103,7 +103,7 @@ class SBO(object):
 
 
     def evaluate_sample(self, point, candidate_point, sample, var_noise=None, mean=None,
-                        parameters_kernel=None, cache=True, n_threads=0):
+                        parameters_kernel=None, cache=True, n_threads=0, clear_cache=True):
         """
         Evaluate a sample of a_{n+1}(point) given that candidate_point is chosen.
 
@@ -123,7 +123,8 @@ class SBO(object):
 
         vectors = self.bq.compute_parameters_for_sample(
             point, candidate_point, var_noise=var_noise, mean=mean,
-            parameters_kernel=parameters_kernel, cache=cache, n_threads=n_threads)
+            parameters_kernel=parameters_kernel, cache=cache, n_threads=n_threads,
+            clear_cache=clear_cache)
         value = vectors['a'] + sample * vectors['b']
 
         return value[0, 0]
@@ -339,6 +340,7 @@ class SBO(object):
             wrapper_evaluate_sbo_by_sample_bayesian, point_dict, *args, **opt_params_mc)
 
         values_parameters = []
+        self.optimal_samples = {}
         for k in xrange(n_samples_parameters):
             index_cache_2 = (tuple(candidate_point[0, :]), tuple(parameters[k]))
             self.optimal_samples[index_cache_2]['optimum'] = {}
@@ -359,7 +361,10 @@ class SBO(object):
             max_mean = self.bq.max_mean[index_cache]
             values_parameters.append(np.mean(max_values) - max_mean)
         sbo_value = np.mean(values_parameters)
+
+        self.mc_bayesian = {}
         self.mc_bayesian[tuple(candidate_point[0,:])] = sbo_value
+
         return sbo_value
 
     def evaluate_gradient_mc_bayesian(
@@ -476,7 +481,7 @@ class SBO(object):
             return {'value': np.mean(optimal_values) - max_mean,
                     'std': np.std(optimal_values) / n_samples}
 
-#        self.optimal_samples = {}
+        self.optimal_samples = {}
         self.optimal_samples[index_cache_2] = {}
         self.optimal_samples[index_cache_2]['max'] = {}
         self.optimal_samples[index_cache_2]['optimum'] = {}

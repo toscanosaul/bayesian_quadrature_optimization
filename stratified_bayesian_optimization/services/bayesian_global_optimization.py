@@ -93,6 +93,7 @@ class BGO(object):
                  number_points_each_dimension_debug=None, n_samples_parameters=0):
 
         self.acquisition_function = acquisition_function
+        self.acquisition_function.clean_cache()
         self.gp_model = gp_model
         self.method_optimization = method_optimization
         self.quadrature = quadrature

@@ -172,7 +172,7 @@ class BayesianQuadrature(object):
                 return self.cache_quadrature_with_candidate[index]
         return None
 
-    def _updated_cached_data(self, index, value, name, thread=False):
+    def _updated_cached_data(self, index, value, name, thread=False, clear_cache=True):
         """
 
         :param index: tuple. (parameters_kernel, )
@@ -183,16 +183,16 @@ class BayesianQuadrature(object):
         """
 
         if name == QUADRATURES:
-            # if not thread:
-            #     self.cache_quadratures = {}
+            if not thread and clear_cache:
+                 self.cache_quadratures = {}
             self.cache_quadratures[index] = value
         if name == POSTERIOR_MEAN:
-            # if not thread:
-            #     self.cache_posterior_mean = {}
+            if not thread and clear_cache:
+                 self.cache_posterior_mean = {}
             self.cache_posterior_mean[index] = value
         if name == B_NEW:
-            # if not thread:
-            #     self.cache_quadrature_with_candidate = {}
+            if not thread and clear_cache:
+                 self.cache_quadrature_with_candidate = {}
             self.cache_quadrature_with_candidate[index] = value
 
     def evaluate_quadrate_cov(self, point, parameters_kernel):
@@ -807,7 +807,7 @@ class BayesianQuadrature(object):
         }
 
     def get_parameters_for_samples(self, cache, candidate_point, parameters_kernel,
-                                           var_noise, mean, clear_cache=False):
+                                           var_noise, mean, clear_cache=True):
         """
         Computes additional parameters needed for sample of SBO.
 
@@ -836,7 +836,7 @@ class BayesianQuadrature(object):
             mean = self.gp.mean.value[0]
 
         chol_solve = self.gp._cholesky_solve_vectors_for_posterior(
-            var_noise, mean, parameters_kernel, cache=cache)
+            var_noise, mean, parameters_kernel, cache=cache, clear_cache=clear_cache)
         chol = chol_solve['chol']
         solve = chol_solve['solve']
 
@@ -879,7 +879,7 @@ class BayesianQuadrature(object):
 
     def compute_parameters_for_sample(
             self, point, candidate_point, var_noise=None, mean=None,
-            parameters_kernel=None, cache=True, n_threads=0):
+            parameters_kernel=None, cache=True, n_threads=0, clear_cache=True):
         """
         Compute posterior parameters of a_n+1(point) given the candidate_point. Caching is different
         than in the other functions.
@@ -905,7 +905,8 @@ class BayesianQuadrature(object):
         var_noise = additional_parameters.get('var_noise')
 
         vec_covs, b_new = self.get_vec_covs(cache, point, parameters_kernel, candidate_point,
-                                            False, monte_carlo=True, n_threads=n_threads)
+                                            False, monte_carlo=True, n_threads=n_threads,
+                                            clear_cache=clear_cache)
 
         mu_n = mean + np.dot(vec_covs, solve)
 
@@ -962,7 +963,7 @@ class BayesianQuadrature(object):
         return {'a': gradient_a, 'b': gradient_b}
 
     def get_vec_covs(self, cache, points, parameters_kernel, candidate_point, parallel,
-                     keep_indexes=None, monte_carlo=False, n_threads=0):
+                     keep_indexes=None, monte_carlo=False, n_threads=0, clear_cache=True):
         """
         Get vectors b from cache if possible.
 
@@ -1039,10 +1040,12 @@ class BayesianQuadrature(object):
                 thread = False
 
             if compute_vec_covs:
-                self._updated_cached_data(index_vec_covs, vec_covs, QUADRATURES, thread=thread)
+                self._updated_cached_data(index_vec_covs, vec_covs, QUADRATURES, thread=thread,
+                                          clear_cache=clear_cache)
 
             if compute_b_new:
-                self._updated_cached_data(index_b_new, b_new, B_NEW, thread=thread)
+                self._updated_cached_data(index_b_new, b_new, B_NEW, thread=thread,
+                                          clear_cache=clear_cache)
 
         return vec_covs, b_new
 
