@@ -36,8 +36,8 @@ if __name__ == '__main__':
     mle = True
     distribution = UNIFORM_FINITE
     parallel = True
-    thinning = 5
-    n_burning = 100
+    thinning = 10
+    n_burning = 500
     max_steps_out = 1000
     n_iterations = 100
     same_correlation = True

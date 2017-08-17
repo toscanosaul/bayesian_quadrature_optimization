@@ -293,17 +293,23 @@ class SBO(object):
 
         if self.starting_points_sbo is not None:
             start = self.starting_points_sbo
+            n_restarts = start.shape[0]
         elif parallel:
             start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
                                                            type_bounds=len(bounds_x) * [0])
-            if len(self.bq.optimal_solutions[index_cache]) > 0:
-                start = self.bq.optimal_solutions[index_cache][-1]['solution']
-
-                start = [start] + start_points[0: -1]
+            prev_starts = []
+            if len(self.bq.optimal_solutions) > 0:
+                for index in self.bq.optimal_solutions:
+                    if len(self.bq.optimal_solutions[index]) > 0:
+                        start = self.bq.optimal_solutions[index][-1]['solution']
+                        prev_starts.append(start)
+            if len(prev_starts) > 0:
+                start = prev_starts + start_points
                 start = np.array(start)
             else:
                 start = np.array(start_points)
             self.starting_points_sbo = start
+            n_restarts = start.shape[0]
 
         max_values = []
 

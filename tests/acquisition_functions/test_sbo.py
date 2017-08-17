@@ -634,14 +634,15 @@ class TestSBO(unittest.TestCase):
         self.sbo.optimal_samples = {}
         self.sbo.starting_points_sbo = None
 
+        np.random.seed(1)
         answer = self.sbo.optimize(start=None, random_seed=1, parallel=True, monte_carlo=True,
-                                   n_samples=2, n_restarts_mc=100, n_best_restarts_mc=5,
+                                   n_samples=2, n_restarts_mc=10, n_best_restarts_mc=5,
                                    n_restarts=5, n_best_restarts=2, start_ei=True,
                                    n_samples_parameters=2, **{'factr': 1e12, 'maxiter': 10})
-        print obj, grad, answer
+
         npt.assert_almost_equal(obj, np.array([ 0.09597]), decimal=5)
         npt.assert_almost_equal(grad, np.array([ 0.0003711, 0]))
-        npt.assert_almost_equal(answer['optimal_value'], 0.67576666571448896)
+        npt.assert_almost_equal(answer['optimal_value'], 0.26311760094810011, decimal=5)
 
 
 
