@@ -1,6 +1,6 @@
 {
     "max_steps_out":1000,
-    "n_best_restarts_mc":3,
+    "n_best_restarts_mc":0,
     "mean_value":[
 
     ],
@@ -34,7 +34,7 @@
     ],
     "n_burning":500,
     "method_optimization":"sbo",
-    "random_seed":7,
+    "random_seed":10,
     "n_samples":0,
     "name_model":"gp_fitting_gaussian",
     "x_domain":[

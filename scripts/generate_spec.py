@@ -29,7 +29,7 @@ if __name__ == '__main__':
     dimensions = [5, 4, 5]
     bounds_domain = [[0.01, 1.01], [0.1, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
     n_training = 5
-    random_seed = 7
+    random_seed = 10
     type_bounds = [0, 0, 0, 0, 1]
     x_domain = [0, 1, 2, 3]
     number_points_each_dimension = [6, 6, 11, 6]
