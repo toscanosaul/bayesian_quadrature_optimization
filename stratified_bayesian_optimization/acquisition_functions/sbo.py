@@ -952,7 +952,7 @@ class SBO(object):
             wrapper_objective_voi,
             bounds,
             wrapper_gradient_voi,
-            minimize=False, **{'maxiter': 20})
+            minimize=False, **{'maxiter': 10})
 
         point_dict = {}
         for j in xrange(n_restarts):

@@ -46,13 +46,13 @@ if __name__ == '__main__':
     monte_carlo_sbo = True
     n_samples_mc = 10
     n_restarts_mc = 10
-    n_best_restarts_mc = 3
+    n_best_restarts_mc = 0
     factr_mc = 1e12
     maxiter_mc = 10
-    n_restarts = 5
+    n_restarts = 15
     n_best_restarts = 2
     use_only_training_points = True
-    method_optimization = MULTI_TASK_METHOD
+    method_optimization = SBO_METHOD
     n_samples_parameters = 10
     n_restarts_mean = 1000
     n_best_restarts_mean = 100

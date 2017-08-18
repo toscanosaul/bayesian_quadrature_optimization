@@ -1,6 +1,6 @@
 {
     "max_steps_out":1000,
-    "n_best_restarts_mc":10,
+    "n_best_restarts_mc":3,
     "mean_value":[
 
     ],
@@ -24,7 +24,7 @@
         ]
     ],
     "use_only_training_points":true,
-    "n_best_restarts":5,
+    "n_best_restarts":2,
     "type_bounds":[
         0,
         0,
@@ -49,7 +49,7 @@
     "dim_x":4,
     "monte_carlo_sbo":true,
     "n_training":5,
-    "n_samples_parameters":15,
+    "n_samples_parameters":10,
     "mle":true,
     "n_iterations":100,
     "type_kernel":[
@@ -59,13 +59,13 @@
     ],
     "debug":false,
     "distribution":"uniform_finite",
-    "n_restarts":50,
+    "n_restarts":15,
     "dimensions":[
         5,
         4,
         5
     ],
-    "n_restarts_mc":500,
+    "n_restarts_mc":10,
     "n_best_restarts_mean":100,
     "thinning":10,
     "n_restarts_mean":1000,
@@ -115,7 +115,7 @@
         ]
     ],
     "minimize":false,
-    "n_samples_mc":50,
+    "n_samples_mc":10,
     "points":[
 
     ],
