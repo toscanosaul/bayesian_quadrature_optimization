@@ -270,7 +270,7 @@ class SBO(object):
         self.starting_points_sbo = start
 
     def evaluate_mc_bayesian(self, candidate_point, n_samples_parameters, n_samples,
-                             n_restarts=10, n_best_restarts=0, n_threads=0, compute_max_mean=True,
+                             n_restarts=10, n_best_restarts=0, n_threads=0, compute_max_mean=False,
                              **opt_params_mc):
         """
         Evaluate SBO policy following a Bayesian approach.
@@ -385,7 +385,7 @@ class SBO(object):
 
     def evaluate_gradient_mc_bayesian(
             self, candidate_point, n_samples_parameters, n_samples, n_restarts=10,
-            n_best_restarts=0, n_threads=0, compute_max_mean=True, **opt_params_mc):
+            n_best_restarts=0, n_threads=0, compute_max_mean=False, **opt_params_mc):
         """
         Evaluate the gradient of SBO by using MC estimation.
 
