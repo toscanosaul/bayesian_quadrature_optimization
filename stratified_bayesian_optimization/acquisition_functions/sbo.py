@@ -270,7 +270,8 @@ class SBO(object):
         self.starting_points_sbo = start
 
     def evaluate_mc_bayesian(self, candidate_point, n_samples_parameters, n_samples,
-                             n_restarts=10, n_best_restarts=0, n_threads=0, **opt_params_mc):
+                             n_restarts=10, n_best_restarts=0, n_threads=0, compute_max_mean=True,
+                             **opt_params_mc):
         """
         Evaluate SBO policy following a Bayesian approach.
         :param candidate_point:
@@ -279,6 +280,7 @@ class SBO(object):
         :param n_restarts:
         :param n_best_restarts:
         :param n_threads:
+        :param compute_max_mean
         :param opt_params_mc:
         :return: float
         """
@@ -365,10 +367,14 @@ class SBO(object):
             params = parameters[k]
             index_cache = (params[0], params[1], tuple(params[2:]))
 
-            if index_cache not in self.bq.max_mean:
-                self.bq.optimize_posterior_mean(n_treads=0, var_noise=params[0],
-                    parameters_kernel=params[2:], mean=params[1], n_best_restarts=100)
-            max_mean = self.bq.max_mean[index_cache]
+            if not compute_max_mean:
+                max_mean = 0
+            else:
+                if index_cache not in self.bq.max_mean:
+                    self.bq.optimize_posterior_mean(n_treads=0, var_noise=params[0],
+                        parameters_kernel=params[2:], mean=params[1], n_best_restarts=100)
+                max_mean = self.bq.max_mean[index_cache]
+
             values_parameters.append(np.mean(max_values) - max_mean)
         sbo_value = np.mean(values_parameters)
 
@@ -379,7 +385,7 @@ class SBO(object):
 
     def evaluate_gradient_mc_bayesian(
             self, candidate_point, n_samples_parameters, n_samples, n_restarts=10,
-            n_best_restarts=0, n_threads=0, **opt_params_mc):
+            n_best_restarts=0, n_threads=0, compute_max_mean=True, **opt_params_mc):
         """
         Evaluate the gradient of SBO by using MC estimation.
 
@@ -403,7 +409,8 @@ class SBO(object):
         if tuple(candidate_point[0,:]) not in self.mc_bayesian:
             self.evaluate_mc_bayesian(candidate_point, n_samples_parameters, n_samples,
                                  n_restarts=n_restarts, n_best_restarts=n_best_restarts,
-                                      n_threads=n_threads, **opt_params_mc)
+                                      n_threads=n_threads, compute_max_mean=compute_max_mean,
+                                      **opt_params_mc)
 
         gradients = []
         parameters = self.bq.gp.samples_parameters[-n_samples_parameters:]

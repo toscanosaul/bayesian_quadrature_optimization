@@ -355,7 +355,7 @@ def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restart
         value = self.objective_voi_bayesian(
             point, monte_carlo=monte_carlo, n_samples_parameters=n_samples_parameters,
             n_samples=n_samples, n_restarts=n_restarts, n_best_restarts=n_best_restarts,
-            n_threads=n_threads, **opt_params_mc)
+            n_threads=n_threads, compute_max_mean=False, **opt_params_mc)
 
     return value
 
@@ -389,7 +389,7 @@ def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts
     else:
         value = self.grad_obj_voi_bayesian(
             point, monte_carlo, n_samples_parameters, n_samples, n_restarts,
-            n_best_restarts, n_threads, **opt_params_mc)
+            n_best_restarts, n_threads, compute_max_mean=False, **opt_params_mc)
 
     return value
 
