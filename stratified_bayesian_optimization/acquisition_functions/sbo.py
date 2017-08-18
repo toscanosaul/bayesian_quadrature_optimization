@@ -297,7 +297,7 @@ class SBO(object):
             n_restarts = start.shape[0]
 
         if tuple(candidate_point[0,:]) in self.mc_bayesian:
-            value = self.mc_bayesian[tuple(candidate_point)]
+            value = self.mc_bayesian[tuple(candidate_point[0,:])]
             return value
 
         arguments = {}
@@ -819,7 +819,8 @@ class SBO(object):
 
     def optimize(self, start=None, random_seed=None, parallel=True, monte_carlo=False, n_samples=1,
                  n_restarts_mc=1, n_best_restarts_mc=0, n_restarts=1, n_best_restarts=0,
-                 start_ei=True, n_samples_parameters=0, start_new_chain=True, **opt_params_mc):
+                 start_ei=True, n_samples_parameters=0, start_new_chain=True,
+                 compute_max_mean_bayesian=False, **opt_params_mc):
         """
         Optimizes the VOI.
         :param start: np.array(1xn)
@@ -835,6 +836,7 @@ class SBO(object):
         :param n_samples_parameters: (int) Number of samples of the parameters of the model. If
             n_samples_parameters = 0, we optimize SBO with the MLE parameters.
         :param start_new_chain: (boolen)
+        :param compute_max_mean_bayesian: boolean
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -950,7 +952,7 @@ class SBO(object):
             wrapper_objective_voi,
             bounds,
             wrapper_gradient_voi,
-            minimize=False)
+            minimize=False, **{'maxiter': 50})
 
         point_dict = {}
         for j in xrange(n_restarts):
@@ -965,7 +967,7 @@ class SBO(object):
                     n_restarts_mc, n_best_restarts_mc,
                     opt_params_mc, 0, n_samples_parameters)
 
-        if n_samples_parameters > 0:
+        if n_samples_parameters > 0 and compute_max_mean_bayesian:
             parameters = self.bq.gp.samples_parameters[-n_samples_parameters:]
             for parameter in parameters:
                 index_cache = (parameter[0], parameter[1], tuple(parameter[2:]))

@@ -643,10 +643,10 @@ class TestSBO(unittest.TestCase):
                                    n_samples=2, n_restarts_mc=10, n_best_restarts_mc=5,
                                    n_restarts=5, n_best_restarts=2, start_ei=True,
                                    n_samples_parameters=2, **{'factr': 1e12, 'maxiter': 10})
-
-        npt.assert_almost_equal(obj, np.array([ 0.00259004]), decimal=5)
+        print grad, answer
+        npt.assert_almost_equal(obj, np.array([ -0.5185451893015001]), decimal=5)
         npt.assert_almost_equal(grad, np.array([ 0.00054018, 0]))
-        npt.assert_almost_equal(answer['optimal_value'], -0.073357090830057842, decimal=5)
+        npt.assert_almost_equal(answer['optimal_value'], -0.53985909427427536, decimal=5)
 
 
 
