@@ -52,7 +52,7 @@ if __name__ == '__main__':
     n_restarts = 15
     n_best_restarts = 2
     use_only_training_points = True
-    method_optimization = SBO_METHOD
+    method_optimization = MULTI_TASK_METHOD
     n_samples_parameters = 10
     n_restarts_mean = 1000
     n_best_restarts_mean = 100
