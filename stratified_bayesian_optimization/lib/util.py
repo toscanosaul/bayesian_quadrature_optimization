@@ -387,9 +387,8 @@ def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts
                                   n_restarts=n_restarts, n_best_restarts=n_best_restarts,
                                   n_threads=n_threads, **opt_params_mc)
     else:
-        point = point.reshape((1, len(point)))
-        value = self.evaluate_gradient_mc_bayesian(
-            point, n_samples_parameters, n_samples, n_restarts,
+        value = self.grad_obj_voi_bayesian(
+            point, monte_carlo, n_samples_parameters, n_samples, n_restarts,
             n_best_restarts, n_threads, **opt_params_mc)
 
     return value

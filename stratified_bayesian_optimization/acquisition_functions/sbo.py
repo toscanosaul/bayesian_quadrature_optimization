@@ -443,7 +443,6 @@ class SBO(object):
         :param opt_params_mc:
         :return:
         """
-        point = point.reshape((1, len(point)))
 
         if monte_carlo is False:
             args = (monte_carlo, n_samples, n_restarts, n_best_restarts, n_threads)
@@ -451,14 +450,39 @@ class SBO(object):
                                                n_samples_parameters, None, *args,
                                                **opt_params_mc)[0]
         else:
+            point = point.reshape((1, len(point)))
             value = self.evaluate_mc_bayesian(
                 point, n_samples_parameters, n_samples, n_restarts,
-                n_best_restarts, n_threads, **opt_params_mc)['value']
+                n_best_restarts, n_threads, **opt_params_mc)
 
         return value
 
+    def grad_obj_voi_bayesian(self, point, monte_carlo, n_samples_parameters, n_samples,
+                               n_restarts, n_best_restarts, n_threads, **opt_params_mc):
+        """
+        Computes gradient of voi using a Bayesian approach.
+        :param point:
+        :param monte_carlo:
+        :param n_samples_parameters:
+        :param n_samples:
+        :param n_restarts:
+        :param n_best_restarts:
+        :param n_threads:
+        :param opt_params_mc:
+        :return:
+        """
+        if monte_carlo is False:
+            args = (monte_carlo, n_samples, n_restarts, n_best_restarts, n_threads)
+            value = BayesianEvaluations.evaluate(self.grad_obj_voi, point, self.bq.gp,
+                                               n_samples_parameters, None, *args,
+                                               **opt_params_mc)[0]
+        else:
+            point = point.reshape((1, len(point)))
+            value = self.evaluate_gradient_mc_bayesian(
+                point, n_samples_parameters, n_samples, n_restarts,
+                n_best_restarts, n_threads, **opt_params_mc)
 
-
+        return value
 
     def evaluate_mc(self, candidate_point,  n_samples, var_noise=None, mean=None,
                     parameters_kernel=None, random_seed=None, parallel=True, n_restarts=10,
