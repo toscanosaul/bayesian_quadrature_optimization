@@ -44,16 +44,16 @@ if __name__ == '__main__':
     debug = False
     number_points_each_dimension_debug = [10, 10, 10, 10]
     monte_carlo_sbo = True
-    n_samples_mc = 20
-    n_restarts_mc = 100
-    n_best_restarts_mc = 5
+    n_samples_mc = 10
+    n_restarts_mc = 10
+    n_best_restarts_mc = 3
     factr_mc = 1e12
     maxiter_mc = 10
     n_restarts = 5
     n_best_restarts = 2
     use_only_training_points = True
     method_optimization = MULTI_TASK_METHOD
-    n_samples_parameters = 5
+    n_samples_parameters = 10
     n_restarts_mean = 1000
     n_best_restarts_mean = 100
 

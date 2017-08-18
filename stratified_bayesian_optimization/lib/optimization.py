@@ -76,5 +76,7 @@ class Optimization(object):
             'optimal_value': opt[1] if self.minimize else -1.0 * opt[1],
             'gradient': opt[2]['grad'] if self.minimize else -1.0 * opt[2]['grad'],
             'warnflag': opt[2]['warnflag'],
-            'task': opt[2]['task']
+            'task': opt[2]['task'],
+            'nit': opt[2]['nit'],
+            'funcalls': opt[2]['funcalls'],
         }
