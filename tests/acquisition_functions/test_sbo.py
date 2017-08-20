@@ -649,5 +649,24 @@ class TestSBO(unittest.TestCase):
         npt.assert_almost_equal(answer['optimal_value'], -0.53985909427427536, decimal=5)
 
 
+    def test_evaluate_gradient_given_sample_given_parameters(self):
+        candidate = np.array([[52.5, 0]])
+        np.random.seed(1)
+        n_samples = 5
+        parameters = np.array([1.0, 5.0, 50.0, 9.6, -3.0, -0.1])
 
+        np.random.seed(1)
+        grad_1 = self.sbo_med.grad_obj_voi(candidate[0, :], True, n_samples, 10, 0, 0,
+                                    *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])),
+                                       **{'factr': 1e12, 'maxiter': 10})
 
+        samples = self.sbo_med.samples
+        values = []
+
+        np.random.seed(1)
+        for sample in samples:
+            value = self.sbo_med.evaluate_gradient_given_sample_given_parameters(
+                candidate, sample, parameters, parallel=False, **{'factr': 1e12, 'maxiter': 10})
+            values.append(value)
+
+        npt.assert_almost_equal(np.mean(values, axis=0)[0, :], grad_1)

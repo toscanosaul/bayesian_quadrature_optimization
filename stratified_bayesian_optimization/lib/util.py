@@ -588,6 +588,29 @@ def wrapper_evaluate_sbo_by_sample(start_sample, self, candidate_point, var_nois
         parameters_kernel=parameters_kernel, n_restarts=0, parallel=False, n_threads=n_threads,
         **opt_params_mc)
 
+def wrapper_evaluate_sbo_by_sample_2(start, self, sample, candidate_point, var_noise, mean,
+                                   parameters_kernel, n_threads, **opt_params_mc):
+    """
+
+    :param start: np.array(n)
+    :param self: sbo-instance
+    :param sample: float
+    :param candidate_point: np.array(1xm)
+    :param var_noise: float
+    :param mean: float
+    :param parameters_kernel: np.array(l)
+    :param opt_params_mc:
+        -'factr': int
+        -'maxiter': int
+    :param n_threads: int
+    :return: {'max': float, 'optimum': np.array(n)}
+    """
+
+    return self.evaluate_sbo_by_sample(
+        candidate_point, sample, start=start, var_noise=var_noise, mean=mean,
+        parameters_kernel=parameters_kernel, n_restarts=0, parallel=False, n_threads=n_threads,
+        **opt_params_mc)
+
 def wrapper_evaluate_sbo_by_sample_bayesian(start_sample_parameters, self, candidate_point,
                                             n_threads, **opt_params_mc):
     """
@@ -753,6 +776,6 @@ def wrapper_get_parameters_for_samples(parameters, point, self, *args):
     return self.bq.get_parameters_for_samples(True, point, parameters[0], parameters[1],
                                               parameters[2], clear_cache=False)
 
-
-
+def wrapper_grad_voi_sgd(point, self, *args, **opt_params_mc):
+    return self.grad_voi_sgd(point, *args,  **opt_params_mc)
 

@@ -2,14 +2,16 @@ from __future__ import absolute_import
 
 from scipy.optimize import fmin_l_bfgs_b
 
-from stratified_bayesian_optimization.lib.constant import LBFGS_NAME
+from stratified_bayesian_optimization.lib.constant import LBFGS_NAME, SGD_NAME
+from stratified_bayesian_optimization.lib.stochastic_gradient_descent import SGD
 
 
 class Optimization(object):
 
-    _optimizers_ = [LBFGS_NAME]
+    _optimizers_ = [LBFGS_NAME, SGD_NAME]
 
-    def __init__(self, optimizer_name, function, bounds, grad, minimize=True, **kwargs):
+    def __init__(self, optimizer_name, function, bounds, grad, minimize=True, full_gradient=None,
+                 debug=True, args=None, **kwargs):
         """
         Class used to minimize function.
 
@@ -18,6 +20,9 @@ class Optimization(object):
         :param bounds: [(min, max)] for each point
         :param grad:
         :param minimize: boolean
+        :param full_gradient: function that computes the complete gradient. Used in SGD.
+        :param debug: boolean
+        :param args: () additional arguments for the full_gradient function
         :param kwargs:
             -'factr': int
             -'maxiter': int
@@ -30,6 +35,8 @@ class Optimization(object):
         self.dim = len(self.bounds)
         self.minimize = minimize
         self.optimization_options = kwargs
+        self.args = args
+        self.debug = debug
 
     @staticmethod
     def _get_optimizer(optimizer_name):
@@ -79,4 +86,34 @@ class Optimization(object):
             'task': opt[2]['task'],
             'nit': opt[2]['nit'],
             'funcalls': opt[2]['funcalls'],
+        }
+
+
+    def SGD(self, start, n, *args):
+
+        if not self.minimize:
+            def grad(x, *args):
+                return -1.0 * self.gradient(x, *args)
+        else:
+            grad = self.gradient
+
+        opt = self.optimizer(
+            start,
+            grad,
+            n,
+            args=args,
+            **self.optimization_options
+        )
+
+        value_objective = None
+        gradient = None
+
+        if self.debug:
+            value_objective = self.function(opt, *self.args)
+            gradient = self.full_gradient(opt, *self.args)
+
+        return {
+            'solution': opt,
+            'optimal_value': value_objective,
+            'gradient': gradient,
         }
