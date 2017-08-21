@@ -684,6 +684,10 @@ def wrapper_optimize(point, self, *args):
 
     return self.optimize(point, *args)
 
+def wrapper_sgd(point, self, *args, **kwargs):
+
+    return self.SGD(point, *args, **kwargs)
+
 def wrapper_objective_posterior_mean_bq(point, self, var_noise=None, mean=None,
                                         parameters_kernel=None, n_samples_parameters=0):
     """
@@ -777,5 +781,5 @@ def wrapper_get_parameters_for_samples(parameters, point, self, *args):
                                               parameters[2], clear_cache=False)
 
 def wrapper_grad_voi_sgd(point, self, *args, **opt_params_mc):
-    return self.grad_voi_sgd(point, *args,  **opt_params_mc)
 
+    return self.grad_voi_sgd(point, *args,  **opt_params_mc)

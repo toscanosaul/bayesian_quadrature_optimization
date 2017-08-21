@@ -450,16 +450,20 @@ class TestSBO(unittest.TestCase):
 
         val = self.sbo_med.optimize(random_seed=1, parallel=False, n_restarts=1)
 
-        val_2 = self.sbo_med.optimize(monte_carlo=True, n_samples=50, n_restarts_mc=10,
-                                      random_seed=1, parallel=False, n_restarts=1)
-
+        val_2 = self.sbo_med.optimize(monte_carlo=True, n_samples=2, n_restarts_mc=2,
+                                      random_seed=1, parallel=False, n_restarts=1, maxepoch=20,
+                                      **{'factr':1e12,'maxiter':100})
         npt.assert_almost_equal(val['solution'], val_2['solution'], decimal=2)
 
     def test_optimize_sbo_mc_diff_parameters(self):
+        np.random.seed(1)
         val = self.sbo_med.optimize(monte_carlo=True, n_samples=2, n_restarts_mc=2,
-                               random_seed=1, parallel=False, n_restarts=1,
+                               random_seed=1, parallel=False, n_restarts=1, maxepoch=20,
                                     **{'factr':1e12,'maxiter':100})
-        print val
+        npt.assert_almost_equal(val['optimal_value'], 1493.8213246438795, decimal=4)
+        npt.assert_almost_equal(val['gradient'], np.array([ 0.0010511,  0.        ]))
+        npt.assert_almost_equal(val['solution'], np.array([ 99.9894658,   0.  ]))
+
         # assert 1 ==2
 
     def test_objective_voi_model_params(self):
@@ -641,12 +645,13 @@ class TestSBO(unittest.TestCase):
         np.random.seed(1)
         answer = self.sbo.optimize(start=None, random_seed=1, parallel=True, monte_carlo=True,
                                    n_samples=2, n_restarts_mc=10, n_best_restarts_mc=5,
-                                   n_restarts=5, n_best_restarts=2, start_ei=True,
-                                   n_samples_parameters=2, **{'factr': 1e12, 'maxiter': 10})
+                                   n_restarts=3, n_best_restarts=1, start_ei=True, maxepoch=20,
+                                   n_samples_parameters=2, compute_max_mean_bayesian=True,
+                                   **{'factr': 1e12, 'maxiter': 10})
         print grad, answer
         npt.assert_almost_equal(obj, np.array([ -0.5185451893015001]), decimal=5)
         npt.assert_almost_equal(grad, np.array([ 0.00054018, 0]))
-        npt.assert_almost_equal(answer['optimal_value'], -0.53985909427427536, decimal=5)
+        npt.assert_almost_equal(answer['optimal_value'], -0.023123930176947499, decimal=5)
 
 
     def test_evaluate_gradient_given_sample_given_parameters(self):

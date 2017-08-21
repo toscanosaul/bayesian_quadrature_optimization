@@ -37,6 +37,7 @@ class Optimization(object):
         self.optimization_options = kwargs
         self.args = args
         self.debug = debug
+        self.full_gradient = full_gradient
 
     @staticmethod
     def _get_optimizer(optimizer_name):
@@ -48,6 +49,9 @@ class Optimization(object):
 
         if optimizer_name == LBFGS_NAME:
             return fmin_l_bfgs_b
+
+        if optimizer_name == SGD_NAME:
+            return SGD
 
     def optimize(self, start, *args):
         """
@@ -89,11 +93,11 @@ class Optimization(object):
         }
 
 
-    def SGD(self, start, n, *args):
+    def SGD(self, start, n, *args, **kwargs):
 
         if not self.minimize:
-            def grad(x, *args):
-                return -1.0 * self.gradient(x, *args)
+            def grad(x, *args, **kwargs):
+                return -1.0 * self.gradient(x, *args, **kwargs)
         else:
             grad = self.gradient
 
@@ -102,6 +106,7 @@ class Optimization(object):
             grad,
             n,
             args=args,
+            kwargs=kwargs,
             **self.optimization_options
         )
 

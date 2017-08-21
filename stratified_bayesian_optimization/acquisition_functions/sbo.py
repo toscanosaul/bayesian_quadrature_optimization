@@ -44,6 +44,7 @@ from stratified_bayesian_optimization.lib.util import (
     wrapper_evaluate_sbo_by_sample_bayesian,
     wrapper_evaluate_sbo_by_sample_2,
     wrapper_grad_voi_sgd,
+    wrapper_sgd,
 )
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.lib.util import wrapper_evaluate_sbo
@@ -292,6 +293,7 @@ class SBO(object):
         """
         parameters = self.bq.gp.samples_parameters[-n_samples_parameters:]
 
+
         if self.samples is not None:
             samples = self.samples
             start = self.starting_points_sbo
@@ -405,7 +407,6 @@ class SBO(object):
         :param opt_params_mc:
         :return: float
         """
-
         if parameters is None:
             var_noise = self.bq.gp.var_noise.value[0]
             parameters_kernel = self.bq.gp.kernel.hypers_values_as_array
@@ -528,7 +529,7 @@ class SBO(object):
         Computes the objective voi using a bayesian approach. Used for the SGD. We useo only one
         sample of Z, and one sample of the parameters.
 
-        :param point:
+        :param point: np.array(n)
         :param monte_carlo:
         :param n_restarts:
         :param n_best_restarts:
@@ -538,18 +539,19 @@ class SBO(object):
         :return: float
         """
 
+        point = point.reshape((1, len(point)))
         params = None
         sample = None
         if bayesian:
             params = self.bq.gp.sample_parameters(1)[0]
         if monte_carlo:
-            sample = np.random.normal(0, 1, 1)
+            sample = np.random.normal(0, 1, 1)[0]
 
         #TODO IMPLEMENT THE CASE WHEN MONTE_CARLO IS FALSE
 
         grad = self.evaluate_gradient_given_sample_given_parameters(
             point, sample, params, n_restarts, n_best_restarts, n_threads, parallel,
-            **opt_params_mc)
+            **opt_params_mc)[0, :]
 
         return grad
 
@@ -937,7 +939,7 @@ class SBO(object):
     def optimize(self, start=None, random_seed=None, parallel=True, monte_carlo=False, n_samples=1,
                  n_restarts_mc=1, n_best_restarts_mc=0, n_restarts=1, n_best_restarts=0,
                  start_ei=True, n_samples_parameters=0, start_new_chain=True,
-                 compute_max_mean_bayesian=False, **opt_params_mc):
+                 compute_max_mean_bayesian=False, maxepoch=250, **opt_params_mc):
         """
         Optimizes the VOI.
         :param start: np.array(1xn)
@@ -954,6 +956,7 @@ class SBO(object):
             n_samples_parameters = 0, we optimize SBO with the MLE parameters.
         :param start_new_chain: (boolen)
         :param compute_max_mean_bayesian: boolean
+        :param maxepoch: (int) Max number of iterations in SGD
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -969,7 +972,7 @@ class SBO(object):
 
         if n_samples_parameters > 0 and start_new_chain:
             self.bq.gp.start_new_chain()
-         #   self.bq.gp.sample_parameters(n_samples_parameters)
+            self.bq.gp.sample_parameters(n_samples_parameters)
 
         bounds = self.bq.bounds
 
@@ -1063,7 +1066,7 @@ class SBO(object):
             n_restarts = 1
 
         bounds = [tuple(bound) for bound in self.bounds_opt]
-
+        opt_method = None
         if n_samples_parameters==0 and not monte_carlo:
             optimization = Optimization(
                 LBFGS_NAME,
@@ -1080,6 +1083,8 @@ class SBO(object):
                 args = (False, None, False, 0, optimization, self, monte_carlo, n_samples,
                         n_restarts_mc, n_best_restarts_mc,
                         opt_params_mc, 0, n_samples_parameters)
+            opt_method = wrapper_optimize
+            kwargs = {}
         else:
             args_ = (self, monte_carlo, n_samples, n_restarts_mc, n_best_restarts_mc,
                      opt_params_mc, n_threads, n_samples_parameters)
@@ -1091,7 +1096,8 @@ class SBO(object):
                 wrapper_grad_voi_sgd,
                 minimize=False,
                 full_gradient=wrapper_gradient_voi,
-                args=args_
+                args=args_,
+                **{'maxepoch': maxepoch}
             )
             #TODO: THINK ABOUT N_THREADS. Do we want to run it in parallel?
             N = max(n_samples * n_samples_parameters, n_samples_parameters, n_samples)
@@ -1100,7 +1106,9 @@ class SBO(object):
                 bayesian=False
 
             args = (False, None, parallel, 0, optimization, N, self, monte_carlo, bayesian,
-                    n_restarts_mc, n_best_restarts_mc, n_threads, True, opt_params_mc)
+                    n_restarts_mc, n_best_restarts_mc, n_threads, False)
+            kwargs = opt_params_mc
+            opt_method = wrapper_sgd
 
         point_dict = {}
         for j in xrange(n_restarts):
@@ -1119,7 +1127,7 @@ class SBO(object):
 
 
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
-            wrapper_optimize, point_dict, *args)
+            opt_method, point_dict, *args, **kwargs)
 
         maximum_values = []
         for j in xrange(n_restarts):
