@@ -107,6 +107,7 @@ class Optimization(object):
             n,
             args=args,
             kwargs=kwargs,
+            bounds=self.bounds,
             **self.optimization_options
         )
 

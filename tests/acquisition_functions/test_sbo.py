@@ -612,7 +612,7 @@ class TestSBO(unittest.TestCase):
         self.sbo.clean_cache()
         val_2 = self.sbo.evaluate_sample(np.array([[ 9.76619979]]), np.array([[52.5, 0]]),
                                          -1.2831193615780914)
-        npt.assert_almost_equal(val, val_2)
+        npt.assert_almost_equal(val, val_2, decimal=5)
 
     def test_evaluate_sbo_sample_parameters(self):
 
