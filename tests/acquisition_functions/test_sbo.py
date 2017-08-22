@@ -219,7 +219,7 @@ class TestSBO(unittest.TestCase):
         assert z == 0
 
     def test_optimization(self):
-        val = self.sbo_med.optimize(random_seed=1, parallel=False, n_restarts=1)
+        val = self.sbo_med.optimize(random_seed=1, parallel=False, n_restarts=1, start_ei=False)
         # Benchmark numbers obtained after optimizing the function manually, i.e. plot the function
         # and find the maximum.
         npt.assert_almost_equal(2018.8827643498898, val['optimal_value'], decimal=3)
@@ -228,7 +228,7 @@ class TestSBO(unittest.TestCase):
         self.sbo_med.bq.separate_tasks = False
         self.sbo_med.bq.bounds = [[0, 100], [0, 1]]
         self.sbo_med.bq.type_bounds = [0, 1]
-        val = self.sbo_med.optimize(random_seed=1, n_restarts=1, parallel=False)
+        val = self.sbo_med.optimize(random_seed=1, n_restarts=1, parallel=False, start_ei=False)
         npt.assert_almost_equal([99.98636451, 0], val['solution'], decimal=4)
         npt.assert_almost_equal(2018.8827643498898, val['optimal_value'], decimal=3)
 
@@ -460,9 +460,9 @@ class TestSBO(unittest.TestCase):
         val = self.sbo_med.optimize(monte_carlo=True, n_samples=2, n_restarts_mc=2,
                                random_seed=1, parallel=False, n_restarts=1, maxepoch=20,
                                     **{'factr':1e12,'maxiter':100})
-        npt.assert_almost_equal(val['optimal_value'], 1493.8213246438795, decimal=4)
-        npt.assert_almost_equal(val['gradient'], np.array([ 0.0010511,  0.        ]))
-        npt.assert_almost_equal(val['solution'], np.array([ 99.9894658,   0.  ]))
+        npt.assert_almost_equal(val['optimal_value'], 1484.5136641588726, decimal=4)
+        npt.assert_almost_equal(val['gradient'], np.array([ -0.0028595,  0.        ]))
+        npt.assert_almost_equal(val['solution'], np.array([ 99.9919394,   0.  ]))
 
         # assert 1 ==2
 
@@ -648,15 +648,15 @@ class TestSBO(unittest.TestCase):
                                    n_restarts=3, n_best_restarts=1, start_ei=True, maxepoch=20,
                                    n_samples_parameters=2, compute_max_mean_bayesian=True,
                                    **{'factr': 1e12, 'maxiter': 10})
-        print grad, answer
         npt.assert_almost_equal(obj, np.array([ -0.5185451893015001]), decimal=5)
         npt.assert_almost_equal(grad, np.array([ 0.00054018, 0]))
-        npt.assert_almost_equal(answer['optimal_value'], -0.023123930176947499, decimal=5)
+        npt.assert_almost_equal(answer['optimal_value'], 0.14898026594047414, decimal=5)
 
 
     def test_evaluate_gradient_given_sample_given_parameters(self):
         candidate = np.array([[52.5, 0]])
         np.random.seed(1)
+
         n_samples = 5
         parameters = np.array([1.0, 5.0, 50.0, 9.6, -3.0, -0.1])
 
@@ -675,3 +675,47 @@ class TestSBO(unittest.TestCase):
             values.append(value)
 
         npt.assert_almost_equal(np.mean(values, axis=0)[0, :], grad_1)
+
+    def test_evaluate_mc_bayesian_candidate_points(self):
+        candidate_points = np.array([[52.5, 0], [42.5, 1]])
+        np.random.seed(1)
+        n_samples_parameters = 2
+        n_samples = 5
+        compute_max_mean = False
+        n_restarts = 10
+
+        self.sbo_med.bq.gp.sample_parameters(n_samples_parameters)
+
+        np.random.seed(1)
+        values = self.sbo_med.evaluate_mc_bayesian_candidate_points(
+            candidate_points, n_samples_parameters, n_samples, n_restarts=n_restarts,
+            n_best_restarts=3, compute_max_mean=compute_max_mean, compute_gradient=True,
+            **{'factr': 1e12, 'maxiter': 10})
+
+        self.sbo_med.clean_cache()
+
+        np.random.seed(1)
+
+        samples, start = self.sbo_med.generate_samples_starting_points_evaluate_mc(
+            n_samples, n_restarts, cache=True)
+        evals = []
+        gradients = []
+        for i in xrange(2):
+            val = self.sbo_med.evaluate_mc_bayesian(
+                candidate_points[i:i+1,:], n_samples_parameters, n_samples, n_restarts=n_restarts,
+                n_best_restarts=3, n_threads=0, compute_max_mean=compute_max_mean,
+                **{'factr': 1e12, 'maxiter': 10})
+            evals.append(val)
+
+            grad = self.sbo_med.evaluate_gradient_mc_bayesian(
+                candidate_points[i:i+1,:], n_samples_parameters, n_samples, n_restarts=n_restarts,
+                n_best_restarts=3, n_threads=0, compute_max_mean=compute_max_mean,
+                **{'factr': 1e12, 'maxiter': 10}
+            )
+
+            gradients.append(grad)
+
+        evals = np.array(evals)
+        gradients = np.array(gradients)
+        npt.assert_almost_equal(evals, values['evaluations'])
+        npt.assert_almost_equal(gradients, values['gradient'])

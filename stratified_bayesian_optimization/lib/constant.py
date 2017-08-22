@@ -75,3 +75,6 @@ PARTIAL_RESULTS = 'partial_results'
 DEBUGGING_DIR = 'data/debugging'
 
 BAYESIAN_QUADRATURE = 'bayesian_quadrature'
+
+# Default number of sampled parameters
+DEFAULT_N_PARAMETERS = 15

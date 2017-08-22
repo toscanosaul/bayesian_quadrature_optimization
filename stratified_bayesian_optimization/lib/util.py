@@ -346,7 +346,6 @@ def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restart
     if opt_params_mc is None:
         opt_params_mc = {}
 
-
     if n_samples_parameters == 0:
         value = self.objective_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
                                    n_restarts=n_restarts, n_best_restarts=n_best_restarts,
@@ -637,6 +636,33 @@ def wrapper_evaluate_sbo_by_sample_bayesian(start_sample_parameters, self, candi
         parameters_kernel=params[2:], n_restarts=0, parallel=False, n_threads=n_threads,
         **opt_params_mc)
 
+def wrapper_evaluate_sbo_by_sample_bayesian_2(start_sample_parameters_candidate, self, n_threads,
+                                              **opt_params_mc):
+    """
+
+    :param start_sample_parameters: [np.array(n), float, np.array(l)], the first element is the
+        starting point, and the second element is the sampled element from the Gaussian r.v.
+    :param self: sbo-instance
+    :param candidate_point: np.array(1xm)
+    :param var_noise: float
+    :param mean: float
+    :param parameters_kernel: np.array(l)
+    :param opt_params_mc:
+        -'factr': int
+        -'maxiter': int
+    :param n_threads: int
+    :return: {'max': float, 'optimum': np.array(n)}
+    """
+    sample = start_sample_parameters_candidate[2]
+    candidate_point = start_sample_parameters_candidate[1]
+    start = start_sample_parameters_candidate[0]
+    params = start_sample_parameters_candidate[3]
+
+    return self.evaluate_sbo_by_sample(
+        candidate_point, sample, start=start, var_noise=params[0], mean=params[1],
+        parameters_kernel=params[2:], n_restarts=0, parallel=False, n_threads=n_threads,
+        **opt_params_mc)
+
 def wrapper_evaluate_sample(point, self, *args):
     """
 
@@ -778,6 +804,10 @@ def wrapper_gradient_acquisition_function(point, self, n_samples_parameters=0, *
 
 def wrapper_get_parameters_for_samples(parameters, point, self, *args):
     return self.bq.get_parameters_for_samples(True, point, parameters[0], parameters[1],
+                                              parameters[2], clear_cache=False)
+
+def wrapper_get_parameters_for_samples_2(parameters, self, *args):
+    return self.bq.get_parameters_for_samples(True, parameters[3], parameters[0], parameters[1],
                                               parameters[2], clear_cache=False)
 
 def wrapper_grad_voi_sgd(point, self, *args, **opt_params_mc):
