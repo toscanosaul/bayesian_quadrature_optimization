@@ -1094,7 +1094,8 @@ class SBO(object):
     def optimize(self, start=None, random_seed=None, parallel=True, monte_carlo=False, n_samples=1,
                  n_restarts_mc=1, n_best_restarts_mc=0, n_restarts=1, n_best_restarts=0,
                  start_ei=True, n_samples_parameters=0, start_new_chain=True,
-                 compute_max_mean_bayesian=False, maxepoch=20, **opt_params_mc):
+                 compute_max_mean_bayesian=False, maxepoch=10, default_n_samples=None,
+                 default_n_samples_parameters=None, **opt_params_mc):
         """
         Optimizes the VOI.
         :param start: np.array(1xn)
@@ -1112,6 +1113,8 @@ class SBO(object):
         :param start_new_chain: (boolen)
         :param compute_max_mean_bayesian: boolean
         :param maxepoch: (int) Max number of iterations in SGD
+        :param default_n_samples: (int)
+        :param default_n_samples_parameters: (int)
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -1125,7 +1128,13 @@ class SBO(object):
         if n_samples_parameters == 0:
             n_parameters = 0
         else:
-            n_parameters = DEFAULT_N_PARAMETERS
+            if default_n_samples_parameters is not None:
+                n_parameters = default_n_samples_parameters
+            else:
+                n_parameters = DEFAULT_N_PARAMETERS
+
+        if default_n_samples is None:
+            default_n_samples = DEFAULT_N_SAMPLES
 
         n_jobs = min(n_restarts, mp.cpu_count())
         n_threads = max(int((mp.cpu_count() - n_jobs) / n_jobs), 1)
@@ -1173,7 +1182,7 @@ class SBO(object):
             candidate_points = np.array(candidate_points)
 
             output = self.evaluate_mc_bayesian_candidate_points(
-                candidate_points, n_parameters, DEFAULT_N_SAMPLES, n_restarts_mc,
+                candidate_points, n_parameters, default_n_samples, n_restarts_mc,
                 n_best_restarts_mc, n_threads=0, compute_max_mean=True, compute_gradient=False)
 
             evaluations = output['evaluations']
@@ -1223,7 +1232,7 @@ class SBO(object):
                     candidate_points = np.array(candidate_points)
 
                     output = self.evaluate_mc_bayesian_candidate_points(
-                        candidate_points, n_parameters, DEFAULT_N_SAMPLES, n_restarts_mc,
+                        candidate_points, n_parameters, default_n_samples, n_restarts_mc,
                         n_best_restarts_mc, n_threads=0, compute_max_mean=True,
                         compute_gradient=False)
 
@@ -1271,7 +1280,7 @@ class SBO(object):
             kwargs = {}
         else:
 
-            args_ = (self, monte_carlo, DEFAULT_N_SAMPLES, n_restarts_mc, n_best_restarts_mc,
+            args_ = (self, monte_carlo, default_n_samples, n_restarts_mc, n_best_restarts_mc,
                      opt_params_mc, n_threads, n_parameters)
 
             optimization = Optimization(
@@ -1312,7 +1321,7 @@ class SBO(object):
             candidate_points = np.array(candidate_points)
 
             output = self.evaluate_mc_bayesian_candidate_points(
-                candidate_points, n_parameters, DEFAULT_N_SAMPLES, n_restarts_mc,
+                candidate_points, n_parameters, default_n_samples, n_restarts_mc,
                 n_best_restarts_mc, n_threads=0, compute_max_mean=True, compute_gradient=True)
 
             evaluations = output['evaluations']
