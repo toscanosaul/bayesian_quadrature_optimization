@@ -1144,7 +1144,7 @@ class SBO(object):
             self.bq.gp.sample_parameters(n_parameters)
 
         if n_samples_parameters > 0 and compute_max_mean_bayesian:
-            parameters = self.bq.gp.samples_parameters[-n_samples_parameters:]
+            parameters = self.bq.gp.samples_parameters[-n_parameters:]
             for parameter in parameters:
                 index_cache = (parameter[0], parameter[1], tuple(parameter[2:]))
 
