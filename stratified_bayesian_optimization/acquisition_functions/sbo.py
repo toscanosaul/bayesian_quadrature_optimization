@@ -48,7 +48,7 @@ from stratified_bayesian_optimization.lib.util import (
     wrapper_get_parameters_for_samples_2,
     wrapper_evaluate_sbo_by_sample_bayesian_2,
 )
-from stratified_bayesian_optimization.lib.constant import DEFAULT_N_PARAMETERS
+from stratified_bayesian_optimization.lib.constant import DEFAULT_N_PARAMETERS, DEFAULT_N_SAMPLES
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.lib.util import wrapper_evaluate_sbo
 from stratified_bayesian_optimization.acquisition_functions.ei import EI
@@ -1173,7 +1173,7 @@ class SBO(object):
             candidate_points = np.array(candidate_points)
 
             output = self.evaluate_mc_bayesian_candidate_points(
-                candidate_points, n_parameters, 25, n_restarts_mc,
+                candidate_points, n_parameters, DEFAULT_N_SAMPLES, n_restarts_mc,
                 n_best_restarts_mc, n_threads=0, compute_max_mean=True, compute_gradient=False)
 
             evaluations = output['evaluations']
@@ -1223,7 +1223,7 @@ class SBO(object):
                     candidate_points = np.array(candidate_points)
 
                     output = self.evaluate_mc_bayesian_candidate_points(
-                        candidate_points, n_parameters, 25, n_restarts_mc,
+                        candidate_points, n_parameters, DEFAULT_N_SAMPLES, n_restarts_mc,
                         n_best_restarts_mc, n_threads=0, compute_max_mean=True,
                         compute_gradient=False)
 
@@ -1271,7 +1271,7 @@ class SBO(object):
             kwargs = {}
         else:
 
-            args_ = (self, monte_carlo, 30, n_restarts_mc, n_best_restarts_mc,
+            args_ = (self, monte_carlo, DEFAULT_N_SAMPLES, n_restarts_mc, n_best_restarts_mc,
                      opt_params_mc, n_threads, n_parameters)
 
             optimization = Optimization(
@@ -1312,7 +1312,7 @@ class SBO(object):
             candidate_points = np.array(candidate_points)
 
             output = self.evaluate_mc_bayesian_candidate_points(
-                candidate_points, n_parameters, 25, n_restarts_mc,
+                candidate_points, n_parameters, DEFAULT_N_SAMPLES, n_restarts_mc,
                 n_best_restarts_mc, n_threads=0, compute_max_mean=True, compute_gradient=True)
 
             evaluations = output['evaluations']
