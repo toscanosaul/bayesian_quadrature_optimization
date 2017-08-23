@@ -1183,7 +1183,8 @@ class SBO(object):
 
             output = self.evaluate_mc_bayesian_candidate_points(
                 candidate_points, n_parameters, default_n_samples, n_restarts_mc,
-                n_best_restarts_mc, n_threads=0, compute_max_mean=True, compute_gradient=False)
+                n_best_restarts_mc, n_threads=0, compute_max_mean=True, compute_gradient=False,
+                **opt_params_mc)
 
             evaluations = output['evaluations']
 
@@ -1234,7 +1235,7 @@ class SBO(object):
                     output = self.evaluate_mc_bayesian_candidate_points(
                         candidate_points, n_parameters, default_n_samples, n_restarts_mc,
                         n_best_restarts_mc, n_threads=0, compute_max_mean=True,
-                        compute_gradient=False)
+                        compute_gradient=False, **opt_params_mc)
 
                     evaluations = output['evaluations']
 
@@ -1322,7 +1323,8 @@ class SBO(object):
 
             output = self.evaluate_mc_bayesian_candidate_points(
                 candidate_points, n_parameters, default_n_samples, n_restarts_mc,
-                n_best_restarts_mc, n_threads=0, compute_max_mean=True, compute_gradient=True)
+                n_best_restarts_mc, n_threads=0, compute_max_mean=True, compute_gradient=True,
+                **opt_params_mc)
 
             evaluations = output['evaluations']
             gradients = output['gradient']

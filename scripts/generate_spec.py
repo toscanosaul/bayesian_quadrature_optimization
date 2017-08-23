@@ -49,8 +49,8 @@ if __name__ == '__main__':
     n_best_restarts_mc = 5
     factr_mc = 1e12
     maxiter_mc = 10
-    n_restarts = 15
-    n_best_restarts = 2
+    n_restarts = 5
+    n_best_restarts = 0
     use_only_training_points = True
     method_optimization = MULTI_TASK_METHOD
     n_samples_parameters = 10
