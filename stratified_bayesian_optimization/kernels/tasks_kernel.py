@@ -290,11 +290,11 @@ class TasksKernel(AbstractKernel):
 
         :param point:
         :param inputs:
-        :return: {i: np.array(1x1), i<n}
+        :return: np.array(nx1x1)
         """
-        hessian = {}
-        for i in xrange(inputs.shape[0]):
-            hessian[i] = np.zeros((1, 1))
+
+        hessian = np.zeros((inputs.shape[0], 1, 1))
+
         return hessian
 
     @classmethod

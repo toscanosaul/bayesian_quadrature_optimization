@@ -232,13 +232,11 @@ class ScaledKernel(AbstractKernel):
 
         :param point:
         :param inputs:
-        :return: {i: np.array(dxd), i<n}
+        :return: np.array(nxdxd)
         """
         hessian = self.kernel.hessian_respect_point(point, inputs)
 
-        for i in hessian:
-            hessian[i] *= self.sigma2.value
-        return hessian
+        return self.sigma2.value * hessian
 
     @classmethod
     def evaluate_grad_respect_point(cls, params, point, inputs, dimension, *args):

@@ -75,7 +75,7 @@ class Distances(object):
         :param point: np.array(1xd)
         :param x: np.array(nxd)
         :param second: (boolean) Hessian if it's True
-        :return: np.array(nxd) or {'first': np.array(nxd), 'second': {i (i<n): np.array(dxd)}}
+        :return: np.array(nxd) or {'first': np.array(nxd), 'second': np.array(nxdxd)}
         """
 
         r2 = np.abs(cls.dist_square_length_scale(ls, point, x))
@@ -106,13 +106,11 @@ class Distances(object):
             for j in xrange(i + 1, len(ls)):
                 cross_partial[(i, j)] = -1.0 * differences[i] * differences[j] /r3
 
-        hessian = {}
-        for i in xrange(x.shape[0]):
-            hessian[i] = np.zeros((len(ls), len(ls)))
-            for j in xrange(len(ls)):
-                hessian[i][j, j] = gradient_2[i ,j]
-                for h in xrange(j + 1, len(ls)):
-                    hessian[i][j, h] = cross_partial[(j, h)][0, i]
-                    hessian[i][h, j] = hessian[i][j, h]
+        hessian = np.zeros((x.shape[0], len(ls), len(ls)))
+        for j in xrange(len(ls)):
+            hessian[:, j, j] = gradient_2[:, j]
+            for h in xrange(j + 1, len(ls)):
+                hessian[:, j, h] = cross_partial[(j, h)][0, :]
+                hessian[:, h, j] = hessian[:, j, h]
 
         return {'first': gradient, 'second': hessian}

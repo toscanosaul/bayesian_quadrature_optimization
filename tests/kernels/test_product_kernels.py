@@ -356,5 +356,5 @@ class TestProductKernels(unittest.TestCase):
         for i in xrange(3):
             for j in xrange(3):
                 npt.assert_almost_equal(finite_diff[i, j],
-                                        np.array([[result[0][i, j], result[1][i, j]]]), decimal=5)
+                                        np.array([[result[0, i, j], result[1, i, j]]]), decimal=5)
 

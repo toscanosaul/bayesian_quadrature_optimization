@@ -211,7 +211,7 @@ class Matern52(AbstractKernel):
 
         :param point:
         :param inputs:
-        :return: {i: np.array(dxd), i<n}
+        :return: np.array(nxdxd)
         """
         hessian = GradientLSMatern52.hessian_respect_point(self.length_scale, point, inputs)
         return hessian
@@ -465,7 +465,7 @@ class GradientLSMatern52(object):
         :param ls: (ParameterEntity) length_scale
         :param point: np.array(1xd)
         :param inputs: np.array(nxd)
-        :return: {i: np.array(dxd)}, 0<=i<n
+        :return: np.array(nxdxd)
         """
 
         derivatives_resp_r = cls.gradient_respect_distance_cross(ls, point, inputs, second=True)
@@ -474,15 +474,25 @@ class GradientLSMatern52(object):
             ls.value, point, inputs, second=True
         )
 
-        hessian = {}
-        for i in xrange(inputs.shape[0]):
-            hess = hessian_respect_point['second'][i]
-            part_1 = hess * derivatives_resp_r['first'][0, i]
+        hess = hessian_respect_point['second']
+        part_1 = hess * derivatives_resp_r['first'][0, :][:, np.newaxis, np.newaxis]
 
-            grad = hessian_respect_point['first'][i:i+1, :]
-            part_2 = np.dot(grad.transpose(), grad)
-            part_2 *= derivatives_resp_r['second'][0, i]
+        grad = hessian_respect_point['first']
+        part_2 = grad[:, :, None] * grad[:, None, :]
+        part_2 *= derivatives_resp_r['second'][0, :][:, np.newaxis, np.newaxis]
 
-            hessian[i] = part_1 + part_2
+        hessian = part_1 + part_2
+
+
+        # hessian = {}
+        # for i in xrange(inputs.shape[0]):
+        #     hess = hessian_respect_point['second'][i]
+        #     part_1 = hess * derivatives_resp_r['first'][0, i]
+        #
+        #     grad = hessian_respect_point['first'][i:i+1, :]
+        #     part_2 = np.dot(grad.transpose(), grad)
+        #     part_2 *= derivatives_resp_r['second'][0, i]
+        #
+        #     hessian[i] = part_1 + part_2
 
         return hessian

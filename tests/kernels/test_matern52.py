@@ -327,7 +327,7 @@ class TestMatern52(unittest.TestCase):
             for j in xrange(2):
                 print i, j
                 npt.assert_almost_equal(finite_diff[i, j],
-                                        np.array([[result[0][i, j], result[1][i, j]]]), decimal=5)
+                                        np.array([[result[0, i, j], result[1, i, j]]]), decimal=5)
 
     def test_hessian_distance_length_scale_respect_point(self):
         params = np.array([1.0, 5.0])
@@ -349,4 +349,4 @@ class TestMatern52(unittest.TestCase):
             for j in xrange(2):
                 print i, j
                 npt.assert_almost_equal(finite_diff[i, j],
-                                        np.array([[result[0][i, j], result[1][i, j]]]), decimal=5)
+                                        np.array([[result[0, i, j], result[1, i, j]]]), decimal=5)

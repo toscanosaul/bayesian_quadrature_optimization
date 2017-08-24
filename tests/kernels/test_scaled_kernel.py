@@ -97,5 +97,5 @@ class TestScaledKernel(unittest.TestCase):
         for i in xrange(2):
             for j in xrange(2):
                 npt.assert_almost_equal(finite_diff[i, j],
-                                        np.array([[result[0][i, j], result[1][i, j]]]), decimal=5)
+                                        np.array([[result[0, i, j], result[1, i, j]]]), decimal=5)
 

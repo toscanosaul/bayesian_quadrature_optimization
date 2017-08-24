@@ -328,7 +328,7 @@ class ProductKernels(AbstractKernel):
 
         :param point:
         :param inputs: np.array(nxd)
-        :return: {i: np.array(dxd), i<n}
+        :return: np.array(nxdxd)
         """
 
         point_dict = self.inputs_from_array_to_dict(point)
@@ -340,17 +340,25 @@ class ProductKernels(AbstractKernel):
         hess_diag = hessian_dict['diagonal_hessian']
 
         # Only works for the product of two kernels
-        hessian = {}
         name_1 = self.names[0]
         name_2 = self.names[1]
-        for i in xrange(inputs.shape[0]):
-            hessian[i] = [hess[name_1][i], hess_diag[i]]
-            hessian[i] = np.concatenate(hessian[i], 1)
 
-            hess_2 = [hess_diag[i].transpose(), hess[name_2][i]]
-            hess_2 = np.concatenate(hess_2, 1)
+        hessian = np.concatenate([hess[name_1], hess_diag], 2)
 
-            hessian[i] = np.concatenate((hessian[i], hess_2), axis=0)
+        # I'm not 100% sure that this is correct
+
+        hessian_2 = np.concatenate([np.einsum('ikj', hess_diag), hess[name_2]], 2)
+
+        hessian = np.concatenate([hessian, hessian_2], axis=1)
+
+        # for i in xrange(inputs.shape[0]):
+        #     hessian[i] = [hess[name_1][i], hess_diag[i]]
+        #     hessian[i] = np.concatenate(hessian[i], 1)
+        #
+        #     hess_2 = [hess_diag[i].transpose(), hess[name_2][i]]
+        #     hess_2 = np.concatenate(hess_2, 1)
+        #
+        #     hessian[i] = np.concatenate((hessian[i], hess_2), axis=0)
 
         return hessian
 
@@ -361,8 +369,8 @@ class ProductKernels(AbstractKernel):
         :param point: {(str) kernel_name: np.array(1xd)}
         :param inputs: {(str) kernel_name: np.array(nxd)}
 
-        :return: {'hessian': (str) kernel_name: {i: np.array(dxd)},
-            'diagonal_hessian': {i: np.array(dxd)}}
+        :return: {'hessian': (str) kernel_name: np.array(nxdxd),
+            'diagonal_hessian': np.array(nxdxd)}
         """
         # TODO - Generalize when the gradients share the same inputs
         # TODO - Generalize to more than two kernels
@@ -371,7 +379,6 @@ class ProductKernels(AbstractKernel):
         grad = {}
         cov = {}
 
-        total_points = inputs[self.names[0]].shape[0]
         for name in self.names:
             hess[name] = self.kernels[name].hessian_respect_point(point[name], inputs[name])
             grad[name] = self.kernels[name].grad_respect_point(point[name], inputs[name])
@@ -386,16 +393,20 @@ class ProductKernels(AbstractKernel):
             name_1 = self.names[ind_1]
             name_2 = self.names[ind_2]
 
-            hessian[name_1] = {}
+            part_1 = hess[name_1] * cov[name_2][:, 0][:, np.newaxis, np.newaxis]
+            hessian[name_1] = part_1
 
-            for i in xrange(total_points):
-                part_1 = hess[name_1][i] * cov[name_2][i, 0]
-                hessian[name_1][i] = part_1
+            if 0 == j:
+                diagonal_hessian = grad[name_1][:, :, None] *grad[name_2][:, None, :]
 
-                if 0 == j:
-                    diagonal_part = np.dot(grad[name_1][i:i + 1, :].transpose(),
-                                           grad[name_2][i:i + 1, :])
-                    diagonal_hessian[i] = diagonal_part
+            # for i in xrange(total_points):
+            #     part_1 = hess[name_1][i] * cov[name_2][i, 0]
+            #     hessian[name_1][i] = part_1
+            #
+            #     if 0 == j:
+            #         diagonal_part = np.dot(grad[name_1][i:i + 1, :].transpose(),
+            #                                grad[name_2][i:i + 1, :])
+            #         diagonal_hessian[i] = diagonal_part
 
         return {'hessian': hessian, 'diagonal_hessian': diagonal_hessian}
 
