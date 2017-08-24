@@ -226,6 +226,20 @@ class ScaledKernel(AbstractKernel):
 
         return grad * self.sigma2.value
 
+    def hessian_respect_point(self, point, inputs):
+        """
+        Computes the hessians of cov(point, inputs) respect point
+
+        :param point:
+        :param inputs:
+        :return: {i: np.array(dxd), i<n}
+        """
+        hessian = self.kernel.hessian_respect_point(point, inputs)
+
+        for i in hessian:
+            hessian[i] *= self.sigma2.value
+        return hessian
+
     @classmethod
     def evaluate_grad_respect_point(cls, params, point, inputs, dimension, *args):
         """
@@ -242,6 +256,20 @@ class ScaledKernel(AbstractKernel):
         """
         kernel = cls.define_kernel_from_array(dimension, params, *args)
         return kernel.grad_respect_point(point, inputs)
+
+    @classmethod
+    def evaluate_hessian_respect_point(cls, params, point, inputs, dimension):
+        """
+        Evaluate the hessian of the kernel defined by params respect to the point.
+
+        :param params:
+        :param point:
+        :param inputs:
+        :param dimension:
+        :return:
+        """
+        kernel = cls.define_kernel_from_array(dimension, params)
+        return kernel.hessian_respect_point(point, inputs)
 
     @classmethod
     def evaluate_cov_defined_by_params(cls, params, inputs, dimension, *args):

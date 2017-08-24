@@ -331,3 +331,30 @@ class TestProductKernels(unittest.TestCase):
         kernel_ = copy.deepcopy(kernel)
         kernel_.parameters[TASKS_KERNEL_NAME][LOWER_TRIANG_NAME].value = [3]
         assert ProductKernels.compare_kernels(kernel, kernel_) is False
+
+    def test_evaluate_hessian_respect_point(self):
+        point = np.array([[4.5, 7.5, 0]])
+        inputs = np.array([[5.0, 6.0, 0], [8.0, 9.0, 1]])
+        params = [np.array([1.0, 5.0]), np.array([1.0, 5.0, 6.0])]
+        result = ProductKernels.evaluate_hessian_respect_point(
+            params, point, inputs, [2, 2], [MATERN52_NAME, TASKS_KERNEL_NAME])
+
+        val_1 = ProductKernels.evaluate_cross_cov_defined_by_params_array(
+                params, point, inputs, [2, 2], [MATERN52_NAME, TASKS_KERNEL_NAME])
+
+        point_ = {MATERN52_NAME: np.array([[4.5, 7.5]]), TASKS_KERNEL_NAME: np.array([[0]])}
+        val_2 = ProductKernels.evaluate_cross_cov_defined_by_params(
+                params, point_, self.inputs_, [2, 2], [MATERN52_NAME, TASKS_KERNEL_NAME])
+        assert np.all(val_1 == val_2)
+
+        dh = 0.0001
+        finite_diff = FiniteDifferences.second_order_central(
+            lambda x: ProductKernels.evaluate_cross_cov_defined_by_params_array(
+                params, x.reshape((1, len(x))), inputs, [2, 2], [MATERN52_NAME, TASKS_KERNEL_NAME]),
+            point[0, :], np.array([dh])
+        )
+        for i in xrange(3):
+            for j in xrange(3):
+                npt.assert_almost_equal(finite_diff[i, j],
+                                        np.array([[result[0][i, j], result[1][i, j]]]), decimal=5)
+

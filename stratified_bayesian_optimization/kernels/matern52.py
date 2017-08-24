@@ -205,6 +205,17 @@ class Matern52(AbstractKernel):
         grad = GradientLSMatern52.grad_respect_point(self.length_scale, point, inputs)
         return grad
 
+    def hessian_respect_point(self, point, inputs):
+        """
+        Computes the hessians of cov(point, inputs) respect point
+
+        :param point:
+        :param inputs:
+        :return: {i: np.array(dxd), i<n}
+        """
+        hessian = GradientLSMatern52.hessian_respect_point(self.length_scale, point, inputs)
+        return hessian
+
     @classmethod
     def evaluate_grad_respect_point(cls, params, point, inputs, dimension):
         """
@@ -219,6 +230,20 @@ class Matern52(AbstractKernel):
         """
         matern52 = cls.define_kernel_from_array(dimension, params)
         return matern52.grad_respect_point(point, inputs)
+
+    @classmethod
+    def evaluate_hessian_respect_point(cls, params, point, inputs, dimension):
+        """
+        Evaluate the hessian of the kernel defined by params respect to the point.
+
+        :param params:
+        :param point:
+        :param inputs:
+        :param dimension: int
+        :return:
+        """
+        matern52 = cls.define_kernel_from_array(dimension, params)
+        return matern52.hessian_respect_point(point, inputs)
 
     @classmethod
     def evaluate_cov_defined_by_params(cls, params, inputs, dimension, **kwargs):
@@ -374,21 +399,40 @@ class GradientLSMatern52(object):
         return cls.gradient_respect_distance_cross(ls, inputs, inputs)
 
     @classmethod
-    def gradient_respect_distance_cross(cls, ls, inputs_1, inputs_2):
+    def gradient_respect_distance_cross(cls, ls, inputs_1, inputs_2, second=False):
         """
 
         :param ls: (ParameterEntity) length_scale
         :param inputs_1: np.array(nxd)
         :param inputs_2: np.array(mxd)
-        :return: np.array(nxm)
+        :param second: (boolean) Computes second derivative if it's True.
+        :return: np.array(nxm) or {'first': np.array(nxm), 'second': np.array(nxm)}
         """
+
         r2 = np.abs(Distances.dist_square_length_scale(ls.value, inputs_1, inputs_2))
         r = np.sqrt(r2)
 
-        part_1 = (1.0 + np.sqrt(5) * r + (5.0/3.0) * r2) * np.exp(-np.sqrt(5) * r) * (-np.sqrt(5))
-        part_2 = (np.exp(-np.sqrt(5) * r) * (np.sqrt(5) + (10.0/3.0) * r))
+        exp_r = np.exp(-np.sqrt(5) * r)
+
+        part_1 = (1.0 + np.sqrt(5) * r + (5.0/3.0) * r2) * exp_r * (-np.sqrt(5))
+        part_2 = (exp_r * (np.sqrt(5) + (10.0/3.0) * r))
         derivate_respect_to_r = part_1 + part_2
-        return derivate_respect_to_r
+
+        if not second:
+            return derivate_respect_to_r
+
+        part_0 = (10.0 / 3.0) * exp_r
+        part_1 = part_1 * (-np.sqrt(5.0))
+        part_3 = 2.0 * ( (10.0 / 3.0) * r + np.sqrt(5.0)) * exp_r * (-np.sqrt(5.0))
+
+        hessian_respect_to_r = part_0 + part_1 + part_3
+
+        sol = {
+            'first': derivate_respect_to_r,
+            'second': hessian_respect_to_r,
+        }
+
+        return sol
 
     @classmethod
     def grad_respect_point(cls, ls, point, inputs):
@@ -411,3 +455,34 @@ class GradientLSMatern52(object):
         gradient = np.nan_to_num(gradient)
 
         return gradient
+
+
+    @classmethod
+    def hessian_respect_point(cls, ls, point, inputs):
+        """
+        Computes the Hessians of cov(point, inputs) respect point.
+
+        :param ls: (ParameterEntity) length_scale
+        :param point: np.array(1xd)
+        :param inputs: np.array(nxd)
+        :return: {i: np.array(dxd)}, 0<=i<n
+        """
+
+        derivatives_resp_r = cls.gradient_respect_distance_cross(ls, point, inputs, second=True)
+
+        hessian_respect_point = Distances.gradient_distance_length_scale_respect_point(
+            ls.value, point, inputs, second=True
+        )
+
+        hessian = {}
+        for i in xrange(inputs.shape[0]):
+            hess = hessian_respect_point['second'][i]
+            part_1 = hess * derivatives_resp_r['first'][0, i]
+
+            grad = hessian_respect_point['first'][i:i+1, :]
+            part_2 = np.dot(grad.transpose(), grad)
+            part_2 *= derivatives_resp_r['second'][0, i]
+
+            hessian[i] = part_1 + part_2
+
+        return hessian

@@ -322,6 +322,83 @@ class ProductKernels(AbstractKernel):
 
         return np.concatenate(grad, 1)
 
+    def hessian_respect_point(self, point, inputs):
+        """
+        Computes the hessians of cov(point, inputs) respect point
+
+        :param point:
+        :param inputs: np.array(nxd)
+        :return: {i: np.array(dxd), i<n}
+        """
+
+        point_dict = self.inputs_from_array_to_dict(point)
+        inputs_dict = self.inputs_from_array_to_dict(inputs)
+
+        hessian_dict = self.hessian_respect_point_dict(point_dict, inputs_dict)
+
+        hess = hessian_dict['hessian']
+        hess_diag = hessian_dict['diagonal_hessian']
+
+        # Only works for the product of two kernels
+        hessian = {}
+        name_1 = self.names[0]
+        name_2 = self.names[1]
+        for i in xrange(inputs.shape[0]):
+            hessian[i] = [hess[name_1][i], hess_diag[i]]
+            hessian[i] = np.concatenate(hessian[i], 1)
+
+            hess_2 = [hess_diag[i].transpose(), hess[name_2][i]]
+            hess_2 = np.concatenate(hess_2, 1)
+
+            hessian[i] = np.concatenate((hessian[i], hess_2), axis=0)
+
+        return hessian
+
+    def hessian_respect_point_dict(self, point, inputs):
+        """
+        Computes the hessians of cov(point, inputs) respect point.
+
+        :param point: {(str) kernel_name: np.array(1xd)}
+        :param inputs: {(str) kernel_name: np.array(nxd)}
+
+        :return: {'hessian': (str) kernel_name: {i: np.array(dxd)},
+            'diagonal_hessian': {i: np.array(dxd)}}
+        """
+        # TODO - Generalize when the gradients share the same inputs
+        # TODO - Generalize to more than two kernels
+
+        hess = {}
+        grad = {}
+        cov = {}
+
+        total_points = inputs[self.names[0]].shape[0]
+        for name in self.names:
+            hess[name] = self.kernels[name].hessian_respect_point(point[name], inputs[name])
+            grad[name] = self.kernels[name].grad_respect_point(point[name], inputs[name])
+            cov[name] = self.kernels[name].cross_cov(point[name], inputs[name]).transpose()
+
+        hessian = {}
+        diagonal_hessian = {}
+        for j in xrange(2):
+            ind_1 = j
+            ind_2 = (j + 1) % 2
+
+            name_1 = self.names[ind_1]
+            name_2 = self.names[ind_2]
+
+            hessian[name_1] = {}
+
+            for i in xrange(total_points):
+                part_1 = hess[name_1][i] * cov[name_2][i, 0]
+                hessian[name_1][i] = part_1
+
+                if 0 == j:
+                    diagonal_part = np.dot(grad[name_1][i:i + 1, :].transpose(),
+                                           grad[name_2][i:i + 1, :])
+                    diagonal_hessian[i] = diagonal_part
+
+        return {'hessian': hessian, 'diagonal_hessian': diagonal_hessian}
+
     def grad_respect_point_dict(self, point, inputs):
         """
         Computes the vector of the gradients of cov(point, inputs) respect point.
@@ -368,6 +445,27 @@ class ProductKernels(AbstractKernel):
         kernel = cls.define_kernel_from_array(dimension, params, *args, **kernel_parameters)
 
         return kernel.grad_respect_point(point, inputs)
+
+    @classmethod
+    def evaluate_hessian_respect_point(cls, params, point, inputs, dimension, *args,
+                                    **kernel_parameters):
+        """
+        Evaluate the hessian of the kernel defined by params respect to the point.
+
+        :param params: [np.array(k)] The first part are related to the parameters of the first
+            kernel and so on.
+        :param point: np.array(1xd)
+        :param inputs: np.array(nxd)
+        :param dimension: [int] list with the dimensions of the kernel
+        :param args: [str] List with the names of the kernels.
+        :param kernel_parameters: additional kernel parameters,
+            - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
+        :return:
+        """
+
+        kernel = cls.define_kernel_from_array(dimension, params, *args, **kernel_parameters)
+
+        return kernel.hessian_respect_point(point, inputs)
 
     @classmethod
     def evaluate_cov_defined_by_params(cls, params, inputs, dimension, *args, **kernel_parameters):
@@ -435,6 +533,31 @@ class ProductKernels(AbstractKernel):
         """
 
         kernel = cls.define_kernel_from_array(dimension, params, *args, **kernel_parameters)
+
+        return kernel.cross_cov_dict(inputs_1, inputs_2)
+
+    @classmethod
+    def evaluate_cross_cov_defined_by_params_array(cls, params, inputs_1, inputs_2, dimension,
+                                                   *args, **kernel_parameters):
+        """
+        Evaluate the covariance of the kernel defined by params.
+
+        :param params: (np.array(k)) The first part are related to the parameters of the first
+            kernel and so on.
+        :param inputs_1: np.array(nxd)
+        :param inputs_2: np.array(nxd)
+        :param dimension: [int] list with the dimensions of the kernel
+        :param args: [str] List with the names of the kernels.
+        :param kernel_parameters: additional kernel parameters,
+            - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
+
+        :return: (np.array(nxk)) cov(inputs_1, inputs_2) where the kernel is defined with params
+        """
+
+        kernel = cls.define_kernel_from_array(dimension, params, *args, **kernel_parameters)
+
+        inputs_1 = kernel.inputs_from_array_to_dict(inputs_1)
+        inputs_2 = kernel.inputs_from_array_to_dict(inputs_2)
 
         return kernel.cross_cov_dict(inputs_1, inputs_2)
 

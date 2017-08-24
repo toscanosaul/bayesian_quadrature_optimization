@@ -307,3 +307,46 @@ class TestMatern52(unittest.TestCase):
 
         kernel = Matern52.define_kernel_from_array(1, np.array([5.0]))
         assert np.all(result == kernel.grad_respect_point(np.array([[1]]), np.array([[4], [5]])))
+
+    def test_evaluate_hessian_respect_point(self):
+        point = np.array([[4.5, 7.5]])
+        inputs = np.array([[5.0, 6.0], [8.0, 9.0]])
+        params = np.array([1.0, 5.0])
+        result = Matern52.evaluate_hessian_respect_point(
+            params, point, inputs, 2)
+
+
+        dh = 0.00001
+        finite_diff = FiniteDifferences.second_order_central(
+            lambda x: Matern52.evaluate_cross_cov_defined_by_params(
+                params, x.reshape((1, len(x))), inputs, 2),
+            point[0, :], np.array([dh])
+        )
+
+        for i in xrange(2):
+            for j in xrange(2):
+                print i, j
+                npt.assert_almost_equal(finite_diff[i, j],
+                                        np.array([[result[0][i, j], result[1][i, j]]]), decimal=5)
+
+    def test_hessian_distance_length_scale_respect_point(self):
+        params = np.array([1.0, 5.0])
+        point = np.array([[4.5, 7.5]])
+        inputs = np.array([[5.0, 6.0], [8.0, 9.0]])
+        result = Distances.gradient_distance_length_scale_respect_point(
+            params, point, inputs, second=True
+        )
+        result = result['second']
+
+        dh = 0.00001
+        finite_diff = FiniteDifferences.second_order_central(
+            lambda x: np.sqrt(Distances.dist_square_length_scale(
+                params, x.reshape((1, len(x))), inputs)),
+            point[0, :], np.array([dh])
+        )
+
+        for i in xrange(2):
+            for j in xrange(2):
+                print i, j
+                npt.assert_almost_equal(finite_diff[i, j],
+                                        np.array([[result[0][i, j], result[1][i, j]]]), decimal=5)

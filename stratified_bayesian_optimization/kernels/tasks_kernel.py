@@ -284,6 +284,19 @@ class TasksKernel(AbstractKernel):
 
         return np.zeros((inputs.shape[0], 1))
 
+    def hessian_respect_point(self, point, inputs):
+        """
+        Computes the hessians of cov(point, inputs) respect point
+
+        :param point:
+        :param inputs:
+        :return: {i: np.array(1x1), i<n}
+        """
+        hessian = {}
+        for i in xrange(inputs.shape[0]):
+            hessian[i] = np.zeros((1, 1))
+        return hessian
+
     @classmethod
     def evaluate_grad_respect_point(cls, params, point, inputs, dimension):
         """
@@ -334,6 +347,20 @@ class TasksKernel(AbstractKernel):
                                                     same_correlation=same_correlation)
 
         return task_kernels.cross_cov(inputs_1, inputs_2)
+
+    @classmethod
+    def evaluate_hessian_respect_point(cls, params, point, inputs, dimension):
+        """
+        Evaluate the hessian of the kernel defined by params respect to the point.
+
+        :param params:
+        :param point:
+        :param inputs:
+        :param dimension:
+        :return:
+        """
+        kernel = cls.define_kernel_from_array(dimension, params)
+        return kernel.hessian_respect_point(point, inputs)
 
     @classmethod
     def evaluate_grad_defined_by_params_respect_params(cls, params, inputs, dimension, **kwargs):
