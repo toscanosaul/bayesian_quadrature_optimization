@@ -258,7 +258,7 @@ class ScaledKernel(AbstractKernel):
         return kernel.grad_respect_point(point, inputs)
 
     @classmethod
-    def evaluate_hessian_respect_point(cls, params, point, inputs, dimension):
+    def evaluate_hessian_respect_point(cls, params, point, inputs, dimension, *args):
         """
         Evaluate the hessian of the kernel defined by params respect to the point.
 
@@ -268,7 +268,7 @@ class ScaledKernel(AbstractKernel):
         :param dimension:
         :return:
         """
-        kernel = cls.define_kernel_from_array(dimension, params)
+        kernel = cls.define_kernel_from_array(dimension, params, *args)
         return kernel.hessian_respect_point(point, inputs)
 
     @classmethod
