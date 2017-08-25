@@ -43,6 +43,8 @@ VAR_NOISE_NAME = 'var_noise'
 LBFGS_NAME = 'lbfgs'
 SGD_NAME = 'sgd'
 NEWTON_CG_NAME = 'newton_cg'
+TRUST_N_CG = 'trust-ncg'
+DOGLEG = 'dogleg'
 
 # Constants
 SMALLEST_POSITIVE_NUMBER = 1e-10

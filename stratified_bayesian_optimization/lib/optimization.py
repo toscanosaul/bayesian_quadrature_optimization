@@ -2,14 +2,17 @@ from __future__ import absolute_import
 
 from scipy.optimize import fmin_l_bfgs_b
 
-from stratified_bayesian_optimization.lib.optimization_methods import newton_cg
-from stratified_bayesian_optimization.lib.constant import LBFGS_NAME, SGD_NAME, NEWTON_CG_NAME
+from stratified_bayesian_optimization.lib.optimization_methods import (
+    newton_cg, trust_ncg, dogleg)
+from stratified_bayesian_optimization.lib.constant import (
+    LBFGS_NAME, SGD_NAME, NEWTON_CG_NAME, TRUST_N_CG, DOGLEG)
 from stratified_bayesian_optimization.lib.stochastic_gradient_descent import SGD
 
 
 class Optimization(object):
 
-    _optimizers_ = [LBFGS_NAME, SGD_NAME, NEWTON_CG_NAME]
+    _optimizers_ = [LBFGS_NAME, SGD_NAME, NEWTON_CG_NAME, TRUST_N_CG, DOGLEG]
+    _hessian_methods = [NEWTON_CG_NAME, TRUST_N_CG, DOGLEG]
 
     def __init__(self, optimizer_name, function, bounds, grad, hessian=None, minimize=True,
                  full_gradient=None, debug=True, args=None, **kwargs):
@@ -60,6 +63,12 @@ class Optimization(object):
         if optimizer_name == NEWTON_CG_NAME:
             return newton_cg
 
+        if optimizer_name == TRUST_N_CG:
+            return trust_ncg
+
+        if optimizer_name == DOGLEG:
+            return dogleg
+
     def optimize(self, start, *args):
         """
 
@@ -93,7 +102,7 @@ class Optimization(object):
                 def hessian(x, *args):
                     return -1.0 * self.hessian(x, *args)
 
-            if self.optimizer_name == NEWTON_CG_NAME:
+            if self.optimizer_name in self._hessian_methods:
                 opt = self.optimizer(
                     f, start,
                     fprime=grad, hessian=hessian,

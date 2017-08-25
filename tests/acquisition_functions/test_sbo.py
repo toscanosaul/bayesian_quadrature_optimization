@@ -20,6 +20,9 @@ from stratified_bayesian_optimization.lib.constant import (
     TASKS_KERNEL_NAME,
     UNIFORM_FINITE,
     TASKS,
+    NEWTON_CG_NAME,
+    TRUST_N_CG,
+    DOGLEG,
 )
 from stratified_bayesian_optimization.services.gp_fitting import GPFittingService
 from stratified_bayesian_optimization.models.gp_fitting_gaussian import GPFittingGaussian
@@ -363,9 +366,21 @@ class TestSBO(unittest.TestCase):
         eval_2 = self.sbo.evaluate_sbo_by_sample(candidate_point, sample, n_restarts=10)
 
         eval_3 = self.sbo.evaluate_sbo_by_sample(
-            candidate_point, sample, n_restarts=10, parallel=True, hessian=True)
+            candidate_point, sample, n_restarts=10, parallel=True, method_opt=NEWTON_CG_NAME)
         npt.assert_almost_equal(eval_3['max'], eval_2['max'], decimal=5)
         npt.assert_almost_equal(eval_3['optimum'], eval_2['optimum'], decimal=3)
+
+        eval_4 = self.sbo.evaluate_sbo_by_sample(
+            candidate_point, sample, n_restarts=10, parallel=True, method_opt=TRUST_N_CG)
+
+        eval_5 = self.sbo.evaluate_sbo_by_sample(
+            candidate_point, sample, n_restarts=10, parallel=True, method_opt=DOGLEG)
+
+        npt.assert_almost_equal(eval_4['max'], eval_3['max'], decimal=5)
+        npt.assert_almost_equal(eval_4['optimum'], eval_3['optimum'], decimal=3)
+
+        npt.assert_almost_equal(eval_5['max'], eval_3['max'], decimal=5)
+        npt.assert_almost_equal(eval_5['optimum'], eval_3['optimum'], decimal=3)
 
     def test_evaluate_sbo_mc(self):
         warnings.filterwarnings("ignore")

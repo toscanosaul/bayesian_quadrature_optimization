@@ -199,7 +199,7 @@ class SBO(object):
 
     def evaluate_sbo_by_sample(self, candidate_point, sample, start=None,
                                var_noise=None, mean=None, parameters_kernel=None, n_restarts=5,
-                               parallel=True, n_threads=0, hessian=False, **opt_params_mc):
+                               parallel=True, n_threads=0, method_opt=None, **opt_params_mc):
         """
         Optimize a_{n+1}(x)  given the candidate_point and the sample of the Gaussian r.v.
 
@@ -212,7 +212,7 @@ class SBO(object):
         :param parameters_kernel: np.array(l)
         :param parallel: (boolean) Multi-start optimization in parallel if it's True
         :param n_threads: (int)
-        :param hessian: (boolean) Uses the Hessian in the optimization if it's True
+        :param method_opt: [LBFGS_NAME, NEWTON_CG_NAME, TRUST_N_CG, DOGLEG]
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -247,12 +247,11 @@ class SBO(object):
             grad_function = self.evaluate_gradient_sample
             hessian_function = self.evaluate_hessian_sample
 
-        optimizer = LBFGS_NAME
-        if hessian:
-            optimizer = NEWTON_CG_NAME
+        if method_opt is None:
+            method_opt = LBFGS_NAME
 
         optimization = Optimization(
-            optimizer,
+            method_opt,
             objective_function,
             bounds_x,
             grad_function,
