@@ -612,6 +612,20 @@ def wrapper_evaluate_sbo_by_sample_2(start, self, sample, candidate_point, var_n
         method_opt=method_opt, tol=0.9,
         **opt_params_mc)
 
+def wrapper_evaluate_sbo_by_sample_no_sp(
+        sample_candid_parameters, self, n_threads, method_opt, n_restarts,
+        **opt_params_mc):
+
+    sample = sample_candid_parameters[1]
+    candidate_point = sample_candid_parameters[0]
+    params = sample_candid_parameters[2]
+
+    return self.evaluate_sbo_by_sample(
+        candidate_point, sample, start=None, var_noise=params[0], mean=params[1],
+        parameters_kernel=params[2:], n_restarts=n_restarts, parallel=False, n_threads=n_threads,
+        method_opt=method_opt, tol=None, **opt_params_mc)
+
+
 def wrapper_evaluate_sbo_by_sample_bayesian(start_sample_parameters, self, candidate_point,
                                             n_threads, method_opt, **opt_params_mc):
     """

@@ -747,6 +747,31 @@ class TestSBO(unittest.TestCase):
         npt.assert_almost_equal(evals, values['evaluations'])
         npt.assert_almost_equal(gradients, values['gradient'])
 
+    def test_evaluate_mc_bayesian_candidate_points_no_restarts(self):
+        candidate_points = np.array([[52.5, 0], [42.5, 1]])
+        np.random.seed(1)
+        n_samples_parameters = 2
+        n_samples = 5
+        compute_max_mean = False
+        n_restarts = 10
+
+        self.sbo_med.bq.gp.sample_parameters(n_samples_parameters)
+
+        np.random.seed(1)
+        values = self.sbo_med.evaluate_mc_bayesian_candidate_points_no_restarts(
+            candidate_points, n_samples_parameters, n_samples, n_restarts=n_restarts,
+            compute_max_mean=compute_max_mean, compute_gradient=True)
+        self.sbo_med.clean_cache()
+        values_2 = self.sbo_med.evaluate_mc_bayesian_candidate_points(
+            candidate_points, n_samples_parameters, n_samples, n_restarts=n_restarts,
+            n_best_restarts=3, compute_max_mean=compute_max_mean, compute_gradient=True,
+            **{'factr': 1e12, 'maxiter': 10})
+
+        print values
+        print values_2
+        assert 1==2
+
+
     def test_evaluate_hessian_sample(self):
         point = np.array([[49.2]])
         candidate_point = np.array([[52.5, 0]])

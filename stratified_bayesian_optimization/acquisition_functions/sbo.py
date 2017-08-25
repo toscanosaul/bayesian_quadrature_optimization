@@ -49,6 +49,7 @@ from stratified_bayesian_optimization.lib.util import (
     wrapper_get_parameters_for_samples_2,
     wrapper_evaluate_sbo_by_sample_bayesian_2,
     wrapper_evaluate_hessian_sample,
+    wrapper_evaluate_sbo_by_sample_no_sp,
 )
 from stratified_bayesian_optimization.lib.constant import DEFAULT_N_PARAMETERS, DEFAULT_N_SAMPLES
 from stratified_bayesian_optimization.util.json_file import JSONFile
@@ -511,10 +512,10 @@ class SBO(object):
         if method_opt is None:
             method_opt = LBFGS_NAME
 
-        args = (False, None, True, n_threads, self, n_threads, method_opt)
+        args = (False, None, True, n_threads, self, n_threads, method_opt, n_restarts)
 
         simulated_values = Parallel.run_function_different_arguments_parallel(
-            wrapper_evaluate_sbo_by_sample_bayesian_2, point_dict, *args, **opt_params_mc)
+            wrapper_evaluate_sbo_by_sample_no_sp, point_dict, *args, **opt_params_mc)
 
         evaluations = np.zeros(n_candidate_points)
         gradient = None
@@ -531,18 +532,11 @@ class SBO(object):
                 optimum_values = np.zeros((n_samples, len(self.bq.x_domain)))
                 max_values = []
                 param = parameters[k]
-                for i in xrange(n_samples):
-                    values = []
-                    for j in xrange(n_restarts_):
-                        if simulated_values.get((j, i, k, l)) is None:
-                            logger.info("Error in computing simulated value at sample %d" % i)
-                            continue
-                        values.append(simulated_values[(j, i, k, l)]['max'])
-                    maximum = simulated_values[(np.argmax(values), i, k, l)]['optimum']
-                    optimum_values[i, :] = maximum
 
-                    max_ = np.max(values)
-                    max_values.append(max_)
+                for i in xrange(n_samples):
+                    max_values.append(simulated_values[(i, k, l)]['max'])
+                    optimum_values[i, :] = simulated_values[(i, k, l)]['optimum']
+
 
                 params = parameters[k]
                 index_cache = (params[0], params[1], tuple(params[2:]))
