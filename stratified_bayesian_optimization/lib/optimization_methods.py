@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from scipy.optimize import minimize
 
-def newton_cg(f, start, fprime, hessian, args, bounds, **optimization_options):
+def newton_cg(f, start, fprime, hessian, args, bounds, tol=None, **optimization_options):
     sol = minimize(f, start, args=args, method='Newton-CG', jac=fprime, hess=hessian,
                    options=optimization_options)
     new_solution = []
@@ -28,7 +28,7 @@ def newton_cg(f, start, fprime, hessian, args, bounds, **optimization_options):
 
     return new_solution
 
-def trust_ncg(f, start, fprime, hessian, args, bounds, **optimization_options):
+def trust_ncg(f, start, fprime, hessian, args, bounds, tol=None, **optimization_options):
     sol = minimize(f, start, args=args, method='trust-ncg', jac=fprime, hess=hessian,
                    options=optimization_options)
     new_solution = []
@@ -54,8 +54,8 @@ def trust_ncg(f, start, fprime, hessian, args, bounds, **optimization_options):
 
     return new_solution
 
-def dogleg(f, start, fprime, hessian, args, bounds, **optimization_options):
-    sol = minimize(f, start, args=args, method='dogleg', jac=fprime, hess=hessian,
+def dogleg(f, start, fprime, hessian, args, bounds, tol=None, **optimization_options):
+    sol = minimize(f, start, args=args, method='dogleg', jac=fprime, hess=hessian, tol=tol,
                    options=optimization_options)
     new_solution = []
 

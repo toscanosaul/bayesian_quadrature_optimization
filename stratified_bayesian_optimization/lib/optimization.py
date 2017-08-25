@@ -15,7 +15,7 @@ class Optimization(object):
     _hessian_methods = [NEWTON_CG_NAME, TRUST_N_CG, DOGLEG]
 
     def __init__(self, optimizer_name, function, bounds, grad, hessian=None, minimize=True,
-                 full_gradient=None, debug=True, args=None, **kwargs):
+                 full_gradient=None, debug=True, args=None, tol=None, **kwargs):
         """
         Class used to minimize function.
 
@@ -28,6 +28,7 @@ class Optimization(object):
         :param full_gradient: function that computes the complete gradient. Used in SGD.
         :param debug: boolean
         :param args: () additional arguments for the full_gradient function
+        :parma tol: float
         :param kwargs:
             -'factr': int
             -'maxiter': int
@@ -44,6 +45,7 @@ class Optimization(object):
         self.debug = debug
         self.full_gradient = full_gradient
         self.hessian = hessian
+        self.tol = tol
 
 
     @staticmethod
@@ -106,7 +108,7 @@ class Optimization(object):
                 opt = self.optimizer(
                     f, start,
                     fprime=grad, hessian=hessian,
-                    args=args,
+                    args=args, tol=self.tol,
                     bounds=self.bounds, **self.optimization_options)
             else:
                 opt = self.optimizer(

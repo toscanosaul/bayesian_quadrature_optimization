@@ -199,7 +199,8 @@ class SBO(object):
 
     def evaluate_sbo_by_sample(self, candidate_point, sample, start=None,
                                var_noise=None, mean=None, parameters_kernel=None, n_restarts=5,
-                               parallel=True, n_threads=0, method_opt=None, **opt_params_mc):
+                               parallel=True, n_threads=0, method_opt=None, tol=None,
+                               **opt_params_mc):
         """
         Optimize a_{n+1}(x)  given the candidate_point and the sample of the Gaussian r.v.
 
@@ -213,6 +214,7 @@ class SBO(object):
         :param parallel: (boolean) Multi-start optimization in parallel if it's True
         :param n_threads: (int)
         :param method_opt: [LBFGS_NAME, NEWTON_CG_NAME, TRUST_N_CG, DOGLEG]
+        :param tol: float
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -255,7 +257,7 @@ class SBO(object):
             objective_function,
             bounds_x,
             grad_function,
-            hessian=hessian_function,
+            hessian=hessian_function, tol=tol,
             minimize=False, **opt_params_mc)
 
         if parallel:
