@@ -216,7 +216,7 @@ class TestBayesianQuadrature(unittest.TestCase):
         point = points[np.argmax(evaluations), 0]
         index = np.argmax(evaluations)
 
-        assert sol['optimal_value'] >= evaluations[index]
+        npt.assert_almost_equal(sol['optimal_value'][0], evaluations[index])
         npt.assert_almost_equal(sol['solution'], point, decimal=1)
 
         bounds_x = [gp.gp.bounds[i] for i in xrange(len(gp.gp.bounds)) if i in

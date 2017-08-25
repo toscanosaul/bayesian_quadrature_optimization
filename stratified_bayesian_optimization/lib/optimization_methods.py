@@ -79,4 +79,3 @@ def dogleg(f, start, fprime, hessian, args, bounds, tol=None, **optimization_opt
     new_solution.append(res)
 
     return new_solution
-

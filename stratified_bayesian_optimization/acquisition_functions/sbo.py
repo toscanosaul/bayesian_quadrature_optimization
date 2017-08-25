@@ -225,11 +225,17 @@ class SBO(object):
         bounds_x = [self.bounds_opt[i] for i in xrange(len(self.bounds_opt)) if i in
                     self.bq.x_domain]
 
+        if var_noise is None:
+            index_cache = 'mc_mean'
+        else:
+            index_cache = (var_noise, mean, tuple(parameters_kernel))
+
         if start is None:
             start_points =  DomainService.get_points_domain(n_restarts + 1, bounds_x,
                                                         type_bounds=len(bounds_x) * [0])
-            if len(self.bq.optimal_solutions) > 0:
-                start = self.bq.optimal_solutions[-1]['solution']
+            if index_cache in self.bq.optimal_solutions and \
+                            len(self.bq.optimal_solutions[index_cache]) > 0:
+                start = self.bq.optimal_solutions[index_cache][-1]['solution']
 
                 start = [start] + start_points[0 : -1]
                 start = np.array(start)
@@ -461,7 +467,6 @@ class SBO(object):
         :param n_samples_parameters:
         :param n_samples:
         :param n_restarts:
-        :param n_best_restarts:
         :param n_threads:
         :param compute_max_mean:
         :param compute_gradient: boolean
@@ -536,7 +541,6 @@ class SBO(object):
                 for i in xrange(n_samples):
                     max_values.append(simulated_values[(i, k, l)]['max'])
                     optimum_values[i, :] = simulated_values[(i, k, l)]['optimum']
-
 
                 params = parameters[k]
                 index_cache = (params[0], params[1], tuple(params[2:]))
@@ -1204,7 +1208,7 @@ class SBO(object):
                 max_value = self.evaluate_sbo_by_sample(
                     candidate_point, samples[i], start=None, var_noise=var_noise, mean=mean,
                     parameters_kernel=parameters_kernel, n_restarts=n_restarts, parallel=True,
-                    method_opt=method_opt, tol=0.9, **opt_params_mc)
+                    method_opt=method_opt, tol=None, **opt_params_mc)
                 max_values.append(max_value['max'])
                 maximum = max_value['optimum']
                 self.optimal_samples[index_cache_2]['max'][i] = max_value['max']
@@ -1518,9 +1522,9 @@ class SBO(object):
                 candidate_points.append(point)
             candidate_points = np.array(candidate_points)
 
-            output = self.evaluate_mc_bayesian_candidate_points(
+            output = self.evaluate_mc_bayesian_candidate_points_no_restarts(
                 candidate_points, n_parameters, default_n_samples, default_restarts_mc,
-                n_best_restarts_mc, n_threads=0, compute_max_mean=True, compute_gradient=False,
+                n_threads=0, compute_max_mean=True, compute_gradient=False,
                 method_opt=method_opt_mc, **opt_params_mc)
 
             evaluations = output['evaluations']
@@ -1569,9 +1573,9 @@ class SBO(object):
                         candidate_points.append(start[i, :])
                     candidate_points = np.array(candidate_points)
 
-                    output = self.evaluate_mc_bayesian_candidate_points(
+                    output = self.evaluate_mc_bayesian_candidate_points_no_restarts(
                         candidate_points, n_parameters, default_n_samples, default_restarts_mc,
-                        n_best_restarts_mc, n_threads=0, compute_max_mean=True,
+                        n_threads=0, compute_max_mean=True,
                         compute_gradient=False, method_opt=method_opt_mc, **opt_params_mc)
 
                     evaluations = output['evaluations']
@@ -1599,6 +1603,7 @@ class SBO(object):
         opt_method = None
         compute_value_function = False
         if n_samples_parameters==0 and not monte_carlo:
+            #TODO: CHECK THIS
             optimization = Optimization(
                 LBFGS_NAME,
                 wrapper_objective_voi,
@@ -1620,6 +1625,8 @@ class SBO(object):
 
             args_ = (self, monte_carlo, default_n_samples, default_restarts_mc, n_best_restarts_mc,
                      opt_params_mc, n_threads, n_parameters, method_opt_mc)
+            #TODO CHANGE wrapper_objective_voi, wrapper_grad_voi_sgd TO NO SOLVE MAX_a_{n+1} in
+            #TODO: parallel for the several starting points
 
             optimization = Optimization(
                 SGD_NAME,
@@ -1659,9 +1666,9 @@ class SBO(object):
                 candidate_points.append(point)
             candidate_points = np.array(candidate_points)
 
-            output = self.evaluate_mc_bayesian_candidate_points(
+            output = self.evaluate_mc_bayesian_candidate_points_no_restarts(
                 candidate_points, n_parameters, default_n_samples, default_restarts_mc,
-                n_best_restarts_mc, n_threads=0, compute_max_mean=True, compute_gradient=True,
+                n_threads=0, compute_max_mean=True, compute_gradient=True,
                 method_opt=method_opt_mc, **opt_params_mc)
 
             evaluations = output['evaluations']

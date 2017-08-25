@@ -45,8 +45,8 @@ def toy_example(x):
     """
     epsilon = x[0]
     lamb = x[1]
-    maxepoch = int(x[3])
-    num_feat = int(x[2])
+    maxepoch = max(int(x[3]), 1)
+    num_feat = max(int(x[2]), 1)
     task = int(x[4])
 
     # validation = [training_data[index] for index in random_indexes[task]]

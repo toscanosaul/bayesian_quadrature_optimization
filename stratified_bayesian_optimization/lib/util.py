@@ -586,7 +586,7 @@ def wrapper_evaluate_sbo_by_sample(start_sample, self, candidate_point, var_nois
     return self.evaluate_sbo_by_sample(
         candidate_point, start_sample[1], start=start_sample[0], var_noise=var_noise, mean=mean,
         parameters_kernel=parameters_kernel, n_restarts=0, parallel=False, n_threads=n_threads,
-        method_opt=method_opt, tol=0.9, **opt_params_mc)
+        method_opt=method_opt, tol=None, **opt_params_mc)
 
 def wrapper_evaluate_sbo_by_sample_2(start, self, sample, candidate_point, var_noise, mean,
                                    parameters_kernel, n_threads, method_opt, **opt_params_mc):
@@ -609,8 +609,7 @@ def wrapper_evaluate_sbo_by_sample_2(start, self, sample, candidate_point, var_n
     return self.evaluate_sbo_by_sample(
         candidate_point, sample, start=start, var_noise=var_noise, mean=mean,
         parameters_kernel=parameters_kernel, n_restarts=0, parallel=False, n_threads=n_threads,
-        method_opt=method_opt, tol=0.9,
-        **opt_params_mc)
+        method_opt=method_opt, tol=None, **opt_params_mc)
 
 def wrapper_evaluate_sbo_by_sample_no_sp(
         sample_candid_parameters, self, n_threads, method_opt, n_restarts,
@@ -651,7 +650,7 @@ def wrapper_evaluate_sbo_by_sample_bayesian(start_sample_parameters, self, candi
     return self.evaluate_sbo_by_sample(
         candidate_point, sample, start=start, var_noise=params[0], mean=params[1],
         parameters_kernel=params[2:], n_restarts=0, parallel=False, n_threads=n_threads,
-        method_opt=method_opt, tol=0.9, **opt_params_mc)
+        method_opt=method_opt, tol=None, **opt_params_mc)
 
 def wrapper_evaluate_sbo_by_sample_bayesian_2(start_sample_parameters_candidate, self, n_threads,
                                             method_opt, **opt_params_mc):
@@ -678,8 +677,7 @@ def wrapper_evaluate_sbo_by_sample_bayesian_2(start_sample_parameters_candidate,
     return self.evaluate_sbo_by_sample(
         candidate_point, sample, start=start, var_noise=params[0], mean=params[1],
         parameters_kernel=params[2:], n_restarts=0, parallel=False, n_threads=n_threads,
-        method_opt=method_opt, tol=0.9,
-        **opt_params_mc)
+        method_opt=method_opt, tol=None, **opt_params_mc)
 
 def wrapper_evaluate_sample(point, self, *args):
     """
