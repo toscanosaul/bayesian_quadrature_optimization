@@ -592,7 +592,7 @@ class TestSBO(unittest.TestCase):
         np.random.seed(1)
         grad_2 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0)
 
-        npt.assert_almost_equal(grad_1, grad_2)
+        npt.assert_almost_equal(grad_1, grad_2, decimal=5)
 
 
     def test_combine_sbo_gradient(self):
@@ -615,7 +615,7 @@ class TestSBO(unittest.TestCase):
         np.random.seed(1)
         grad_2 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
-        npt.assert_almost_equal(grad, grad_2, decimal=5)
+        npt.assert_almost_equal(grad, grad_2, decimal=4)
 
     def test_evaluate_sample_sbo_with_best_restarts(self):
         args = (self.sbo, )

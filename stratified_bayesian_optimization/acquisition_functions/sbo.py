@@ -1134,7 +1134,7 @@ class SBO(object):
                  n_restarts_mc=1, n_best_restarts_mc=0, n_restarts=1, n_best_restarts=0,
                  start_ei=True, n_samples_parameters=0, start_new_chain=True,
                  compute_max_mean_bayesian=False, maxepoch=10, default_n_samples=None,
-                 default_n_samples_parameters=None, default_restarts_mc=10, **opt_params_mc):
+                 default_n_samples_parameters=None, default_restarts_mc=None, **opt_params_mc):
         """
         Optimizes the VOI.
         :param start: np.array(1xn)
@@ -1175,6 +1175,9 @@ class SBO(object):
 
         if default_n_samples is None:
             default_n_samples = DEFAULT_N_SAMPLES
+
+        if default_restarts_mc is None:
+            default_restarts_mc = n_restarts_mc
 
         n_jobs = min(n_restarts, mp.cpu_count())
         n_threads = max(int((mp.cpu_count() - n_jobs) / n_jobs), 1)

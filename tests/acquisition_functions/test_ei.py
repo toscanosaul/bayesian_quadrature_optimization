@@ -119,7 +119,7 @@ class TestEI(unittest.TestCase):
             np.array([91.5, 0]), np.array([dh]))
 
         npt.assert_almost_equal(finite_diff[0], grad[0], decimal=2)
-        npt.assert_almost_equal(finite_diff[1], grad[1])
+        npt.assert_almost_equal(finite_diff[1], grad[1], decimal=3)
 
     def test_evaluate_gradient_bq(self):
         point =  np.array([[91.5]])
