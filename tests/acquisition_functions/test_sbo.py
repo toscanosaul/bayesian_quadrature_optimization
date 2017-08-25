@@ -518,7 +518,7 @@ class TestSBO(unittest.TestCase):
 
 
 
-        value_2 = sbo.objective_voi(point[0, :], False, 1, 1, 0, 0,
+        value_2 = sbo.objective_voi(point[0, :], False, 1, 1, 0, 0, None,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
 
         self.gp.gp.var_noise.value[0] = 1.0
@@ -549,11 +549,11 @@ class TestSBO(unittest.TestCase):
         n_samples = 50
         n_restarts = 30
 
-        value = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0, 0,
+        value = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0, 0, None,
                                   *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])),
                                   **{'factr':1e12,'maxiter':10})
 
-        value_1 = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0, 0,
+        value_1 = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0, 0, None,
                                     **{'factr':1e12,'maxiter':10})
 
 
@@ -562,7 +562,7 @@ class TestSBO(unittest.TestCase):
         self.gp.gp.kernel.update_value_parameters(np.array([50.0, 9.6, -3.0, -0.1]))
 
         np.random.seed(1)
-        value_2 = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0, 0,
+        value_2 = sbo.objective_voi(point[0, :], True, n_samples, n_restarts, 0, 0, None,
                                     **{'factr':1e12,'maxiter':10})
 
         npt.assert_almost_equal(value_2, value)
@@ -571,7 +571,7 @@ class TestSBO(unittest.TestCase):
 
         candidate = np.array([[52.5, 0]])
 
-        grad_1 = self.sbo.grad_obj_voi(candidate[0, :], False, 1, 1, 0, 0,
+        grad_1 = self.sbo.grad_obj_voi(candidate[0, :], False, 1, 1, 0, 0, None,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
 
         grad = self.sbo.grad_obj_voi(candidate[0, :])
@@ -593,7 +593,7 @@ class TestSBO(unittest.TestCase):
         candidate = np.array([[52.5, 0]])
 
         np.random.seed(1)
-        grad_1 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0,
+        grad_1 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0, None,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
 
         grad = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0)
@@ -620,15 +620,15 @@ class TestSBO(unittest.TestCase):
 
         np.random.seed(1)
 
-        obj = self.sbo.objective_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0,
+        obj = self.sbo.objective_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0, None,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
 
-        grad = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0,
+        grad = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0, None,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
 
         self.sbo.clean_cache()
         np.random.seed(1)
-        grad_2 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0,
+        grad_2 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0, None,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])))
         npt.assert_almost_equal(grad, grad_2, decimal=4)
 
@@ -656,7 +656,7 @@ class TestSBO(unittest.TestCase):
         self.sbo.bq.gp.sample_parameters(n_samples_parameters)
 
         args = (self.sbo, monte_carlo, n_samples, n_restarts, n_best_restarts_mc, opt_params_mc, 0,
-                n_samples_parameters)
+                n_samples_parameters, None)
         # TODO: THINK IN A GOOD TEST. NOW IT ONLY TESTS THAT IT RUNS
         np.random.seed(1)
         obj = wrapper_objective_voi(candidate[0, :], *args)
@@ -688,7 +688,7 @@ class TestSBO(unittest.TestCase):
         parameters = np.array([1.0, 5.0, 50.0, 9.6, -3.0, -0.1])
 
         np.random.seed(1)
-        grad_1 = self.sbo_med.grad_obj_voi(candidate[0, :], True, n_samples, 10, 0, 0,
+        grad_1 = self.sbo_med.grad_obj_voi(candidate[0, :], True, n_samples, 10, 0, 0, None,
                                     *(1.0, 5.0, np.array([50.0, 9.6, -3.0, -0.1])),
                                        **{'factr': 1e12, 'maxiter': 10})
 

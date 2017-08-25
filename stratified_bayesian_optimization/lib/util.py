@@ -324,7 +324,7 @@ def wrapper_optimization(start, *args):
 
 def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restarts=1,
                           n_best_restarts=0, opt_params_mc=None, n_threads=0,
-                          n_samples_parameters=0):
+                          n_samples_parameters=0, method_opt_mc=None):
     """
     Wrapper of objective_voi
     :param self: instance of the acquisition function
@@ -349,18 +349,18 @@ def wrapper_objective_voi(point, self, monte_carlo=False, n_samples=1, n_restart
     if n_samples_parameters == 0:
         value = self.objective_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
                                    n_restarts=n_restarts, n_best_restarts=n_best_restarts,
-                                   n_threads=n_threads, **opt_params_mc)
+                                   n_threads=n_threads, method_opt=method_opt_mc, **opt_params_mc)
     else:
         value = self.objective_voi_bayesian(
             point, monte_carlo=monte_carlo, n_samples_parameters=n_samples_parameters,
             n_samples=n_samples, n_restarts=n_restarts, n_best_restarts=n_best_restarts,
-            n_threads=n_threads, compute_max_mean=False, **opt_params_mc)
+            n_threads=n_threads, compute_max_mean=False, method_opt=method_opt_mc, **opt_params_mc)
 
     return value
 
 def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts=1,
                          n_best_restarts=0, opt_params_mc=None, n_threads=0,
-                         n_samples_parameters=0):
+                         n_samples_parameters=0, method_opt_mc=None):
     """
     Wrapper of objective_voi (an acquisition function)
     :param self: instance of the acquisition function
@@ -384,11 +384,12 @@ def wrapper_gradient_voi(point, self, monte_carlo=False, n_samples=1, n_restarts
     if n_samples_parameters == 0:
         value = self.grad_obj_voi(point, monte_carlo=monte_carlo, n_samples=n_samples,
                                   n_restarts=n_restarts, n_best_restarts=n_best_restarts,
-                                  n_threads=n_threads, **opt_params_mc)
+                                  n_threads=n_threads, method_opt=method_opt_mc, **opt_params_mc)
     else:
         value = self.grad_obj_voi_bayesian(
             point, monte_carlo, n_samples_parameters, n_samples, n_restarts,
-            n_best_restarts, n_threads, compute_max_mean=False, **opt_params_mc)
+            n_best_restarts, n_threads, compute_max_mean=False, method_opt=method_opt_mc,
+            **opt_params_mc)
 
     return value
 
@@ -565,7 +566,7 @@ def wrapper_GPFittingGaussian(training_data_sets, model, type_kernel, dimensions
     return gp
 
 def wrapper_evaluate_sbo_by_sample(start_sample, self, candidate_point, var_noise, mean,
-                                   parameters_kernel, n_threads, **opt_params_mc):
+                                   parameters_kernel, n_threads, method_opt, **opt_params_mc):
     """
 
     :param start_sample: [np.array(n), float], the first element is the starting point, and the
@@ -585,10 +586,10 @@ def wrapper_evaluate_sbo_by_sample(start_sample, self, candidate_point, var_nois
     return self.evaluate_sbo_by_sample(
         candidate_point, start_sample[1], start=start_sample[0], var_noise=var_noise, mean=mean,
         parameters_kernel=parameters_kernel, n_restarts=0, parallel=False, n_threads=n_threads,
-        **opt_params_mc)
+        method_opt=method_opt, tol=0.9, **opt_params_mc)
 
 def wrapper_evaluate_sbo_by_sample_2(start, self, sample, candidate_point, var_noise, mean,
-                                   parameters_kernel, n_threads, **opt_params_mc):
+                                   parameters_kernel, n_threads, method_opt, **opt_params_mc):
     """
 
     :param start: np.array(n)
@@ -608,10 +609,11 @@ def wrapper_evaluate_sbo_by_sample_2(start, self, sample, candidate_point, var_n
     return self.evaluate_sbo_by_sample(
         candidate_point, sample, start=start, var_noise=var_noise, mean=mean,
         parameters_kernel=parameters_kernel, n_restarts=0, parallel=False, n_threads=n_threads,
+        method_opt=method_opt, tol=0.9,
         **opt_params_mc)
 
 def wrapper_evaluate_sbo_by_sample_bayesian(start_sample_parameters, self, candidate_point,
-                                            n_threads, **opt_params_mc):
+                                            n_threads, method_opt, **opt_params_mc):
     """
 
     :param start_sample_parameters: [np.array(n), float, np.array(l)], the first element is the
@@ -625,6 +627,7 @@ def wrapper_evaluate_sbo_by_sample_bayesian(start_sample_parameters, self, candi
         -'factr': int
         -'maxiter': int
     :param n_threads: int
+    :param method_opt: str
     :return: {'max': float, 'optimum': np.array(n)}
     """
     sample = start_sample_parameters[1]
@@ -634,10 +637,10 @@ def wrapper_evaluate_sbo_by_sample_bayesian(start_sample_parameters, self, candi
     return self.evaluate_sbo_by_sample(
         candidate_point, sample, start=start, var_noise=params[0], mean=params[1],
         parameters_kernel=params[2:], n_restarts=0, parallel=False, n_threads=n_threads,
-        **opt_params_mc)
+        method_opt=method_opt, tol=0.9, **opt_params_mc)
 
 def wrapper_evaluate_sbo_by_sample_bayesian_2(start_sample_parameters_candidate, self, n_threads,
-                                              **opt_params_mc):
+                                            method_opt, **opt_params_mc):
     """
 
     :param start_sample_parameters: [np.array(n), float, np.array(l)], the first element is the
@@ -661,6 +664,7 @@ def wrapper_evaluate_sbo_by_sample_bayesian_2(start_sample_parameters_candidate,
     return self.evaluate_sbo_by_sample(
         candidate_point, sample, start=start, var_noise=params[0], mean=params[1],
         parameters_kernel=params[2:], n_restarts=0, parallel=False, n_threads=n_threads,
+        method_opt=method_opt, tol=0.9,
         **opt_params_mc)
 
 def wrapper_evaluate_sample(point, self, *args):
