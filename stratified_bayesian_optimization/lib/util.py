@@ -698,6 +698,16 @@ def wrapper_evaluate_gradient_sample(point, self, *args):
     """
     return self.evaluate_gradient_sample(point, *args)
 
+def wrapper_evaluate_hessian_sample(point, self, *args):
+    """
+
+    :param point:
+    :param self: sbo instance
+    :param args:
+    :return:
+    """
+    return self.evaluate_hessian_sample(point, *args)
+
 
 def wrapper_optimize(point, self, *args):
     """

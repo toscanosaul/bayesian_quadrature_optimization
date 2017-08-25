@@ -42,6 +42,7 @@ VAR_NOISE_NAME = 'var_noise'
 # Optimization methods
 LBFGS_NAME = 'lbfgs'
 SGD_NAME = 'sgd'
+NEWTON_CG_NAME = 'newton_cg'
 
 # Constants
 SMALLEST_POSITIVE_NUMBER = 1e-10

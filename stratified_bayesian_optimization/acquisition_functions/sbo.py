@@ -18,6 +18,7 @@ from stratified_bayesian_optimization.lib.constant import (
     DEBUGGING_DIR,
     TASKS,
     SGD_NAME,
+    NEWTON_CG_NAME,
 )
 from stratified_bayesian_optimization.bayesian.bayesian_evaluations import BayesianEvaluations
 from stratified_bayesian_optimization.lib.affine_break_points import (
@@ -47,6 +48,7 @@ from stratified_bayesian_optimization.lib.util import (
     wrapper_sgd,
     wrapper_get_parameters_for_samples_2,
     wrapper_evaluate_sbo_by_sample_bayesian_2,
+    wrapper_evaluate_hessian_sample,
 )
 from stratified_bayesian_optimization.lib.constant import DEFAULT_N_PARAMETERS, DEFAULT_N_SAMPLES
 from stratified_bayesian_optimization.util.json_file import JSONFile
@@ -197,7 +199,7 @@ class SBO(object):
 
     def evaluate_sbo_by_sample(self, candidate_point, sample, start=None,
                                var_noise=None, mean=None, parameters_kernel=None, n_restarts=5,
-                               parallel=True, n_threads=0, **opt_params_mc):
+                               parallel=True, n_threads=0, hessian=False, **opt_params_mc):
         """
         Optimize a_{n+1}(x)  given the candidate_point and the sample of the Gaussian r.v.
 
@@ -210,6 +212,7 @@ class SBO(object):
         :param parameters_kernel: np.array(l)
         :param parallel: (boolean) Multi-start optimization in parallel if it's True
         :param n_threads: (int)
+        :param hessian: (boolean) Uses the Hessian in the optimization if it's True
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -238,15 +241,22 @@ class SBO(object):
         if parallel:
             grad_function = wrapper_evaluate_gradient_sample
             objective_function = wrapper_evaluate_sample
+            hessian_function = wrapper_evaluate_hessian_sample
         else:
             objective_function = self.evaluate_sample
             grad_function = self.evaluate_gradient_sample
+            hessian_function = self.evaluate_hessian_sample
+
+        optimizer = LBFGS_NAME
+        if hessian:
+            optimizer = NEWTON_CG_NAME
 
         optimization = Optimization(
-            LBFGS_NAME,
+            optimizer,
             objective_function,
             bounds_x,
             grad_function,
+            hessian=hessian_function,
             minimize=False, **opt_params_mc)
 
         if parallel:

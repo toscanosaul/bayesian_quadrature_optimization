@@ -2,16 +2,17 @@ from __future__ import absolute_import
 
 from scipy.optimize import fmin_l_bfgs_b
 
-from stratified_bayesian_optimization.lib.constant import LBFGS_NAME, SGD_NAME
+from stratified_bayesian_optimization.lib.optimization_methods import newton_cg
+from stratified_bayesian_optimization.lib.constant import LBFGS_NAME, SGD_NAME, NEWTON_CG_NAME
 from stratified_bayesian_optimization.lib.stochastic_gradient_descent import SGD
 
 
 class Optimization(object):
 
-    _optimizers_ = [LBFGS_NAME, SGD_NAME]
+    _optimizers_ = [LBFGS_NAME, SGD_NAME, NEWTON_CG_NAME]
 
-    def __init__(self, optimizer_name, function, bounds, grad, minimize=True, full_gradient=None,
-                 debug=True, args=None, **kwargs):
+    def __init__(self, optimizer_name, function, bounds, grad, hessian=None, minimize=True,
+                 full_gradient=None, debug=True, args=None, **kwargs):
         """
         Class used to minimize function.
 
@@ -19,6 +20,7 @@ class Optimization(object):
         :param function:
         :param bounds: [(min, max)] for each point
         :param grad:
+        :param hessian: function that computes the hessian
         :param minimize: boolean
         :param full_gradient: function that computes the complete gradient. Used in SGD.
         :param debug: boolean
@@ -38,6 +40,8 @@ class Optimization(object):
         self.args = args
         self.debug = debug
         self.full_gradient = full_gradient
+        self.hessian = hessian
+
 
     @staticmethod
     def _get_optimizer(optimizer_name):
@@ -52,6 +56,9 @@ class Optimization(object):
 
         if optimizer_name == SGD_NAME:
             return SGD
+
+        if optimizer_name == NEWTON_CG_NAME:
+            return newton_cg
 
     def optimize(self, start, *args):
         """
@@ -69,18 +76,35 @@ class Optimization(object):
         """
 
         if self.minimize:
-            opt = self.optimizer(self.function, start, fprime=self.gradient, args=args,
-                                 bounds=self.bounds, **self.optimization_options)
+            if self.optimizer_name == NEWTON_CG_NAME:
+                opt = self.optimizer(self.function, start, fprime=self.gradient,
+                                     hessian=self.hessian, args=args,
+                                     bounds=self.bounds, **self.optimization_options)
+            else:
+                opt = self.optimizer(self.function, start, fprime=self.gradient, args=args,
+                                     bounds=self.bounds, **self.optimization_options)
         else:
             def f(x, *args):
                 return -1.0 * self.function(x, *args)
             def grad(x, *args):
                 return -1.0 * self.gradient(x, *args)
-            opt = self.optimizer(
-                f, start,
-                fprime=grad,
-                args=args,
-                bounds=self.bounds, **self.optimization_options)
+
+            if self.hessian is not None:
+                def hessian(x, *args):
+                    return -1.0 * self.hessian(x, *args)
+
+            if self.optimizer_name == NEWTON_CG_NAME:
+                opt = self.optimizer(
+                    f, start,
+                    fprime=grad, hessian=hessian,
+                    args=args,
+                    bounds=self.bounds, **self.optimization_options)
+            else:
+                opt = self.optimizer(
+                    f, start,
+                    fprime=grad,
+                    args=args,
+                    bounds=self.bounds, **self.optimization_options)
 
         return {
             'solution': opt[0],

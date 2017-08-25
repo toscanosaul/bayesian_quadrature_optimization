@@ -355,6 +355,18 @@ class TestSBO(unittest.TestCase):
 
         assert np.max(values) <= eval
 
+    def test_evaluate_sbo_by_sample_hessian(self):
+        candidate_point = np.array([[52.5, 0]])
+        np.random.seed(1)
+
+        sample = -2.0
+        eval_2 = self.sbo.evaluate_sbo_by_sample(candidate_point, sample, n_restarts=10)
+
+        eval_3 = self.sbo.evaluate_sbo_by_sample(
+            candidate_point, sample, n_restarts=10, parallel=True, hessian=True)
+        npt.assert_almost_equal(eval_3['max'], eval_2['max'], decimal=5)
+        npt.assert_almost_equal(eval_3['optimum'], eval_2['optimum'], decimal=3)
+
     def test_evaluate_sbo_mc(self):
         warnings.filterwarnings("ignore")
 

@@ -1031,7 +1031,7 @@ class GPFittingGaussian(object):
         :param points_1: np.array(1xk)
         :param points_2: np.array(mxk)
         :param parameters_kernel: np.array(l)
-        :return: np.array(kxm)
+        :return: np.array(mxk)
         """
 
         if self.type_kernel[0] == PRODUCT_KERNELS_SEPARABLE:
