@@ -719,3 +719,46 @@ class TestSBO(unittest.TestCase):
         gradients = np.array(gradients)
         npt.assert_almost_equal(evals, values['evaluations'])
         npt.assert_almost_equal(gradients, values['gradient'])
+
+    def test_evaluate_hessian_sample(self):
+        point = np.array([[49.2]])
+        candidate_point = np.array([[52.5, 0]])
+        np.random.seed(1)
+        sample = 0.5
+
+
+        gradient = self.sbo.evaluate_hessian_sample(point, candidate_point, sample)
+
+        dh = 0.1
+        finite_diff = FiniteDifferences.second_order_central(
+            lambda point_: self.sbo.evaluate_sample(
+                point_.reshape((1, len(point_))), candidate_point, sample),
+            np.array([49.2]), np.array([dh]))
+
+        npt.assert_almost_equal(finite_diff[(0, 0)], gradient, decimal=3)
+
+        val = self.sbo.evaluate_sample(point, candidate_point, sample)
+
+        sample = -0.8
+        point = np.array([[10.2]])
+        gradient = self.sbo.evaluate_hessian_sample(point, candidate_point, sample)
+
+        dh = 0.1
+        finite_diff = FiniteDifferences.second_order_central(
+            lambda point_: self.sbo.evaluate_sample(
+                point_.reshape((1, len(point_))), candidate_point, sample),
+            np.array([10.2]), np.array([dh]))
+
+        npt.assert_almost_equal(finite_diff[(0, 0)], gradient, decimal=3)
+        np.random.seed(1)
+        sample = -5.1
+        point = np.array([[10.2]])
+        gradient = self.sbo.evaluate_hessian_sample(point, candidate_point, sample)
+
+        dh = 2.0
+        finite_diff = FiniteDifferences.second_order_central(
+            lambda point_: self.sbo.evaluate_sample(
+                point_.reshape((1, len(point_))), candidate_point, sample),
+            np.array([10.2]), np.array([dh]))
+
+        npt.assert_almost_equal(finite_diff[(0, 0)], gradient, decimal=3)

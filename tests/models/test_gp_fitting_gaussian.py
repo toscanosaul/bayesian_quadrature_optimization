@@ -715,6 +715,28 @@ class TestGPFittingGaussian(unittest.TestCase):
 
         assert np.all(value == value_2)
 
+    def test_evaluate_hessian_respect_point(self):
+
+        type_kernel = [MATERN52_NAME]
+        training_data = {
+            "evaluations":
+                [42.2851784656, 72.3121248508, 1.0113231069, 30.9309246906, 15.5288331909],
+            "points": [
+                [42.2851784656], [72.3121248508], [1.0113231069], [30.9309246906], [15.5288331909]],
+            "var_noise": []}
+        dimensions = [1]
+
+        gp = GPFittingGaussian(type_kernel, training_data, dimensions)
+        value = gp.evaluate_hessian_cross_cov_respect_point(np.array([[40.0]]),
+                                                         np.array([[39.0], [38.0]]),
+                                                         np.array([1.0]))
+
+        value_2 = Matern52.evaluate_hessian_respect_point(np.array([1.0]),
+                                                       np.array([[40.0]]),
+                                                       np.array([[39.0], [38.0]]), 1)
+        assert np.all(value == value_2)
+
+
     def test_get_historical_best_solution(self):
         max_ = self.gp.get_historical_best_solution()
         assert max_ == 72.3121248508

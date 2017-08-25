@@ -61,12 +61,47 @@ def gradient_uniform_finite(f, point, index_points, domain_random, index_random,
     gradients = np.zeros((new_points.shape[0], point.shape[1], points_2.shape[0]))
 
     for i in xrange(new_points.shape[0]):
-        value = f(new_points[i:i+1, :], points_2, parameters_kernel)[:, 0]
-        gradients[i, :, :] = value
+        value = f(new_points[i:i+1, :], points_2, parameters_kernel)[:, index_points]
+        gradients[i, :, :] = value.transpose()
 
     gradient = np.mean(gradients, axis=0)
 
     return gradient
+
+def hessian_uniform_finite(f, point, index_points, domain_random, index_random, points_2,
+                            parameters_kernel):
+    """
+    Computes the Hessian of the expectation of f(z, point_), where z=(point, x), for each
+    point_ in points_2.
+
+    :param f: function
+    :param point: np.array(1xk)
+    :param index_points:
+    :param domain_random:
+    :param index_random:
+    :param points_2: np.array(mxk')
+    :param parameters_kernel:
+    :return: np.array(mxkxk)
+    """
+
+    dim_random = domain_random.shape[1]
+
+    new_points = np.zeros((domain_random.shape[0], dim_random + point.shape[1]))
+
+    new_points[:, index_points] = np.repeat(point, domain_random.shape[0], axis=0)
+
+    new_points[:, index_random] = domain_random
+
+    hessian = np.zeros((new_points.shape[0], points_2.shape[0], point.shape[1], point.shape[1]))
+
+    for i in xrange(new_points.shape[0]):
+        value = f(new_points[i:i+1, :], points_2, parameters_kernel)[:, index_points]
+        value = value[:, :, index_points]
+        hessian[i, :, :, :] = value
+
+    hessian = np.mean(hessian, axis=0)
+
+    return hessian
 
 
 def gradient_uniform_finite_resp_candidate(f, candidate_point, index_points, domain_random,

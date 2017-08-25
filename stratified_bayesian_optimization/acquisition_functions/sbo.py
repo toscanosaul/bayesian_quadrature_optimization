@@ -166,6 +166,35 @@ class SBO(object):
 
         return grad
 
+    def evaluate_hessian_sample(self, point, candidate_point, sample, var_noise=None, mean=None,
+                        parameters_kernel=None, cache=True):
+        """
+        Evaluate the hessian of a sample of a_{n+1}(point) given that candidate_point is chosen.
+
+        :param point: np.array(1xn)
+        :param candidate_point: np.array(1xm)
+        :param sample: (float) a sample from a standard Gaussian r.v.
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
+        :param cache: (boolean) Use cached data and cache data if cache is True
+        :return: np.array(nxn)
+        """
+
+        if len(point.shape) == 1:
+            point = point.reshape((1, len(point)))
+
+        hessian_params = self.bq.compute_hessian_parameters_for_sample(
+            point, candidate_point, var_noise=var_noise, mean=mean,
+            parameters_kernel=parameters_kernel, cache=cache
+        )
+
+        hessian_a = hessian_params['a']
+        hessian_b = hessian_params['b']
+        hessian = hessian_a + sample * hessian_b
+
+        return hessian
+
     def evaluate_sbo_by_sample(self, candidate_point, sample, start=None,
                                var_noise=None, mean=None, parameters_kernel=None, n_restarts=5,
                                parallel=True, n_threads=0, **opt_params_mc):

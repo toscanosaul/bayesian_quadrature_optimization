@@ -80,11 +80,23 @@ class TestBayesianQuadrature(unittest.TestCase):
             "var_noise": [],
         }
 
+        training_data_2 = {
+            'evaluations': list(function[[0, 30, 50, 90, 99]]),
+            'points': points[[0, 30, 50, 90, 99], :],
+            "var_noise": [],
+        }
+
         gaussian_p = GPFittingGaussian(
             [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
             training_data, [2, 1, 2], bounds_domain=[[0, 100]])
         gaussian_p = gaussian_p.fit_gp_regression(random_seed=1314938)
 
+        gaussian_p_2 = GPFittingGaussian(
+            [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME],
+            training_data_2, [2, 1, 2], bounds_domain=[[0, 100]])
+        gaussian_p_2 = gaussian_p.fit_gp_regression(random_seed=1314938)
+
+        self.gp_complete_2 = BayesianQuadrature(gaussian_p_2, [0], UNIFORM_FINITE, {TASKS: 2})
         self.gp_complete = BayesianQuadrature(gaussian_p, [0], UNIFORM_FINITE, {TASKS: 2})
 
 
@@ -408,5 +420,27 @@ class TestBayesianQuadrature(unittest.TestCase):
         assert max_point == sol_2['solution']
         npt.assert_almost_equal(max_value, sol_2['optimal_value'], decimal=3)
 
+    def test_compute_hessian_parameters_for_sample(self):
+        point = np.array([[95.0]])
+        candidate_point = np.array([[99.15, 0]])
+        val = self.gp_complete_2.compute_hessian_parameters_for_sample(point, candidate_point)
 
+        dh = 0.01
+        finite_diff = FiniteDifferences.second_order_central(
+            lambda x: self.gp_complete_2.compute_parameters_for_sample(
+                x.reshape((1, len(point))), candidate_point, clear_cache=False)['a'],
+            point[0, :], np.array([dh])
+        )
+
+        npt.assert_almost_equal(finite_diff[(0, 0)], val['a'][0,:], decimal=5)
+
+        dh = 0.1
+        finite_diff = FiniteDifferences.second_order_central(
+            lambda x: self.gp_complete_2.compute_parameters_for_sample(
+                x.reshape((1, len(point))), candidate_point, clear_cache=False)['b'],
+            point[0, :], np.array([dh])
+        )
+
+
+        npt.assert_almost_equal(finite_diff[(0, 0)], val['b'], decimal=5)
 

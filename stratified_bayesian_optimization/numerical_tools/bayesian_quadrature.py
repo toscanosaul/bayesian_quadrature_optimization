@@ -32,6 +32,7 @@ from stratified_bayesian_optimization.lib.expectations import (
     uniform_finite,
     gradient_uniform_finite,
     gradient_uniform_finite_resp_candidate,
+    hessian_uniform_finite,
 )
 from stratified_bayesian_optimization.lib.optimization import Optimization
 from stratified_bayesian_optimization.util.json_file import JSONFile
@@ -67,6 +68,7 @@ class BayesianQuadrature(object):
             'grad_expectation': gradient_uniform_finite,
             'parameter': TASKS,
             'grad_expectation_candidate': gradient_uniform_finite_resp_candidate,
+            'hessian_expectation': hessian_uniform_finite,
         },
     }
 
@@ -273,6 +275,30 @@ class BayesianQuadrature(object):
         gradient = self.expectation['grad_expectation'](**parameters)
 
         return gradient
+
+    def evaluate_hessian_cross_cov(self, point, points_2, parameters_kernel):
+        """
+        This is hessian[B(x, j)] respect to x=point in the SBO paper.
+
+        :param point: np.array(1xk)
+        :param points_2: np.array(mxk')
+        :param parameters_kernel: np.array(l)
+        :return: np.array(mxkxk)
+        """
+        parameters = {
+            'f': self.gp.evaluate_hessian_cross_cov_respect_point,
+            'point': point,
+            'points_2': points_2,
+            'index_points': self.x_domain,
+            'index_random': self.w_domain,
+            'parameters_kernel': parameters_kernel,
+        }
+
+        parameters.update(self.arguments_expectation)
+
+        hessian = self.expectation['hessian_expectation'](**parameters)
+
+        return hessian
 
     def evaluate_grad_quadrature_cross_cov_resp_candidate(self, candidate_point, points,
                                                           parameters_kernel):
@@ -961,6 +987,50 @@ class BayesianQuadrature(object):
         gradient_b = (gradient_new - np.dot(gradient, solve_2)) / denominator
         gradient_b = gradient_b[:, 0]
         return {'a': gradient_a, 'b': gradient_b}
+
+    def compute_hessian_parameters_for_sample(
+            self, point, candidate_point, var_noise=None, mean=None,
+            parameters_kernel=None, cache=True):
+        """
+        Compute the hessian of the posterior parameters of a_n+1(point) respect to point given the
+        candidate_point.
+
+        :param point: np.array(1xn)
+        :param candidate_point: np.array(1xm)
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
+        :param cache: (boolean) Use cached data and cache data if cache is True
+        :return: {'a': np.array(nxn), 'b': np.array(nxn)}
+        """
+
+        additional_parameters = self.get_parameters_for_samples(
+            cache, candidate_point, parameters_kernel, var_noise, mean)
+
+        chol = additional_parameters.get('chol')
+        solve = additional_parameters.get('solve')
+        parameters_kernel = additional_parameters.get('parameters_kernel')
+        mean = additional_parameters.get('mean')
+        var_noise = additional_parameters.get('var_noise')
+
+
+        historical_points = self.gp.data['points']
+        historical_evaluations = self.gp.data['evaluations']
+
+        hessian = self.evaluate_hessian_cross_cov(point, historical_points, parameters_kernel)
+
+        # not sure if this is correct
+        hessian_a = np.einsum('ijk,i->jk', hessian, solve)
+
+        denominator = additional_parameters.get('denominator')
+        solve_2 = additional_parameters.get('solve_2')[:, 0]
+
+        hessian_new = \
+            self.evaluate_hessian_cross_cov(point, candidate_point, parameters_kernel)[0, :]
+
+        hessian_b = (hessian_new - np.einsum('ijk,i->jk', hessian, solve_2)) / denominator
+
+        return {'a': hessian_a, 'b': hessian_b}
 
     def get_vec_covs(self, cache, points, parameters_kernel, candidate_point, parallel,
                      keep_indexes=None, monte_carlo=False, n_threads=0, clear_cache=True):

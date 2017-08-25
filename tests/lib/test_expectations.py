@@ -11,6 +11,7 @@ from stratified_bayesian_optimization.models.gp_fitting_gaussian import (
 from stratified_bayesian_optimization.lib.expectations import (
     gradient_uniform_finite,
     gradient_uniform_finite_resp_candidate,
+    hessian_uniform_finite,
 )
 from stratified_bayesian_optimization.lib.finite_differences import FiniteDifferences
 from stratified_bayesian_optimization.lib.constant import (
@@ -80,3 +81,20 @@ class TestExpectations(unittest.TestCase):
             candidate_point[0, :], np.array([dh]))
         npt.assert_almost_equal(value[0, 1], finite_diff[0])
         assert value[1, 1] == finite_diff[1]
+
+    def test_hessian_uniform_finite(self):
+        f = self.gp.gp.evaluate_hessian_cross_cov_respect_point
+        points_1 = np.array([[41.0, 0]])
+        point_3 = np.array([[41.0, 1]])
+        points_2 = self.gp.gp.data['points']
+
+        parameters_kernel = self.gp.gp.kernel.hypers_values_as_array
+        a = f(points_1, points_2, parameters_kernel)[:, 0, 0]
+        b = f(point_3, points_2, parameters_kernel)[:, 0, 0]
+        hessian_ = (a+b)/2.0
+
+        hessian = hessian_uniform_finite(f, np.array([[41.0]]), [0], np.array([[0], [1]]), [1],
+                                       points_2, parameters_kernel)
+
+        assert np.all(hessian[0, :] == hessian_[0])
+        assert np.all(hessian[1, :] == hessian_[1])
