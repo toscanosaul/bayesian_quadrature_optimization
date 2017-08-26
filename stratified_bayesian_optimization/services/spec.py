@@ -5,6 +5,7 @@ from stratified_bayesian_optimization.entities.run_spec import RunSpecEntity
 from stratified_bayesian_optimization.lib.constant import (
     DEFAULT_RANDOM_SEED,
     UNIFORM_FINITE,
+    DOGLEG,
 )
 
 logger = SBOLog(__name__)
@@ -26,7 +27,7 @@ class SpecService(object):
                            n_samples_mc=1, n_restarts_mc=1, factr_mc=1e12, maxiter_mc=1000,
                            use_only_training_points=True, n_restarts=10, n_best_restarts=10,
                            n_best_restarts_mc=1, n_samples_parameters=0, n_restarts_mean=1000,
-                           n_best_restarts_mean=100):
+                           n_best_restarts_mean=100, method_opt_mc=DOGLEG, maxepoch=10):
 
         """
         Generate dict that represents run spec.
@@ -97,6 +98,8 @@ class SpecService(object):
             using a Bayesian approach.
         :param n_restarts_mean: (int) Number of starting points to optimize the posterior mean.
         :param n_best_restarts_mean: (int)
+        :param method_opt_mc: (str) Optimization method when estimating SBO or KG by samples
+        :param maxepoch: (int) For SGD
 
         :return: dict
         """
@@ -187,6 +190,8 @@ class SpecService(object):
             'n_samples_parameters': n_samples_parameters,
             'n_restarts_mean': n_restarts_mean,
             'n_best_restarts_mean': n_best_restarts_mean,
+            'method_opt_mc': method_opt_mc,
+            'maxepoch': maxepoch,
         }
 
     # TODO - generate a list of runspecentities over different parameters

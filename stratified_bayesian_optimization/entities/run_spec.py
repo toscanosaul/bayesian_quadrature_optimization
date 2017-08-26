@@ -11,6 +11,7 @@ from stratified_bayesian_optimization.lib.constant import (
     SPECS_DIR,
     MULTIPLESPECS_DIR,
     DEFAULT_RANDOM_SEED,
+    LBFGS_NAME,
 )
 from stratified_bayesian_optimization.entities.domain import (
     BoundsEntity,
@@ -81,6 +82,9 @@ class RunSpecEntity(Model):
 
     n_restarts_mean = IntType(required=False)
     n_best_restarts_mean = IntType(required=False)
+
+    method_opt_mc = StringType(required=False)
+    maxepoch = IntType(required=False)
 
     @classmethod
     def from_json(cls, specfile):
@@ -170,6 +174,9 @@ class RunSpecEntity(Model):
         n_restarts_mean = spec.get('n_restarts_mean', 1000)
         n_best_restarts_mean = spec.get('n_best_restarts_mean', 100)
 
+        method_opt_mc = spec.get('method_opt_mc', LBFGS_NAME)
+        maxepoch = spec.get('maxepoch', 10)
+
         entry.update({
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -218,6 +225,8 @@ class RunSpecEntity(Model):
             'n_samples_parameters': n_samples_parameters,
             'n_best_restarts_mean': n_best_restarts_mean,
             'n_restarts_mean': n_restarts_mean,
+            'method_opt_mc': method_opt_mc,
+            'maxepoch': maxepoch,
         })
 
         return cls(entry)

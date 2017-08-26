@@ -12,6 +12,8 @@ from stratified_bayesian_optimization.lib.constant import (
     SBO_METHOD,
     MULTI_TASK_METHOD,
     TASKS,
+    DOGLEG,
+    LBFGS_NAME,
 )
 from stratified_bayesian_optimization.entities.objective import Objective
 from stratified_bayesian_optimization.acquisition_functions.sbo import SBO
@@ -113,7 +115,7 @@ class BGO(object):
     def optimize(self, random_seed=None, start=None, debug=False, monte_carlo_sbo=False,
                  n_samples_mc=1, n_restarts_mc=1, n_best_restarts_mc=0,
                  n_restarts=10, n_best_restarts=0, n_samples_parameters=0, n_restarts_mean=1000,
-                 n_best_restarts_mean=100, **opt_params_mc):
+                 n_best_restarts_mean=100, method_opt_mc=None, maxepoch=10, **opt_params_mc):
         """
         Optimize objective over the domain.
         :param random_seed: int
@@ -131,12 +133,18 @@ class BGO(object):
         :param n_samples_parameters: (int)
         :param n_restarts_mean: int
         :param n_best_restarts_mean: int
+        :param method_opt_mc: (str)
+        :param maxepoch: (int) For SGD
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
 
         :return: Objective
         """
+
+        if method_opt_mc is None:
+            method_opt_mc = LBFGS_NAME
+
         if random_seed is not None:
             np.random.seed(random_seed)
 
@@ -149,7 +157,8 @@ class BGO(object):
                                                       n_restarts=n_restarts_mean,
                                                       n_best_restarts=n_best_restarts_mean,
                                                       n_samples_parameters=n_samples_parameters,
-                                                      start_new_chain=True)
+                                                      start_new_chain=True, method_opt=DOGLEG)
+
         optimal_value = \
             self.objective.add_point(optimize_mean['solution'], optimize_mean['optimal_value'][0])
 
@@ -169,7 +178,8 @@ class BGO(object):
                 n_samples=n_samples_mc, n_restarts_mc=n_restarts_mc,
                 n_best_restarts_mc=n_best_restarts_mc, n_restarts=n_restarts,
                 n_best_restarts=n_best_restarts, n_samples_parameters=n_samples_parameters,
-                start_new_chain=False, **opt_params_mc)['solution']
+                start_new_chain=False, method_opt_mc=method_opt_mc, maxepoch=maxepoch,
+                **opt_params_mc)['solution']
 
             self.acquisition_function.write_debug_data(self.problem_name, self.name_model,
                                                        self.training_name, self.n_training,
@@ -258,6 +268,9 @@ class BGO(object):
         if maxiter is not None:
             opt_params_mc['maxiter'] = maxiter
 
+        method_opt_mc = spec.get('method_opt_mc')
+        maxepoch = spec.get('maxepoch')
+
 
         # WE CAN STILL ADD THE DOMAIN IF NEEDED FOR THE KG
         result = bgo.optimize(debug=debug, n_samples_mc=n_samples_mc, n_restarts_mc=n_restarts_mc,
@@ -267,6 +280,6 @@ class BGO(object):
                               n_samples_parameters=n_samples_parameters,
                               n_restarts_mean=n_restarts_mean,
                               n_best_restarts_mean=n_best_restarts_mean,
-                              random_seed=bgo.random_seed,
-                              **opt_params_mc)
+                              random_seed=bgo.random_seed, method_opt_mc=method_opt_mc,
+                              maxepoch=maxepoch, **opt_params_mc)
         return result
