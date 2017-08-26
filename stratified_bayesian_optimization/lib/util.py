@@ -777,6 +777,23 @@ def wrapper_grad_posterior_mean_bq(point, self, var_noise=None, mean=None, param
 
     return val
 
+def wrapper_hessian_posterior_mean_bq(
+        point, self, var_noise=None, mean=None, parameters_kernel=None, n_samples_parameters=0):
+    """
+    ONLY FOR n_samples_parameters = 0
+    :param point: np.array(k)
+    :param self:
+    :param var_noise:
+    :param mean:
+    :param parameters_kernel:
+    :param n_samples_parameters:
+    :return:
+    """
+    point = point.reshape((1, len(point)))
+    val = self.hessian_posterior_mean(point, var_noise, mean, parameters_kernel)
+
+    return val
+
 def wrapper_objective_acquisition_function(point, self, n_samples_parameters=0, *params):
     """
     Wrapper of an acquisition function that's not SBO or KG.
@@ -839,3 +856,9 @@ def wrapper_get_parameters_for_samples_2(parameters, self, *args):
 def wrapper_grad_voi_sgd(point, self, *args, **opt_params_mc):
 
     return self.grad_voi_sgd(point, *args,  **opt_params_mc)
+
+def wrapper_optimize_posterior_mean(parameter, self, random_seed, method_opt, n_restarts):
+    self.optimize_posterior_mean(
+        random_seed=random_seed, n_treads=0, var_noise=parameter[0],
+        parameters_kernel=parameter[2:], mean=parameter[1], n_restarts=n_restarts,
+        method_opt=method_opt, parallel=False, n_best_restarts=0)

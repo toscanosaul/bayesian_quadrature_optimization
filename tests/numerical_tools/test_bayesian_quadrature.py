@@ -20,6 +20,7 @@ from stratified_bayesian_optimization.lib.constant import (
     QUADRATURES,
     POSTERIOR_MEAN,
     B_NEW,
+    DOGLEG,
 )
 from stratified_bayesian_optimization.numerical_tools.bayesian_quadrature import BayesianQuadrature
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
@@ -240,6 +241,18 @@ class TestBayesianQuadrature(unittest.TestCase):
         npt.assert_almost_equal(sol_2['optimal_value'], sol['optimal_value'])
         npt.assert_almost_equal(sol['solution'], sol_2['solution'], decimal=3)
 
+
+    def test_optimize_posterior_mean_hessian(self):
+        gp = self.gp_complete
+        random_seed = 1
+        sol_3 = gp.optimize_posterior_mean(random_seed=random_seed, method_opt=DOGLEG)
+
+        gp.clean_cache()
+        sol_2 = gp.optimize_posterior_mean(random_seed=random_seed)
+        assert sol_3['solution'] == sol_2['solution']
+        npt.assert_almost_equal(sol_3['optimal_value'], sol_2['optimal_value'], decimal=2)
+
+
     def test_evaluate_grad_quadrature_cross_cov_resp_candidate(self):
         candidate_point = np.array([[51.5, 0]])
         points = np.array([[51.3], [30.5], [95.1]])
@@ -443,4 +456,22 @@ class TestBayesianQuadrature(unittest.TestCase):
 
 
         npt.assert_almost_equal(finite_diff[(0, 0)], val['b'], decimal=5)
+
+    def test_hessian_posterior_mean(self):
+
+        gp = self.gp_complete
+
+        point = np.array([[80.5]])
+
+        # Test evaluate_grad_quadrature_cross_cov
+        hessian = gp.hessian_posterior_mean(point)
+
+        dh = 0.1
+        finite_diff = FiniteDifferences.second_order_central(
+            lambda points:
+            gp.compute_posterior_parameters(points.reshape((1, len(points))),
+                                            only_mean=True)['mean'],
+            point[0, :], np.array([dh]))
+
+        npt.assert_almost_equal(finite_diff[(0, 0)], hessian[0, 0])
 

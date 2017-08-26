@@ -43,6 +43,7 @@ from stratified_bayesian_optimization.lib.util import (
     wrapper_objective_posterior_mean_bq,
     wrapper_grad_posterior_mean_bq,
     wrapper_optimize,
+    wrapper_hessian_posterior_mean_bq,
 )
 
 logger = SBOLog(__name__)
@@ -329,6 +330,38 @@ class BayesianQuadrature(object):
 
         return gradient
 
+    def hessian_posterior_mean(self, point, var_noise=None, mean=None, parameters_kernel=None):
+        """
+        Computes the Hessian of the posterior mean
+        :param point: np.array(1xn)
+        :param var_noise:
+        :param mean:
+        :param parameters_kernel:
+        :return: np.array(nxn)
+        """
+
+        if var_noise is None:
+            var_noise = self.gp.var_noise.value[0]
+
+        if parameters_kernel is None:
+            parameters_kernel = self.gp.kernel.hypers_values_as_array
+
+        if mean is None:
+            mean = self.gp.mean.value[0]
+
+        chol_solve = self.gp._cholesky_solve_vectors_for_posterior(
+            var_noise, mean, parameters_kernel, cache=True)
+        solve = chol_solve['solve']
+
+        historical_points = self.gp.data['points']
+
+        hessian = self.evaluate_hessian_cross_cov(point, historical_points, parameters_kernel)
+
+        # not sure if this is correct
+        hessian_a = np.einsum('ijk,i->jk', hessian, solve)
+
+        return hessian_a
+
     def compute_posterior_parameters(self, points, var_noise=None, mean=None,
                                      parameters_kernel=None, historical_points=None,
                                      historical_evaluations=None, only_mean=False, cache=True,
@@ -559,7 +592,7 @@ class BayesianQuadrature(object):
     def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False, n_restarts=1000,
                                 n_best_restarts=100, parallel=True, n_treads=0, var_noise=None,
                                 mean=None, parameters_kernel=None, n_samples_parameters=0,
-                                start_new_chain=False):
+                                start_new_chain=False, method_opt=None):
         """
         Optimize the posterior mean.
 
@@ -575,10 +608,14 @@ class BayesianQuadrature(object):
         :param parameters_kernel: np.array(l)
         :param n_samples_parameters: int
         :param start_new_chain: boolean
+        :param method_opt: str
         :return: dictionary with the results of the optimization
         """
         if random_seed is not None:
             np.random.seed(random_seed)
+
+        if method_opt is None:
+            method_opt = LBFGS_NAME
 
         if start_new_chain and n_samples_parameters > 0:
             self.gp.start_new_chain()
@@ -636,12 +673,14 @@ class BayesianQuadrature(object):
 
         objective_function = wrapper_objective_posterior_mean_bq
         grad_function = wrapper_grad_posterior_mean_bq
+        hessian_function = wrapper_hessian_posterior_mean_bq
+
 
         optimization = Optimization(
-            LBFGS_NAME,
+            method_opt,
             objective_function,
             bounds,
-            grad_function,
+            grad_function, hessian=hessian_function,
             minimize=minimize)
 
         point_dict = {}

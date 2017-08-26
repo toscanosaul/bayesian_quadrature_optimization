@@ -19,6 +19,7 @@ from stratified_bayesian_optimization.lib.constant import (
     TASKS,
     SGD_NAME,
     NEWTON_CG_NAME,
+    DOGLEG,
 )
 from stratified_bayesian_optimization.bayesian.bayesian_evaluations import BayesianEvaluations
 from stratified_bayesian_optimization.lib.affine_break_points import (
@@ -50,6 +51,7 @@ from stratified_bayesian_optimization.lib.util import (
     wrapper_evaluate_sbo_by_sample_bayesian_2,
     wrapper_evaluate_hessian_sample,
     wrapper_evaluate_sbo_by_sample_no_sp,
+    wrapper_optimize_posterior_mean,
 )
 from stratified_bayesian_optimization.lib.constant import DEFAULT_N_PARAMETERS, DEFAULT_N_SAMPLES
 from stratified_bayesian_optimization.util.json_file import JSONFile
@@ -529,6 +531,22 @@ class SBO(object):
             gradient = np.zeros((n_candidate_points, candidate_points.shape[1]))
             samples = samples.reshape((n_samples, 1))
 
+        if n_samples_parameters > 0 and compute_max_mean:
+            parameters_dict = {}
+
+            for i, parameter in enumerate(parameters):
+                index_cache = (parameter[0], parameter[1], tuple(parameter[2:]))
+
+                if index_cache not in self.bq.max_mean:
+                    parameters_dict[i] = parameter
+
+            if len(parameters_dict) > 0:
+                args = (False, None, True, 0, self.bq, None, DOGLEG, 100)
+
+                Parallel.run_function_different_arguments_parallel(
+                    wrapper_optimize_posterior_mean, parameters_dict, *args)
+
+
         for l in xrange(n_candidate_points):
             gradients = []
             values_parameters = []
@@ -550,9 +568,6 @@ class SBO(object):
                     if index_cache in self.bq.max_mean:
                         max_mean = self.bq.max_mean[index_cache]
                 else:
-                    if index_cache not in self.bq.max_mean:
-                        self.bq.optimize_posterior_mean(n_treads=0, var_noise=params[0],
-                            parameters_kernel=params[2:], mean=params[1], n_best_restarts=100)
                     max_mean = self.bq.max_mean[index_cache]
 
                 values_parameters.append(np.mean(max_values) - max_mean)
@@ -1486,13 +1501,19 @@ class SBO(object):
 
         if n_samples_parameters > 0 and compute_max_mean_bayesian:
             parameters = self.bq.gp.samples_parameters[-n_parameters:]
-            for parameter in parameters:
+
+            parameters_dict = {}
+            for i, parameter in enumerate(parameters):
                 index_cache = (parameter[0], parameter[1], tuple(parameter[2:]))
 
                 if index_cache not in self.bq.max_mean:
-                    self.bq.optimize_posterior_mean(
-                        random_seed=random_seed, n_treads=0, var_noise=parameter[0],
-                        parameters_kernel=parameter[2:], mean=parameter[1], n_best_restarts=100)
+                    parameters_dict[i] = parameter
+
+            if len(parameters_dict) > 0:
+                args = (False, None, parallel, 0, self.bq, random_seed, DOGLEG, 100)
+
+                Parallel.run_function_different_arguments_parallel(
+                    wrapper_optimize_posterior_mean, parameters_dict, *args)
 
         bounds = self.bq.bounds
 
