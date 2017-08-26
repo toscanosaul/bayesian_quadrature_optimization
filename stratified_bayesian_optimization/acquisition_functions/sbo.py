@@ -543,9 +543,18 @@ class SBO(object):
             if len(parameters_dict) > 0:
                 args = (False, None, True, 0, self.bq, None, DOGLEG, 100)
 
-                Parallel.run_function_different_arguments_parallel(
+                sol = Parallel.run_function_different_arguments_parallel(
                     wrapper_optimize_posterior_mean, parameters_dict, *args)
+                for i in sol:
+                    opt = sol.get(i)
+                    par = parameters_dict[i]
+                    index_cache = (par[0], par[1], tuple(par[2:]))
+                    self.bq.max_mean[index_cache] = opt['optimal_value']
 
+                    if index_cache not in self.bq.optimal_solutions:
+                        self.bq.optimal_solutions[index_cache] = []
+
+                    self.bq.optimal_solutions[index_cache].append(opt)
 
         for l in xrange(n_candidate_points):
             gradients = []
@@ -1512,8 +1521,19 @@ class SBO(object):
             if len(parameters_dict) > 0:
                 args = (False, None, parallel, 0, self.bq, random_seed, DOGLEG, 100)
 
-                Parallel.run_function_different_arguments_parallel(
+                sol = Parallel.run_function_different_arguments_parallel(
                     wrapper_optimize_posterior_mean, parameters_dict, *args)
+
+                for i in sol:
+                    opt = sol.get(i)
+                    par = parameters_dict[i]
+                    index_cache = (par[0], par[1], tuple(par[2:]))
+                    self.bq.max_mean[index_cache] = opt['optimal_value']
+
+                    if index_cache not in self.bq.optimal_solutions:
+                        self.bq.optimal_solutions[index_cache] = []
+
+                    self.bq.optimal_solutions[index_cache].append(opt)
 
         bounds = self.bq.bounds
 

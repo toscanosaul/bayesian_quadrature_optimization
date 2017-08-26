@@ -858,7 +858,8 @@ def wrapper_grad_voi_sgd(point, self, *args, **opt_params_mc):
     return self.grad_voi_sgd(point, *args,  **opt_params_mc)
 
 def wrapper_optimize_posterior_mean(parameter, self, random_seed, method_opt, n_restarts):
-    self.optimize_posterior_mean(
+    opt_result = self.optimize_posterior_mean(
         random_seed=random_seed, n_treads=0, var_noise=parameter[0],
         parameters_kernel=parameter[2:], mean=parameter[1], n_restarts=n_restarts,
         method_opt=method_opt, parallel=False, n_best_restarts=0)
+    return opt_result
