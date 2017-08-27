@@ -12,12 +12,14 @@ from stratified_bayesian_optimization.lib.util import (
 )
 
 
-# 508496 observations
+# Training data has 246650 observations
 year = '2016'
 month = '1'
 n_folds = 5
-num_item = 5000
-num_user = 4815
+# num_item = 5000
+# num_user = 4815
+num_item = 2018
+num_user = 2752
 
 train=[]
 validate=[]

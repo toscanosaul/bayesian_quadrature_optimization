@@ -26,6 +26,8 @@ class TrainingData(object):
                                         'validation_data.mat'.format
     _name_fold_indexes = 'problems/arxiv/data/{year}_{month}_fold_indexes' \
                                '.json'.format
+    _name_file_final_categ = 'problems/arxiv/data/{year}_{month}_top_users_top_' \
+                             'categories.json'.format
 
 
 
@@ -42,7 +44,7 @@ class TrainingData(object):
 
         """
         random.seed(random_seed)
-        file_name = cls._name_file_final(year=year, month=month)
+        file_name = cls._name_file_final_categ(year=year, month=month)
         data = JSONFile.read(file_name)
 
         papers = data[0].keys()

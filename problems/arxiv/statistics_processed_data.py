@@ -172,11 +172,6 @@ class StatisticsProcessedData(object):
                 users_new[user] = full_data[1][user]
                 users_new[user]['diff_papers'] = paper_user
 
-        users_new = {}
-        for user in full_data[1]:
-            if len(set(users_cg[user]).intersection(set(top_cat))) > 0:
-                users_new[user] = full_data[1][user]
-
         file_name = cls._name_file_final_categ(year=year, month=month)
         JSONFile.write([papers_new, users_new], file_name)
 
