@@ -15,4 +15,5 @@ if __name__ == '__main__':
     month = args.month
     year = '2016'
 
-    StatisticsProcessedData.top_users_papers(year, month)
+    # StatisticsProcessedData.top_users_papers(year, month)
+    StatisticsProcessedData.top_users_papers_selecting_categories(year, month)
