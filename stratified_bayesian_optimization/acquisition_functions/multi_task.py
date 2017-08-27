@@ -46,7 +46,7 @@ class MultiTasks(object):
         return self.ei.evaluate(point, var_noise, mean, parameters_kernel)
 
     def optimize_first(self, start=None, random_seed=None, parallel=True, n_restarts=100,
-                       n_samples_parameters=0, n_best_restarts=0):
+                       n_samples_parameters=0, n_best_restarts=0, maxepoch=11):
         """
         Optimizes EI
 
@@ -62,7 +62,7 @@ class MultiTasks(object):
 
         solution = self.ei.optimize(start, random_seed, parallel, n_restarts,
                                     n_best_restarts=n_best_restarts,
-                                    n_samples_parameters=n_samples_parameters)
+                                    n_samples_parameters=n_samples_parameters, maxepoch=maxepoch)
 
         return solution['solution']
 

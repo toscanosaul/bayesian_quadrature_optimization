@@ -489,7 +489,7 @@ class TestSBO(unittest.TestCase):
         val = self.sbo_med.optimize(monte_carlo=True, n_samples=2, n_restarts_mc=2,
                                random_seed=1, parallel=False, n_restarts=1, maxepoch=20,
                                     **{'factr':1e12,'maxiter':100})
-        npt.assert_almost_equal(val['optimal_value'], 1918.3431421710602, decimal=4)
+        npt.assert_almost_equal(val['optimal_value'], 1923.3614355784607, decimal=4)
         npt.assert_almost_equal(val['gradient'], np.array([ 0.0005051,  0.        ]))
         npt.assert_almost_equal(val['solution'], np.array([ 99.9869007,   0.  ]))
 
@@ -609,7 +609,7 @@ class TestSBO(unittest.TestCase):
         np.random.seed(1)
         grad_2 = self.sbo.grad_obj_voi(candidate[0, :], True, n_samples, n_restarts, 0, 0)
 
-        npt.assert_almost_equal(grad_1, grad_2, decimal=5)
+        npt.assert_almost_equal(grad_1, grad_2, decimal=4)
 
 
     def test_combine_sbo_gradient(self):
@@ -679,7 +679,7 @@ class TestSBO(unittest.TestCase):
                                    **{'factr': 1e12, 'maxiter': 10})
         npt.assert_almost_equal(obj, np.array([ -0.5185451893015001]), decimal=5)
         npt.assert_almost_equal(grad, np.array([ 0.00054018, 0]))
-        npt.assert_almost_equal(answer['optimal_value'], 0.080614536533020226, decimal=2)
+        npt.assert_almost_equal(answer['optimal_value'], 0.10114675542498977, decimal=2)
 
 
     def test_evaluate_gradient_given_sample_given_parameters(self):

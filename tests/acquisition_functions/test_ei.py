@@ -243,10 +243,10 @@ class TestEI(unittest.TestCase):
         gradient = wrapper_gradient_acquisition_function(point, self.ei, n_samples_parameters)
         np.random.seed(1)
         sol = self.ei.optimize(None, 1, True, 10,
-                                    n_samples_parameters=n_samples_parameters)
+                                    n_samples_parameters=n_samples_parameters, maxepoch=5)
         npt.assert_almost_equal(value, 0.297100121625)
         npt.assert_almost_equal(gradient, np.array([0.00058253, 0]))
-        npt.assert_almost_equal(sol['optimal_value'], 0.324626)
+        npt.assert_almost_equal(sol['optimal_value'], 0.26284)
 
     def test_optimize_ei(self):
         np.random.seed(2)

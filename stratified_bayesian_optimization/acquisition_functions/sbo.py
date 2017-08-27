@@ -1561,7 +1561,7 @@ class SBO(object):
             mk = MultiTasks(quadrature_2, quadrature_2.parameters_distribution.get(TASKS))
             st_ei = mk.optimize_first(parallel=True, start=None, n_restarts=100,
                                       n_best_restarts=10,
-                                      n_samples_parameters=n_parameters)
+                                      n_samples_parameters=n_parameters, maxepoch=3)
             candidate_points = []
             for i in xrange(len(self.bq.tasks)):
                 point = np.concatenate((st_ei, np.array([i])))

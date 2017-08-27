@@ -80,6 +80,6 @@ DEBUGGING_DIR = 'data/debugging'
 BAYESIAN_QUADRATURE = 'bayesian_quadrature'
 
 # Default number of sampled parameters
-DEFAULT_N_PARAMETERS = 20
+DEFAULT_N_PARAMETERS = 15
 
-DEFAULT_N_SAMPLES = 20
+DEFAULT_N_SAMPLES = 15
