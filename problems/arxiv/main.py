@@ -23,6 +23,7 @@ n_folds = 5
 
 num_item = 326
 num_user = 507
+# there are 90271 observations
 
 train=[]
 validate=[]
