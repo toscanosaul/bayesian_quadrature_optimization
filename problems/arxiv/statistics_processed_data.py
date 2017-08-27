@@ -141,7 +141,7 @@ class StatisticsProcessedData(object):
             }
         ]
         """
-        categories = cls.assign_categories_date_year(year, month)
+        categories = JSONFile.read(cls._name_file_categories(year=year, month=month))
         papers_cat = pd.DataFrame.from_records([categories]).transpose()
 
         users_cg, user_cat = cls.assign_categories_to_users(year, month)
@@ -184,7 +184,6 @@ class StatisticsProcessedData(object):
         logger.info('Number of users is %d' % len(users_new))
 
         return [papers_new, users_new]
-
 
     @classmethod
     def plot_histograms_papers_categories(cls, year, month):
