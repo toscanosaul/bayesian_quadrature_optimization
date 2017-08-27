@@ -66,12 +66,16 @@ class TrainingData(object):
             index_papers = range(len(other_papers))
             random.shuffle(index_papers)
 
-            index = min(len(users_data[user]['diff_papers']), len(index_papers))
+            dislike_papers = np.random.randint(0, len(index_papers), 1)
+
+            index = dislike_papers
             keep_index_papers = index_papers[0: index]
             for index in keep_index_papers:
                 training_data.append([i + 1, key_paper[other_papers[index]], 1])
 
         file_name = cls._name_training_data(year=year, month=month)
+
+        logger.info('There are %d training points' % len(training_data))
         JSONFile.write(training_data, file_name)
 
     @classmethod
