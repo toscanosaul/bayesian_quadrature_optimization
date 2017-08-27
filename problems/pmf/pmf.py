@@ -3,7 +3,7 @@ import numpy as np
 from math import *
 
 
-def PMF(num_user, num_item, train, val, epsilon=50, lamb=0.01, maxepoch=50, num_feat=10, l_rating=1,
+def PMF(num_user, num_item, train, val, epsilon=0.1, lamb=0.01, maxepoch=50, num_feat=10, l_rating=1,
         u_rating=5):
     """
     Ids of users and items start from one!
@@ -14,14 +14,14 @@ def PMF(num_user, num_item, train, val, epsilon=50, lamb=0.01, maxepoch=50, num_
     maxepoch: number of epochs
     """
     np.random.seed(1)
-    momentum = 0.8
+    momentum = 0.5
     epoch = 1
     mean_rating = np.mean(train[:, 2])
 
     pairs_tr = train.shape[0]  # training data
     pairs_va = val.shape[0]  # validation data
 
-    num_batches = 9
+    num_batches = int(pairs_tr / 256.0)
     batch_size = pairs_tr / num_batches
 
     w1_M1 = 0.1 * np.random.randn(num_item, num_feat)  # movie feature vectors
@@ -68,10 +68,10 @@ def PMF(num_user, num_item, train, val, epsilon=50, lamb=0.01, maxepoch=50, num_
 
             ##update with momentum
 
-            w1_M1_inc = momentum * w1_M1_inc + epsilon * dw_m / float(batch_size)
+            w1_M1_inc = momentum * w1_M1_inc + epsilon * dw_m #/ float(batch_size)
             w1_M1 = w1_M1 - w1_M1_inc
 
-            w1_P1_inc = momentum * w1_P1_inc + epsilon * dw_p / float(batch_size)
+            w1_P1_inc = momentum * w1_P1_inc + epsilon * dw_p #/ float(batch_size)
             w1_P1 = w1_P1 - w1_P1_inc
     ###compute validation error
 
