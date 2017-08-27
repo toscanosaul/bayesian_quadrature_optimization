@@ -20,7 +20,7 @@ n_folds = 5
 # num_user = 4815
 num_item = 2018
 num_user = 2752
-# there are 2821771 observations
+# there are 40306 observations
 
 # num_item = 326
 # num_user = 507

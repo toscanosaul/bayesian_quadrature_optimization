@@ -4,7 +4,7 @@ from math import *
 
 
 def PMF(num_user, num_item, train, val, epsilon=0.1, lamb=0.01, maxepoch=50, num_feat=10, l_rating=1,
-        u_rating=5):
+        u_rating=5, num_batches=9):
     """
     Ids of users and items start from one!
 
@@ -20,8 +20,9 @@ def PMF(num_user, num_item, train, val, epsilon=0.1, lamb=0.01, maxepoch=50, num
 
     pairs_tr = train.shape[0]  # training data
     pairs_va = val.shape[0]  # validation data
-
-    num_batches = int(pairs_tr / 256.0)
+   #
+   # # num_batches = int(pairs_tr / 256.0)
+   #  num_batches = 9 # tal vez es mejor idea
     batch_size = pairs_tr / num_batches
 
     w1_M1 = 0.1 * np.random.randn(num_item, num_feat)  # movie feature vectors

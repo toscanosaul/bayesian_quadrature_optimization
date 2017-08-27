@@ -65,8 +65,10 @@ class TrainingData(object):
             other_papers = list(set(papers) - set(users_data[user]['diff_papers']))
             index_papers = range(len(other_papers))
             random.shuffle(index_papers)
+            seen_papers = len(set(users_data[user]['diff_papers']))
 
-            dislike_papers = np.random.randint(0, len(index_papers), 1)
+            dislike_papers = np.random.randint(int(0.5 * seen_papers),
+                                               min(int(1.8 * seen_papers), len(index_papers)), 1)
 
             index = dislike_papers[0]
 
