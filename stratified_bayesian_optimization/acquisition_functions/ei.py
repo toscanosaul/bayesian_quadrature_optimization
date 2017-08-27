@@ -107,13 +107,16 @@ class EI(object):
 
         return evaluation
 
-    def evaluate_gradient_sample_params(self, point):
+    def evaluate_gradient_sample_params(self, point, random_seed=None):
         """
         Computes the gradient of EI taking a random sample of the parameters of the model.
 
         :param point: np.array(n)
         :return: np.array(n)
         """
+
+        if random_seed is not None:
+            np.random.seed(random_seed)
         point = point.reshape((1, len(point)))
 
         if self.gp.name_model == BAYESIAN_QUADRATURE:
@@ -258,6 +261,10 @@ class EI(object):
             args = (False, None, parallel, 0, optimization, self, n_samples_parameters)
 
             opt_method = wrapper_optimize
+
+            point_dict = {}
+            for j in xrange(n_restarts):
+                point_dict[j] = start[j, :]
         else:
 
             #TODO CHANGE wrapper_objective_voi, wrapper_grad_voi_sgd TO NO SOLVE MAX_a_{n+1} in
@@ -282,10 +289,10 @@ class EI(object):
 
             opt_method = wrapper_sgd
 
-
-        point_dict = {}
-        for j in xrange(n_restarts):
-            point_dict[j] = start[j, :]
+            random_seeds = np.random.randint(0, 4294967295, n_restarts)
+            point_dict = {}
+            for j in xrange(n_restarts):
+                point_dict[j] = [start[j, :], random_seeds[j]]
 
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
             opt_method, point_dict, *args)
