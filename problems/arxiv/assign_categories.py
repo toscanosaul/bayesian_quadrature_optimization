@@ -20,6 +20,7 @@ class Categories(object):
     _name_file_categories_users_hist = \
         'problems/arxiv/data/{year}_{month}_users_papers_hist.json'.format
 
+    @classmethod
     def assign_categories_date_year(cls, year, month):
         """
         :param year: (str)
