@@ -64,7 +64,7 @@ class StatisticsProcessedData(object):
 
         if only_assign_categories:
             return
-        
+
         rank_user = {}
 
         users_ls = []
@@ -111,6 +111,19 @@ class StatisticsProcessedData(object):
 
 
         return [rank_papers, rank_user]
+
+    @classmethod
+    def assign_categories_date_year(cls, year, month):
+        """
+        :param year: (str)
+        :param month: (str) e.g. '1', '12'
+        :return:
+        """
+
+        file_name = cls._name_file_final(year=year, month=month)
+        data = JSONFile.read(file_name)
+        papers = data[0].keys()
+        cls.assign_categories(papers)
 
     @classmethod
     def assign_categories(cls, list_papers):
