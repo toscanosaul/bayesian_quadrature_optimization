@@ -68,7 +68,8 @@ class TrainingData(object):
 
             dislike_papers = np.random.randint(0, len(index_papers), 1)
 
-            index = dislike_papers
+            index = dislike_papers[0]
+
             keep_index_papers = index_papers[0: index]
             for index in keep_index_papers:
                 training_data.append([i + 1, key_paper[other_papers[index]], 1])
