@@ -495,7 +495,7 @@ class BayesianQuadrature(object):
         return np.dot(gradient, solve)
 
     def gradient_posterior_parameters(self, point, var_noise=None, mean=None,
-                                      parameters_kernel=None, cache=True):
+                                      parameters_kernel=None, cache=True, parallel=True):
         """
         Computes the gradient of the posterior parameters of the GP on g(x).
 
@@ -504,6 +504,7 @@ class BayesianQuadrature(object):
         :param mean: float
         :param parameters_kernel: np.array(l)
         :param cache: boolean
+        :param parallel: boolean
 
         :return: {'mean': np.array(n), 'cov': np.array(n)}
         """
@@ -539,7 +540,7 @@ class BayesianQuadrature(object):
         if compute_vec_covs:
             computations = self.compute_vectors_b(point, None, self.gp.data['points'],
                                                   parameters_kernel, compute_vec_covs,
-                                                  False, True)
+                                                  False, parallel)
 
             if compute_vec_covs:
                 vec_covs = computations['vec_covs']
@@ -731,7 +732,6 @@ class BayesianQuadrature(object):
             'vec_covs': np.array(nxt),
         }
         """
-
 
         n = points.shape[0]
         m = historical_points.shape[0]

@@ -853,7 +853,10 @@ def wrapper_get_parameters_for_samples_2(parameters, self, *args):
     return self.bq.get_parameters_for_samples(True, parameters[3], parameters[0], parameters[1],
                                               parameters[2], clear_cache=False)
 
-def wrapper_grad_voi_sgd(point, self, *args, **opt_params_mc):
+def wrapper_grad_voi_sgd(point_rs, self, *args, **opt_params_mc):
+    point = point_rs[0]
+    rs = point_rs[1]
+    args += (rs, )
 
     return self.grad_voi_sgd(point, *args,  **opt_params_mc)
 
@@ -863,3 +866,6 @@ def wrapper_optimize_posterior_mean(parameter, self, random_seed, method_opt, n_
         parameters_kernel=parameter[2:], mean=parameter[1], n_restarts=n_restarts,
         method_opt=method_opt, parallel=False, n_best_restarts=0)
     return opt_result
+
+def wrapper_evaluate_gradient_ei_sample_params(point, self):
+    return self.evaluate_gradient_sample_params(point)

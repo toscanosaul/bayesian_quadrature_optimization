@@ -246,7 +246,7 @@ class TestEI(unittest.TestCase):
                                     n_samples_parameters=n_samples_parameters)
         npt.assert_almost_equal(value, 0.297100121625)
         npt.assert_almost_equal(gradient, np.array([0.00058253, 0]))
-        npt.assert_almost_equal(sol['optimal_value'], 0.30205775381169897)
+        npt.assert_almost_equal(sol['optimal_value'], 0.324626)
 
     def test_optimize_ei(self):
         np.random.seed(2)
@@ -264,10 +264,11 @@ class TestEI(unittest.TestCase):
         n_samples_parameters = 15
 
         np.random.seed(2)
-        opt = self.ei.optimize(random_seed=1, n_restarts=15, start_new_chain=True,
-                               n_samples_parameters=n_samples_parameters)
+        opt = self.ei.optimize(random_seed=1, n_restarts=4, start_new_chain=True,
+                               n_samples_parameters=n_samples_parameters, maxepoch=5)
 
         np.random.seed(2)
-        opt_2 = self.ei.optimize(random_seed=1, n_restarts=100, n_best_restarts=10,
-                                 start_new_chain=True, n_samples_parameters=n_samples_parameters)
+        opt_2 = self.ei.optimize(random_seed=1, n_restarts=10, n_best_restarts=10,
+                                 start_new_chain=True, n_samples_parameters=n_samples_parameters,
+                                 maxepoch=5)
         assert opt_2['optimal_value'] >= opt['optimal_value']

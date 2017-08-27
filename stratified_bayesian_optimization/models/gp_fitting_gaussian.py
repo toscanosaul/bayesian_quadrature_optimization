@@ -1192,7 +1192,7 @@ class GPFittingGaussian(object):
         }
 
     def gradient_posterior_parameters(self, point, var_noise=None, mean=None,
-                                      parameters_kernel=None):
+                                      parameters_kernel=None, parallel=True):
         """
         Computes the gradient of the posterior parameters of the GP.
 

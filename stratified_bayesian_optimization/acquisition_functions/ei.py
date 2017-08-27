@@ -21,11 +21,14 @@ from stratified_bayesian_optimization.lib.util import (
     wrapper_optimize,
     wrapper_objective_acquisition_function,
     wrapper_gradient_acquisition_function,
+    wrapper_sgd,
+    wrapper_evaluate_gradient_ei_sample_params,
 )
 from stratified_bayesian_optimization.lib.constant import (
     LBFGS_NAME,
     DEBUGGING_DIR,
     BAYESIAN_QUADRATURE,
+    SGD_NAME,
 )
 from stratified_bayesian_optimization.services.domain import (
     DomainService,
@@ -104,6 +107,24 @@ class EI(object):
 
         return evaluation
 
+    def evaluate_gradient_sample_params(self, point):
+        """
+        Computes the gradient of EI taking a random sample of the parameters of the model.
+
+        :param point: np.array(n)
+        :return: np.array(n)
+        """
+        point = point.reshape((1, len(point)))
+
+        if self.gp.name_model == BAYESIAN_QUADRATURE:
+            params = self.gp.gp.sample_parameters(1)[0]
+        else:
+            params = self.gp.sample_parameters(1)[0]
+
+        return self.evaluate_gradient(point, var_noise=params[0], mean=params[1],
+                                      parameters_kernel=params[2:])
+
+
     def evaluate_gradient(self, point, var_noise=None, mean=None, parameters_kernel=None):
         """
         Computes the gradient of EI.
@@ -128,7 +149,8 @@ class EI(object):
 
         std = np.sqrt(cov)
 
-        gradient = self.gp.gradient_posterior_parameters(point, var_noise, mean, parameters_kernel)
+        gradient = self.gp.gradient_posterior_parameters(point, var_noise, mean, parameters_kernel,
+                                                         parallel=False)
         grad_mu = gradient['mean']
         grad_cov = gradient['cov']
 
@@ -148,7 +170,8 @@ class EI(object):
 
 
     def optimize(self, start=None, random_seed=None, parallel=True, n_restarts=10,
-                 n_best_restarts=0, n_samples_parameters=0, start_new_chain=False):
+                 n_best_restarts=0, n_samples_parameters=0, start_new_chain=False,
+                 maxepoch=11):
         """
         Optimizes EI
 
@@ -223,21 +246,49 @@ class EI(object):
         objective_function = wrapper_objective_acquisition_function
         grad_function = wrapper_gradient_acquisition_function
 
-        optimization = Optimization(
-            LBFGS_NAME,
-            objective_function,
-            bounds,
-            grad_function,
-            minimize=False)
+        if n_samples_parameters==0:
+            #TODO: CHECK THIS
+            optimization = Optimization(
+                LBFGS_NAME,
+                objective_function,
+                bounds,
+                grad_function,
+                minimize=False)
+
+            args = (False, None, parallel, 0, optimization, self, n_samples_parameters)
+
+            opt_method = wrapper_optimize
+        else:
+
+            #TODO CHANGE wrapper_objective_voi, wrapper_grad_voi_sgd TO NO SOLVE MAX_a_{n+1} in
+            #TODO: parallel for the several starting points
+
+            args_ = (self, n_samples_parameters)
+
+            optimization = Optimization(
+                SGD_NAME,
+                objective_function,
+                bounds,
+                wrapper_evaluate_gradient_ei_sample_params,
+                minimize=False,
+                full_gradient=grad_function,
+                args=args_, debug=True,
+                **{'maxepoch': maxepoch}
+            )
+
+            args = (False, None, parallel, 0, optimization, n_samples_parameters, self)
+
+            #TODO: THINK ABOUT N_THREADS. Do we want to run it in parallel?
+
+            opt_method = wrapper_sgd
+
 
         point_dict = {}
         for j in xrange(n_restarts):
             point_dict[j] = start[j, :]
 
-        args = (False, None, parallel, 0, optimization, self, n_samples_parameters)
-
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
-            wrapper_optimize, point_dict, *args)
+            opt_method, point_dict, *args)
 
         maximum_values = []
         for j in xrange(n_restarts):

@@ -1023,7 +1023,8 @@ class SBO(object):
         return np.mean(gradients, axis=0)
 
     def grad_voi_sgd(self, point, monte_carlo, bayesian, n_restarts=10, n_best_restarts=0,
-                     n_threads=0, parallel=True, method_opt=None, **opt_params_mc):
+                     n_threads=0, parallel=True, method_opt=None, random_seed=None,
+                     **opt_params_mc):
         """
         Computes the objective voi using a bayesian approach. Used for the SGD. We useo only one
         sample of Z, and one sample of the parameters.
@@ -1034,9 +1035,14 @@ class SBO(object):
         :param n_best_restarts:
         :param n_threads:
         :param parallel:
+        :param method_opt:
+        :param random_seed:
         :param opt_params_mc:
         :return: float
         """
+
+        if random_seed is not None:
+            np.random.seed(random_seed)
 
         point = point.reshape((1, len(point)))
         params = None
@@ -1542,7 +1548,7 @@ class SBO(object):
         values_ei = []
         if start_ei and not self.bq.separate_tasks:
             ei = EI(self.bq.gp)
-            opt_ei = ei.optimize(n_restarts=100, n_samples_parameters=n_samples_parameters,
+            opt_ei = ei.optimize(n_restarts=100, n_samples_parameters=n_parameters,
                                  parallel=parallel, n_best_restarts=10)
             st_ei = opt_ei['solution']
             st_ei = st_ei.reshape((1, len(st_ei)))
@@ -1555,7 +1561,7 @@ class SBO(object):
             mk = MultiTasks(quadrature_2, quadrature_2.parameters_distribution.get(TASKS))
             st_ei = mk.optimize_first(parallel=True, start=None, n_restarts=100,
                                       n_best_restarts=10,
-                                      n_samples_parameters=n_samples_parameters)
+                                      n_samples_parameters=n_parameters)
             candidate_points = []
             for i in xrange(len(self.bq.tasks)):
                 point = np.concatenate((st_ei, np.array([i])))
@@ -1662,6 +1668,10 @@ class SBO(object):
                         opt_params_mc, 0, n_samples_parameters, method_opt_mc)
             opt_method = wrapper_optimize
             kwargs = {}
+
+            point_dict = {}
+            for j in xrange(n_restarts):
+                point_dict[j] = start[j, :]
         else:
 
             args_ = (self, monte_carlo, default_n_samples, default_restarts_mc, n_best_restarts_mc,
@@ -1693,9 +1703,10 @@ class SBO(object):
 
             compute_value_function = True
 
-        point_dict = {}
-        for j in xrange(n_restarts):
-            point_dict[j] = start[j, :]
+            random_seeds = np.random.randint(0, 4294967295, n_restarts)
+            point_dict = {}
+            for j in xrange(n_restarts):
+                point_dict[j] = [start[j, :], random_seeds[j]]
 
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
             opt_method, point_dict, *args, **kwargs)
