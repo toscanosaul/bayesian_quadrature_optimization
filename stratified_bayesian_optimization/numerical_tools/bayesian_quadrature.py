@@ -44,6 +44,8 @@ from stratified_bayesian_optimization.lib.util import (
     wrapper_grad_posterior_mean_bq,
     wrapper_optimize,
     wrapper_hessian_posterior_mean_bq,
+    wrapper_sgd,
+    wrapper_evaluate_gradient_sample_params_bq,
 )
 
 logger = SBOLog(__name__)
@@ -575,6 +577,22 @@ class BayesianQuadrature(object):
                                                  parameters_kernel=parameters_kernel,
                                                  only_mean=True)['mean']
 
+    def evaluate_gradient_sample_params(self, point, random_seed=None):
+        """
+        Computes the gradient of EI taking a random sample of the parameters of the model.
+
+        :param point: np.array(n)
+        :return: np.array(n)
+        """
+
+        if random_seed is not None:
+            np.random.seed(random_seed)
+
+        params = self.gp.sample_parameters(1)[0]
+
+        return self.grad_posterior_mean(point, var_noise=params[0], mean=params[1],
+                                      parameters_kernel=params[2:])
+
     def grad_posterior_mean(self, point, var_noise=None, mean=None, parameters_kernel=None):
         """
         Computes the gradient of the posterior mean evaluated on point.
@@ -593,7 +611,7 @@ class BayesianQuadrature(object):
     def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False, n_restarts=1000,
                                 n_best_restarts=100, parallel=True, n_treads=0, var_noise=None,
                                 mean=None, parameters_kernel=None, n_samples_parameters=0,
-                                start_new_chain=False, method_opt=None):
+                                start_new_chain=False, method_opt=None, maxepoch=50):
         """
         Optimize the posterior mean.
 
@@ -676,24 +694,56 @@ class BayesianQuadrature(object):
         grad_function = wrapper_grad_posterior_mean_bq
         hessian_function = wrapper_hessian_posterior_mean_bq
 
+        if n_samples_parameters==0:
+            #TODO: CHECK THIS
+            optimization = Optimization(
+                method_opt,
+                objective_function,
+                bounds,
+                grad_function, hessian=hessian_function,
+                minimize=minimize)
 
-        optimization = Optimization(
-            method_opt,
-            objective_function,
-            bounds,
-            grad_function, hessian=hessian_function,
-            minimize=minimize)
+            args = (False, None, parallel, n_treads, optimization, self, var_noise, mean,
+                    parameters_kernel, n_samples_parameters)
 
-        point_dict = {}
+            opt_method = wrapper_optimize
 
-        for j in xrange(n_restart_):
-            point_dict[j] = start[j, :]
+            point_dict = {}
 
-        args = (False, None, parallel, n_treads, optimization, self, var_noise, mean,
-                parameters_kernel, n_samples_parameters)
+            for j in xrange(n_restart_):
+                point_dict[j] = start[j, :]
+        else:
+
+            #TODO CHANGE wrapper_objective_voi, wrapper_grad_voi_sgd TO NO SOLVE MAX_a_{n+1} in
+            #TODO: parallel for the several starting points
+
+            args_ = (self, var_noise, mean, parameters_kernel, n_samples_parameters)
+
+            optimization = Optimization(
+                method_opt,
+                objective_function,
+                bounds,
+                wrapper_evaluate_gradient_sample_params_bq,
+                minimize=False,
+                full_gradient=grad_function,
+                args=args_, debug=True,
+                **{'maxepoch': maxepoch}
+            )
+
+            args = (False, None, parallel, 0, optimization, n_samples_parameters, self)
+
+            #TODO: THINK ABOUT N_THREADS. Do we want to run it in parallel?
+
+            opt_method = wrapper_sgd
+
+            random_seeds = np.random.randint(0, 4294967295, n_restarts)
+            point_dict = {}
+            for j in xrange(n_restarts):
+                point_dict[j] = [start[j, :], random_seeds[j]]
+
 
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
-            wrapper_optimize, point_dict, *args)
+            opt_method, point_dict, *args)
 
         maximum_values = []
         for j in xrange(n_restart_):

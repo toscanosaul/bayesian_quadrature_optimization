@@ -23,12 +23,12 @@ if __name__ == '__main__':
     # script used to generate spec file to run BGO
 
     dim_x = 4
-    bounds_domain_x = [(0.01, 1.01), (0.1, 2.1), (1, 21), (1, 201)]
+    bounds_domain_x = [(0.01, 1.01), (0.01, 2.1), (1, 21), (1, 201)]
     problem_name = 'arxiv'
     training_name = None
     type_kernel = [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]
     dimensions = [5, 4, 5]
-    bounds_domain = [[0.01, 1.01], [0.1, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
+    bounds_domain = [[0.01, 1.01], [0.01, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
     n_training = 5
     random_seed = 10
     type_bounds = [0, 0, 0, 0, 1]
@@ -46,19 +46,21 @@ if __name__ == '__main__':
     number_points_each_dimension_debug = [10, 10, 10, 10]
     monte_carlo_sbo = True
     n_samples_mc = 5
-    n_restarts_mc = 10
+    n_restarts_mc = 5
     n_best_restarts_mc = 0
     factr_mc = 1e12
     maxiter_mc = 10
-    n_restarts = 40
+    n_restarts = 10
     n_best_restarts = 0
     use_only_training_points = True
     method_optimization = SBO_METHOD
     n_samples_parameters = 5
-    n_restarts_mean = 1000
-    n_best_restarts_mean = 100
+    n_restarts_mean = 100
+    n_best_restarts_mean = 10
     method_opt_mc = DOGLEG
     maxepoch = 10
+    n_samples_parameters_mean = 15
+    maxepoch_mean = 20
 
     spec = SpecService.generate_dict_spec(
         problem_name, dim_x, bounds_domain_x, training_name, type_kernel, dimensions,
@@ -73,7 +75,8 @@ if __name__ == '__main__':
         n_best_restarts=n_best_restarts, use_only_training_points=use_only_training_points,
         method_optimization=method_optimization, n_samples_parameters=n_samples_parameters,
         n_restarts_mean=n_restarts_mean, n_best_restarts_mean=n_best_restarts_mean,
-        n_best_restarts_mc=n_best_restarts_mc, maxepoch=maxepoch, method_opt_mc=method_opt_mc)
+        n_best_restarts_mc=n_best_restarts_mc, maxepoch=maxepoch, method_opt_mc=method_opt_mc,
+        n_samples_parameters_mean=n_samples_parameters_mean, maxepoch_mean=maxepoch_mean)
 
 
     print ujson.dumps(spec, indent=4)

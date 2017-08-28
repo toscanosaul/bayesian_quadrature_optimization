@@ -871,3 +871,6 @@ def wrapper_optimize_posterior_mean(parameter, self, random_seed, method_opt, n_
 def wrapper_evaluate_gradient_ei_sample_params(point, self):
 
     return self.evaluate_gradient_sample_params(point)
+
+def wrapper_evaluate_gradient_sample_params_bq(point, self):
+    return self.evaluate_gradient_sample_params(point)

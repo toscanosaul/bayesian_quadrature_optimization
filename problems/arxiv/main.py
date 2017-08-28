@@ -20,7 +20,9 @@ n_folds = 5
 # num_user = 4815
 num_item = 2018
 num_user = 2752
-# there are 40306 observations
+# there are 263238 observations
+total_obs = 263238
+num_batches = int((n_folds - 1) * (float(total_obs) / float(n_folds)) / 500.0)
 
 # num_item = 326
 # num_user = 507
@@ -71,7 +73,7 @@ def toy_example(x):
     validation = validate[task]
 
     val = PMF(num_user, num_item, training, validation, epsilon, lamb, maxepoch, num_feat,
-              l_rating=1, u_rating=2)
+              l_rating=1, u_rating=2, num_batches=num_batches)
     return [val]
 
 def integrate_toy_example(x):

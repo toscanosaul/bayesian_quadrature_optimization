@@ -27,7 +27,8 @@ class SpecService(object):
                            n_samples_mc=1, n_restarts_mc=1, factr_mc=1e12, maxiter_mc=1000,
                            use_only_training_points=True, n_restarts=10, n_best_restarts=10,
                            n_best_restarts_mc=1, n_samples_parameters=0, n_restarts_mean=1000,
-                           n_best_restarts_mean=100, method_opt_mc=DOGLEG, maxepoch=10):
+                           n_best_restarts_mean=100, method_opt_mc=DOGLEG, maxepoch=10,
+                           n_samples_parameters_mean=15, maxepoch_mean=20):
 
         """
         Generate dict that represents run spec.
@@ -100,6 +101,8 @@ class SpecService(object):
         :param n_best_restarts_mean: (int)
         :param method_opt_mc: (str) Optimization method when estimating SBO or KG by samples
         :param maxepoch: (int) For SGD
+        :param n_samples_parameters_mean: (int)
+        :param maxepoch_mean: (int) Maxepoch for the optimization of the posterior mean
 
         :return: dict
         """
@@ -192,6 +195,8 @@ class SpecService(object):
             'n_best_restarts_mean': n_best_restarts_mean,
             'method_opt_mc': method_opt_mc,
             'maxepoch': maxepoch,
+            'n_samples_parameters_mean': n_samples_parameters_mean,
+            'maxepoch_mean': maxepoch_mean,
         }
 
     # TODO - generate a list of runspecentities over different parameters

@@ -86,6 +86,9 @@ class RunSpecEntity(Model):
     method_opt_mc = StringType(required=False)
     maxepoch = IntType(required=False)
 
+    n_samples_parameters_mean = IntType(required=False)
+    maxepoch_mean = IntType(required=False)
+
     @classmethod
     def from_json(cls, specfile):
         """
@@ -177,6 +180,10 @@ class RunSpecEntity(Model):
         method_opt_mc = spec.get('method_opt_mc', LBFGS_NAME)
         maxepoch = spec.get('maxepoch', 10)
 
+        n_samples_parameters_mean = spec.get('n_samples_parameters_mean', 15)
+
+        maxepoch_mean = spec.get('maxepoch_mean', 15)
+
         entry.update({
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -227,6 +234,8 @@ class RunSpecEntity(Model):
             'n_restarts_mean': n_restarts_mean,
             'method_opt_mc': method_opt_mc,
             'maxepoch': maxepoch,
+            'n_samples_parameters_mean': n_samples_parameters_mean,
+            'maxepoch_mean': maxepoch_mean,
         })
 
         return cls(entry)
