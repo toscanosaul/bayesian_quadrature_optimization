@@ -86,5 +86,5 @@ class TestMultiTask(unittest.TestCase):
         np.random.seed(1)
         sol = self.mt.optimize(random_seed=1, n_samples_parameters=10, n_restarts=100,
                                n_best_restarts=10)
-        npt.assert_almost_equal(sol['solution'], np.array([100, 1]))
+        npt.assert_almost_equal(sol['solution'], np.array([96.0098558, 1]))
 

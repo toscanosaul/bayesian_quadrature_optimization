@@ -21,6 +21,7 @@ from stratified_bayesian_optimization.lib.constant import (
     B_NEW,
     BAYESIAN_QUADRATURE,
     SBO_METHOD,
+    SGD_NAME,
 )
 from stratified_bayesian_optimization.lib.la_functions import (
     cho_solve,
@@ -611,7 +612,7 @@ class BayesianQuadrature(object):
     def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False, n_restarts=1000,
                                 n_best_restarts=100, parallel=True, n_treads=0, var_noise=None,
                                 mean=None, parameters_kernel=None, n_samples_parameters=0,
-                                start_new_chain=False, method_opt=None, maxepoch=50):
+                                start_new_chain=False, method_opt=None, maxepoch=10):
         """
         Optimize the posterior mean.
 
@@ -635,6 +636,9 @@ class BayesianQuadrature(object):
 
         if method_opt is None:
             method_opt = LBFGS_NAME
+
+        if n_samples_parameters > 0:
+            method_opt = SGD_NAME
 
         if start_new_chain and n_samples_parameters > 0:
             self.gp.start_new_chain()
@@ -688,6 +692,7 @@ class BayesianQuadrature(object):
                 n_restart_ = start.shape[0]
         else:
             n_restart_ = 1
+
         bounds = [tuple(bound) for bound in bounds_x]
 
         objective_function = wrapper_objective_posterior_mean_bq
@@ -736,9 +741,9 @@ class BayesianQuadrature(object):
 
             opt_method = wrapper_sgd
 
-            random_seeds = np.random.randint(0, 4294967295, n_restarts)
+            random_seeds = np.random.randint(0, 4294967295, n_restart_)
             point_dict = {}
-            for j in xrange(n_restarts):
+            for j in xrange(n_restart_):
                 point_dict[j] = [start[j, :], random_seeds[j]]
 
 

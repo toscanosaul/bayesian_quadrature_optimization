@@ -160,7 +160,7 @@ class BGO(object):
 
         noise = None
 
-        if n_samples_parameters > 0:
+        if n_samples_parameters_mean > 0:
             method_opt_mu = SGD_NAME
         else:
             method_opt_mu = DOGLEG

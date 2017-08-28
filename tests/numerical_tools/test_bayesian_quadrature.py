@@ -426,7 +426,7 @@ class TestBayesianQuadrature(unittest.TestCase):
         gp.gp.thinning = 10
         gp.gp.n_burning = 500
 
-        sol_2 = gp.optimize_posterior_mean(random_seed=random_seed, n_best_restarts=10,
+        sol_2 = gp.optimize_posterior_mean(random_seed=random_seed, n_best_restarts=2,
                                            n_samples_parameters=n_samples_parameters,
                                            start_new_chain=True)
 

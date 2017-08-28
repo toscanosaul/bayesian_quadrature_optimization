@@ -69,10 +69,10 @@ def PMF(num_user, num_item, train, val, epsilon=0.1, lamb=0.01, maxepoch=50, num
 
             ##update with momentum
 
-            w1_M1_inc = momentum * w1_M1_inc + epsilon * dw_m #/ float(batch_size)
+            w1_M1_inc = momentum * w1_M1_inc + epsilon * dw_m / float(batch_size)
             w1_M1 = w1_M1 - w1_M1_inc
 
-            w1_P1_inc = momentum * w1_P1_inc + epsilon * dw_p #/ float(batch_size)
+            w1_P1_inc = momentum * w1_P1_inc + epsilon * dw_p / float(batch_size)
             w1_P1 = w1_P1 - w1_P1_inc
     ###compute validation error
 

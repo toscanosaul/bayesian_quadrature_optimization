@@ -83,6 +83,10 @@ class TestSpecService(unittest.TestCase):
             'n_best_restarts_mc': 1,
             'n_best_restarts_mean': 100,
             'n_restarts_mean': 1000,
+            'maxepoch': 10,
+            'maxepoch_mean': 20,
+            'method_opt_mc': 'dogleg',
+            'n_samples_parameters_mean': 15,
         }
 
     def test_generate_dic_specs(self):
