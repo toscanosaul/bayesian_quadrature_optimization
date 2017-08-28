@@ -29,7 +29,7 @@ if __name__ == '__main__':
     type_kernel = [PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]
     dimensions = [5, 4, 5]
     bounds_domain = [[0.01, 1.01], [0.01, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
-    n_training = 5
+    n_training = 50
     random_seed = 10
     type_bounds = [0, 0, 0, 0, 1]
     x_domain = [0, 1, 2, 3]
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     n_best_restarts_mean = 10
     method_opt_mc = DOGLEG
     maxepoch = 10
-    n_samples_parameters_mean = 15
+    n_samples_parameters_mean = 20
     maxepoch_mean = 20
 
     spec = SpecService.generate_dict_spec(
