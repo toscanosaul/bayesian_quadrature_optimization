@@ -70,10 +70,7 @@ class TestDomainService(unittest.TestCase):
         sample = DomainService.get_points_domain(2, [[1, 5], [2, 3, 4]], [0, 1], 1)
         np.random.seed(1)
 
-        a = list(np.random.uniform(1, 5, 2))
-        b = list(np.random.choice([2, 3, 4], 2))
-
-        assert sample == [[a[0], b[0]], [a[1], b[1]]]
+        assert sample == [[2.668088018810296, 2], [3.8812979737686324, 3]]
 
         sample_2 = DomainService.get_points_domain(2, [[1, 5], [2, 3]], random_seed=1)
         np.random.seed(1)

@@ -1456,7 +1456,7 @@ class SBO(object):
     def optimize(self, start=None, random_seed=None, parallel=True, monte_carlo=False, n_samples=1,
                  n_restarts_mc=1, n_best_restarts_mc=0, n_restarts=1, n_best_restarts=0,
                  start_ei=True, n_samples_parameters=0, start_new_chain=True,
-                 compute_max_mean_bayesian=False, maxepoch=10, default_n_samples=None,
+                 compute_max_mean_bayesian=True, maxepoch=10, default_n_samples=None,
                  default_n_samples_parameters=None, default_restarts_mc=None, method_opt_mc=None,
                  **opt_params_mc):
         """

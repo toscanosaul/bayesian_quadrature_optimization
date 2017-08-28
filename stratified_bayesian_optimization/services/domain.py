@@ -130,11 +130,10 @@ class DomainService(object):
             entry, 1 if the bounds are all the finite options for the entry.
         :return: [float]
         """
-
         if type_bounds == 1:
             samples = bounds
             n_samples -= len(bounds)
-            if n_samples == 0:
+            if n_samples <= 0:
                 return samples
 
         if type_bounds == 0:
