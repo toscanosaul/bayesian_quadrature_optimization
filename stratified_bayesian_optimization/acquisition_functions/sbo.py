@@ -319,11 +319,11 @@ class SBO(object):
         start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
                                                        type_bounds=len(bounds_x) * [0])
         prev_starts = []
-        if len(self.bq.optimal_solutions) > 0:
-            for index in self.bq.optimal_solutions:
-                if len(self.bq.optimal_solutions[index]) > 0:
-                    start = self.bq.optimal_solutions[index][-1]['solution']
-                    prev_starts.append(start)
+        # if len(self.bq.optimal_solutions) > 0:
+        #     for index in self.bq.optimal_solutions:
+        #         if len(self.bq.optimal_solutions[index]) > 0:
+        #             start = self.bq.optimal_solutions[index][-1]['solution']
+        #             prev_starts.append(start)
         if len(prev_starts) > 0:
             start = prev_starts + start_points
             start = np.array(start)
