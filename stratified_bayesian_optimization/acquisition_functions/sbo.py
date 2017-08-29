@@ -1763,6 +1763,7 @@ class SBO(object):
         self.optimal_samples = {}
         self.starting_points_sbo = None
         self.mc_bayesian = {}
+        self.bq.optimal_solutions = {}
 
     def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed,
                          monte_carlo=False, n_samples_parameters=0):
