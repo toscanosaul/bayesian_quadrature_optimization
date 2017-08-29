@@ -1513,6 +1513,8 @@ class SBO(object):
         if n_samples_parameters > 0 and start_new_chain:
             self.bq.gp.start_new_chain()
             self.bq.gp.sample_parameters(n_parameters)
+        elif n_samples_parameters > 0 and len(self.bq.gp.samples_parameters) < n_parameters:
+            self.bq.gp.sample_parameters(n_parameters - len(self.bq.gp.samples_parameters))
 
         if n_samples_parameters > 0 and compute_max_mean_bayesian:
             parameters = self.bq.gp.samples_parameters[-n_parameters:]
