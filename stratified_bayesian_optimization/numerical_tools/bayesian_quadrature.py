@@ -769,6 +769,8 @@ class BayesianQuadrature(object):
                 maximum_values.append(optimal_solutions.get(j)['optimal_value'])
             except Exception as e:
                 self.logger.info("Error optimizing posterior mean")
+                self.logger.info("posterior parameters are:")
+                self.logge.info(self.gp.samples_parameters)
                 self.logger.info("Point is: ")
                 self.logger.info(point_dict[j])
                 sys.exit(1)

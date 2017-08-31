@@ -1731,6 +1731,8 @@ class SBO(object):
                     point = optimal_solutions.get(j)['solution']
                 except Exception as e:
                     self.logger.info("Error optimizing VOI")
+                    self.logger.info("Posterior parameters are: ")
+                    self.logge.info(self.bq.gp.samples_parameters)
                     self.logger.info("Point is: ")
                     self.logger.info(point_dict[j])
                     sys.exit(1)
