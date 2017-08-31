@@ -109,7 +109,7 @@ class BGO(object):
         self.quadrature = quadrature
 
         if quadrature is not None:
-            self.quadrature.args_handler = (name_model, problem_name, training_name,
+            self.quadrature.args_handler = (True, name_model, problem_name, training_name,
                                                   n_training, random_seed, n_samples_parameters)
 
         self.problem_name = problem_name
