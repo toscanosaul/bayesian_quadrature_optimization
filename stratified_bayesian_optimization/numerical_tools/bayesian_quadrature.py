@@ -7,6 +7,8 @@ import itertools
 from os import path
 import os
 
+import sys
+
 from copy import deepcopy
 
 from stratified_bayesian_optimization.initializers.log import SBOLog
@@ -752,7 +754,13 @@ class BayesianQuadrature(object):
 
         maximum_values = []
         for j in xrange(n_restart_):
-            maximum_values.append(optimal_solutions.get(j)['optimal_value'])
+            try:
+                maximum_values.append(optimal_solutions.get(j)['optimal_value'])
+            except Exception as e:
+                logger.info("Error optimizing posterior mean")
+                logger.info("Point is: ")
+                logger.info(point_dict[j])
+                sys.exit(1)
 
         max_ = np.max(maximum_values)
         ind_max = np.argmax(maximum_values)

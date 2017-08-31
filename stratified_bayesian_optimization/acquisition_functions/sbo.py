@@ -1725,7 +1725,6 @@ class SBO(object):
                     logger.info("Point is: ")
                     logger.info(point_dict[j])
                     sys.exit(1)
-
                 candidate_points.append(point)
             candidate_points = np.array(candidate_points)
 
