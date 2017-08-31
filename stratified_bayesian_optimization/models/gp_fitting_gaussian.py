@@ -65,7 +65,7 @@ class GPFittingGaussian(object):
                  kernel_values=None, mean_value=None, var_noise_value=None, thinning=0, n_burning=0,
                  start_point_sampler=None, max_steps_out=1, data=None, random_seed=None,
                  type_bounds=None, training_name=None, problem_name=None,
-                 name_model='gp_fitting_gaussian', **kernel_parameters):
+                 name_model='gp_fitting_gaussian', samples_parameters=None, **kernel_parameters):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL].
@@ -99,6 +99,7 @@ class GPFittingGaussian(object):
         :param name_model: (str)
         :param kernel_parameters: additional kernel parameters,
             - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
+        :param samples_parameters: [[float]]
 
         """
 
@@ -160,6 +161,9 @@ class GPFittingGaussian(object):
         self.max_steps_out = max_steps_out
         self.n_burning = n_burning
         self.samples_parameters = []
+
+        if samples_parameters is not None:
+            self.samples_parameters = [np.array(sample) for sample in samples_parameters]
         self.slice_samplers = []
         self.start_point_sampler = start_point_sampler
 
@@ -486,6 +490,10 @@ class GPFittingGaussian(object):
 
         same_correlation = self.additional_kernel_parameters.get(SAME_CORRELATION, False)
 
+        samples_parameters = self.samples_parameters
+        if len(samples_parameters) > 0:
+            samples_parameters = [list(param) for param in samples_parameters]
+
         return {
             'type_kernel': self.type_kernel,
             'training_data': self.training_data,
@@ -504,6 +512,7 @@ class GPFittingGaussian(object):
             'problem_name': problem_name,
             'same_correlation': same_correlation,
             'start_point_sampler': list(self.start_point_sampler),
+            'samples_parameters': samples_parameters,
         }
 
     @classmethod

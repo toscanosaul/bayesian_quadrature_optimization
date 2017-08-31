@@ -10,6 +10,8 @@ from copy import deepcopy
 
 import multiprocessing as mp
 
+import sys
+
 import itertools
 
 from stratified_bayesian_optimization.lib.constant import (
@@ -1716,7 +1718,14 @@ class SBO(object):
         if compute_value_function:
             candidate_points = []
             for j in xrange(n_restarts):
-                point = optimal_solutions.get(j)['solution']
+                try:
+                    point = optimal_solutions.get(j)['solution']
+                except Exception as e:
+                    logger.info("Error optimizing VOI")
+                    logger.info("Point is: ")
+                    logger.info(point_dict[j])
+                    sys.exit(1)
+
                 candidate_points.append(point)
             candidate_points = np.array(candidate_points)
 
