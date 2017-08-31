@@ -644,6 +644,9 @@ class BayesianQuadrature(object):
         :param method_opt: str
         :return: dictionary with the results of the optimization
         """
+
+        logger.info("starting_optimization of posterior mean", *self.args_handler)
+
         if random_seed is not None:
             np.random.seed(random_seed)
 
