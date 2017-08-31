@@ -80,20 +80,23 @@ class BGO(object):
         n_training = spec.get('n_training')
         number_points_each_dimension_debug = spec.get('number_points_each_dimension_debug')
         n_samples_parameters = spec.get('n_samples_parameters', 0)
+        use_only_training_points = spec.get('use_only_training_points', True)
 
 
         bgo = cls(acquisition_function, gp_model, n_iterations, problem_name, training_name,
                   random_seed, n_training, name_model, method_optimization, minimize=minimize,
                   n_samples=n_samples, noise=noise, quadrature=quadrature, parallel=parallel,
                   number_points_each_dimension_debug=number_points_each_dimension_debug,
-                  n_samples_parameters=n_samples_parameters)
+                  n_samples_parameters=n_samples_parameters,
+                  use_only_training_points=use_only_training_points)
 
         return bgo
 
     def __init__(self, acquisition_function, gp_model, n_iterations, problem_name, training_name,
                  random_seed, n_training, name_model, method_optimization, minimize=False,
                  n_samples=None, noise=False, quadrature=None, parallel=True,
-                 number_points_each_dimension_debug=None, n_samples_parameters=0):
+                 number_points_each_dimension_debug=None, n_samples_parameters=0,
+                 use_only_training_points=True):
 
         self.acquisition_function = acquisition_function
         self.acquisition_function.clean_cache()
@@ -105,6 +108,10 @@ class BGO(object):
         self.name_model = name_model
         self.objective = Objective(problem_name, training_name, random_seed, n_training, n_samples,
                                    noise, self.method_optimization, n_samples_parameters)
+
+        if not use_only_training_points:
+            self.objective.set_data_from_file()
+
         self.n_iterations = n_iterations
         self.minimize = minimize
         self.parallel = parallel

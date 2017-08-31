@@ -94,6 +94,17 @@ class Objective(object):
             'standard_deviation_evaluations': self.standard_deviation_evaluations,
         }
 
+    def set_data_from_file(self):
+        data = JSONFile.read(self.file_path)
+
+        if data is None:
+            return
+
+        self.evaluated_points = data['evaluated_points']
+        self.objective_values = data['objective_values']
+        self.model_objective_values = data['model_objective_values']
+        self.standard_deviation_evaluations = data['standard_deviation_evaluations']
+
     @staticmethod
     def evaluate_objective(module, point, n_samples=None):
         """
