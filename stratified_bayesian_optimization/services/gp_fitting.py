@@ -55,6 +55,8 @@ class GPFittingService(object):
             'cache': spec.get('cache', True),
             'same_correlation': spec.get('same_correlation', False),
             'use_only_training_points': spec.get('use_only_training_points', True),
+            'optimization_method': spec.get('method_optimization'),
+            'n_samples_parameters': spec.get('n_samples_parameters', 0),
         }
 
         return cls.get_gp(**entry)
@@ -118,7 +120,7 @@ class GPFittingService(object):
                training_name=None, mle=True, thinning=0, n_burning=0, max_steps_out=1,
                n_samples=None, random_seed=DEFAULT_RANDOM_SEED, kernel_values=None, mean_value=None,
                var_noise_value=None, cache=True, same_correlation=False,
-               use_only_training_points=True):
+               use_only_training_points=True, optimization_method=None, n_samples_parameters=0):
         """
         Fetch a GP model from file if it exists, otherwise train a new model and save it locally.
 
@@ -157,6 +159,8 @@ class GPFittingService(object):
         :param use_only_training_points (boolean) If the model is read, and the param is true,
             it uses only the training points in data. Otherwise, it also includes new points
             previously computed.
+        :param optimization_method: (str)
+        :param n_samples_parameters: (int)
 
         :return: (GPFittingGaussian) - An instance of GPFittingGaussian
         """
@@ -165,7 +169,12 @@ class GPFittingService(object):
         if training_name is None:
             training_name = 'default_training_data_%d_points_rs_%d' % (n_training, random_seed)
 
-        f_name = cls._get_filename(model_type, problem_name, type_kernel, training_name)
+        if use_only_training_points:
+            f_name = cls._get_filename(model_type, problem_name, type_kernel, training_name)
+        else:
+            f_name = cls._get_filename_modified(model_type, problem_name, type_kernel,
+                                                training_name, optimization_method,
+                                                n_samples_parameters)
 
         gp_dir = path.join(GP_DIR, problem_name)
 
