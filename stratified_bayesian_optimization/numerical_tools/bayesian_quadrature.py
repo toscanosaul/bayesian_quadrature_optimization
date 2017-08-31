@@ -160,6 +160,16 @@ class BayesianQuadrature(object):
         # Used to compute the best solution for EI.
         self.best_solution = {}
 
+    def add_file_to_log(self, model_type, problem_name, training_name, n_training, random_seed,
+                        n_samples_parameters):
+
+        kernel_name = ''
+        for kernel in self.gp.type_kernel:
+            kernel_name += kernel + '_'
+        kernel_name = kernel_name[0: -1]
+
+        logger.add_file_to_log(model_type, problem_name, kernel_name, training_name, n_training,
+                               random_seed, n_samples_parameters)
 
     def _get_cached_data(self, index, name):
         """

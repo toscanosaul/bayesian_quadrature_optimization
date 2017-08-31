@@ -115,7 +115,15 @@ class SBO(object):
         # Cached evaluations of the SBO by taking samples of the parameters of the model.
         self.mc_bayesian = {}
 
+    def add_file_to_log(self, model_type, problem_name, training_name, n_training, random_seed,
+                        n_samples_parameters):
+        kernel_name = ''
+        for kernel in self.bq.gp.type_kernel:
+            kernel_name += kernel + '_'
+        kernel_name = kernel_name[0: -1]
 
+        logger.add_file_to_log(model_type, problem_name, kernel_name, training_name, n_training,
+                               random_seed, n_samples_parameters)
 
     def evaluate_sample(self, point, candidate_point, sample, var_noise=None, mean=None,
                         parameters_kernel=None, cache=True, n_threads=0, clear_cache=True):

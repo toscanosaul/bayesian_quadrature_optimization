@@ -73,6 +73,8 @@ class EI(object):
             self.bounds_opt = self.bounds_opt[0: -1]
             self.bounds_opt.append([None, None])
 
+    def add_file_to_log(self):
+        pass
 
     def evaluate(self, point, var_noise=None, mean=None, parameters_kernel=None):
         """

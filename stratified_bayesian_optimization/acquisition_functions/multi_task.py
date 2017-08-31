@@ -33,6 +33,9 @@ class MultiTasks(object):
         self.ei_tasks = EI(self.bq.gp)
         self.ei = EI(self.bq)
 
+    def add_file_to_log(self):
+        pass
+
     def evaluate_first(self, point, var_noise=None, mean=None, parameters_kernel=None):
         """
         Computes the ei after imputing missing observations using the predictive means.

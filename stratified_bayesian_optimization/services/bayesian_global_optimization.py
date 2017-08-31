@@ -99,10 +99,21 @@ class BGO(object):
                  use_only_training_points=True):
 
         self.acquisition_function = acquisition_function
+
+        self.acquisition_function.add_file_to_log(
+            name_model, problem_name, training_name, n_training, random_seed, n_samples_parameters)
+
         self.acquisition_function.clean_cache()
         self.gp_model = gp_model
+
         self.method_optimization = method_optimization
         self.quadrature = quadrature
+
+        if quadrature is not None:
+            self.quadrature.add_file_to_log(
+                name_model, problem_name, training_name, n_training, random_seed,
+                n_samples_parameters)
+
         self.problem_name = problem_name
         self.training_name = training_name
         self.name_model = name_model

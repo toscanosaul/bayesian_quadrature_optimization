@@ -18,6 +18,9 @@ RESULTS_DIR = 'results/'
 # Directory of GP models
 GP_DIR = 'data/gp_models'
 
+# Directory of log messages
+LOG_DIR = 'data/log'
+
 # Directory of problems
 PROBLEM_DIR = 'problems'
 
