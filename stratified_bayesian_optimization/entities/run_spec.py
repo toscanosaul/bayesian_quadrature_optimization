@@ -12,6 +12,7 @@ from stratified_bayesian_optimization.lib.constant import (
     MULTIPLESPECS_DIR,
     DEFAULT_RANDOM_SEED,
     LBFGS_NAME,
+    DOGLEG,
 )
 from stratified_bayesian_optimization.entities.domain import (
     BoundsEntity,
@@ -276,12 +277,44 @@ class MultipleSpecEntity(Model):
     distributions = ListType(StringType, required=False)
     parameters_distributions = ListType(ListType(FloatType), required=False)
 
-    minimizes = ListType(BooleanType)
-    n_iterationss = ListType(IntType)
+    minimizes = ListType(BooleanType, required=False)
+    n_iterationss = ListType(IntType, required=False)
 
-    kernel_valuess = ListType(ListType(FloatType))
-    mean_values = ListType(ListType(FloatType))
-    var_noise_values = ListType(ListType(FloatType))
+    kernel_valuess = ListType(ListType(FloatType), required=False)
+    mean_values = ListType(ListType(FloatType), required=False)
+    var_noise_values = ListType(ListType(FloatType), required=False)
+
+    caches = ListType(BooleanType, required=False)
+    debugs = ListType(BooleanType, required=False)
+
+    same_correlations = ListType(BooleanType, required=False)
+
+    number_points_each_dimension_debugs = ListType(ListType(IntType), required=False)
+
+    monte_carlo_sbos = ListType(BooleanType, required=False)
+    n_samples_mcs = ListType(IntType, required=False)
+    n_restarts_mcs = ListType(IntType, required=False)
+
+    factr_mcs = ListType(FloatType, required=False)
+    maxiter_mcs = ListType(IntType, required=False)
+
+    use_only_training_pointss = ListType(BooleanType, required=False)
+    n_restartss = ListType(IntType, required=False)
+    n_best_restartss = ListType(IntType, required=False)
+
+    n_best_restarts_mcs = ListType(IntType, required=False)
+
+    n_samples_parameterss = ListType(IntType, required=False)
+
+    n_restarts_means = ListType(IntType, required=False)
+    n_best_restarts_means = ListType(IntType, required=False)
+
+    method_opt_mcs = ListType(StringType, required=False)
+    maxepochs = ListType(IntType, required=False)
+
+    n_samples_parameters_means = ListType(IntType, required=False)
+
+    maxepoch_means = ListType(IntType, required=False)
 
     # TODO - Complete all the other needed params
 
@@ -353,7 +386,61 @@ class MultipleSpecEntity(Model):
         mean_values = spec.get('mean_values')
         var_noise_values = spec.get('var_noise_values')
 
+
+        caches = spec.get('caches', n_specs * [True])
+        debugs = spec.get('debugs',  n_specs * [False])
+
+        same_correlations = spec.get('same_correlations', n_specs * [True])
+
+        number_points_each_dimension_debugs = spec.get('number_points_each_dimension_debugs')
+
+        monte_carlo_sbos = spec.get('monte_carlo_sbos', n_specs * [True])
+        n_samples_mcs = spec.get('n_samples_mcs', n_specs * [5])
+        n_restarts_mcs = spec.get('n_restarts_mcs', n_specs * [5])
+
+        factr_mcs = spec.get('factr_mcs', n_specs * [1e12])
+        maxiter_mcs = spec.get('maxiter_mcs', n_specs * [1000])
+
+        use_only_training_pointss = spec.get('use_only_training_pointss', n_specs * [True])
+        n_restartss = spec.get('n_restartss', n_specs * [10])
+        n_best_restartss = spec.get('n_best_restartss', n_specs * [0])
+
+        n_best_restarts_mcs = spec.get('n_best_restarts_mcs', n_specs * [0])
+
+        n_samples_parameterss = spec.get('n_samples_parameterss', n_specs * [0])
+
+        n_restarts_means = spec.get('n_restarts_means', n_specs * [100])
+        n_best_restarts_means = spec.get('n_best_restarts_means', n_specs * [10])
+
+        method_opt_mcs = spec.get('method_opt_mcs', n_specs * [DOGLEG])
+        maxepochs = spec.get('maxepochs', n_specs * [10])
+
+        n_samples_parameters_means = spec.get('n_samples_parameters_means', n_specs * [20])
+
+        maxepoch_means = spec.get('maxepoch_means', n_specs * [20])
+
+
         entry.update({
+            'caches': caches,
+            'debugs': debugs,
+            'same_correlations': same_correlations,
+            'number_points_each_dimension_debugs': number_points_each_dimension_debugs,
+            'monte_carlo_sbos': monte_carlo_sbos,
+            'n_samples_mcs': n_samples_mcs,
+            'n_restarts_mcs': n_restarts_mcs,
+            'factr_mcs': factr_mcs,
+            'maxiter_mcs': maxiter_mcs,
+            'use_only_training_pointss': use_only_training_pointss,
+            'n_restartss': n_restartss,
+            'n_best_restartss': n_best_restartss,
+            'n_best_restarts_mcs': n_best_restarts_mcs,
+            'n_samples_parameterss': n_samples_parameterss,
+            'n_restarts_means': n_restarts_means,
+            'n_best_restarts_means': n_best_restarts_means,
+            'method_opt_mcs': method_opt_mcs,
+            'maxepochs': maxepochs,
+            'n_samples_parameters_means': n_samples_parameters_means,
+            'maxepoch_means': maxepoch_means,
             'problem_names': problem_names,
             'dim_xs': dim_xs,
             'choose_noises': choose_noises,

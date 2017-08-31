@@ -70,6 +70,7 @@ class TestGpFitting(unittest.TestCase):
             'training_name': 'default_training_data_30_points_rs_1',
             'same_correlation': False,
             'start_point_sampler': model['start_point_sampler'],
+            'samples_parameters': model['samples_parameters'],
         }
 
         estimation = gp.compute_posterior_parameters(np.array([[1.4], [2.4], [0], [-9.9], [8.5],
@@ -105,6 +106,7 @@ class TestGpFitting(unittest.TestCase):
             'training_name': 'default_training_data_30_points_rs_1',
             'same_correlation': True,
             'start_point_sampler': model['start_point_sampler'],
+            'samples_parameters': model['samples_parameters'],
         }
 
 
@@ -140,6 +142,7 @@ class TestGpFitting(unittest.TestCase):
             'training_name': 'default_training_data_30_points_rs_1',
             'same_correlation': False,
             'start_point_sampler': model['start_point_sampler'],
+            'samples_parameters': model['samples_parameters'],
         }
 
     @patch('os.path.exists')
