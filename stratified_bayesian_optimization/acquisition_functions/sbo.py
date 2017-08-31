@@ -114,6 +114,7 @@ class SBO(object):
 
         # Cached evaluations of the SBO by taking samples of the parameters of the model.
         self.mc_bayesian = {}
+        self.logger = SBOLog(__name__)
 
     def add_file_to_log(self, model_type, problem_name, training_name, n_training, random_seed,
                         n_samples_parameters):
@@ -122,7 +123,7 @@ class SBO(object):
             kernel_name += kernel + '_'
         kernel_name = kernel_name[0: -1]
 
-        logger.add_file_to_log(model_type, problem_name, kernel_name, training_name, n_training,
+        self.logger.add_file_to_log(model_type, problem_name, kernel_name, training_name, n_training,
                                random_seed, n_samples_parameters)
 
     def evaluate_sample(self, point, candidate_point, sample, var_noise=None, mean=None,
@@ -294,7 +295,7 @@ class SBO(object):
 
             for i in xrange(n_restarts + 1):
                 if sol.get(i) is None:
-                    logger.info("Error in computing optimum of a_{n+1} at one sample at point %d"
+                    self.logger.info("Error in computing optimum of a_{n+1} at one sample at point %d"
                                 % i)
                     continue
                 solutions.append(sol.get(i)['optimal_value'])
@@ -437,7 +438,7 @@ class SBO(object):
                 values = []
                 for j in xrange(n_restarts_):
                     if simulated_values.get((j, i, k)) is None:
-                        logger.info("Error in computing simulated value at sample %d" % i)
+                        self.logger.info("Error in computing simulated value at sample %d" % i)
                         continue
                     values.append(simulated_values[(j, i, k)]['max'])
                 maximum = simulated_values[(np.argmax(values), i, k)]['optimum']
@@ -713,7 +714,7 @@ class SBO(object):
                     values = []
                     for j in xrange(n_restarts_):
                         if simulated_values.get((j, i, k, l)) is None:
-                            logger.info("Error in computing simulated value at sample %d" % i)
+                            self.logger.info("Error in computing simulated value at sample %d" % i)
                             continue
                         values.append(simulated_values[(j, i, k, l)]['max'])
                     maximum = simulated_values[(np.argmax(values), i, k, l)]['optimum']
@@ -859,7 +860,7 @@ class SBO(object):
                     values = []
                     for j in xrange(n_restarts_):
                         if simulated_values.get((j, i, k, l)) is None:
-                            logger.info("Error in computing simulated value at sample %d" % i)
+                            self.logger.info("Error in computing simulated value at sample %d" % i)
                             continue
                         values.append(simulated_values[(j, i, k, l)]['max'])
                     maximum = simulated_values[(np.argmax(values), i, k, l)]['optimum']
@@ -961,7 +962,7 @@ class SBO(object):
         values = []
         for j in xrange(n_restarts):
             if values_opt.get(j) is None:
-                logger.info("Error in computing simulated value at sample %d" % i)
+                self.logger.info("Error in computing simulated value at sample %d" % i)
                 continue
             values.append(values_opt[j]['max'])
 
@@ -1235,7 +1236,7 @@ class SBO(object):
                 values = []
                 for j in xrange(n_restarts_):
                     if simulated_values.get((j, i)) is None:
-                        logger.info("Error in computing simulated value at sample %d" % i)
+                        self.logger.info("Error in computing simulated value at sample %d" % i)
                         continue
                     values.append(simulated_values[(j, i)]['max'])
                 maximum = simulated_values[(np.argmax(values), i)]['optimum']
@@ -1729,9 +1730,9 @@ class SBO(object):
                 try:
                     point = optimal_solutions.get(j)['solution']
                 except Exception as e:
-                    logger.info("Error optimizing VOI")
-                    logger.info("Point is: ")
-                    logger.info(point_dict[j])
+                    self.logger.info("Error optimizing VOI")
+                    self.logger.info("Point is: ")
+                    self.logger.info(point_dict[j])
                     sys.exit(1)
                 candidate_points.append(point)
             candidate_points = np.array(candidate_points)
@@ -1754,8 +1755,8 @@ class SBO(object):
 
         ind_max = np.argmax(maximum_values)
 
-        logger.info("Results of the optimization of the SBO: ")
-        logger.info(optimal_solutions.get(ind_max))
+        self.logger.info("Results of the optimization of the SBO: ")
+        self.logger.info(optimal_solutions.get(ind_max))
 
         self.optimization_results.append(optimal_solutions.get(ind_max))
 

@@ -135,7 +135,8 @@ class BGO(object):
                  n_samples_mc=1, n_restarts_mc=1, n_best_restarts_mc=0,
                  n_restarts=10, n_best_restarts=0, n_samples_parameters=0, n_restarts_mean=1000,
                  n_best_restarts_mean=100, method_opt_mc=None, maxepoch=10,
-                 n_samples_parameters_mean=0, maxepoch_mean=20, **opt_params_mc):
+                 n_samples_parameters_mean=0, maxepoch_mean=20, threshold_sbo=None,
+                 **opt_params_mc):
         """
         Optimize objective over the domain.
         :param random_seed: int
@@ -157,6 +158,8 @@ class BGO(object):
         :param maxepoch: (int) For SGD
         :param n_samples_parameters_mean: (int)
         :param maxepoch_mean: (int)
+        :param threshold_sbo: (float) If VOI < threshold_sbo, then we choose randomly a point
+            instead.
         :param opt_params_mc:
             -'factr': int
             -'maxiter': int
@@ -172,6 +175,10 @@ class BGO(object):
 
         if random_seed is not None:
             np.random.seed(random_seed)
+
+        threshold_af = None
+        if self.method_optimization == SBO_METHOD:
+            threshold_af = threshold_sbo
 
         if self.method_optimization == SBO_METHOD or self.method_optimization == MULTI_TASK_METHOD:
             model = self.quadrature
@@ -202,13 +209,20 @@ class BGO(object):
 
         for iteration in xrange(self.n_iterations):
 
-            new_point = self.acquisition_function.optimize(
+            new_point_sol = self.acquisition_function.optimize(
                 parallel=self.parallel, start=start, monte_carlo=monte_carlo_sbo,
                 n_samples=n_samples_mc, n_restarts_mc=n_restarts_mc,
                 n_best_restarts_mc=n_best_restarts_mc, n_restarts=n_restarts,
                 n_best_restarts=n_best_restarts, n_samples_parameters=n_samples_parameters,
                 start_new_chain=False, method_opt_mc=method_opt_mc, maxepoch=maxepoch,
-                **opt_params_mc)['solution']
+                **opt_params_mc)
+
+            value_sbo = new_point_sol['optimal_value']
+            new_point = new_point_sol['solution']
+
+            if threshold_af is not None and value_sbo < threshold_af:
+                #TODO: FINISH THIS
+                new_point = self.acquisition_function.random_point_domain(1)
 
             self.acquisition_function.write_debug_data(self.problem_name, self.name_model,
                                                        self.training_name, self.n_training,

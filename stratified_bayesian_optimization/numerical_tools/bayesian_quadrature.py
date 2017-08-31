@@ -159,6 +159,7 @@ class BayesianQuadrature(object):
 
         # Used to compute the best solution for EI.
         self.best_solution = {}
+        self.logger = SBOLog(__name__)
 
     def add_file_to_log(self, model_type, problem_name, training_name, n_training, random_seed,
                         n_samples_parameters):
@@ -168,7 +169,7 @@ class BayesianQuadrature(object):
             kernel_name += kernel + '_'
         kernel_name = kernel_name[0: -1]
 
-        logger.add_file_to_log(model_type, problem_name, kernel_name, training_name, n_training,
+        self.logger.add_file_to_log(model_type, problem_name, kernel_name, training_name, n_training,
                                random_seed, n_samples_parameters)
 
     def _get_cached_data(self, index, name):
@@ -767,16 +768,16 @@ class BayesianQuadrature(object):
             try:
                 maximum_values.append(optimal_solutions.get(j)['optimal_value'])
             except Exception as e:
-                logger.info("Error optimizing posterior mean")
-                logger.info("Point is: ")
-                logger.info(point_dict[j])
+                self.logger.info("Error optimizing posterior mean")
+                self.logger.info("Point is: ")
+                self.logger.info(point_dict[j])
                 sys.exit(1)
 
         max_ = np.max(maximum_values)
         ind_max = np.argmax(maximum_values)
 
-        logger.info("Results of the optimization of the posterior mean: ")
-        logger.info(optimal_solutions.get(ind_max))
+        self.logger.info("Results of the optimization of the posterior mean: ")
+        self.logger.info(optimal_solutions.get(ind_max))
 
         if index_cache not in self.optimal_solutions:
             self.optimal_solutions[index_cache] = []
@@ -833,7 +834,7 @@ class BayesianQuadrature(object):
 
             for i in xrange(n):
                 if b_vectors.get(i) is None:
-                    logger.info("Error in computing b vectors at point %d" % i)
+                    self.logger.info("Error in computing b vectors at point %d" % i)
                     continue
                 if compute_vec_covs:
                     vec_covs[i, :] = b_vectors[i]['vec_covs']
