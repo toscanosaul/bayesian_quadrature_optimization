@@ -23,12 +23,15 @@ class SBOLog(object):
         self.name = name
         self._log = logging.getLogger(name)
 
-    def info(self, msg, *args, **kwargs):
+    def info(self, msg, file=False, *args):
         """
         :param msg: dict
         """
 
-        self._log.info(msg, *args, **kwargs)
+        if file and len(self._log.handlers) == 0:
+            self.add_file_to_log(*args)
+
+        self._log.info(msg)
 
     def add_file_to_log(self, model_type, problem_name, type_kernel, training_name, n_training,
                         random_seed, n_samples_parameters):
