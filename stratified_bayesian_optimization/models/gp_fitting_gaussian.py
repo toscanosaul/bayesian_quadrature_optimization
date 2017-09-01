@@ -272,7 +272,14 @@ class GPFittingGaussian(object):
         for sample in xrange(n_samples):
             points = separate_vector(start_point, self.length_scale_indexes)
             for index, slice in enumerate(self.slice_samplers):
-                points[1 - index] = slice.slice_sample(points[1 - index], points[index], *(self, ))
+                new_point_ = None
+                while new_point_ is None:
+                    try:
+                        new_point_ = \
+                            slice.slice_sample(points[1 - index], points[index], *(self, ))
+                    except Exception as e:
+                        new_point_ = None
+                points[1 - index] = new_point_
             start_point = combine_vectors(points[0], points[1], self.length_scale_indexes)
             samples.append(start_point)
         samples_return = samples[::self.thinning + 1]
