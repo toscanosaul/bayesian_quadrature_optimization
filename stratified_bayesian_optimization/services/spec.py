@@ -28,7 +28,7 @@ class SpecService(object):
                            use_only_training_points=True, n_restarts=10, n_best_restarts=10,
                            n_best_restarts_mc=1, n_samples_parameters=0, n_restarts_mean=1000,
                            n_best_restarts_mean=100, method_opt_mc=DOGLEG, maxepoch=10,
-                           n_samples_parameters_mean=15, maxepoch_mean=20):
+                           n_samples_parameters_mean=15, maxepoch_mean=20, threshold_sbo=None):
 
         """
         Generate dict that represents run spec.
@@ -103,6 +103,7 @@ class SpecService(object):
         :param maxepoch: (int) For SGD
         :param n_samples_parameters_mean: (int)
         :param maxepoch_mean: (int) Maxepoch for the optimization of the posterior mean
+        :param threshold_sbo: (int) If SBO < threshold_sbo, we randomly choose a point instead.
 
         :return: dict
         """
@@ -197,6 +198,7 @@ class SpecService(object):
             'maxepoch': maxepoch,
             'n_samples_parameters_mean': n_samples_parameters_mean,
             'maxepoch_mean': maxepoch_mean,
+            'threshold_sbo': threshold_sbo,
         }
 
     # TODO - generate a list of runspecentities over different parameters

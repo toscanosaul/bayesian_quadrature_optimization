@@ -30,8 +30,8 @@ if __name__ == '__main__':
     dimensions = [5, 4, 5]
     bounds_domain = [[0.01, 5.0], [0.0, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
     #old bounds: [[0.01, 1.01], [0.01, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
-    n_training = 30
-    random_seed = 10
+    n_training = 5
+    random_seed = 300
     type_bounds = [0, 0, 0, 0, 1]
     x_domain = [0, 1, 2, 3]
     number_points_each_dimension = [6, 6, 11, 6]
@@ -62,6 +62,7 @@ if __name__ == '__main__':
     maxepoch = 10
     n_samples_parameters_mean = 20
     maxepoch_mean = 20
+    threshold_sbo = 0.001
 
     spec = SpecService.generate_dict_spec(
         problem_name, dim_x, bounds_domain_x, training_name, type_kernel, dimensions,
@@ -77,7 +78,8 @@ if __name__ == '__main__':
         method_optimization=method_optimization, n_samples_parameters=n_samples_parameters,
         n_restarts_mean=n_restarts_mean, n_best_restarts_mean=n_best_restarts_mean,
         n_best_restarts_mc=n_best_restarts_mc, maxepoch=maxepoch, method_opt_mc=method_opt_mc,
-        n_samples_parameters_mean=n_samples_parameters_mean, maxepoch_mean=maxepoch_mean)
+        n_samples_parameters_mean=n_samples_parameters_mean, maxepoch_mean=maxepoch_mean,
+        threshold_sbo=threshold_sbo)
 
 
     print ujson.dumps(spec, indent=4)

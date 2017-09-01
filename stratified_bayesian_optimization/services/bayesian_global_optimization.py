@@ -16,6 +16,7 @@ from stratified_bayesian_optimization.lib.constant import (
     LBFGS_NAME,
     SGD_NAME,
 )
+from stratified_bayesian_optimization.lib.distances import Distances
 from stratified_bayesian_optimization.entities.objective import Objective
 from stratified_bayesian_optimization.acquisition_functions.sbo import SBO
 from stratified_bayesian_optimization.acquisition_functions.multi_task import MultiTasks
@@ -227,7 +228,12 @@ class BGO(object):
 
             if threshold_af is not None and value_sbo < threshold_af:
                 #TODO: FINISH THIS
-                new_point = self.acquisition_function.random_point_domain(1)
+                new_points = self.acquisition_function.random_points_domain(100)
+                current_points = np.array(self.quadrature.gp.data['points'])
+                distances = Distances.dist_square_length_scale(
+                    np.ones(new_point.shape[1]), new_points, current_points)
+                max_distances = np.max(distances, axis=1)
+                new_point = new_points[np.argmax(max_distances), :]
 
             self.acquisition_function.write_debug_data(self.problem_name, self.name_model,
                                                        self.training_name, self.n_training,
@@ -326,6 +332,7 @@ class BGO(object):
         n_samples_parameters_mean = spec.get('n_samples_parameters_mean', 15)
         maxepoch_mean = spec.get('maxepoch_mean', 15)
 
+        threshold_sbo = spec.get('threshold_sbo')
 
         # WE CAN STILL ADD THE DOMAIN IF NEEDED FOR THE KG
         result = bgo.optimize(debug=debug, n_samples_mc=n_samples_mc, n_restarts_mc=n_restarts_mc,
@@ -338,5 +345,5 @@ class BGO(object):
                               random_seed=bgo.random_seed, method_opt_mc=method_opt_mc,
                               n_samples_parameters_mean=n_samples_parameters_mean,
                               maxepoch_mean=maxepoch_mean,
-                              maxepoch=maxepoch, **opt_params_mc)
+                              maxepoch=maxepoch, threshold_sbo=threshold_sbo, **opt_params_mc)
         return result

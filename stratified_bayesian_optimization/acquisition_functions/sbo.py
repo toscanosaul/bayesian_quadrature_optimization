@@ -1465,6 +1465,40 @@ class SBO(object):
 
         return grad
 
+    def random_points_domain(self, n_points):
+        """
+        Sample n_points random points from the domain of SBO
+        :param n_points: (int)
+        :return: np.array(n_points x m)
+        """
+        bounds = self.bq.bounds
+
+        if self.bq.separate_tasks:
+            tasks = self.bq.tasks
+            n_tasks = len(tasks)
+
+            n_restarts = int(np.ceil(float(n_points) / n_tasks) * n_tasks)
+
+            ind = [[i] for i in range(n_restarts)]
+            np.random.shuffle(ind)
+            task_chosen = np.zeros((n_restarts, 1))
+            n_task_per_group = n_restarts / n_tasks
+
+            for i in xrange(n_tasks):
+                for j in xrange(n_task_per_group):
+                    tk = ind[j + i * n_task_per_group]
+                    task_chosen[tk, 0] = i
+
+            start_points = DomainService.get_points_domain(
+                n_restarts, bounds, type_bounds=self.bq.type_bounds)
+
+            start_points = np.concatenate((start_points, task_chosen), axis=1)
+        else:
+            start_points = DomainService.get_points_domain(
+                n_points, bounds, type_bounds=self.bq.type_bounds)
+
+        return np.array(start_points)
+
     def optimize(self, start=None, random_seed=None, parallel=True, monte_carlo=False, n_samples=1,
                  n_restarts_mc=1, n_best_restarts_mc=0, n_restarts=1, n_best_restarts=0,
                  start_ei=True, n_samples_parameters=0, start_new_chain=True,

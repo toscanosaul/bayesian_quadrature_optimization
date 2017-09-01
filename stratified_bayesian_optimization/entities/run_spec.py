@@ -90,6 +90,8 @@ class RunSpecEntity(Model):
     n_samples_parameters_mean = IntType(required=False)
     maxepoch_mean = IntType(required=False)
 
+    threshold_sbo = FloatType(required=False)
+
     @classmethod
     def from_json(cls, specfile):
         """
@@ -185,6 +187,8 @@ class RunSpecEntity(Model):
 
         maxepoch_mean = spec.get('maxepoch_mean', 15)
 
+        threshold_sbo = spec.get('threshold_sbo')
+
         entry.update({
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -237,6 +241,7 @@ class RunSpecEntity(Model):
             'maxepoch': maxepoch,
             'n_samples_parameters_mean': n_samples_parameters_mean,
             'maxepoch_mean': maxepoch_mean,
+            'threshold_sbo': threshold_sbo,
         })
 
         return cls(entry)
@@ -315,6 +320,8 @@ class MultipleSpecEntity(Model):
     n_samples_parameters_means = ListType(IntType, required=False)
 
     maxepoch_means = ListType(IntType, required=False)
+
+    threshold_sbos = ListType(FloatType, required=False)
 
     # TODO - Complete all the other needed params
 
@@ -419,6 +426,8 @@ class MultipleSpecEntity(Model):
 
         maxepoch_means = spec.get('maxepoch_means', n_specs * [20])
 
+        threshold_sbos = spec.get('threshold_sbos', n_specs * [[]])
+
 
         entry.update({
             'caches': caches,
@@ -472,6 +481,7 @@ class MultipleSpecEntity(Model):
             'kernel_valuess': kernel_valuess,
             'mean_values': mean_values,
             'var_noise_values': var_noise_values,
+            'threshold_sbos': threshold_sbos,
         })
 
         return cls(entry)
