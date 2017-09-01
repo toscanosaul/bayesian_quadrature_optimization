@@ -235,8 +235,8 @@ class BGO(object):
 
                 if self.acquisition_function.bq.separate_tasks:
                     new_points = new_points[:, 0:-1]
-                    current_points = current_points[:, 0:-1]
                     tasks_hist = current_points[:, -1]
+                    current_points = current_points[:, 0:-1]
                     tasks = self.acquisition_function.bq.tasks
                     n_tasks = len(tasks)
                     freq_task = Counter(tasks_hist)
