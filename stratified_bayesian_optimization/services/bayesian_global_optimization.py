@@ -236,10 +236,9 @@ class BGO(object):
                 if self.acquisition_function.bq.separate_tasks:
                     new_points = new_points[:, 0:-1]
                     current_points = current_points[:, 0:-1]
-
+                    tasks_hist = current_points[:, -1]
                     tasks = self.acquisition_function.bq.tasks
                     n_tasks = len(tasks)
-                    tasks_hist = current_points[:, -1]
                     freq_task = Counter(tasks_hist)
                     less_freq_task = freq_task.most_common(n_tasks)[-1][0]
 
@@ -248,7 +247,9 @@ class BGO(object):
                 max_distances = np.min(distances, axis=1)
 
                 distances_opt = Distances.dist_square_length_scale(
-                    np.ones(new_points.shape[1]), optimize_mean['solution'], current_points)
+                    np.ones(new_points.shape[1]),
+                    optimize_mean['solution'].reshape((1, len(optimize_mean['solution']))),
+                    current_points)
                 distance_opt = np.min(distances_opt)
 
                 if distance_opt > np.median(max_distances):
