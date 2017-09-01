@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from os import path
 import os
+import sys
 
 from numpy.linalg.linalg import LinAlgError
 import numpy as np
@@ -259,12 +260,17 @@ class GPFittingGaussian(object):
         if len(self.slice_samplers) == 1:
             for sample in xrange(n_samples):
                 start_point_ = None
-                while start_point_ is None:
+                n_try = 0
+                while start_point_ is None and n_try < 10:
                     try:
                         start_point_ = \
                             self.slice_samplers[0].slice_sample(start_point, None, *(self, ))
                     except Exception as e:
+                        n_try += 1
                         start_point_ = None
+                if start_point_ is None:
+                    logger.info('program failed to compute a sample of the parameters')
+                    sys.exit(1)
                 start_point = start_point_
                 samples.append(start_point)
             return samples[::self.thinning + 1]
@@ -273,12 +279,17 @@ class GPFittingGaussian(object):
             points = separate_vector(start_point, self.length_scale_indexes)
             for index, slice in enumerate(self.slice_samplers):
                 new_point_ = None
-                while new_point_ is None:
+                n_try = 0
+                while new_point_ is None and n_try < 10:
                     try:
                         new_point_ = \
                             slice.slice_sample(points[1 - index], points[index], *(self, ))
                     except Exception as e:
+                        n_try += 1
                         new_point_ = None
+                if new_point_ is None:
+                    logger.info('program failed to compute a sample of the parameters')
+                    sys.exit(1)
                 points[1 - index] = new_point_
             start_point = combine_vectors(points[0], points[1], self.length_scale_indexes)
             samples.append(start_point)
