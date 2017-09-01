@@ -258,7 +258,14 @@ class GPFittingGaussian(object):
 
         if len(self.slice_samplers) == 1:
             for sample in xrange(n_samples):
-                start_point = self.slice_samplers[0].slice_sample(start_point, None, *(self, ))
+                start_point_ = None
+                while start_point_ is None:
+                    try:
+                        start_point_ = \
+                            self.slice_samplers[0].slice_sample(start_point, None, *(self, ))
+                    except Exception as e:
+                        start_point_ = None
+                start_point = start_point_
                 samples.append(start_point)
             return samples[::self.thinning + 1]
 
