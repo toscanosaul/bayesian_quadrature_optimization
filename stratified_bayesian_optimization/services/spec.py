@@ -204,17 +204,22 @@ class SpecService(object):
     # TODO - generate a list of runspecentities over different parameters
 
     @classmethod
-    def generate_dict_multiple_spec(cls, n_specs, problem_names, dim_xs, bounds_domain_xs,
-                                    training_names, type_kernels, dimensionss, bounds_domains=None,
-                                    number_points_each_dimensions=None, choose_noises=None,
-                                    method_optimizations=None, type_boundss=None, n_trainings=None,
-                                    pointss=None, noises=None, n_sampless=None, random_seeds=None,
-                                    parallels=None, name_models=None, mles=None, thinnings=None,
-                                    n_burnings=None, max_steps_outs=None, training_datas=None,
-                                    x_domains=None, distributions=None,
-                                    parameters_distributions=None, minimizes=None,
-                                    n_iterationss=None, kernel_valuess=None, mean_values=None,
-                                    var_noise_values=None):
+    def generate_dict_multiple_spec(
+            cls, n_specs, problem_names, dim_xs, bounds_domain_xs, training_names, type_kernels,
+            dimensionss, bounds_domains=None, number_points_each_dimensions=None,
+            choose_noises=None, method_optimizations=None, type_boundss=None, n_trainings=None,
+            pointss=None, noises=None, n_sampless=None, random_seeds=None, parallels=None,
+            name_models=None, mles=None, thinnings=None, n_burnings=None, max_steps_outs=None,
+            training_datas=None, x_domains=None, distributions=None, parameters_distributions=None,
+            minimizes=None, n_iterationss=None, kernel_valuess=None, mean_values=None,
+            var_noise_values=None, caches=None, debugs=None, same_correlations=None,
+            number_points_each_dimension_debugs=None, monte_carlo_sbos=None, n_samples_mcs=None,
+            n_restarts_mcs=None, factr_mcs=None, maxiter_mcs=None, use_only_training_pointss=None,
+            n_restartss=None, n_best_restartss=None, n_best_restarts_mcs=None,
+            n_samples_parameterss=None, n_restarts_means=None, n_best_restarts_means=None,
+            method_opt_mcs=None, maxepochs=None, n_samples_parameters_means=None,
+            maxepoch_means=None, threshold_sbos=None):
+
         """
         Generate dict that represents multiple run specs
 
@@ -266,6 +271,66 @@ class SpecService(object):
 
         :return: dict
         """
+        if caches is None:
+            caches = [True]
+
+        if debugs is None:
+            debugs = [False]
+
+        if same_correlations is None:
+            same_correlations = [True]
+
+        if monte_carlo_sbos is None:
+            monte_carlo_sbos = [True]
+
+        if n_samples_mcs is None:
+            n_samples_mcs = [1]
+
+        if n_restarts_mcs is None:
+            n_restarts_mcs = [1]
+
+        if factr_mcs is None:
+            factr_mcs = [1e12]
+
+        if maxiter_mcs is None:
+            maxiter_mcs = [1000]
+
+        if use_only_training_pointss is None:
+            use_only_training_pointss = [True]
+
+        if n_restartss is None:
+            n_restartss = [10]
+
+        if n_best_restartss is None:
+            n_best_restartss = [0]
+
+        if n_best_restarts_mcs is None:
+            n_best_restarts_mcs = [1]
+
+        if n_samples_parameterss is None:
+            n_samples_parameterss = [5]
+
+        if n_restarts_means is None:
+            n_restarts_means = [1000]
+
+        if n_best_restarts_means is None:
+            n_best_restarts_means = [100]
+
+        if method_opt_mcs is None:
+            method_opt_mcs = [DOGLEG]
+
+        if maxepochs is None:
+            method_opt_mcs = [10]
+
+        if n_samples_parameters_means is None:
+            n_samples_parameters_means = [15]
+
+        if maxepoch_means is None:
+            maxepoch_means = [20]
+
+        if threshold_sbos is None:
+            threshold_sbos = [None]
+
 
         if kernel_valuess is None:
             kernel_valuess = [[]]
@@ -339,6 +404,11 @@ class SpecService(object):
             number_points_each_dimensions = []
             for dim_x in dim_xs:
                 number_points_each_dimensions.append(dim_x * [10])
+
+        if number_points_each_dimension_debugs is None:
+            number_points_each_dimension_debugs = []
+            for dim_x in dim_xs:
+                number_points_each_dimension_debugs.append(dim_x * [10])
 
         if len(choose_noises) != n_specs:
             choose_noises = n_specs * choose_noises
@@ -417,6 +487,66 @@ class SpecService(object):
         if len(var_noise_values) != n_specs:
             var_noise_values = n_specs * var_noise_values
 
+        if len(caches) != n_specs:
+            caches = n_specs * caches
+
+        if len(debugs) != n_specs:
+            debugs = n_specs * debugs
+
+        if len(same_correlations) != n_specs:
+            same_correlations = n_specs * same_correlations
+
+        if len(monte_carlo_sbos) != n_specs:
+            monte_carlo_sbos = n_specs * monte_carlo_sbos
+
+        if len(n_samples_mcs) != n_specs:
+            n_samples_mcs = n_specs * n_samples_mcs
+
+        if len(n_restarts_mcs) != n_specs:
+            n_restarts_mcs = n_specs * n_restarts_mcs
+
+        if len(factr_mcs) != n_specs:
+            factr_mcs = n_specs * factr_mcs
+
+        if len(maxiter_mcs) != n_specs:
+            maxiter_mcs = n_specs * maxiter_mcs
+
+        if len(use_only_training_pointss) != n_specs:
+            use_only_training_pointss = n_specs * use_only_training_pointss
+
+        if len(n_restartss) != n_specs:
+            n_restartss = n_specs * n_restartss
+
+        if len(n_best_restartss) != n_specs:
+            n_best_restartss = n_specs * n_best_restartss
+
+        if len(n_best_restarts_mcs) != n_specs:
+            n_best_restarts_mcs = n_specs * n_best_restarts_mcs
+
+        if len(n_samples_parameterss) != n_specs:
+            n_samples_parameterss = n_specs * n_samples_parameterss
+
+        if len(n_restarts_means) != n_specs:
+            n_restarts_means = n_specs * n_restarts_means
+
+        if len(n_best_restarts_means) != n_specs:
+            n_best_restarts_means = n_specs * n_best_restarts_means
+
+        if len(method_opt_mcs) != n_specs:
+            method_opt_mcs = n_specs * method_opt_mcs
+
+        if len(maxepochs) != n_specs:
+            maxepochs = n_specs * maxepochs
+
+        if len(n_samples_parameters_means) != n_specs:
+            n_samples_parameters_means = n_specs * n_samples_parameters_means
+
+        if len(maxepoch_means) != n_specs:
+            maxepoch_means = n_specs * maxepoch_means
+
+        if len(threshold_sbos) != n_specs:
+            threshold_sbos = n_specs * threshold_sbos
+
         return {
             'problem_names': problem_names,
             'dim_xs': dim_xs,
@@ -449,159 +579,315 @@ class SpecService(object):
             'var_noise_values': var_noise_values,
             'mean_values': mean_values,
             'kernel_valuess': kernel_valuess,
+            'caches': caches,
+            'debugs': debugs,
+            'same_correlations': same_correlations,
+            'number_points_each_dimension_debugs': number_points_each_dimension_debugs,
+            'monte_carlo_sbos': monte_carlo_sbos,
+            'n_samples_mcs': n_samples_mcs,
+            'n_restarts_mcs': n_restarts_mcs,
+            'factr_mcs': factr_mcs,
+            'maxiter_mcs': maxiter_mcs,
+            'use_only_training_pointss': use_only_training_pointss,
+            'n_restartss': n_restartss,
+            'n_best_restartss': n_best_restartss,
+            'n_best_restarts_mcs': n_best_restarts_mcs,
+            'n_samples_parameterss': n_samples_parameterss,
+            'n_restarts_means': n_restarts_means,
+            'n_best_restarts_means': n_best_restarts_means,
+            'method_opt_mcs': method_opt_mcs,
+            'maxepochs': maxepochs,
+            'n_samples_parameters_means': n_samples_parameters_means,
+            'maxepoch_means': maxepoch_means,
+            'threshold_sbos': threshold_sbos,
         }
 
     @classmethod
-    def generate_specs(cls, n_specs, multiple_spec):
+    def generate_specs(cls, n_spec, multiple_spec):
         """
-        Generate a list of RunSpecEntities.
+        Generate the spec associated to the ith entries of multiple_spec.
 
-        :param n_specs: (int) Number of specifications
+        :param n_spec: (int) Number of specificaction to be created
         :param multiple_spec: MultipleSpecEntity
 
-        :return: [RunSpecEntity]
+        :return: RunSpecEntity
         """
 
-        problem_names = multiple_spec.problem_names
-        method_optimizations = multiple_spec.method_optimizations
-        dim_xs = multiple_spec.dim_xs
-        choose_noises = multiple_spec.choose_noises
-        bounds_domain_xs = multiple_spec.bounds_domain_xs
-        number_points_each_dimensions = multiple_spec.number_points_each_dimensions
+        dim_xs = multiple_spec.get('dim_xs')[n_spec]
+        problem_names = multiple_spec.get('problem_names')[n_spec]
+        method_optimizations = multiple_spec.get('method_optimizations')[n_spec]
+        choose_noises = multiple_spec.get('choose_noises')[n_spec]
+        bounds_domain_xs = multiple_spec.get('bounds_domain_xs')[n_spec]
+        number_points_each_dimensions = multiple_spec.get('number_points_each_dimensions')[n_spec]
 
-        training_names = multiple_spec.training_names
-        bounds_domains = multiple_spec.bounds_domains
-        type_boundss = multiple_spec.type_boundss
-        n_trainings = multiple_spec.n_trainings
+        training_names = multiple_spec.get('training_names')[n_spec]
+        bounds_domains = multiple_spec.get('bounds_domains')[n_spec]
+        type_boundss = multiple_spec.get('type_boundss')[n_spec]
+        n_trainings = multiple_spec.get('n_trainings')[n_spec]
+        pointss = multiple_spec.get('pointss')[n_spec]
+        noises = multiple_spec.get('noises')[n_spec]
+        n_sampless = multiple_spec.get('n_sampless')[n_spec]
+        random_seeds = multiple_spec.get('random_seeds')[n_spec]
+        parallels = multiple_spec.get('parallels')[n_spec]
 
-        type_kernels = multiple_spec.type_kernels
-        dimensionss = multiple_spec.dimensionss
+        # New parameters due to the GP model
+        name_models = multiple_spec.get('name_models')[n_spec]
+        type_kernels = multiple_spec.get('type_kernels')[n_spec]
+        dimensionss = multiple_spec.get('dimensionss')[n_spec]
+        mles = multiple_spec.get('mles')[n_spec]
+        thinnings = multiple_spec.get('thinnings')[n_spec]
+        n_burnings = multiple_spec.get('n_burnings')[n_spec]
+        max_steps_outs = multiple_spec.get('max_steps_outs')[n_spec]
+        training_datas = multiple_spec.get('training_datas')[n_spec]
 
-        name_models = multiple_spec.name_models
-        if name_models is None:
-            name_models = n_specs * ['gp_fitting_gaussian']
+        # New parameters due Bayesian quadrature
+        x_domains = multiple_spec.get('x_domains')[n_spec]
+        distributions = multiple_spec.get('distributions')[n_spec]
+        parameters_distributions = multiple_spec.get('parameters_distributions')[n_spec]
 
-        mles = multiple_spec.mles
-        if mles is None:
-            mles = n_specs * [True]
+        minimizes = multiple_spec.get('minimizes')[n_spec]
+        n_iterationss = multiple_spec.get('n_iterationss')[n_spec]
 
-        thinnings = multiple_spec.thinnings
-        if thinnings is None:
-            thinnings = n_specs * [0]
+        kernel_valuess = multiple_spec.get('kernel_valuess')[n_spec]
+        mean_values = multiple_spec.get('mean_values')[n_spec]
+        var_noise_values = multiple_spec.get('var_noise_values')[n_spec]
 
-        n_burnings = multiple_spec.n_burnings
-        if n_burnings is None:
-            n_burnings = n_specs * [0]
+        caches = multiple_spec.get('caches')[n_spec]
+        debugs = multiple_spec.get('debugs')[n_spec]
 
-        max_steps_outs = multiple_spec.max_steps_outs
-        if max_steps_outs is None:
-            max_steps_outs = n_specs * [1]
+        same_correlations = multiple_spec.get('same_correlations')[n_spec]
 
-        training_datas = multiple_spec.training_datas
-        if training_datas is None:
-            training_datas = n_specs * [{}]
+        number_points_each_dimension_debugs = \
+            multiple_spec.get('number_points_each_dimension_debugs')[n_spec]
 
-        pointss = multiple_spec.pointss
-        if pointss is None:
-            pointss = n_specs * [[]]
+        monte_carlo_sbos = multiple_spec.get('monte_carlo_sbos')[n_spec]
+        n_samples_mcs = multiple_spec.get('n_samples_mcs')[n_spec]
+        n_restarts_mcs = multiple_spec.get('n_restarts_mcs')[n_spec]
 
-        noises = multiple_spec.noises
-        if noises is None:
-            noises = n_specs * [False]
+        factr_mcs = multiple_spec.get('factr_mcs')[n_spec]
+        maxiter_mcs = multiple_spec.get('maxiter_mcs')[n_spec]
 
-        n_sampless = multiple_spec.n_sampless
-        if n_sampless is None:
-            n_sampless = n_specs * [0]
+        use_only_training_pointss = multiple_spec.get('use_only_training_pointss')[n_spec]
+        n_restartss = multiple_spec.get('n_restartss')[n_spec]
+        n_best_restartss = multiple_spec.get('n_best_restartss')[n_spec]
 
-        random_seeds = multiple_spec.random_seeds
-        if random_seeds is None:
-            random_seeds = n_specs * [DEFAULT_RANDOM_SEED]
+        n_best_restarts_mcs = multiple_spec.get('n_best_restarts_mcs')[n_spec]
 
-        parallels = multiple_spec.parallels
-        if parallels is None:
-            parallels = n_specs * [True]
+        n_samples_parameterss = multiple_spec.get('n_samples_parameterss')[n_spec]
 
-        x_domains = multiple_spec.x_domains
-        if x_domains is None:
-            x_domains = n_specs * [[]]
+        n_restarts_means = multiple_spec.get('n_restarts_means')[n_spec]
+        n_best_restarts_means = multiple_spec.get('n_best_restarts_means')[n_spec]
 
-        distributions = multiple_spec.distributions
-        if distributions is None:
-            distributions = n_specs * [UNIFORM_FINITE]
+        method_opt_mcs = multiple_spec.get('method_opt_mcs')[n_spec]
+        maxepochs = multiple_spec.get('maxepochs')[n_spec]
 
-        parameters_distributions = multiple_spec.parameters_distributions
-        if parameters_distributions is None:
-            parameters_distributions = n_specs * [{}]
+        n_samples_parameters_means = multiple_spec.get('n_samples_parameters_means')[n_spec]
 
-        minimizes = multiple_spec.minimizes
-        if minimizes is None:
-            minimizes = n_specs * [False]
+        maxepoch_means = multiple_spec.get('maxepoch_means')[n_spec]
 
-        n_iterationss = multiple_spec.n_iterationss
-        if n_iterationss is None:
-            n_iterationss = n_specs * [5]
+        threshold_sbos = multiple_spec.get('threshold_sbos')[n_spec]
 
-        kernel_valuess = multiple_spec.kernel_valuess
-        if kernel_valuess is None:
-            kernel_valuess = n_specs * [[]]
+        entry = {}
 
-        mean_values = multiple_spec.mean_values
-        if mean_values is None:
-            mean_values = n_specs * [[]]
+        entry.update({
+            'problem_name': problem_names,
+            'dim_x': dim_xs,
+            'choose_noise': choose_noises,
+            'bounds_domain_x': bounds_domain_xs,
+            'number_points_each_dimension': number_points_each_dimensions,
+            'method_optimization': method_optimizations,
+            'training_name': training_names,
+            'bounds_domain': bounds_domains,
+            'n_training': n_trainings,
+            'points': pointss,
+            'noise': noises,
+            'n_samples': n_sampless,
+            'random_seed': random_seeds,
+            'parallel': parallels,
+            'type_bounds': type_boundss,
+            'name_model': name_models,
+            'type_kernel': type_kernels,
+            'dimensions': dimensionss,
+            'mle': mles,
+            'thinning': thinnings,
+            'n_burning': n_burnings,
+            'max_steps_out': max_steps_outs,
+            'training_data': training_datas,
+            'x_domain': x_domains,
+            'distribution': distributions,
+            'parameters_distribution': parameters_distributions,
+            'minimize': minimizes,
+            'n_iterations': n_iterationss,
+            'kernel_values': kernel_valuess,
+            'mean_value': mean_values,
+            'var_noise_value': var_noise_values,
+            'cache': caches,
+            'debug': debugs,
+            'same_correlation': same_correlations,
+            'number_points_each_dimension_debug': number_points_each_dimension_debugs,
+            'monte_carlo_sbo': monte_carlo_sbos,
+            'n_samples_mc': n_samples_mcs,
+            'n_restarts_mc': n_restarts_mcs,
+            'factr_mc': factr_mcs,
+            'maxiter_mc': maxiter_mcs,
+            'use_only_training_points': use_only_training_pointss,
+            'n_restarts': n_restartss,
+            'n_best_restarts_mc': n_best_restarts_mcs,
+            'n_best_restarts': n_best_restartss,
+            'n_samples_parameters': n_samples_parameterss,
+            'n_best_restarts_mean': n_best_restarts_means,
+            'n_restarts_mean': n_restarts_means,
+            'method_opt_mc': method_opt_mcs,
+            'maxepoch': maxepochs,
+            'n_samples_parameters_mean': n_samples_parameters_means,
+            'maxepoch_mean': maxepoch_means,
+            'threshold_sbo': threshold_sbos,
+        })
 
-        var_noise_values = multiple_spec.var_noise_values
-        if var_noise_values is None:
-            var_noise_values = n_specs * [[]]
-
-        run_spec = []
-
-        for problem_name, method_optimization, dim_x, choose_noise, bounds_domain_x, \
-            number_points_each_dimension, training_name, bounds_domain, type_bounds, n_training, \
-            points, noise, n_samples, random_seed, parallel, type_kernel, dimensions, name_model, \
-            mle, thinning, n_burning, max_steps_out, training_data, x_domain, distribution, \
-            parameters_distribution, minimize, n_iterations, kernel_values, mean_value, \
-            var_noise_value  in \
-                zip(problem_names, method_optimizations, dim_xs, choose_noises, bounds_domain_xs,
-                    number_points_each_dimensions, training_names, bounds_domains, type_boundss,
-                    n_trainings, pointss, noises, n_sampless, random_seeds, parallels, type_kernels,
-                    dimensionss, name_models, mles, thinnings, n_burnings, max_steps_outs,
-                    training_datas, x_domains, distributions, parameters_distributions, minimizes,
-                    n_iterationss, kernel_valuess, mean_values, var_noise_values):
-
-            parameters_entity = {
-                'problem_name': problem_name,
-                'method_optimization': method_optimization,
-                'dim_x': dim_x,
-                'choose_noise': choose_noise,
-                'bounds_domain_x': bounds_domain_x,
-                'number_points_each_dimension': number_points_each_dimension,
-                'training_name': training_name,
-                'bounds_domain': bounds_domain,
-                'type_bounds': type_bounds,
-                'n_training': n_training,
-                'points': points,
-                'noise': noise,
-                'n_samples': n_samples,
-                'random_seed': random_seed,
-                'parallel': parallel,
-                'type_kernel': type_kernel,
-                'dimensions': dimensions,
-                'name_model': name_model,
-                'mle': mle,
-                'thinning': thinning,
-                'n_burning': n_burning,
-                'max_steps_out': max_steps_out,
-                'training_data': training_data,
-                'x_domain': x_domain,
-                'distribution': distribution,
-                'parameters_distribution': parameters_distribution,
-                'minimize': minimize,
-                'n_iterations': n_iterations,
-                'var_noise_value': var_noise_value,
-                'mean_value': mean_value,
-                'kernel_values': kernel_values,
-            }
-
-            run_spec.append(RunSpecEntity(parameters_entity))
+        run_spec = RunSpecEntity(entry)
 
         return run_spec
+
+        # problem_names = multiple_spec.problem_names
+        # method_optimizations = multiple_spec.method_optimizations
+        # dim_xs = multiple_spec.dim_xs
+        # choose_noises = multiple_spec.choose_noises
+        # bounds_domain_xs = multiple_spec.bounds_domain_xs
+        # number_points_each_dimensions = multiple_spec.number_points_each_dimensions
+        #
+        # training_names = multiple_spec.training_names
+        # bounds_domains = multiple_spec.bounds_domains
+        # type_boundss = multiple_spec.type_boundss
+        # n_trainings = multiple_spec.n_trainings
+        #
+        # type_kernels = multiple_spec.type_kernels
+        # dimensionss = multiple_spec.dimensionss
+        #
+        # name_models = multiple_spec.name_models
+        # if name_models is None:
+        #     name_models = n_specs * ['gp_fitting_gaussian']
+        #
+        # mles = multiple_spec.mles
+        # if mles is None:
+        #     mles = n_specs * [True]
+        #
+        # thinnings = multiple_spec.thinnings
+        # if thinnings is None:
+        #     thinnings = n_specs * [0]
+        #
+        # n_burnings = multiple_spec.n_burnings
+        # if n_burnings is None:
+        #     n_burnings = n_specs * [0]
+        #
+        # max_steps_outs = multiple_spec.max_steps_outs
+        # if max_steps_outs is None:
+        #     max_steps_outs = n_specs * [1]
+        #
+        # training_datas = multiple_spec.training_datas
+        # if training_datas is None:
+        #     training_datas = n_specs * [{}]
+        #
+        # pointss = multiple_spec.pointss
+        # if pointss is None:
+        #     pointss = n_specs * [[]]
+        #
+        # noises = multiple_spec.noises
+        # if noises is None:
+        #     noises = n_specs * [False]
+        #
+        # n_sampless = multiple_spec.n_sampless
+        # if n_sampless is None:
+        #     n_sampless = n_specs * [0]
+        #
+        # random_seeds = multiple_spec.random_seeds
+        # if random_seeds is None:
+        #     random_seeds = n_specs * [DEFAULT_RANDOM_SEED]
+        #
+        # parallels = multiple_spec.parallels
+        # if parallels is None:
+        #     parallels = n_specs * [True]
+        #
+        # x_domains = multiple_spec.x_domains
+        # if x_domains is None:
+        #     x_domains = n_specs * [[]]
+        #
+        # distributions = multiple_spec.distributions
+        # if distributions is None:
+        #     distributions = n_specs * [UNIFORM_FINITE]
+        #
+        # parameters_distributions = multiple_spec.parameters_distributions
+        # if parameters_distributions is None:
+        #     parameters_distributions = n_specs * [{}]
+        #
+        # minimizes = multiple_spec.minimizes
+        # if minimizes is None:
+        #     minimizes = n_specs * [False]
+        #
+        # n_iterationss = multiple_spec.n_iterationss
+        # if n_iterationss is None:
+        #     n_iterationss = n_specs * [5]
+        #
+        # kernel_valuess = multiple_spec.kernel_valuess
+        # if kernel_valuess is None:
+        #     kernel_valuess = n_specs * [[]]
+        #
+        # mean_values = multiple_spec.mean_values
+        # if mean_values is None:
+        #     mean_values = n_specs * [[]]
+        #
+        # var_noise_values = multiple_spec.var_noise_values
+        # if var_noise_values is None:
+        #     var_noise_values = n_specs * [[]]
+        #
+        # run_spec = []
+        #
+        # for problem_name, method_optimization, dim_x, choose_noise, bounds_domain_x, \
+        #     number_points_each_dimension, training_name, bounds_domain, type_bounds, n_training, \
+        #     points, noise, n_samples, random_seed, parallel, type_kernel, dimensions, name_model, \
+        #     mle, thinning, n_burning, max_steps_out, training_data, x_domain, distribution, \
+        #     parameters_distribution, minimize, n_iterations, kernel_values, mean_value, \
+        #     var_noise_value  in \
+        #         zip(problem_names, method_optimizations, dim_xs, choose_noises, bounds_domain_xs,
+        #             number_points_each_dimensions, training_names, bounds_domains, type_boundss,
+        #             n_trainings, pointss, noises, n_sampless, random_seeds, parallels, type_kernels,
+        #             dimensionss, name_models, mles, thinnings, n_burnings, max_steps_outs,
+        #             training_datas, x_domains, distributions, parameters_distributions, minimizes,
+        #             n_iterationss, kernel_valuess, mean_values, var_noise_values):
+        #
+        #     parameters_entity = {
+        #         'problem_name': problem_name,
+        #         'method_optimization': method_optimization,
+        #         'dim_x': dim_x,
+        #         'choose_noise': choose_noise,
+        #         'bounds_domain_x': bounds_domain_x,
+        #         'number_points_each_dimension': number_points_each_dimension,
+        #         'training_name': training_name,
+        #         'bounds_domain': bounds_domain,
+        #         'type_bounds': type_bounds,
+        #         'n_training': n_training,
+        #         'points': points,
+        #         'noise': noise,
+        #         'n_samples': n_samples,
+        #         'random_seed': random_seed,
+        #         'parallel': parallel,
+        #         'type_kernel': type_kernel,
+        #         'dimensions': dimensions,
+        #         'name_model': name_model,
+        #         'mle': mle,
+        #         'thinning': thinning,
+        #         'n_burning': n_burning,
+        #         'max_steps_out': max_steps_out,
+        #         'training_data': training_data,
+        #         'x_domain': x_domain,
+        #         'distribution': distribution,
+        #         'parameters_distribution': parameters_distribution,
+        #         'minimize': minimize,
+        #         'n_iterations': n_iterations,
+        #         'var_noise_value': var_noise_value,
+        #         'mean_value': mean_value,
+        #         'kernel_values': kernel_values,
+        #     }
+        #
+        #     run_spec.append(RunSpecEntity(parameters_entity))
+
+
