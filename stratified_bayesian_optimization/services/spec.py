@@ -359,6 +359,15 @@ class SpecService(object):
         if distributions is None:
             distributions = [UNIFORM_FINITE]
 
+        if len(problem_names) != n_specs:
+            problem_names = n_specs * problem_names
+
+        if len(dim_xs) != n_specs:
+            dim_xs = n_specs * dim_xs
+
+        if len(bounds_domain_xs) != n_specs:
+            bounds_domain_xs = n_specs * bounds_domain_xs
+
         if mles is None:
             mles = [True]
 
@@ -400,15 +409,27 @@ class SpecService(object):
             for bounds_domain_x in bounds_domain_xs:
                 bounds_domains.append([[bound[0], bound[1]] for bound in bounds_domain_x])
 
+        if len(bounds_domains) != n_specs:
+            bounds_domains = n_specs * bounds_domains
+
         if number_points_each_dimensions is None:
             number_points_each_dimensions = []
             for dim_x in dim_xs:
                 number_points_each_dimensions.append(dim_x * [10])
 
+        if len(number_points_each_dimensions) != n_specs:
+            number_points_each_dimensions = n_specs * number_points_each_dimensions
+
         if number_points_each_dimension_debugs is None:
             number_points_each_dimension_debugs = []
             for dim_x in dim_xs:
                 number_points_each_dimension_debugs.append(dim_x * [10])
+
+        if len(number_points_each_dimension_debugs) != n_specs:
+            number_points_each_dimension_debugs = n_specs * number_points_each_dimension_debugs
+
+        if len(training_names) != n_specs:
+            training_names = n_specs * training_names
 
         if len(choose_noises) != n_specs:
             choose_noises = n_specs * choose_noises
@@ -420,6 +441,9 @@ class SpecService(object):
             type_boundss = []
             for bounds_domain in bounds_domains:
                 type_boundss.append(len(bounds_domain) * [0])
+
+        if len(type_boundss) != n_specs:
+            type_boundss = n_specs * type_boundss
 
         if len(n_trainings) != n_specs:
             n_trainings = n_specs * n_trainings
@@ -643,6 +667,7 @@ class SpecService(object):
         # New parameters due Bayesian quadrature
         x_domains = multiple_spec.get('x_domains')[n_spec]
         distributions = multiple_spec.get('distributions')[n_spec]
+
         parameters_distributions = multiple_spec.get('parameters_distributions')[n_spec]
 
         minimizes = multiple_spec.get('minimizes')[n_spec]

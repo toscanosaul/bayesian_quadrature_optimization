@@ -244,6 +244,7 @@ class RunSpecEntity(Model):
             'threshold_sbo': threshold_sbo,
         })
 
+
         return cls(entry)
 
 
@@ -257,7 +258,7 @@ class MultipleSpecEntity(Model):
                                 required=True, min_size=1)
     number_points_each_dimensions = ListType(ListType(IntType), min_size=1, required=True)
 
-    training_names = ListType(StringType, required=True, min_size=1)
+    training_names = ListType(StringType, required=False, min_size=1)
     bounds_domains = ListType(ListType(ListType(FloatType)), min_size=1, required=True)
     type_boundss = ListType(ListType(IntType, min_size=1), min_size=1, required=True)
     n_trainings = ListType(IntType, min_size=1, required=True)
@@ -280,7 +281,7 @@ class MultipleSpecEntity(Model):
     # New parameters due Bayesian quadrature
     x_domains = ListType(ListType(IntType), required=False)
     distributions = ListType(StringType, required=False)
-    parameters_distributions = ListType(ListType(FloatType), required=False)
+    parameters_distributions = ListType(DictType(ListType(FloatType)), required=False)
 
     minimizes = ListType(BooleanType, required=False)
     n_iterationss = ListType(IntType, required=False)
@@ -346,6 +347,7 @@ class MultipleSpecEntity(Model):
 
         entry = {}
         dim_xs = spec['dim_xs']
+
         choose_noises = spec['choose_noises']
 
         bounds_domain_xs_list = spec['bounds_domain_xs']
@@ -384,7 +386,7 @@ class MultipleSpecEntity(Model):
 
         x_domains = spec.get('x_domains')
         distributions = spec.get('distributions')
-        parameters_distributions = spec.get('parameters_distributions')
+        parameters_distributions = spec.get('parameters_distributions', n_specs * [[]])
 
         minimizes = spec.get('minimizes', n_specs * [False])
         n_iterationss = spec.get('n_iterationss', n_specs * [5])
@@ -427,7 +429,6 @@ class MultipleSpecEntity(Model):
         maxepoch_means = spec.get('maxepoch_means', n_specs * [20])
 
         threshold_sbos = spec.get('threshold_sbos', n_specs * [[]])
-
 
         entry.update({
             'caches': caches,
