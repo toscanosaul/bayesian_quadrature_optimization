@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
 
     output_file = args.output_file
-    n_spec = args.spec
+    n_spec = int(args.spec)
 
     output_file = 'spec_%d' % n_spec + '_' + output_file
     multiple_spec = MultipleSpecEntity.from_json(args.mspec)
