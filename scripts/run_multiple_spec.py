@@ -1,4 +1,4 @@
-from __future__ import absoluste_import
+from __future__ import absolute_import
 
 import argparse
 import ujson
@@ -10,7 +10,7 @@ from stratified_bayesian_optimization.services.bayesian_global_optimization impo
 
 if __name__ == '__main__':
     # Example usage:
-    # python -m scripts.run_multiple_spec sample_multiple_spec.json 2
+    # python -m scripts.run_multiple_spec arxiv_10_training_random_seeds.json 2
 
     parser = argparse.ArgumentParser()
     parser.add_argument('multiple_spec', help='e.g. test_multiple_spec.json')
