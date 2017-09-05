@@ -19,7 +19,7 @@ from stratified_bayesian_optimization.lib.constant import (
 from stratified_bayesian_optimization.util.json_file import JSONFile
 
 _aggregated_results = 'results_{problem_name}_{training_name}_{n_points}_{method}.json'.format
-_aggregated_results_plot = 'plot_{problem_name}_{training_name}_{n_points}_{method}.png'.format
+_aggregated_results_plot = 'plot_{problem_name}_{training_name}_{n_points}_{method}.pdf'.format
 
 
 def plot_aggregate_results(multiple_spec, negative=True, square=True):
@@ -79,10 +79,10 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True):
         file_path = path.join(dir, file_name)
 
         plt.figure()
-        plt.plot(x_axis, y_values, color='b', linewidth=2.0, label='means')
+        plt.plot(x_axis, y_values, color='b', linewidth=2.0)
         plt.plot(x_axis, ci_u, '--', color='b', label="95% CI")
         plt.plot(x_axis, ci_l, '--', color='b')
         plt.xlabel('Iteration', fontsize=26)
-        plt.ylabel('Mean value', fontsize=24)
+        plt.ylabel('Cross Validation Error', fontsize=24)
         plt.legend(loc=3, ncol=2, mode="expand", borderaxespad=0.)
         plt.savefig(file_path)
