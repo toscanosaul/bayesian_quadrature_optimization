@@ -2,6 +2,7 @@ import ujson
 
 import argparse
 
+from plots.plot_aggregate_results import plot_aggregate_results
 from stratified_bayesian_optimization.entities.run_spec import MultipleSpecEntity
 from stratified_bayesian_optimization.services.spec import SpecService
 from stratified_bayesian_optimization.lib.constant import (
@@ -29,3 +30,5 @@ if __name__ == '__main__':
     multiple_spec = MultipleSpecEntity.from_json(multiple_spec_file)
 
     SpecService.collect_multi_spec_results(multiple_spec)
+
+    plot_aggregate_results(multiple_spec)

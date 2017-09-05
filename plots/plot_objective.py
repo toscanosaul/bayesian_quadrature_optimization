@@ -57,7 +57,6 @@ def plot_objective_function_af(problem_name, filename_plot, bounds, n_points_by_
             plt.figure()
             plt.plot(points, values[i], label='task_'+str(i))
             plt.legend()
-
             plt.savefig(filename_plot + '_task_'+str(i) + '.png')
 
 def plot_objective_function(problem_name, filename_plot, bounds, n_points_by_dimension=None,

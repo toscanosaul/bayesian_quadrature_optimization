@@ -999,8 +999,8 @@ class SpecService(object):
                     mean = np.mean(values)
                     std = np.std(values)
                     n_samples = len(results[iteration])
-                    ci_low =  mean -1.96 * std / n_samples
-                    ci_up = mean + 1.96 * std / n_samples
+                    ci_low =  mean -1.96 * std / np.sqrt(n_samples)
+                    ci_up = mean + 1.96 * std / np.sqrt(n_samples)
 
                     aggregated_results[key][iteration] = {}
                     aggregated_results[key][iteration]['mean'] = mean
