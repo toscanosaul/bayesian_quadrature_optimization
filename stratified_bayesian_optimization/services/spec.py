@@ -931,12 +931,12 @@ class SpecService(object):
         #     run_spec.append(RunSpecEntity(parameters_entity))
 
     @classmethod
-    def collect_multi_spec_results(cls, multiple_spec, sign=True, square=True):
+    def collect_multi_spec_results(cls, multiple_spec, sign=True, sqr=True):
         """
         Writes the files with the aggregated results
         :param multiple_spec:
         :param sign: (boolean) If true, we multiply the results by -1
-        :param square: (boolean) If true, we take the square of the results
+        :param sqr: (boolean) If true, we take the square root of the results
         :return:
         """
 
@@ -949,8 +949,8 @@ class SpecService(object):
         else:
             sign = 1.0
 
-        if square:
-            f = lambda x: x**2
+        if sqr:
+            f = lambda x: x ** 0.5
         else:
             f = lambda x: x
 
