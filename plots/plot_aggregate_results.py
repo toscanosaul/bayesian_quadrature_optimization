@@ -67,7 +67,7 @@ def plot_aggregate_results(multiple_spec):
             ci_l.append(data[i]['ci_low'])
 
         x_axis = [int(i) for i in x_axis]
-        x_axis = x_axis.sort()
+        x_axis.sort()
 
         file_name = _aggregated_results_plot(
             problem_name=problem,
