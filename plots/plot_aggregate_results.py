@@ -4,6 +4,10 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+font = {'family' : 'normal',
+    'weight' : 'bold',
+    'size'   : 15}
+
 import numpy as np
 from os import path
 import os
