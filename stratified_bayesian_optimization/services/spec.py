@@ -931,16 +931,28 @@ class SpecService(object):
         #     run_spec.append(RunSpecEntity(parameters_entity))
 
     @classmethod
-    def collect_multi_spec_results(cls, multiple_spec):
+    def collect_multi_spec_results(cls, multiple_spec, sign=True, square=True):
         """
         Writes the files with the aggregated results
         :param multiple_spec:
+        :param sign: (boolean) If true, we multiply the results by -1
+        :param square: (boolean) If true, we take the square of the results
         :return:
         """
 
         n_specs = len(multiple_spec.get('random_seeds'))
 
         results_dict = {}
+
+        if sign:
+            sign = -1.0
+        else:
+            sign = 1.0
+
+        if square:
+            f = lambda x: x**2
+        else:
+            f = lambda x: x
 
         for i in xrange(n_specs):
             problem_name = multiple_spec.get('problem_names')[i]
@@ -978,7 +990,7 @@ class SpecService(object):
                 results_dict[key_dict] = [[] for _ in range(n_iterations)]
 
             for iteration in xrange(len(results)):
-                results_dict[key_dict][iteration].append(results[iteration])
+                results_dict[key_dict][iteration].append(f(sign * results[iteration]))
 
         problem_names = set(multiple_spec.get('problem_names'))
         training_names = set(multiple_spec.get('training_names'))
