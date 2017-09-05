@@ -57,17 +57,16 @@ def plot_aggregate_results(multiple_spec):
         data = JSONFile.read(file_path)
 
         x_axis = list(data.keys())
+        x_axis = [int(i) for i in x_axis]
+        x_axis.sort()
 
         y_values = []
         ci_u = []
         ci_l = []
         for i in x_axis:
-            y_values.append(data[i]['mean'])
-            ci_u.append(data[i]['ci_up'])
-            ci_l.append(data[i]['ci_low'])
-
-        x_axis = [int(i) for i in x_axis]
-        x_axis.sort()
+            y_values.append(data[str(i)]['mean'])
+            ci_u.append(data[str(i)]['ci_up'])
+            ci_l.append(data[str(i)]['ci_low'])
 
         file_name = _aggregated_results_plot(
             problem_name=problem,
