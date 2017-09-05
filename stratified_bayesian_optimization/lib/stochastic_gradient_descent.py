@@ -6,7 +6,7 @@ import numpy as np
 def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, momentum=0.5,
         maxepoch=250):
     """
-    SGD to minimize sum(i=0 -> n) (1/n) * f(x)
+    SGD to minimize sum(i=0 -> n) (1/n) * f(x). Batch sizes are of size 1.
     :param start: np.array(n)
     :param gradient:
     :param n:

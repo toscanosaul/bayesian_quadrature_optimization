@@ -1,17 +1,32 @@
 from __future__ import absolute_import
 
+from os import path
+import os
+
+import numpy as np
+
 from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.entities.run_spec import RunSpecEntity
+from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.lib.constant import (
     DEFAULT_RANDOM_SEED,
     UNIFORM_FINITE,
     DOGLEG,
+    PROBLEM_DIR,
+    PARTIAL_RESULTS,
+    AGGREGATED_RESULTS,
 )
 
 logger = SBOLog(__name__)
 
 
 class SpecService(object):
+
+    _filename_results = 'results_{problem_name}_{training_name}_{n_points}_{random_seed}_' \
+                        '{method}_samples_params_{n_samples_parameters}.json'.format
+
+    _aggregated_results = 'results_{problem_name}_{training_name}_{n_points}_{method}.json'.format
+
     @classmethod
     def generate_dict_spec(cls, problem_name, dim_x, bounds_domain_x, training_name, type_kernel,
                            dimensions, bounds_domain=None, number_points_each_dimension=None,
@@ -915,4 +930,99 @@ class SpecService(object):
         #
         #     run_spec.append(RunSpecEntity(parameters_entity))
 
+    @classmethod
+    def collect_multi_spec_results(cls, multiple_spec):
+        """
+        Writes the files with the aggregated results
+        :param multiple_spec:
+        :return:
+        """
 
+        n_specs = len(multiple_spec.get('random_seeds'))
+
+        results_dict = {}
+
+        for i in xrange(n_specs):
+            problem_name = multiple_spec.get('problem_names')[i]
+            dir = path.join(PROBLEM_DIR, problem_name, PARTIAL_RESULTS)
+
+            if not os.path.exists(dir):
+                continue
+
+            training_name = multiple_spec.get('training_names')[i]
+            n_training = multiple_spec.get('n_trainings')[i]
+            random_seed = multiple_spec.get('random_seeds')[i]
+            method = multiple_spec.get('method_optimizations')[i]
+            n_samples_parameters = multiple_spec.get('n_samples_parameterss')[i]
+            n_iterations = multiple_spec.get('n_iterationss')[i]
+
+            file_name = cls._filename_results(
+                problem_name=problem_name,
+                training_name=training_name,
+                n_points=n_training,
+                random_seed=random_seed,
+                method=method,
+                n_samples_parameters=n_samples_parameters,
+            )
+
+            file_path = path.join(dir, file_name)
+
+            if not os.path.exists(file_path):
+                continue
+
+            results = JSONFile.read(file_path)
+            results = results['objective_values']
+
+            key_dict = (problem_name, training_name, n_training, method)
+            if key_dict not in results_dict:
+                results_dict[key_dict] = n_iterations * [[]]
+
+            for iteration in xrange(len(results)):
+                results_dict[key_dict][iteration].append(results[iteration])
+
+        problem_names = set(multiple_spec.get('problem_names'))
+        training_names = set(multiple_spec.get('training_names'))
+        n_trainings = set(multiple_spec.get('n_trainings'))
+        methods = set(multiple_spec.get('method_optimizations'))
+
+        aggregated_results = {}
+        for problem, training, n_training, method in zip(problem_names, training_names,
+                                                         n_trainings, methods):
+            key = (problem, training, n_training, method)
+            aggregated_results[key] = {}
+
+            results = results_dict[key]
+
+            for iteration in xrange(len(results)):
+                if len(results[iteration]) > 0:
+                    values = results[iteration]
+                    mean = np.mean(values)
+                    std = np.std(values)
+                    n_samples = len(results[iteration])
+                    ci_low =  mean -1.96 * std / n_samples
+                    ci_up = mean + 1.96 * std / n_samples
+
+                    aggregated_results[key][iteration] = {}
+                    aggregated_results[key][iteration]['mean'] = mean
+                    aggregated_results[key][iteration]['std'] = std
+                    aggregated_results[key][iteration]['n_samples'] = n_samples
+                    aggregated_results[key][iteration]['ci_low'] = ci_low
+                    aggregated_results[key][iteration]['ci_up'] = ci_up
+                else:
+                    break
+
+            if len(aggregated_results[key]) > 0:
+                dir = path.join(PROBLEM_DIR, problem_name, AGGREGATED_RESULTS)
+
+                if not os.path.exists(dir):
+                    os.mkdir(dir)
+
+                file_name = cls._aggregated_results(
+                    problem_name=problem,
+                    training_name=training,
+                    n_points=n_training,
+                    method=method,
+                )
+
+                file_path = path.join(dir, file_name)
+                JSONFile.write(aggregated_results[key], file_path)
