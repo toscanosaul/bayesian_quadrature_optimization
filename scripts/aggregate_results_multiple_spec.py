@@ -17,7 +17,7 @@ from stratified_bayesian_optimization.lib.constant import (
 
 
 if __name__ == '__main__':
-    # usage: python -m scripts.aggregate_results_multiple_spec multiple_spec.json
+    # usage: python -m scripts.aggregate_results_multiple_spec arxiv_10_training_random_seeds.json
 
     # script used to aggregate the results of the multiple runs defined by a multiple_spec file
 
