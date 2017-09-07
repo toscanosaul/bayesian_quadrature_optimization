@@ -86,7 +86,7 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True):
         plt.plot(x_axis, y_values, color='b', linewidth=2.0)
         plt.plot(x_axis, ci_u, '--', color='b', label="95% CI")
         plt.plot(x_axis, ci_l, '--', color='b')
-        plt.xlabel('Iteration', fontsize=26)
+        plt.xlabel('Number of Samples', fontsize=26)
         plt.ylabel('Cross Validation Error', fontsize=24)
         plt.legend(loc=3, ncol=2, mode="expand", borderaxespad=0.)
         plt.savefig(file_path)
