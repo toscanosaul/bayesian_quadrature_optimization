@@ -18,6 +18,6 @@ if __name__ == '__main__':
 
     errors = train_nn(rs)
 
-    directory = 'problems/cnn_cifar10/runs_random_seeds/' + 'rs_%d' % rs
+    directory = 'problems/cnn_cifar10/runs_random_seeds/' + 'rs_%d' % rs + '.json'
 
     JSONFile.write(errors, directory)
