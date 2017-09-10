@@ -125,6 +125,23 @@ def train_nn(random_seed, n_epochs=2):
             # print statistics
             running_loss += loss.data[0]
 
+    running_loss = 0.0
+    for i, data in enumerate(trainloader, 0):
+        # get the inputs
+        inputs, labels = data
+
+        # wrap them in Variable
+        inputs, labels = Variable(inputs), Variable(labels)
+
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # forward + backward + optimize
+        outputs = net(inputs)
+        loss = criterion(outputs, labels)
+
+        running_loss += loss.data[0]
+
     error = running_loss / (4.0 * 12500)
 
     correct = 0
