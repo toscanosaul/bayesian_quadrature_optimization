@@ -79,12 +79,22 @@ class Net(nn.Module):
         return x
 
 torch.manual_seed(1)
+
+cuda = torch.cuda.is_available()
+
 net = Net()
 
+if cuda:
+    net.cuda()
 
 def train_nn(random_seed, n_epochs=2):
     if random_seed is not None:
-        torch.manual_seed(random_seed)
+        if not cuda:
+            torch.manual_seed(random_seed)
+        else:
+            torch.manual_seed(random_seed)
+            torch.cuda.manual_seed(random_seed)
+
     net.apply(weights_init)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
@@ -95,6 +105,10 @@ def train_nn(random_seed, n_epochs=2):
         for i, data in enumerate(trainloader, 0):
             # get the inputs
             inputs, labels = data
+
+            if cuda:
+                inputs = inputs.cuda()
+                labels = labels.cuda()
 
             # wrap them in Variable
             inputs, labels = Variable(inputs), Variable(labels)
@@ -113,11 +127,15 @@ def train_nn(random_seed, n_epochs=2):
 
     error = running_loss / (4.0 * 12500)
 
-
     correct = 0
     total = 0
     for data in testloader:
         images, labels = data
+
+        if cuda:
+            images = images.cuda()
+            labels = labels.cuda()
+
         outputs = net(Variable(images))
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
