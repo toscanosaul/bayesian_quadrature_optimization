@@ -8,7 +8,7 @@ from stratified_bayesian_optimization.util.json_file import JSONFile
 
 if __name__ == '__main__':
     # Example usage:
-    # python -m problems.cnn_cifar10.scripts.run_cnn 1
+    # python -m problems.cnn_cifar10.scripts.run_cnn 1 1
 
     parser = argparse.ArgumentParser()
     parser.add_argument('random_seed', help='e.g. 2')

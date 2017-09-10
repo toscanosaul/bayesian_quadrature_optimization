@@ -80,7 +80,7 @@ class Net(nn.Module):
 
 torch.manual_seed(1)
 
-cuda = torch.cuda.is_available()
+cuda = False
 
 net = Net()
 
