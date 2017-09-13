@@ -24,10 +24,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('specfile', help='e.g. multiple_spec.json')
-    parser.add_argument('--niter', help='number of iterations', default=None)
+    parser.add_argument('--niter', help='number of iterations', default=-1)
     args = parser.parse_args()
 
-    n_iterations = args.niter
+    n_iterations = int(args.niter)
+
+    if n_iterations == -1:
+        n_iterations = None
 
     multiple_spec_file = args.specfile
     multiple_spec = MultipleSpecEntity.from_json(multiple_spec_file)
