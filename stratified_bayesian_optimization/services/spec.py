@@ -931,18 +931,18 @@ class SpecService(object):
         #     run_spec.append(RunSpecEntity(parameters_entity))
 
     @classmethod
-    def collect_multi_spec_results(cls, multiple_spec, iteration=None, sign=True, sqr=True):
+    def collect_multi_spec_results(cls, multiple_spec, total_iterations=None, sign=True, sqr=True):
         """
         Writes the files with the aggregated results
         :param multiple_spec:
-        :param iteration: (int) Collect results until this iteration
+        :param total_iterations: (int) Collect results until this iteration
         :param sign: (boolean) If true, we multiply the results by -1
         :param sqr: (boolean) If true, we take the square root of the results
         :return:
         """
 
-        if iteration is None:
-            iteration = 10000
+        if total_iterations is None:
+            total_iterations = 10000
 
         n_specs = len(multiple_spec.get('random_seeds'))
 
@@ -1009,7 +1009,7 @@ class SpecService(object):
 
             results = results_dict[key]
 
-            for iteration in xrange(min(len(results), iteration)):
+            for iteration in xrange(min(len(results), total_iterations)):
                 if len(results[iteration]) > 0:
                     values = results[iteration]
                     mean = np.mean(values)

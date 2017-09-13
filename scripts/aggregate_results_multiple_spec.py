@@ -32,6 +32,6 @@ if __name__ == '__main__':
     multiple_spec_file = args.specfile
     multiple_spec = MultipleSpecEntity.from_json(multiple_spec_file)
 
-    SpecService.collect_multi_spec_results(multiple_spec, iteration=n_iterations)
+    SpecService.collect_multi_spec_results(multiple_spec, total_iterations=n_iterations)
 
     plot_aggregate_results(multiple_spec)
