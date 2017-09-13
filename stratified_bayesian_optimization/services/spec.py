@@ -993,7 +993,7 @@ class SpecService(object):
             if key_dict not in results_dict:
                 results_dict[key_dict] = [[] for _ in range(n_iterations + 1)]
 
-            for iteration in xrange(len(results)):
+            for iteration in xrange(min(len(results), total_iterations)):
                 results_dict[key_dict][iteration].append(f(sign * results[iteration]))
 
         problem_names = set(multiple_spec.get('problem_names'))
