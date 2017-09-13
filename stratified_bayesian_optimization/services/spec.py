@@ -991,7 +991,8 @@ class SpecService(object):
 
             key_dict = (problem_name, training_name, n_training, method)
             if key_dict not in results_dict:
-                results_dict[key_dict] = [[] for _ in range(n_iterations + 1)]
+                results_dict[key_dict] = \
+                    [[] for _ in range(min(n_iterations + 1, total_iterations))]
 
             for iteration in xrange(min(len(results), total_iterations)):
                 results_dict[key_dict][iteration].append(f(sign * results[iteration]))
