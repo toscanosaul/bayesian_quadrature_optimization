@@ -89,7 +89,7 @@ class MultiTasks(object):
             val = wrapper_objective_acquisition_function(point, self.ei_tasks, n_samples_parameters)
             values.append(val)
 
-        return np.argmax(values)
+        return np.argmax(values), values[np.argmax(values)]
 
     def optimize(self, random_seed=None, parallel=True, n_restarts=100, n_best_restarts=0,
                  n_samples_parameters=0, start_new_chain=True, maxepoch=11, **kwargs):
@@ -115,11 +115,11 @@ class MultiTasks(object):
                                     n_samples_parameters=n_samples_parameters,
                                     n_best_restarts=n_best_restarts, maxepoch=maxepoch)
 
-        task = self.choose_best_task_given_x(point, n_samples_parameters=n_samples_parameters)
+        task, value = self.choose_best_task_given_x(point, n_samples_parameters=n_samples_parameters)
 
         solution = np.concatenate((point, np.array([task])))
 
-        return {'solution': solution}
+        return {'solution': solution, 'optimal_value': value}
 
     def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed,
                          n_samples_parameters, **kwargs):
