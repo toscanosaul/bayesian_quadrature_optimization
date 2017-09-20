@@ -33,8 +33,15 @@ class MultiTasks(object):
         self.ei_tasks = EI(self.bq.gp)
         self.ei = EI(self.bq)
 
-    def add_file_to_log(self):
-        pass
+    def add_file_to_log(self, model_type, problem_name, training_name, n_training, random_seed,
+                        n_samples_parameters):
+        kernel_name = ''
+        for kernel in self.bq.gp.type_kernel:
+            kernel_name += kernel + '_'
+        kernel_name = kernel_name[0: -1]
+
+        logger.add_file_to_log(model_type, problem_name, kernel_name, training_name, n_training,
+                               random_seed, n_samples_parameters)
 
     def evaluate_first(self, point, var_noise=None, mean=None, parameters_kernel=None):
         """
@@ -85,7 +92,7 @@ class MultiTasks(object):
         return np.argmax(values)
 
     def optimize(self, random_seed=None, parallel=True, n_restarts=100, n_best_restarts=0,
-                 n_samples_parameters=0, start_new_chain=True, **kwargs):
+                 n_samples_parameters=0, start_new_chain=True, maxepoch=11, **kwargs):
         """
         Optimizes EI
 
@@ -106,7 +113,7 @@ class MultiTasks(object):
         point = self.optimize_first(random_seed=random_seed, parallel=parallel,
                                     n_restarts=n_restarts,
                                     n_samples_parameters=n_samples_parameters,
-                                    n_best_restarts=n_best_restarts)
+                                    n_best_restarts=n_best_restarts, maxepoch=maxepoch)
 
         task = self.choose_best_task_given_x(point, n_samples_parameters=n_samples_parameters)
 
