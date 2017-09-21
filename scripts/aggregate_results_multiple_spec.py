@@ -18,7 +18,7 @@ from stratified_bayesian_optimization.lib.constant import (
 
 
 if __name__ == '__main__':
-    # usage: python -m scripts.aggregate_results_multiple_spec combine_arxiv_runs.json --niter 31
+    # usage: python -m scripts.aggregate_results_multiple_spec combine_arxiv_runs.json --niter 30
 
     # script used to aggregate the results of the multiple runs defined by a multiple_spec file
 
