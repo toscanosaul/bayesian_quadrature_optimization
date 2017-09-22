@@ -94,7 +94,7 @@ def train_nn(random_seed, n_epochs=2, batch_size=4, lr=0.001, weight_decay=0,
         def forward(self, x):
             x = self.pool(F.relu(self.conv1(x)))
             x = self.pool(F.relu(self.conv2(x)))
-            x = x.view(-1, number_chanels_second * 5 * 5)
+            x = x.view(-1, number_chanels_second * size_kernel * size_kernel)
             x = F.relu(self.fc1(x))
             x = F.relu(self.fc2(x))
             x = self.fc3(x)
