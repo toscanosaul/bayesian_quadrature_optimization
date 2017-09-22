@@ -94,7 +94,7 @@ def train_nn(random_seed, n_epochs=2, batch_size=4, lr=0.001, weight_decay=0,
         def forward(self, x):
             x = self.pool(F.relu(self.conv1(x)))
             x = self.pool(F.relu(self.conv2(x)))
-            x = x.view(-1, number_chanels_second * size_kernel * size_kernel)
+            x = x.view(-1, self.num_flat_features(x))
             x = F.relu(self.fc1(x))
             x = F.relu(self.fc2(x))
             x = self.fc3(x)
@@ -116,7 +116,6 @@ def train_nn(random_seed, n_epochs=2, batch_size=4, lr=0.001, weight_decay=0,
     if cuda:
         net.cuda()
 
-    net.apply(weights_init)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
 
