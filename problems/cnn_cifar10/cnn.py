@@ -79,8 +79,6 @@ def train_nn(random_seed, n_epochs=2, batch_size=4, lr=0.001, weight_decay=0,
     if testset is None:
         testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                             download=True, transform=transform)
-    if size_kernel % 2 == 0:
-        size_kernel += 1
 
     class Net(nn.Module):
         def __init__(self):
