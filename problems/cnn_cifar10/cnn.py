@@ -68,7 +68,7 @@ def weights_init(m):
 
 
 def train_nn(random_seed, n_epochs=2, batch_size=4, lr=0.001, weight_decay=0,
-             number_chanels_first=6, number_chanels_second=16, number_hidden_units=120,
+             number_chanels_first=6, number_hidden_units=120,
              size_kernel=5, cuda=False, trainset=None, testset=None):
 
     torch.manual_seed(1)
@@ -87,6 +87,7 @@ def train_nn(random_seed, n_epochs=2, batch_size=4, lr=0.001, weight_decay=0,
             self.conv1 = nn.Conv2d(3, number_chanels_first, size_kernel)
             dim_1 = (32 - size_kernel + 1) / 2
             self.pool = nn.MaxPool2d(2, 2)
+            number_chanels_second = 2 * number_chanels_first
             self.conv2 = nn.Conv2d(number_chanels_first, number_chanels_second, size_kernel)
             dim_2 = (dim_1 - size_kernel + 1) / 2
             self.total_dim = number_chanels_second * dim_2 * dim_2

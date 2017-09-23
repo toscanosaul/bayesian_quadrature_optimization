@@ -71,28 +71,29 @@ def get_training_test(fold):
 
     return training, validation
 
-def toy_example(x, cuda=False):
+def toy_example(x, cuda=True):
     """
 
     :param x: [int, float, int, int, int]
     :return: [float]
+
     """
-    n_epochs = x[0]
-    batch_size = x[1]
+
+    n_epochs = max(int(x[0]), 1)
+    batch_size = max(int(x[1]), 4)
     lr = x[2]
     weight_decay = x[3]
-    number_chanels_second = x[4]
-    number_hidden_units = x[5]
-    size_kernel = x[6]
-    task = x[7]
+    number_chanels_first = max(int(x[4]), 10)
+    number_hidden_units = max(int(x[5]), 100)
+    size_kernel = max(int(x[6]), 2)
+    task = int(x[7])
 
     training, validation = get_training_test(task)
 
     val = train_nn(
         random_seed=1, n_epochs=n_epochs, batch_size=batch_size, lr=lr, weight_decay=weight_decay,
-        number_chanels_first=6, number_chanels_second=number_chanels_second,
-        number_hidden_units=number_hidden_units, size_kernel=size_kernel, cuda=cuda,
-        trainset=training, testset=validation)
+        number_chanels_first=number_chanels_first, number_hidden_units=number_hidden_units,
+        size_kernel=size_kernel, cuda=cuda, trainset=training, testset=validation)
 
     return [val]
 
