@@ -68,7 +68,7 @@ def weights_init(m):
 
 
 def train_nn(random_seed, n_epochs=2, batch_size=4, lr=0.001, weight_decay=0,
-             number_chanels_first=6, number_chanels_second=16, number_hidden_units=120,
+             number_chanels_first=6, number_hidden_units=120,
              size_kernel=5, cuda=False, trainset=None, testset=None):
 
     torch.manual_seed(1)
