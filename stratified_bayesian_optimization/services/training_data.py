@@ -127,6 +127,7 @@ class TrainingDataService(object):
                 else:
                     evaluation = cls.evaluate_function(module, point)
                 training_data['evaluations'].append(evaluation[0])
+                JSONFile.write(training_data, training_path)
             JSONFile.write(training_data, training_path)
             return training_data
 
