@@ -92,6 +92,8 @@ class RunSpecEntity(Model):
 
     threshold_sbo = FloatType(required=False)
 
+    parallel_training = BooleanType(required=False)
+
     @classmethod
     def from_json(cls, specfile):
         """
@@ -189,6 +191,8 @@ class RunSpecEntity(Model):
 
         threshold_sbo = spec.get('threshold_sbo')
 
+        parallel_training = spec.get('parallel_training', True)
+
         entry.update({
             'problem_name': problem_name,
             'dim_x': dim_x,
@@ -242,6 +246,7 @@ class RunSpecEntity(Model):
             'n_samples_parameters_mean': n_samples_parameters_mean,
             'maxepoch_mean': maxepoch_mean,
             'threshold_sbo': threshold_sbo,
+            'parallel_training': parallel_training,
         })
 
 
@@ -323,6 +328,8 @@ class MultipleSpecEntity(Model):
     maxepoch_means = ListType(IntType, required=False)
 
     threshold_sbos = ListType(FloatType, required=False)
+
+    parallel_trainings = ListType(BooleanType, required=False)
 
     # TODO - Complete all the other needed params
 
@@ -430,6 +437,8 @@ class MultipleSpecEntity(Model):
 
         threshold_sbos = spec.get('threshold_sbos', n_specs * [[]])
 
+        parallel_trainings = spec.get('parallel_trainings', n_specs * [True])
+
         entry.update({
             'caches': caches,
             'debugs': debugs,
@@ -483,6 +492,7 @@ class MultipleSpecEntity(Model):
             'mean_values': mean_values,
             'var_noise_values': var_noise_values,
             'threshold_sbos': threshold_sbos,
+            'parallel_trainings': parallel_trainings,
         })
 
         return cls(entry)

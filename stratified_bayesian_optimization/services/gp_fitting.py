@@ -57,6 +57,7 @@ class GPFittingService(object):
             'use_only_training_points': spec.get('use_only_training_points', True),
             'optimization_method': spec.get('method_optimization'),
             'n_samples_parameters': spec.get('n_samples_parameters', 0),
+            'parallel_training': spec.get('parallel_training', True),
         }
 
         return cls.get_gp(**entry)
@@ -120,7 +121,8 @@ class GPFittingService(object):
                training_name=None, mle=True, thinning=0, n_burning=0, max_steps_out=1,
                n_samples=None, random_seed=DEFAULT_RANDOM_SEED, kernel_values=None, mean_value=None,
                var_noise_value=None, cache=True, same_correlation=False,
-               use_only_training_points=True, optimization_method=None, n_samples_parameters=0):
+               use_only_training_points=True, optimization_method=None, n_samples_parameters=0,
+               parallel_training=True):
         """
         Fetch a GP model from file if it exists, otherwise train a new model and save it locally.
 
@@ -161,6 +163,7 @@ class GPFittingService(object):
             previously computed.
         :param optimization_method: (str)
         :param n_samples_parameters: (int)
+        :param parallel_training: (boolean)
 
         :return: (GPFittingGaussian) - An instance of GPFittingGaussian
         """
@@ -200,7 +203,8 @@ class GPFittingService(object):
                                                                   n_samples=n_samples,
                                                                   random_seed=random_seed,
                                                                   type_bounds=type_bounds,
-                                                                  cache=cache)
+                                                                  cache=cache,
+                                                                  parallel=parallel_training)
 
         logger.info("Training %s" % model_type.__name__)
 

@@ -43,7 +43,8 @@ class SpecService(object):
                            use_only_training_points=True, n_restarts=10, n_best_restarts=10,
                            n_best_restarts_mc=1, n_samples_parameters=0, n_restarts_mean=1000,
                            n_best_restarts_mean=100, method_opt_mc=DOGLEG, maxepoch=10,
-                           n_samples_parameters_mean=15, maxepoch_mean=20, threshold_sbo=None):
+                           n_samples_parameters_mean=15, maxepoch_mean=20, threshold_sbo=None,
+                           parallel_training=True):
 
         """
         Generate dict that represents run spec.
@@ -119,6 +120,7 @@ class SpecService(object):
         :param n_samples_parameters_mean: (int)
         :param maxepoch_mean: (int) Maxepoch for the optimization of the posterior mean
         :param threshold_sbo: (int) If SBO < threshold_sbo, we randomly choose a point instead.
+        :param parallel_training: (boolean) If True, the training data is computed in parallel
 
         :return: dict
         """
@@ -214,6 +216,7 @@ class SpecService(object):
             'n_samples_parameters_mean': n_samples_parameters_mean,
             'maxepoch_mean': maxepoch_mean,
             'threshold_sbo': threshold_sbo,
+            'parallel_training': parallel_training,
         }
 
     # TODO - generate a list of runspecentities over different parameters
@@ -233,7 +236,7 @@ class SpecService(object):
             n_restartss=None, n_best_restartss=None, n_best_restarts_mcs=None,
             n_samples_parameterss=None, n_restarts_means=None, n_best_restarts_means=None,
             method_opt_mcs=None, maxepochs=None, n_samples_parameters_means=None,
-            maxepoch_means=None, threshold_sbos=None):
+            maxepoch_means=None, threshold_sbos=None, parallel_trainings=None):
 
         """
         Generate dict that represents multiple run specs
@@ -358,6 +361,9 @@ class SpecService(object):
 
         if name_models is None:
             name_models = ['gp_fitting_gaussian']
+
+        if parallel_trainings is None:
+            parallel_trainings = [True]
 
         if minimizes is None:
             minimizes = [False]
@@ -495,6 +501,9 @@ class SpecService(object):
 
         if len(n_burnings) != n_specs:
             n_burnings = n_specs * n_burnings
+
+        if len(parallel_trainings) != n_specs:
+            parallel_trainings = n_specs * parallel_trainings
 
         if len(max_steps_outs) != n_specs:
             max_steps_outs = n_specs * max_steps_outs
@@ -639,6 +648,7 @@ class SpecService(object):
             'n_samples_parameters_means': n_samples_parameters_means,
             'maxepoch_means': maxepoch_means,
             'threshold_sbos': threshold_sbos,
+            'parallel_trainings': parallel_trainings,
         }
 
     @classmethod
@@ -727,6 +737,8 @@ class SpecService(object):
 
         threshold_sbos = multiple_spec.get('threshold_sbos')[n_spec]
 
+        parallel_trainings = multiple_spec.get('parallel_trainings')[n_spec]
+
         entry = {}
 
         entry.update({
@@ -782,6 +794,7 @@ class SpecService(object):
             'n_samples_parameters_mean': n_samples_parameters_means,
             'maxepoch_mean': maxepoch_means,
             'threshold_sbo': threshold_sbos,
+            'parallel_training': parallel_trainings,
         })
 
         run_spec = RunSpecEntity(entry)

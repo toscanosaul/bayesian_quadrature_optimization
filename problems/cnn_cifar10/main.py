@@ -114,7 +114,7 @@ def integrate_toy_example(x):
         # values.append(val[0])
 
     errors = Parallel.run_function_different_arguments_parallel(
-        toy_example, points)
+        toy_example, points, parallel=False)
 
     values = convert_dictionary_to_list(errors)
 
