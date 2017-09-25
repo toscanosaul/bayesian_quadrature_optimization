@@ -86,12 +86,13 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True):
 
     colors = ['b', 'r']
 
+    plt.figure()
+
     for id, method in enumerate(results):
         x_axis = results[method][0]
         y_values = results[method][1]
         ci_u = results[method][2]
         ci_l = results[method][3]
-        plt.figure()
         col = colors[id]
         plt.plot(x_axis, y_values, color=col, linewidth=2.0, label=str(method))
         plt.plot(x_axis, ci_u, '--', color=col, label="95% CI")
