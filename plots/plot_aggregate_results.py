@@ -51,7 +51,7 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True):
                     n_points=n_training,
                 )
 
-                file_path = path.join(dir, file_name)
+                file_path_plot = path.join(dir, file_name)
                 for method in methods:
                     file_name = _aggregated_results(
                         problem_name=problem,
@@ -99,4 +99,4 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True):
     plt.xlabel('Number of Samples', fontsize=24)
     plt.ylabel('Cross Validation Error', fontsize=24)
     plt.legend(loc=3, ncol=2, mode="expand", borderaxespad=0.)
-    plt.savefig(file_path)
+    plt.savefig(file_path_plot)
