@@ -1008,7 +1008,7 @@ class SpecService(object):
             problems = list(set(multiple_spec.get('problem_names')))
             random_seeds_check = set(random_seeds[problems[0]])
             for i in xrange(1, len(problems)):
-                random_seeds_check = random_seeds.intersection(random_seeds[problems[i]])
+                random_seeds_check = random_seeds_check.intersection(random_seeds[problems[i]])
 
 
         for i in xrange(n_specs):
