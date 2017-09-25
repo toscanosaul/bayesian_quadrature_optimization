@@ -945,7 +945,7 @@ class SpecService(object):
 
     @classmethod
     def collect_multi_spec_results(cls, multiple_spec, total_iterations=None, sign=True, sqr=False,
-                                   same_random_seeds=True):
+                                   same_random_seeds=False):
         """
         Writes the files with the aggregated results
         :param multiple_spec:
