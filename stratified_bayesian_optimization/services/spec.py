@@ -944,13 +944,15 @@ class SpecService(object):
         #     run_spec.append(RunSpecEntity(parameters_entity))
 
     @classmethod
-    def collect_multi_spec_results(cls, multiple_spec, total_iterations=None, sign=True, sqr=False):
+    def collect_multi_spec_results(cls, multiple_spec, total_iterations=None, sign=True, sqr=False,
+                                   same_random_seeds=True):
         """
         Writes the files with the aggregated results
         :param multiple_spec:
         :param total_iterations: (int) Collect results until this iteration
         :param sign: (boolean) If true, we multiply the results by -1
         :param sqr: (boolean) If true, we take the square root of the results
+        :param same_random_seeds: (boolean) If true, we use the same random seeds for both problems
         :return:
         """
 
@@ -971,6 +973,44 @@ class SpecService(object):
         else:
             f = lambda x: x
 
+        if same_random_seeds:
+            random_seeds = {}
+            for problem in set(multiple_spec.get('problem_names')):
+                random_seeds[problem] = []
+            for i in xrange(n_specs):
+                problem_name = multiple_spec.get('problem_names')[i]
+                dir = path.join(PROBLEM_DIR, problem_name, PARTIAL_RESULTS)
+
+                if not os.path.exists(dir):
+                    continue
+
+                training_name = multiple_spec.get('training_names')[i]
+                n_training = multiple_spec.get('n_trainings')[i]
+                random_seed = multiple_spec.get('random_seeds')[i]
+                method = multiple_spec.get('method_optimizations')[i]
+                n_samples_parameters = multiple_spec.get('n_samples_parameterss')[i]
+                n_iterations = multiple_spec.get('n_iterationss')[i]
+
+                file_name = cls._filename_results(
+                    problem_name=problem_name,
+                    training_name=training_name,
+                    n_points=n_training,
+                    random_seed=random_seed,
+                    method=method,
+                    n_samples_parameters=n_samples_parameters,
+                )
+
+                file_path = path.join(dir, file_name)
+                if not os.path.exists(file_path):
+                    continue
+                random_seeds[problem_name].append(random_seed)
+
+            problems = list(set(multiple_spec.get('problem_names')))
+            random_seeds_check = set(random_seeds[problems[0]])
+            for i in xrange(1, len(problems)):
+                random_seeds_check = random_seeds.intersection(random_seeds[problems[i]])
+
+
         for i in xrange(n_specs):
             problem_name = multiple_spec.get('problem_names')[i]
             dir = path.join(PROBLEM_DIR, problem_name, PARTIAL_RESULTS)
@@ -984,6 +1024,9 @@ class SpecService(object):
             method = multiple_spec.get('method_optimizations')[i]
             n_samples_parameters = multiple_spec.get('n_samples_parameterss')[i]
             n_iterations = multiple_spec.get('n_iterationss')[i]
+
+            if same_random_seeds and random_seed not in random_seeds_check:
+                continue
 
             file_name = cls._filename_results(
                 problem_name=problem_name,
