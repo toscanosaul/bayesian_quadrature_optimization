@@ -1016,43 +1016,46 @@ class SpecService(object):
         methods = set(multiple_spec.get('method_optimizations'))
 
         aggregated_results = {}
-        for problem, training, n_training, method in zip(problem_names, training_names,
-                                                         n_trainings, methods):
-            key = (problem, training, n_training, method)
-            aggregated_results[key] = {}
+        for problem in problem_names:
+            for training in training_names:
+                for n_training in n_trainings:
+                    for method in methods:
 
-            results = results_dict[key]
+                        key = (problem, training, n_training, method)
+                        aggregated_results[key] = {}
 
-            for iteration in xrange(min(len(results), total_iterations)):
-                if len(results[iteration]) > 0:
-                    values = results[iteration]
-                    mean = np.mean(values)
-                    std = np.std(values)
-                    n_samples = len(results[iteration])
-                    ci_low =  mean -1.96 * std / np.sqrt(n_samples)
-                    ci_up = mean + 1.96 * std / np.sqrt(n_samples)
+                        results = results_dict[key]
 
-                    aggregated_results[key][iteration] = {}
-                    aggregated_results[key][iteration]['mean'] = mean
-                    aggregated_results[key][iteration]['std'] = std
-                    aggregated_results[key][iteration]['n_samples'] = n_samples
-                    aggregated_results[key][iteration]['ci_low'] = ci_low
-                    aggregated_results[key][iteration]['ci_up'] = ci_up
-                else:
-                    break
+                        for iteration in xrange(min(len(results), total_iterations)):
+                            if len(results[iteration]) > 0:
+                                values = results[iteration]
+                                mean = np.mean(values)
+                                std = np.std(values)
+                                n_samples = len(results[iteration])
+                                ci_low =  mean -1.96 * std / np.sqrt(n_samples)
+                                ci_up = mean + 1.96 * std / np.sqrt(n_samples)
 
-            if len(aggregated_results[key]) > 0:
-                dir = path.join(PROBLEM_DIR, problem_name, AGGREGATED_RESULTS)
+                                aggregated_results[key][iteration] = {}
+                                aggregated_results[key][iteration]['mean'] = mean
+                                aggregated_results[key][iteration]['std'] = std
+                                aggregated_results[key][iteration]['n_samples'] = n_samples
+                                aggregated_results[key][iteration]['ci_low'] = ci_low
+                                aggregated_results[key][iteration]['ci_up'] = ci_up
+                            else:
+                                break
 
-                if not os.path.exists(dir):
-                    os.mkdir(dir)
+                        if len(aggregated_results[key]) > 0:
+                            dir = path.join(PROBLEM_DIR, problem, AGGREGATED_RESULTS)
 
-                file_name = cls._aggregated_results(
-                    problem_name=problem,
-                    training_name=training,
-                    n_points=n_training,
-                    method=method,
-                )
+                            if not os.path.exists(dir):
+                                os.mkdir(dir)
 
-                file_path = path.join(dir, file_name)
-                JSONFile.write(aggregated_results[key], file_path)
+                            file_name = cls._aggregated_results(
+                                problem_name=problem,
+                                training_name=training,
+                                n_points=n_training,
+                                method=method,
+                            )
+
+                            file_path = path.join(dir, file_name)
+                            JSONFile.write(aggregated_results[key], file_path)
