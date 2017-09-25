@@ -975,8 +975,8 @@ class SpecService(object):
 
         if same_random_seeds:
             random_seeds = {}
-            for problem in set(multiple_spec.get('problem_names')):
-                random_seeds[problem] = []
+            for method in set(multiple_spec.get('method_optimizations')):
+                random_seeds[method] = []
             for i in xrange(n_specs):
                 problem_name = multiple_spec.get('problem_names')[i]
                 dir = path.join(PROBLEM_DIR, problem_name, PARTIAL_RESULTS)
@@ -1003,12 +1003,12 @@ class SpecService(object):
                 file_path = path.join(dir, file_name)
                 if not os.path.exists(file_path):
                     continue
-                random_seeds[problem_name].append(random_seed)
+                random_seeds[method].append(random_seed)
 
-            problems = list(set(multiple_spec.get('problem_names')))
-            random_seeds_check = set(random_seeds[problems[0]])
-            for i in xrange(1, len(problems)):
-                random_seeds_check = random_seeds_check.intersection(random_seeds[problems[i]])
+            methods = list(set(multiple_spec.get('method_optimizations')))
+            random_seeds_check = set(random_seeds[methods[0]])
+            for i in xrange(1, len(methods)):
+                random_seeds_check = random_seeds_check.intersection(random_seeds[methods[i]])
 
 
         for i in xrange(n_specs):
