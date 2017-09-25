@@ -39,50 +39,48 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True):
     methods = set(multiple_spec.get('method_optimizations'))
 
     results = {}
-    for problem, training, n_training, method in zip(problem_names, training_names,
-                                                     n_trainings, methods):
-
+    for problem in problem_names:
         dir = path.join(PROBLEM_DIR, problem, AGGREGATED_RESULTS)
-
         if not os.path.exists(dir):
             continue
+        for training in training_names:
+            for n_training in n_trainings:
+                file_name = _aggregated_results_plot(
+                    problem_name=problem,
+                    training_name=training,
+                    n_points=n_training,
+                )
 
-        file_name = _aggregated_results(
-            problem_name=problem,
-            training_name=training,
-            n_points=n_training,
-            method=method,
-        )
+                file_path = path.join(dir, file_name)
+                for method in methods:
+                    file_name = _aggregated_results(
+                        problem_name=problem,
+                        training_name=training,
+                        n_points=n_training,
+                        method=method,
+                    )
 
-        file_path = path.join(dir, file_name)
+                    file_path = path.join(dir, file_name)
 
-        if not os.path.exists(file_path):
-            continue
+                    if not os.path.exists(file_path):
+                        continue
 
-        data = JSONFile.read(file_path)
+                    data = JSONFile.read(file_path)
 
-        x_axis = list(data.keys())
-        x_axis = [int(i) for i in x_axis]
-        x_axis.sort()
+                    x_axis = list(data.keys())
+                    x_axis = [int(i) for i in x_axis]
+                    x_axis.sort()
 
-        y_values = []
-        ci_u = []
-        ci_l = []
+                    y_values = []
+                    ci_u = []
+                    ci_l = []
 
-        for i in x_axis:
-            y_values.append(data[str(i)]['mean'])
-            ci_u.append(data[str(i)]['ci_up'])
-            ci_l.append(data[str(i)]['ci_low'])
+                    for i in x_axis:
+                        y_values.append(data[str(i)]['mean'])
+                        ci_u.append(data[str(i)]['ci_up'])
+                        ci_l.append(data[str(i)]['ci_low'])
 
-        results[method] = [x_axis, y_values, ci_u, ci_l]
-
-        file_name = _aggregated_results_plot(
-            problem_name=problem,
-            training_name=training,
-            n_points=n_training,
-        )
-
-        file_path = path.join(dir, file_name)
+                    results[method] = [x_axis, y_values, ci_u, ci_l]
 
     colors = ['b', 'r']
 
