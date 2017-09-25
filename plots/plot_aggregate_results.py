@@ -23,7 +23,7 @@ from stratified_bayesian_optimization.lib.constant import (
 from stratified_bayesian_optimization.util.json_file import JSONFile
 
 _aggregated_results = 'results_{problem_name}_{training_name}_{n_points}_{method}.json'.format
-_aggregated_results_plot = 'plot_{problem_name}_{training_name}_{n_points}_{method}.pdf'.format
+_aggregated_results_plot = 'plot_{problem_name}_{training_name}_{n_points}.pdf'.format
 
 
 def plot_aggregate_results(multiple_spec, negative=True, square=True):
@@ -38,6 +38,7 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True):
     n_trainings = set(multiple_spec.get('n_trainings'))
     methods = set(multiple_spec.get('method_optimizations'))
 
+    results = {}
     for problem, training, n_training, method in zip(problem_names, training_names,
                                                      n_trainings, methods):
 
@@ -73,20 +74,30 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True):
             ci_u.append(data[str(i)]['ci_up'])
             ci_l.append(data[str(i)]['ci_low'])
 
+        results[method] = [x_axis, y_values, ci_u, ci_l]
+
         file_name = _aggregated_results_plot(
             problem_name=problem,
             training_name=training,
             n_points=n_training,
-            method=method,
         )
 
         file_path = path.join(dir, file_name)
 
+    colors = ['b', 'r']
+
+    for id, method in enumerate(results):
+        x_axis = results[method][0]
+        y_values = results[method][1]
+        ci_u = results[method][2]
+        ci_l = results[method][3]
         plt.figure()
-        plt.plot(x_axis, y_values, color='b', linewidth=2.0)
-        plt.plot(x_axis, ci_u, '--', color='b', label="95% CI")
-        plt.plot(x_axis, ci_l, '--', color='b')
-        plt.xlabel('Number of Samples', fontsize=26)
-        plt.ylabel('Cross Validation Error', fontsize=24)
-        plt.legend(loc=3, ncol=2, mode="expand", borderaxespad=0.)
-        plt.savefig(file_path)
+        col = colors[id]
+        plt.plot(x_axis, y_values, color=col, linewidth=2.0, label=str(method))
+        plt.plot(x_axis, ci_u, '--', color=col, label="95% CI")
+        plt.plot(x_axis, ci_l, '--', color=col)
+
+    plt.xlabel('Number of Samples', fontsize=24)
+    plt.ylabel('Cross Validation Error', fontsize=24)
+    plt.legend(loc=3, ncol=2, mode="expand", borderaxespad=0.)
+    plt.savefig(file_path)

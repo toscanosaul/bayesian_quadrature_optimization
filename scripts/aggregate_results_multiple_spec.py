@@ -18,12 +18,14 @@ from stratified_bayesian_optimization.lib.constant import (
 
 
 if __name__ == '__main__':
-    # usage: python -m scripts.aggregate_results_multiple_spec combine_arxiv_runs.json --niter 30
+    # usage: python -m scripts.aggregate_results_multiple_spec
+    # combine_arxiv_runs.json --niter 30
 
     # script used to aggregate the results of the multiple runs defined by a multiple_spec file
 
+
     parser = argparse.ArgumentParser()
-    parser.add_argument('specfile', help='e.g. multiple_spec.json')
+    parser.add_argument('specfile', help='e.g. combine_arxiv_runs.json')
     parser.add_argument('--niter', help='number of iterations', default=-1)
     args = parser.parse_args()
 
@@ -36,5 +38,6 @@ if __name__ == '__main__':
     multiple_spec = MultipleSpecEntity.from_json(multiple_spec_file)
 
     SpecService.collect_multi_spec_results(multiple_spec, total_iterations=n_iterations)
+
 
     plot_aggregate_results(multiple_spec)

@@ -944,7 +944,7 @@ class SpecService(object):
         #     run_spec.append(RunSpecEntity(parameters_entity))
 
     @classmethod
-    def collect_multi_spec_results(cls, multiple_spec, total_iterations=None, sign=True, sqr=True):
+    def collect_multi_spec_results(cls, multiple_spec, total_iterations=None, sign=True, sqr=False):
         """
         Writes the files with the aggregated results
         :param multiple_spec:
