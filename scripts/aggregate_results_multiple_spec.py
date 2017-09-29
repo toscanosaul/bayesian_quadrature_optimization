@@ -34,7 +34,7 @@ if __name__ == '__main__':
     rs_lw = int(args.rs_lw)
     rs_up = int(args.rs_up)
 
-    if rs_up == 1:
+    if rs_up == -1:
         rs_up = None
 
     if n_iterations == -1:
