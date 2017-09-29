@@ -1661,7 +1661,7 @@ class SBO(object):
                 current_points = current_points[:, 0:-1]
 
                 distances = Distances.dist_square_length_scale(
-                    np.ones(new_points.shape[1]), new_points, current_points)
+                    np.ones(len(new_points[0])), new_points, current_points)
                 max_distances = np.min(distances, axis=1)
 
                 sort_dist_ind = sorted(range(len(max_distances)), key=lambda k: max_distances[k])
@@ -1679,8 +1679,10 @@ class SBO(object):
                 index_2 = [sort_dist_ind[t] for t in index_2]
                 index = index_1 + index_2
 
-                start_points = current_points[index, :]
-
+                start_points = []
+                for i in index:
+                    start_points.append(new_points[i])
+                start_points = np.array(start_points)
                 start_points = np.concatenate((start_points, task_chosen), axis=1)
             elif n_restarts > 0:
                 start_points = DomainService.get_points_domain(
