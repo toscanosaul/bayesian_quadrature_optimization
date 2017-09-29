@@ -945,7 +945,7 @@ class SpecService(object):
 
     @classmethod
     def collect_multi_spec_results(cls, multiple_spec, total_iterations=None, sign=True, sqr=False,
-                                   same_random_seeds=False):
+                                   same_random_seeds=False, rs_lw=0, rs_up=None):
         """
         Writes the files with the aggregated results
         :param multiple_spec:
@@ -972,6 +972,9 @@ class SpecService(object):
             f = lambda x: x ** 0.5
         else:
             f = lambda x: x
+
+        if rs_up is not None:
+            same_random_seeds = True
 
         if same_random_seeds:
             random_seeds = {}
@@ -1010,6 +1013,8 @@ class SpecService(object):
             for i in xrange(1, len(methods)):
                 random_seeds_check = random_seeds_check.intersection(random_seeds[methods[i]])
 
+            if rs_up is not None:
+                random_seeds_check.intersection(range(rs_lw, rs_up))
 
         for i in xrange(n_specs):
             problem_name = multiple_spec.get('problem_names')[i]
