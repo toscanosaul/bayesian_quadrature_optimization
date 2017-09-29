@@ -38,9 +38,22 @@ if __name__ == '__main__':
 
     new_spec = {}
 
+    n_specs = len(spec_1.keys())
+
+
     for key in spec_1:
-        value_1 = spec_1[key]
-        value_2 = spec_2[key]
-        new_spec[key] = value_1 + value_2
+        values_1 = spec_1[key]
+        values_2 = spec_2[key]
+        new_spec[key] = []
+        for i in xrange(len(values_1)):
+            value_1 = values_1[i]
+            value_2 = values_2[i]
+            new_spec[key] += [value_1]
+            new_spec[key] += [value_2]
+
+    # for key in spec_1:
+    #     value_1 = spec_1[key]
+    #     value_2 = spec_2[key]
+    #     new_spec[key] = value_1 + value_2
 
     JSONFile.write(new_spec, path.join(MULTIPLESPECS_DIR, output))

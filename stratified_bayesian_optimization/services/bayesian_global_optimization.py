@@ -228,37 +228,37 @@ class BGO(object):
             value_sbo = new_point_sol['optimal_value']
             new_point = new_point_sol['solution']
 
-            if threshold_af is not None and value_sbo < threshold_af:
-                #TODO: FINISH THIS
-                new_points = self.acquisition_function.random_points_domain(100)
-                current_points = np.array(self.quadrature.gp.data['points'])
-
-                if self.acquisition_function.bq.separate_tasks:
-                    new_points = new_points[:, 0:-1]
-                    tasks_hist = current_points[:, -1]
-                    current_points = current_points[:, 0:-1]
-                    tasks = self.acquisition_function.bq.tasks
-                    n_tasks = len(tasks)
-                    freq_task = Counter(tasks_hist)
-                    less_freq_task = freq_task.most_common(n_tasks)[-1][0]
-
-                distances = Distances.dist_square_length_scale(
-                    np.ones(new_points.shape[1]), new_points, current_points)
-                max_distances = np.min(distances, axis=1)
-
-                distances_opt = Distances.dist_square_length_scale(
-                    np.ones(new_points.shape[1]),
-                    optimize_mean['solution'].reshape((1, len(optimize_mean['solution']))),
-                    current_points)
-                distance_opt = np.min(distances_opt)
-
-                if distance_opt > np.median(max_distances):
-                    new_point = optimize_mean['solution']
-                else:
-                    new_point = new_points[np.argmax(max_distances), :]
-
-                if self.acquisition_function.bq.separate_tasks:
-                    new_point = np.concatenate((new_point, [less_freq_task]))
+            # if threshold_af is not None and value_sbo < threshold_af:
+            #     #TODO: FINISH THIS
+            #     new_points = self.acquisition_function.random_points_domain(100)
+            #     current_points = np.array(self.quadrature.gp.data['points'])
+            #
+            #     if self.acquisition_function.bq.separate_tasks:
+            #         new_points = new_points[:, 0:-1]
+            #         tasks_hist = current_points[:, -1]
+            #         current_points = current_points[:, 0:-1]
+            #         tasks = self.acquisition_function.bq.tasks
+            #         n_tasks = len(tasks)
+            #         freq_task = Counter(tasks_hist)
+            #         less_freq_task = freq_task.most_common(n_tasks)[-1][0]
+            #
+            #     distances = Distances.dist_square_length_scale(
+            #         np.ones(new_points.shape[1]), new_points, current_points)
+            #     max_distances = np.min(distances, axis=1)
+            #
+            #     distances_opt = Distances.dist_square_length_scale(
+            #         np.ones(new_points.shape[1]),
+            #         optimize_mean['solution'].reshape((1, len(optimize_mean['solution']))),
+            #         current_points)
+            #     distance_opt = np.min(distances_opt)
+            #
+            #     if distance_opt > np.median(max_distances):
+            #         new_point = optimize_mean['solution']
+            #     else:
+            #         new_point = new_points[np.argmax(max_distances), :]
+            #
+            #     if self.acquisition_function.bq.separate_tasks:
+            #         new_point = np.concatenate((new_point, [less_freq_task]))
 
 
             self.acquisition_function.write_debug_data(self.problem_name, self.name_model,
