@@ -1014,7 +1014,7 @@ class SpecService(object):
                 random_seeds_check = random_seeds_check.intersection(random_seeds[methods[i]])
 
             if rs_up is not None:
-                random_seeds_check.intersection(range(rs_lw, rs_up))
+                random_seeds_check = random_seeds_check.intersection(range(rs_lw, rs_up))
 
         for i in xrange(n_specs):
             problem_name = multiple_spec.get('problem_names')[i]

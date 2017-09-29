@@ -18,8 +18,7 @@ from stratified_bayesian_optimization.lib.constant import (
 
 
 if __name__ == '__main__':
-    # usage: python -m scripts.aggregate_results_multiple_spec sbo_mt_arxiv.json --niter 30
-    # --rs_lw 0 --rs_up 10
+    # usage: python -m scripts.aggregate_results_multiple_spec sbo_mt_arxiv.json --niter 30 --rs_lw 0 --rs_up 10
 
     # script used to aggregate the results of the multiple runs defined by a multiple_spec file
 
