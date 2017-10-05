@@ -62,7 +62,7 @@ if __name__ == '__main__':
     # parallel_training = [True]
 
     #cnn
-    dim_x = [7]
+    dim_x = [6]
     bounds_domain_x = [[(1, 11), (4, 500), (0, 1), (10, 500), (100, 1000), (2, 11)]]
     problem_name = ['cnn_cifar10']
     training_name = [None]
@@ -93,10 +93,10 @@ if __name__ == '__main__':
     n_best_restarts_mc = [0]
     factr_mc = [1e12]
     maxiter_mc = [10]
-    n_restarts = [10]
-    n_best_restarts = [0]
+    n_restarts = [100]
+    n_best_restarts = [10]
     use_only_training_points = [True]
-    method_optimization = [SBO_METHOD]
+    method_optimization = [MULTI_TASK_METHOD]
     n_samples_parameters = [5]
     n_restarts_mean = [100]
     n_best_restarts_mean = [10]
