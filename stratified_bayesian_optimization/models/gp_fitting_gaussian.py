@@ -280,7 +280,7 @@ class GPFittingGaussian(object):
             for index, slice in enumerate(self.slice_samplers):
                 new_point_ = None
                 n_try = 0
-                while new_point_ is None and n_try < 10:
+                while new_point_ is None and n_try < 500:
                     try:
                         new_point_ = \
                             slice.slice_sample(points[1 - index], points[index], *(self, ))
