@@ -94,6 +94,7 @@ def toy_example(x, cuda=False):
         number_chanels_first=number_chanels_first, number_hidden_units=number_hidden_units,
         size_kernel=size_kernel, cuda=cuda, trainset=training, testset=validation)
 
+    val = -1.0 * val
     return [val]
 
 
