@@ -188,6 +188,7 @@ class GPFittingService(object):
 
         if cache:
             data = JSONFile.read(gp_path)
+            data = None
         else:
             data = None
 
