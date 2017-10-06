@@ -77,7 +77,7 @@ if __name__ == '__main__':
     type_bounds = [[0, 0, 0, 0, 0, 0, 1]]
     x_domain = [[0, 1, 2, 3, 4, 5]]
     number_points_each_dimension = [[6, 6, 11, 6, 1, 1]]
-    mle = [True]
+    mle = [False]
     distribution = [UNIFORM_FINITE]
     parallel = [True]
     thinning = [10]

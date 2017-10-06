@@ -169,7 +169,7 @@ def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2=Non
         LOWER_TRIANG_NAME: None,
     }
 
-    index = -1
+    index = 1
 
     if TASKS_KERNEL_NAME in type_kernel:
         same_correlation = kernel_parameters.get(SAME_CORRELATION, False)
@@ -187,7 +187,7 @@ def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2=Non
 
     if MATERN52_NAME in type_kernel:
         m = data['points'].shape[1]
-        indexes = [i for i in range(m) if i != index - 1]
+        indexes = [i for i in range(m) if i != m - index + 1]
         points_matern = data['points'][:, indexes]
         matern_data = data.copy()
         matern_data['points'] = points_matern
