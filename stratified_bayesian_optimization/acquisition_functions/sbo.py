@@ -1608,30 +1608,34 @@ class SBO(object):
                                             parameters_distribution=self.bq.parameters_distribution,
                                             model_only_x=True)
             mk = MultiTasks(quadrature_2, quadrature_2.parameters_distribution.get(TASKS))
-            st_ei = mk.optimize_first(parallel=True, start=None, n_restarts=100,
-                                      n_best_restarts=10,
-                                      n_samples_parameters=n_parameters, maxepoch=3)
-            candidate_points = []
-            for i in xrange(len(self.bq.tasks)):
-                point = np.concatenate((st_ei, np.array([i])))
-                points_st_ei.append(point)
-                candidate_points.append(point)
-            candidate_points = np.array(candidate_points)
-
-            output = self.evaluate_mc_bayesian_candidate_points_no_restarts(
-                candidate_points, n_parameters, default_n_samples, default_restarts_mc,
-                n_threads=0, compute_max_mean=True, compute_gradient=False,
-                method_opt=method_opt_mc, **opt_params_mc)
-
-            evaluations = output['evaluations']
-
-            for i in xrange(len(self.bq.tasks)):
-                values_ei.append(evaluations[i])
-
-            tk = np.argmax(values_ei)
-            values_ei = [values_ei[t] for t in xrange(len(values_ei)) if t != tk]
-            points_st_ei = [points_st_ei[t] for t in xrange(len(points_st_ei)) if t != tk]
-            st_ei = np.concatenate((st_ei, np.array([tk])))
+            st_ei = mk.optimize(parallel=True, n_restarts=100,
+                                n_best_restarts=10,
+                                n_samples_parameters=n_parameters, maxepoch=3)
+            st_ei = st_ei['solution']
+            # st_ei = mk.optimize_first(parallel=True, start=None, n_restarts=100,
+            #                           n_best_restarts=10,
+            #                           n_samples_parameters=n_parameters, maxepoch=3)
+            # candidate_points = []
+            # for i in xrange(len(self.bq.tasks)):
+            #     point = np.concatenate((st_ei, np.array([i])))
+            #     points_st_ei.append(point)
+            #     candidate_points.append(point)
+            # candidate_points = np.array(candidate_points)
+            #
+            # output = self.evaluate_mc_bayesian_candidate_points_no_restarts(
+            #     candidate_points, n_parameters, default_n_samples, default_restarts_mc,
+            #     n_threads=0, compute_max_mean=True, compute_gradient=False,
+            #     method_opt=method_opt_mc, **opt_params_mc)
+            #
+            # evaluations = output['evaluations']
+            #
+            # for i in xrange(len(self.bq.tasks)):
+            #     values_ei.append(evaluations[i])
+            #
+            # tk = np.argmax(values_ei)
+            # values_ei = [values_ei[t] for t in xrange(len(values_ei)) if t != tk]
+            # points_st_ei = [points_st_ei[t] for t in xrange(len(points_st_ei)) if t != tk]
+            # st_ei = np.concatenate((st_ei, np.array([tk])))
             st_ei = st_ei.reshape((1, len(st_ei)))
             n_restarts -= 1
             n_best_restarts -= 1
@@ -1642,16 +1646,17 @@ class SBO(object):
                 n_tasks = len(tasks)
 
                 n_restarts = int(np.ceil(float(n_restarts) / n_tasks) * n_tasks)
+                n_restarts = min(2, n_restarts / n_tasks)
 
-                ind = [[i] for i in range(n_restarts)]
-                np.random.shuffle(ind)
-                task_chosen = np.zeros((n_restarts, 1))
-                n_task_per_group = n_restarts / n_tasks
-
-                for i in xrange(n_tasks):
-                    for j in xrange(n_task_per_group):
-                        tk = ind[j + i * n_task_per_group]
-                        task_chosen[tk, 0] = i
+                # ind = [[i] for i in range(n_restarts)]
+                # np.random.shuffle(ind)
+                # task_chosen = np.zeros((n_restarts, 1))
+                # n_task_per_group = n_restarts / n_tasks
+                #
+                # for i in xrange(n_tasks):
+                #     for j in xrange(n_task_per_group):
+                #         tk = ind[j + i * n_task_per_group]
+                #         task_chosen[tk, 0] = i
 
                 new_points = DomainService.get_points_domain(
                     100, bounds, type_bounds=self.bq.type_bounds)
@@ -1680,10 +1685,11 @@ class SBO(object):
                 index = index_1 + index_2
 
                 start_points = []
-                for i in index:
-                    start_points.append(new_points[i])
+                for j in xrange(n_tasks):
+                    for i in index:
+                        start_points.append(np.concatenate((new_points[i], j)))
                 start_points = np.array(start_points)
-                start_points = np.concatenate((start_points, task_chosen), axis=1)
+                # start_points = np.concatenate((start_points, task_chosen), axis=1)
             elif n_restarts > 0:
                 start_points = DomainService.get_points_domain(
                     n_restarts, bounds, type_bounds=self.bq.type_bounds)
