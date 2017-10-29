@@ -28,11 +28,19 @@ if __name__ == '__main__':
     parser.add_argument('--niter', help='number of iterations', default=-1)
     parser.add_argument('--rs_lw', help='number of iterations', default=0)
     parser.add_argument('--rs_up', help='number of iterations', default=-1)
+    parser.add_argument('--same_rs', help='0', default=0)
     args = parser.parse_args()
 
     n_iterations = int(args.niter)
     rs_lw = int(args.rs_lw)
     rs_up = int(args.rs_up)
+
+    same_rs = int(args.same_rs)
+
+    if same_rs == 0:
+        same_rs = False
+    else:
+        same_rs = True
 
     if rs_up == -1:
         rs_up = None
@@ -44,7 +52,8 @@ if __name__ == '__main__':
     multiple_spec = MultipleSpecEntity.from_json(multiple_spec_file)
 
     SpecService.collect_multi_spec_results(
-        multiple_spec, total_iterations=n_iterations, rs_lw=rs_lw, rs_up=rs_up)
+        multiple_spec, total_iterations=n_iterations, rs_lw=rs_lw, rs_up=rs_up,
+        same_random_seeds=same_rs)
 
 
     plot_aggregate_results(multiple_spec)
