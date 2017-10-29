@@ -1646,7 +1646,7 @@ class SBO(object):
                 n_tasks = len(tasks)
 
                 n_restarts = int(np.ceil(float(n_restarts) / n_tasks) * n_tasks)
-                n_restarts = min(2, n_restarts / n_tasks)
+                n_restarts = max(1, n_restarts / n_tasks)
 
                 # ind = [[i] for i in range(n_restarts)]
                 # np.random.shuffle(ind)
