@@ -1687,7 +1687,7 @@ class SBO(object):
                 start_points = []
                 for j in xrange(n_tasks):
                     for i in index:
-                        start_points.append(np.concatenate((new_points[i], j)))
+                        start_points.append(np.concatenate((new_points[i], [j])))
                 start_points = np.array(start_points)
                 # start_points = np.concatenate((start_points, task_chosen), axis=1)
             elif n_restarts > 0:
