@@ -11,6 +11,7 @@ from stratified_bayesian_optimization.lib.constant import (
     DOGLEG,
     MULTI_TASK_METHOD,
     EXPONENTIAL,
+    SCALED_KERNEL,
 )
 
 if __name__ == '__main__':
@@ -113,7 +114,7 @@ if __name__ == '__main__':
     bounds_domain_x = [[(0, 6), (0, 6)]]
     problem_name = ['vendor_problem']
     training_name = [None]
-    type_kernel = [[MATERN52_NAME]]
+    type_kernel = [[SCALED_KERNEL, MATERN52_NAME]]
     dimensions = [[4]]
     bounds_domain = [[[0, 6], [0, 6], [0, 20], [0, 20]]]
     n_training = [10]
