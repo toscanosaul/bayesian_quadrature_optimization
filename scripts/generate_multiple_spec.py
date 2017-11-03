@@ -10,6 +10,7 @@ from stratified_bayesian_optimization.lib.constant import (
     SBO_METHOD,
     DOGLEG,
     MULTI_TASK_METHOD,
+    EXPONENTIAL,
 )
 
 if __name__ == '__main__':
@@ -61,29 +62,74 @@ if __name__ == '__main__':
     # threshold_sbo = [0.001]
     # parallel_training = [True]
 
-    #cnn
-    dim_x = [6]
-    bounds_domain_x = [[(1, 11), (4, 500), (0, 1), (3, 50), (100, 1000), (2, 6)]]
-    problem_name = ['cnn_cifar10']
+    # #cnn
+    # dim_x = [6]
+    # bounds_domain_x = [[(1, 11), (4, 500), (0, 1), (3, 50), (100, 1000), (2, 6)]]
+    # problem_name = ['cnn_cifar10']
+    # training_name = [None]
+    # type_kernel = [[PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]]
+    # dimensions = [[7, 6, 5]]
+    # bounds_domain = [[[1, 11], [4, 500], [0, 1], [3, 50], [100, 1000], [2, 6],
+    #                   [0, 1, 2, 3, 4]]]
+    # #old bounds: [[0.01, 1.01], [0.01, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
+    # n_training = [10]
+    # random_seed = range(1, 50)
+    # n_specs = len(random_seed)
+    # type_bounds = [[0, 0, 0, 0, 0, 0, 1]]
+    # x_domain = [[0, 1, 2, 3, 4, 5]]
+    # number_points_each_dimension = [[6, 6, 11, 6, 1, 1]]
+    # mle = [False]
+    # distribution = [UNIFORM_FINITE]
+    # parallel = [True]
+    # thinning = [10]
+    # n_burning = [500]
+    # max_steps_out = [1000]
+    # n_iterations = [35]
+    # same_correlation = [True]
+    # debug = [False]
+    # number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
+    # monte_carlo_sbo = [True]
+    # n_samples_mc = [5]
+    # n_restarts_mc = [5]
+    # n_best_restarts_mc = [0]
+    # factr_mc = [1e12]
+    # maxiter_mc = [10]
+    # n_restarts = [10]
+    # n_best_restarts = [0]
+    # use_only_training_points = [True]
+    # method_optimization = [SBO_METHOD]
+    # n_samples_parameters = [5]
+    # n_restarts_mean = [100]
+    # n_best_restarts_mean = [10]
+    # method_opt_mc = [DOGLEG]
+    # maxepoch = [10]
+    # n_samples_parameters_mean = [20]
+    # maxepoch_mean = [20]
+    # threshold_sbo = [0.001]
+    # parallel_training = [False]
+
+    #inventory
+    dim_x = [4]
+    bounds_domain_x = [[(0, 6), (0, 6)]]
+    problem_name = ['vendor_problem']
     training_name = [None]
-    type_kernel = [[PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]]
-    dimensions = [[7, 6, 5]]
-    bounds_domain = [[[1, 11], [4, 500], [0, 1], [3, 50], [100, 1000], [2, 6],
-                      [0, 1, 2, 3, 4]]]
+    type_kernel = [[MATERN52_NAME]]
+    dimensions = [[4]]
+    bounds_domain = [[[0, 6], [0, 6], [0, 20], [0, 20]]]
     #old bounds: [[0.01, 1.01], [0.01, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
     n_training = [10]
     random_seed = range(1, 50)
     n_specs = len(random_seed)
-    type_bounds = [[0, 0, 0, 0, 0, 0, 1]]
-    x_domain = [[0, 1, 2, 3, 4, 5]]
-    number_points_each_dimension = [[6, 6, 11, 6, 1, 1]]
+    type_bounds = [[0, 0, 0, 0]]
+    x_domain = [[0, 1]]
+    number_points_each_dimension = [[6, 6]]
     mle = [False]
-    distribution = [UNIFORM_FINITE]
+    distribution = [EXPONENTIAL]
     parallel = [True]
     thinning = [10]
     n_burning = [500]
     max_steps_out = [1000]
-    n_iterations = [35]
+    n_iterations = [100]
     same_correlation = [True]
     debug = [False]
     number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]

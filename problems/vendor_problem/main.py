@@ -3,59 +3,59 @@ from __future__ import absolute_import
 import numpy as np
 from copy import deepcopy
 
-def toy_example(x, cuda=False):
+from problems.vendor_problem.vendor import simulation
+
+
+runlength = 5
+n_customers = 5
+n_products = 2
+cost = [5, 6]
+sell_price = [8, 10]
+
+set_constraints = {}
+intervals = [[-np.inf, 0.0], [0.0, np.inf]]
+for i in xrange(2):
+    for j in xrange(2):
+        set_constraints[i * 2 + j] = [intervals[i], intervals[j]]
+
+# n=5
+# x=[2, 3, 4, 1, 1]
+# replications=5
+# customers=10
+# simulation(x, replications, customers, n, [5,6, 3, 1, 1], [8, 12, 7, 2, 3])
+
+def toy_example(n_samples, x):
     """
 
-    :param x: [int, float, int, int, int]
-    :return: [float]
+    :param n_samples: int
+    :param x: (n_products * [int] + [n_products * [float]]) inventory levels, and total sum over the
+        number of custombers of the Gumbel random vector associated to the n_products.
+    :return: [float, float]
 
     """
+    inv_levels = x[0:-1]
+    inv_levels = [int(a) for a in inv_levels]
 
-    n_epochs = max(int(x[0]), 1)
-    batch_size = max(int(x[1]), 4)
-    lr = x[2]
-    number_chanels_first = max(int(x[3]), 3)
-    number_hidden_units = max(int(x[4]), 100)
-    size_kernel = max(int(x[5]), 2)
-    task = int(x[6])
+    sum = x[-1]
+    val = simulation(inv_levels, n_samples, n_customers, n_products, cost, sell_price,
+                     sum_gumbel=sum, seed=1)
 
-    training, validation = get_training_test(task)
-
-    val = train_nn(
-        random_seed=1, n_epochs=n_epochs, batch_size=batch_size, lr=lr, weight_decay=0.0,
-        number_chanels_first=number_chanels_first, number_hidden_units=number_hidden_units,
-        size_kernel=size_kernel, cuda=cuda, trainset=training, testset=validation)
-
-    val = -1.0 * val
-    return [val]
+    return val
 
 
 def integrate_toy_example(x):
     """
 
-    :param x: [float, float, int, int]
+    :param x: n_products * [int]
     :return: [float]
     """
+    val = simulation(x, 1000, n_customers, n_products, cost, sell_price, seed=1)
+    return [val[0]]
 
-    points = {}
-    for task in xrange(n_folds):
-        point = deepcopy(x)
-        point.append(task)
-        points[task] = point
-        # val = toy_example(point)
-        # values.append(val[0])
-
-    errors = Parallel.run_function_different_arguments_parallel(
-        toy_example, points, parallel=False)
-
-    values = convert_dictionary_to_list(errors)
-
-    return [np.mean(np.array(values))]
-
-def main(*params):
+def main(n_samples, *params):
 #    print 'Anything printed here will end up in the output directory for job #:', str(2)
-    return toy_example(*params)
+    return toy_example(n_samples, *params)
 
-def main_objective(*params):
+def main_objective(n_samples, *params):
     # Integrate out the task parameter
     return integrate_toy_example(*params)

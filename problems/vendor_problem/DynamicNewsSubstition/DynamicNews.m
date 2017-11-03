@@ -66,7 +66,7 @@ else
     % Determine Utility Function
     Utility=zeros(n,runlength,T);
     for i=1:n
-        Utility(i,:,:)=u(i)+ Gumbel(i,:,:);
+        Utility(i,:,:)=u(i)+ Gumbel(:,:,i);
     end
     
     % Run Simulation

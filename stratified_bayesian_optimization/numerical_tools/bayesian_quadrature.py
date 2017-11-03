@@ -14,6 +14,7 @@ from copy import deepcopy
 from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.lib.constant import (
     UNIFORM_FINITE,
+    EXPONENTIAL,
     TASKS,
     QUADRATURES,
     POSTERIOR_MEAN,
@@ -36,6 +37,8 @@ from stratified_bayesian_optimization.lib.expectations import (
     gradient_uniform_finite,
     gradient_uniform_finite_resp_candidate,
     hessian_uniform_finite,
+    exponential,
+
 )
 from stratified_bayesian_optimization.lib.optimization import Optimization
 from stratified_bayesian_optimization.util.json_file import JSONFile
@@ -76,6 +79,12 @@ class BayesianQuadrature(object):
             'grad_expectation_candidate': gradient_uniform_finite_resp_candidate,
             'hessian_expectation': hessian_uniform_finite,
         },
+        EXPONENTIAL: {
+            'expectation': exponential,
+            'grad_expectation': gradient_exponential,
+            'grad_expectation_candidate': gradient_exponential_resp_candidate,
+            'hessian_expectation': hessian_exponential,
+        }
     }
 
     def __init__(self, gp_model, x_domain, distribution, parameters_distribution=None,

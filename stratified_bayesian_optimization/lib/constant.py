@@ -64,6 +64,7 @@ DEFAULT_RANDOM_SEED = 1
 #Distributions
 UNIFORM_FINITE = 'uniform_finite'
 TASKS = 'n_tasks'
+EXPONENTIAL = 'exponential'
 
 #Cache Quadrature
 QUADRATURES = 'quadrature'

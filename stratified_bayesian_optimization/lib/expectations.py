@@ -35,6 +35,24 @@ def uniform_finite(f, point, index_points, domain_random, index_random, double=F
 
     return np.mean(values, axis=0)
 
+def exponential(f, point, index_points, domain_random, index_random, double=False):
+    """
+    Computes the expectation of f(z), where z=(point, x) which is equal to:
+        mean(f((point, x)): x in domain_random), where
+    z[index_points[i]] = point[i].
+
+    If double is True, it computes the mean over all the points. Used for the variance.
+
+    :param f: function
+    :param point: np.array(1xk)
+    :param index_points: [int]
+    :param domain_random: np.array(n_tasksx1)
+    :param index_random: [int]
+    :param double: boolean
+    :return: np.array
+    """
+
+
 def gradient_uniform_finite(f, point, index_points, domain_random, index_random, points_2,
                             parameters_kernel):
     """
