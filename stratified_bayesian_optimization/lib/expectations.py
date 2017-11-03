@@ -51,6 +51,7 @@ def exponential(f, point, index_points, domain_random, index_random, double=Fals
     :param double: boolean
     :return: np.array
     """
+    pass
 
 
 def gradient_uniform_finite(f, point, index_points, domain_random, index_random, points_2,
@@ -86,6 +87,9 @@ def gradient_uniform_finite(f, point, index_points, domain_random, index_random,
 
     return gradient
 
+def gradient_exponential():
+    pass
+
 def hessian_uniform_finite(f, point, index_points, domain_random, index_random, points_2,
                             parameters_kernel):
     """
@@ -120,6 +124,12 @@ def hessian_uniform_finite(f, point, index_points, domain_random, index_random, 
     hessian = np.mean(hessian, axis=0)
 
     return hessian
+
+def gradient_exponential_resp_candidate():
+    pass
+
+def hessian_exponential():
+    pass
 
 
 def gradient_uniform_finite_resp_candidate(f, candidate_point, index_points, domain_random,

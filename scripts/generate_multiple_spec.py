@@ -116,7 +116,6 @@ if __name__ == '__main__':
     type_kernel = [[MATERN52_NAME]]
     dimensions = [[4]]
     bounds_domain = [[[0, 6], [0, 6], [0, 20], [0, 20]]]
-    #old bounds: [[0.01, 1.01], [0.01, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
     n_training = [10]
     random_seed = range(1, 50)
     n_specs = len(random_seed)

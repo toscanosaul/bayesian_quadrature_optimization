@@ -38,7 +38,9 @@ from stratified_bayesian_optimization.lib.expectations import (
     gradient_uniform_finite_resp_candidate,
     hessian_uniform_finite,
     exponential,
-
+    gradient_exponential,
+    gradient_exponential_resp_candidate,
+    hessian_exponential,
 )
 from stratified_bayesian_optimization.lib.optimization import Optimization
 from stratified_bayesian_optimization.util.json_file import JSONFile
