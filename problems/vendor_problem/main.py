@@ -38,7 +38,7 @@ def toy_example(n_samples, x):
 
     sum = x[-1]
     val = simulation(inv_levels, n_samples, n_customers, n_products, cost, sell_price,
-                     sum_gumbel=sum, seed=1)
+                     sum_exp=sum, seed=1)
 
     return val
 
