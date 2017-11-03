@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 import numpy as np
 
+from scipy.stats import gamma
+
 
 def uniform_finite(f, point, index_points, domain_random, index_random, double=False):
     """
@@ -35,7 +37,7 @@ def uniform_finite(f, point, index_points, domain_random, index_random, double=F
 
     return np.mean(values, axis=0)
 
-def exponential(f, point, index_points, domain_random, index_random, double=False):
+def gamma(f, point, index_points, index_random, parameter_gamma, n_samples=50, double=False):
     """
     Computes the expectation of f(z), where z=(point, x) which is equal to:
         mean(f((point, x)): x in domain_random), where
@@ -46,12 +48,36 @@ def exponential(f, point, index_points, domain_random, index_random, double=Fals
     :param f: function
     :param point: np.array(1xk)
     :param index_points: [int]
-    :param domain_random: np.array(n_tasksx1)
     :param index_random: [int]
+    :param parameter_gamma: {'scale':float, 'a': int}
+    :param n_samples: int
     :param double: boolean
     :return: np.array
     """
-    pass
+    a = parameter_gamma['a']
+    scale = parameter_gamma['scale']
+
+    new_points = np.zeros((n_samples * n_samples, len(index_random) + point.shape[1]))
+
+    new_points[:, index_points] = np.repeat(point, n_samples * n_samples, axis=0)
+
+    z = gamma.rvs(a, scale=scale, size=n_samples)
+    w = gamma.rvs(a, scale=scale, size=n_samples)
+
+    random = []
+    for s in z:
+        for t in w:
+            random.append([s, t])
+    random = np.array(random)
+
+    new_points[:, index_random] = random
+
+    z = f(new_points)
+
+    if double:
+        return np.mean(z)
+
+    return np.mean(z, axis=0)
 
 
 def gradient_uniform_finite(f, point, index_points, domain_random, index_random, points_2,
@@ -87,7 +113,7 @@ def gradient_uniform_finite(f, point, index_points, domain_random, index_random,
 
     return gradient
 
-def gradient_exponential():
+def gradient_gamma():
     pass
 
 def hessian_uniform_finite(f, point, index_points, domain_random, index_random, points_2,
@@ -125,10 +151,10 @@ def hessian_uniform_finite(f, point, index_points, domain_random, index_random, 
 
     return hessian
 
-def gradient_exponential_resp_candidate():
+def gradient_gamma_resp_candidate():
     pass
 
-def hessian_exponential():
+def hessian_gamma():
     pass
 
 

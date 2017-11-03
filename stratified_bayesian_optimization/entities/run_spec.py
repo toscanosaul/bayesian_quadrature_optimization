@@ -377,7 +377,7 @@ class MultipleSpecEntity(Model):
         type_boundss = spec.get('type_boundss', [len(bd) * [0] for bd in bounds_domains])
 
         pointss = spec.get('pointss', None)
-        noises = spec.get('noises', n_specs * [False])
+        noises = spec.get('noisess', n_specs * [False])
         n_sampless = spec.get('n_sampless',  n_specs * [0])
         random_seeds = spec.get('random_seeds', n_specs * [DEFAULT_RANDOM_SEED])
         parallels = spec.get('parallels', n_specs * [True])

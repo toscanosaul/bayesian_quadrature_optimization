@@ -65,6 +65,7 @@ DEFAULT_RANDOM_SEED = 1
 UNIFORM_FINITE = 'uniform_finite'
 TASKS = 'n_tasks'
 EXPONENTIAL = 'exponential'
+GAMMA = 'gamma'
 
 #Cache Quadrature
 QUADRATURES = 'quadrature'

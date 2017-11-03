@@ -15,6 +15,7 @@ from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.lib.constant import (
     UNIFORM_FINITE,
     EXPONENTIAL,
+    GAMMA,
     TASKS,
     QUADRATURES,
     POSTERIOR_MEAN,
@@ -37,10 +38,10 @@ from stratified_bayesian_optimization.lib.expectations import (
     gradient_uniform_finite,
     gradient_uniform_finite_resp_candidate,
     hessian_uniform_finite,
-    exponential,
-    gradient_exponential,
-    gradient_exponential_resp_candidate,
-    hessian_exponential,
+    gamma,
+    gradient_gamma,
+    gradient_gamma_resp_candidate,
+    hessian_gamma,
 )
 from stratified_bayesian_optimization.lib.optimization import Optimization
 from stratified_bayesian_optimization.util.json_file import JSONFile
@@ -81,11 +82,11 @@ class BayesianQuadrature(object):
             'grad_expectation_candidate': gradient_uniform_finite_resp_candidate,
             'hessian_expectation': hessian_uniform_finite,
         },
-        EXPONENTIAL: {
-            'expectation': exponential,
-            'grad_expectation': gradient_exponential,
-            'grad_expectation_candidate': gradient_exponential_resp_candidate,
-            'hessian_expectation': hessian_exponential,
+        GAMMA: {
+            'expectation': gamma,
+            'grad_expectation': gradient_gamma,
+            'grad_expectation_candidate': gradient_gamma_resp_candidate,
+            'hessian_expectation': hessian_gamma,
         }
     }
 
