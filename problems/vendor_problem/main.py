@@ -33,10 +33,10 @@ def toy_example(n_samples, x):
     :return: [float, float]
 
     """
-    inv_levels = x[0:-1]
+    inv_levels = x[0:-2]
     inv_levels = [int(a) for a in inv_levels]
 
-    sum = x[-1]
+    sum = x[-2:]
     val = simulation(inv_levels, n_samples, n_customers, n_products, cost, sell_price,
                      sum_exp=sum, seed=1)
 
