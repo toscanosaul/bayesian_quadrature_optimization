@@ -152,6 +152,7 @@ if __name__ == '__main__':
     threshold_sbo = [0.001]
     parallel_training = [False]
     noises = [True]
+    n_sampless = [5]
 
     specs = SpecService.generate_dict_multiple_spec(
         n_specs=n_specs, problem_names=problem_name, dim_xs=dim_x, bounds_domain_xs=bounds_domain_x,
@@ -170,6 +171,7 @@ if __name__ == '__main__':
         n_best_restarts_mcs=n_best_restarts_mc, maxepochs=maxepoch, method_opt_mcs=method_opt_mc,
         n_samples_parameters_means=n_samples_parameters_mean, maxepoch_means=maxepoch_mean,
         threshold_sbos=threshold_sbo, parallel_trainings=parallel_training, noises=noises,
+        n_sampless=n_sampless,
     )
 
     print ujson.dumps(specs, indent=4)
