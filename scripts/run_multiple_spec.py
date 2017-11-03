@@ -31,7 +31,6 @@ if __name__ == '__main__':
 
     spec = SpecService.generate_specs(n_spec, multiple_spec)
 
-
     result = BGO.run_spec(spec)
 
     with open(args.output_file, 'w') as f:
