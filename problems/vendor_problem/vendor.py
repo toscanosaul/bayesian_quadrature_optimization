@@ -95,7 +95,8 @@ def simulation(x, runlength, n_customers, n_products, cost, sell_price, mu=1.0, 
     # Compute daily profit
     numSold =initial - inventory
     unitProfit=sell_price-cost
-    singleRepProfit=np.dot(numSold,unitProfit)
+    singleRepProfit=np.dot(numSold, unitProfit)
+    singleRepProfit -= np.dot(inventory, cost)
     fn = np.mean(singleRepProfit)
     FnVar = np.var(singleRepProfit)/runlength
 
