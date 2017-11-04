@@ -164,7 +164,7 @@ if __name__ == '__main__':
     type_kernel = [[PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]]
     dimensions = [[3, 2, 4]]
     bounds_domain = [[[0, 6], [0, 6], [0, 1, 2, 3]]]
-    n_training = [2]
+    n_training = [4]
     random_seed = range(1, 50)
     n_specs = len(random_seed)
     type_bounds = [[0, 0, 1]]
