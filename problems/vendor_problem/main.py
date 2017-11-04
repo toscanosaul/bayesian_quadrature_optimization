@@ -7,16 +7,11 @@ from problems.vendor_problem.vendor import simulation
 
 
 runlength = 5
-n_customers = 5
+n_customers = 1000
 n_products = 2
-cost = [5, 6]
-sell_price = [8, 10]
+cost = [5, 10]
+sell_price = [8, 18]
 
-set_constraints = {}
-intervals = [[-np.inf, 0.0], [0.0, np.inf]]
-for i in xrange(2):
-    for j in xrange(2):
-        set_constraints[i * 2 + j] = [intervals[i], intervals[j]]
 
 # n=5
 # x=[2, 3, 4, 1, 1]
@@ -49,7 +44,7 @@ def integrate_toy_example(x):
     :param x: n_products * [int]
     :return: [float]
     """
-    val = simulation(x, 1000, n_customers, n_products, cost, sell_price, seed=1)
+    val = simulation(x, 10000, n_customers, n_products, cost, sell_price, seed=1)
     return val
 
 def main(n_samples, *params):

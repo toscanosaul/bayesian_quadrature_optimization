@@ -54,17 +54,18 @@ def simulation(x, runlength, n_customers, n_products, cost, sell_price, mu=1.0, 
         gumbel_array = np.zeros([n, runlength, T])
         for j in xrange(runlength):
             for product in xrange(n):
-                upper = set_sum_exp[product][1]
-                lower = set_sum_exp[product][0]
-                if upper == np.inf:
-                    up = max(T * (1.0 / mu) + T * 10.0 * (mu ** -2), lower + 1)
-                else:
-                    up = upper
-                start = np.zeros(T)
-                for i in xrange(T):
-                    start[i] = np.random.uniform(lower / T, up / T, 1)
-                exponential = \
-                    gibbs_sampler(start, T, set_sum_exp[product], mu, 500, 5, 1)[0, :]
+                exponential = rejection_sampling_cond_set_exponential(1, T, set_sum_exp[product], mu)[0,:]
+                # upper = set_sum_exp[product][1]
+                # lower = set_sum_exp[product][0]
+                # if upper == np.inf:
+                #     up = max(T * (1.0 / mu) + T * 10.0 * (mu ** -2), lower + 1)
+                # else:
+                #     up = upper
+                # start = np.zeros(T)
+                # for i in xrange(T):
+                #     start[i] = np.random.uniform(lower / T, up / T, 1)
+                # exponential = \
+                #     gibbs_sampler(start, T, set_sum_exp[product], mu, 500, 5, 1)[0, :]
                 gumbel = np.zeros(T)
                 for i in xrange(T):
                     gumbel[i] = (1.0 - np.exp(- exponential[i] * mu))
@@ -155,5 +156,17 @@ def rejection_sampling_cond_exponential(n_samples, T, sum_exp, mu):
             samplings.append(exponential)
             n += 1
     return np.array(samplings)
+
+def rejection_sampling_cond_set_exponential(n_samples, T, set_exp, mu):
+    n = 0
+    samplings = []
+    while (n < n_samples):
+        exponential = np.random.exponential(1 / mu, T)
+        if exponential.sum() > set_exp[1] or exponential.sum() < set_exp[0]:
+            continue
+        samplings.append(exponential)
+        n += 1
+    return np.array(samplings)
+
 
 
