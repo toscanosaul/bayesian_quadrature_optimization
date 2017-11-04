@@ -122,7 +122,7 @@ def gradient_uniform_finite(f, point, index_points, domain_random, index_random,
     return gradient
 
 def gradient_gamma(f, point, index_points, index_random, points_2, parameters_kernel,
-                   parameters_dist, n_samples=10000):
+                   parameters_dist, n_samples=1000):
 
     a = parameters_dist['a'][0]
     scale = parameters_dist['scale'][0]
@@ -180,7 +180,7 @@ def hessian_uniform_finite(f, point, index_points, domain_random, index_random, 
     return hessian
 
 def hessian_gamma(f, point, index_points, index_random, points_2, parameters_kernel,
-                  parameters_dist, n_samples=10000):
+                  parameters_dist, n_samples=1000):
 
     a = parameters_dist['a'][0]
     scale = parameters_dist['scale'][0]
@@ -236,7 +236,7 @@ def gradient_uniform_finite_resp_candidate(f, candidate_point, index_points, dom
     return gradients
 
 def gradient_gamma_resp_candidate(f, candidate_point, index_points, index_random, points,
-                                  parameters_kernel, parameters_dist, n_samples=10000):
+                                  parameters_kernel, parameters_dist, n_samples=1000):
     a = parameters_dist['a'][0]
     scale = parameters_dist['scale'][0]
 
