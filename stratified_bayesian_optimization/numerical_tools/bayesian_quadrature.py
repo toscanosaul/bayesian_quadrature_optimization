@@ -238,7 +238,7 @@ class BayesianQuadrature(object):
         :return: np.array(m)
         """
 
-        n = self.quadrature.dimension_domain
+        n = self.dimension_domain
         f = lambda x: self.gp.evaluate_cross_cov(x[0:n], x[n:], parameters_kernel)
 
         parameters = {
