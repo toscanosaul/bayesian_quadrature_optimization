@@ -33,7 +33,8 @@ def uniform_finite(f, point, index_points, domain_random, index_random, double=F
 
 
     if double:
-        values = f(new_points, new_points)
+        new_points = np.concatenate([new_points, new_points], axis=1)
+        values = f(new_points)
         return np.mean(values)
 
     values = f(new_points)

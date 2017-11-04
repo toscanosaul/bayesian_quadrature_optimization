@@ -239,7 +239,7 @@ class BayesianQuadrature(object):
         """
 
         n = self.dimension_domain
-        f = lambda x: self.gp.evaluate_cross_cov(x[0:n], x[n:], parameters_kernel)
+        f = lambda x: self.gp.evaluate_cross_cov(x[:, 0:n], x[:, n:], parameters_kernel)
 
         parameters = {
             'f': f,
