@@ -16,7 +16,7 @@ sell_price = [8, 10]
 
 set_constraints = {}
 median = gamma.median(n_customers, scale=1)
-intervals = [[-np.inf, median], [median, np.inf]]
+intervals = [[0.0, median], [median, np.inf]]
 for i in xrange(2):
     for j in xrange(2):
         set_constraints[i * 2 + j] = [intervals[i], intervals[j]]
