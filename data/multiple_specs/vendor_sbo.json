@@ -2530,200 +2530,396 @@
     ],
     "parameters_distributions":[
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         },
         {
-            "a":5,
-            "scale":1.0
+            "a":[
+                5
+            ],
+            "scale":[
+                1.0
+            ]
         }
     ],
     "maxepochs":[
@@ -4276,55 +4472,55 @@
         500
     ],
     "distributions":[
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential",
-        "exponential"
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma",
+        "gamma"
     ],
     "method_opt_mcs":[
         "dogleg",

@@ -5,7 +5,7 @@ import numpy as np
 from scipy.stats import gamma
 
 
-def uniform_finite(f, point, index_points, domain_random, index_random, double=False):
+def uniform_finite(f, point, index_points, domain_random, index_random, weights=None, double=False):
     """
     Computes the expectation of f(z), where z=(point, x) which is equal to:
         mean(f((point, x)): x in domain_random), where
@@ -18,6 +18,7 @@ def uniform_finite(f, point, index_points, domain_random, index_random, double=F
     :param index_points: [int]
     :param domain_random: np.array(n_tasksx1)
     :param index_random: [int]
+    :param weights: np.array(l), weights to compute a weighted average
     :param double: boolean
     :return: np.array
     """
@@ -30,17 +31,20 @@ def uniform_finite(f, point, index_points, domain_random, index_random, double=F
 
     new_points[:, index_random] = domain_random
 
-
-
     if double:
         new_points = np.concatenate([new_points, new_points], axis=1)
         values = f(new_points)
-        return np.mean(values)
+        if weights is not None:
+            weights = weights.reshape((1, len(weights)))
+            weights = np.dot(weights.transpose(), weights)
+
+        return np.average(values, weights=weights)
 
     values = f(new_points)
-    return np.mean(values, axis=0)
+    return np.average(values, axis=0, weights=weights)
 
-def gamma(f, point, index_points, index_random, parameters_dist, n_samples=50, double=False):
+def gamma_expect(f, point, index_points, index_random, parameters_dist, n_samples=1000,
+                 double=False):
     """
     Computes the expectation of f(z), where z=(point, x) which is equal to:
         mean(f((point, x)): x in domain_random), where
@@ -52,45 +56,40 @@ def gamma(f, point, index_points, index_random, parameters_dist, n_samples=50, d
     :param point: np.array(1xk)
     :param index_points: [int]
     :param index_random: [int]
-    :param parameters_dist: {'scale':float, 'a': int}
+    :param parameters_dist: {'scale':[float], 'a': [int]}
     :param n_samples: int
     :param double: boolean
     :return: np.array
     """
-    a = parameters_dist['a']
-    scale = parameters_dist['scale']
 
-    if double:
-        n_samples *= n_samples
+    if not double:
+        n_samples *= 10
+
+    a = parameters_dist['a'][0]
+    scale = parameters_dist['scale'][0]
+
+    dim_w = len(index_random)
 
     new_points = np.zeros((n_samples, len(index_random) + point.shape[1]))
-
     new_points[:, index_points] = np.repeat(point, n_samples, axis=0)
-
-    z = gamma.rvs(a, scale=scale, size=n_samples)
-    if double:
-        w = gamma.rvs(a, scale=scale, size=n_samples)
-
-        random = []
-        for s in z:
-            for t in w:
-                random.append([s, t])
-        random = np.array(random)
-    else:
-        random = np.array([z])
-
+    random = gamma.rvs(a, scale=scale, size=(n_samples, dim_w))
     new_points[:, index_random] = random
 
-    z = f(new_points)
-
     if double:
-        return np.mean(z)
+        random_2 = gamma.rvs(a, scale=scale, size=(n_samples, dim_w))
+        new_points_2 = new_points.copy()
+        new_points_2[:, index_random] = random_2
+        new_points = np.concatenate([new_points, new_points_2], axis=1)
+        values = f(new_points)
+        return np.mean(values)
 
-    return np.mean(z, axis=0)
+    values = f(new_points)
+
+    return np.mean(values, axis=0)
 
 
 def gradient_uniform_finite(f, point, index_points, domain_random, index_random, points_2,
-                            parameters_kernel):
+                            parameters_kernel, weights=None):
     """
     Computes the gradient of the expectation of f(z, point_), where z=(point, x), for each
     point_ in points_2.
@@ -118,15 +117,35 @@ def gradient_uniform_finite(f, point, index_points, domain_random, index_random,
         value = f(new_points[i:i+1, :], points_2, parameters_kernel)[:, index_points]
         gradients[i, :, :] = value.transpose()
 
+    gradient = np.average(gradients, axis=0, weights=weights)
+
+    return gradient
+
+def gradient_gamma(f, point, index_points, index_random, points_2, parameters_kernel,
+                   parameters_dist, n_samples=10000):
+
+    a = parameters_dist['a'][0]
+    scale = parameters_dist['scale'][0]
+
+    dim_w = len(index_random)
+
+    new_points = np.zeros((n_samples, len(index_random) + point.shape[1]))
+    new_points[:, index_points] = np.repeat(point, n_samples, axis=0)
+    random = gamma.rvs(a, scale=scale, size=(n_samples, dim_w))
+    new_points[:, index_random] = random
+
+    gradients = np.zeros((new_points.shape[0], point.shape[1], points_2.shape[0]))
+
+    for i in xrange(new_points.shape[0]):
+        value = f(new_points[i:i+1, :], points_2, parameters_kernel)[:, index_points]
+        gradients[i, :, :] = value.transpose()
+
     gradient = np.mean(gradients, axis=0)
 
     return gradient
 
-def gradient_gamma():
-    pass
-
 def hessian_uniform_finite(f, point, index_points, domain_random, index_random, points_2,
-                            parameters_kernel):
+                            parameters_kernel, weights=None):
     """
     Computes the Hessian of the expectation of f(z, point_), where z=(point, x), for each
     point_ in points_2.
@@ -156,19 +175,37 @@ def hessian_uniform_finite(f, point, index_points, domain_random, index_random, 
         value = value[:, :, index_points]
         hessian[i, :, :, :] = value
 
+    hessian = np.average(hessian, axis=0, weights=weights)
+
+    return hessian
+
+def hessian_gamma(f, point, index_points, index_random, points_2, parameters_kernel,
+                  parameters_dist, n_samples=10000):
+
+    a = parameters_dist['a'][0]
+    scale = parameters_dist['scale'][0]
+
+    dim_w = len(index_random)
+
+    new_points = np.zeros((n_samples, len(index_random) + point.shape[1]))
+    new_points[:, index_points] = np.repeat(point, n_samples, axis=0)
+    random = gamma.rvs(a, scale=scale, size=(n_samples, dim_w))
+    new_points[:, index_random] = random
+
+    hessian = np.zeros((new_points.shape[0], points_2.shape[0], point.shape[1], point.shape[1]))
+
+    for i in xrange(new_points.shape[0]):
+        value = f(new_points[i:i+1, :], points_2, parameters_kernel)[:, index_points]
+        value = value[:, :, index_points]
+        hessian[i, :, :, :] = value
+
     hessian = np.mean(hessian, axis=0)
 
     return hessian
 
-def gradient_gamma_resp_candidate():
-    pass
-
-def hessian_gamma():
-    pass
-
 
 def gradient_uniform_finite_resp_candidate(f, candidate_point, index_points, domain_random,
-                                           index_random, points, parameters_kernel):
+                                           index_random, points, parameters_kernel, weights=None):
     """
     Computes the gradient of the expectation of f(z, candidate_point) respect to candidate_point,
     where z=(point, x) for each point in points.
@@ -193,6 +230,27 @@ def gradient_uniform_finite_resp_candidate(f, candidate_point, index_points, dom
         point = points[i : i+1, :]
         new_points[:, index_points] = np.repeat(point, domain_random.shape[0], axis=0)
         new_points[:, index_random] = domain_random
+        values = f(candidate_point, new_points, parameters_kernel)
+        gradients[:, i] = np.average(values, axis=0, weights=weights)
+
+    return gradients
+
+def gradient_gamma_resp_candidate(f, candidate_point, index_points, index_random, points,
+                                  parameters_kernel, parameters_dist, n_samples=10000):
+    a = parameters_dist['a'][0]
+    scale = parameters_dist['scale'][0]
+
+    dim_w = len(index_random)
+
+    new_points = np.zeros((n_samples, len(index_random) + points.shape[1]))
+
+    gradients = np.zeros((candidate_point.shape[1], points.shape[0]))
+
+    for i in xrange(points.shape[0]):
+        point = points[i : i+1, :]
+        new_points[:, index_points] = np.repeat(point, n_samples, axis=0)
+        random = gamma.rvs(a, scale=scale, size=(n_samples, dim_w))
+        new_points[:, index_random] = random
         values = f(candidate_point, new_points, parameters_kernel)
         gradients[:, i] = np.mean(values, axis=0)
 

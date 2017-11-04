@@ -12,6 +12,7 @@ from stratified_bayesian_optimization.lib.constant import (
     MULTI_TASK_METHOD,
     EXPONENTIAL,
     SCALED_KERNEL,
+    GAMMA,
 )
 
 if __name__ == '__main__':
@@ -124,7 +125,7 @@ if __name__ == '__main__':
     x_domain = [[0, 1]]
     number_points_each_dimension = [[6, 6]]
     mle = [False]
-    distribution = [EXPONENTIAL]
+    distribution = [GAMMA]
     parallel = [True]
     thinning = [10]
     n_burning = [500]
@@ -154,7 +155,7 @@ if __name__ == '__main__':
     parallel_training = [False]
     noises = [True]
     n_sampless = [5]
-    parameters_distributions = [{'scale': 1.0, 'a': 5}]
+    parameters_distributions = [{'scale': [1.0], 'a': [5]}]
 
     specs = SpecService.generate_dict_multiple_spec(
         n_specs=n_specs, problem_names=problem_name, dim_xs=dim_x, bounds_domain_xs=bounds_domain_x,

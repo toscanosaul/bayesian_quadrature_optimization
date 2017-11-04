@@ -38,7 +38,7 @@ from stratified_bayesian_optimization.lib.expectations import (
     gradient_uniform_finite,
     gradient_uniform_finite_resp_candidate,
     hessian_uniform_finite,
-    gamma,
+    gamma_expect,
     gradient_gamma,
     gradient_gamma_resp_candidate,
     hessian_gamma,
@@ -83,10 +83,11 @@ class BayesianQuadrature(object):
             'hessian_expectation': hessian_uniform_finite,
         },
         GAMMA: {
-            'expectation': gamma,
+            'expectation': gamma_expect,
             'grad_expectation': gradient_gamma,
             'grad_expectation_candidate': gradient_gamma_resp_candidate,
             'hessian_expectation': hessian_gamma,
+            'parameter': None,
         }
     }
 
