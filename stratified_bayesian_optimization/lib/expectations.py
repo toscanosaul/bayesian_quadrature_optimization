@@ -30,14 +30,16 @@ def uniform_finite(f, point, index_points, domain_random, index_random, double=F
 
     new_points[:, index_random] = domain_random
 
-    values = f(new_points)
+
 
     if double:
+        values = f(new_points, new_points)
         return np.mean(values)
 
+    values = f(new_points)
     return np.mean(values, axis=0)
 
-def gamma(f, point, index_points, index_random, parameter_gamma, n_samples=50, double=False):
+def gamma(f, point, index_points, index_random, parameters_dist, n_samples=50, double=False):
     """
     Computes the expectation of f(z), where z=(point, x) which is equal to:
         mean(f((point, x)): x in domain_random), where
@@ -49,26 +51,32 @@ def gamma(f, point, index_points, index_random, parameter_gamma, n_samples=50, d
     :param point: np.array(1xk)
     :param index_points: [int]
     :param index_random: [int]
-    :param parameter_gamma: {'scale':float, 'a': int}
+    :param parameters_dist: {'scale':float, 'a': int}
     :param n_samples: int
     :param double: boolean
     :return: np.array
     """
-    a = parameter_gamma['a']
-    scale = parameter_gamma['scale']
+    a = parameters_dist['a']
+    scale = parameters_dist['scale']
 
-    new_points = np.zeros((n_samples * n_samples, len(index_random) + point.shape[1]))
+    if double:
+        n_samples *= n_samples
 
-    new_points[:, index_points] = np.repeat(point, n_samples * n_samples, axis=0)
+    new_points = np.zeros((n_samples, len(index_random) + point.shape[1]))
+
+    new_points[:, index_points] = np.repeat(point, n_samples, axis=0)
 
     z = gamma.rvs(a, scale=scale, size=n_samples)
-    w = gamma.rvs(a, scale=scale, size=n_samples)
+    if double:
+        w = gamma.rvs(a, scale=scale, size=n_samples)
 
-    random = []
-    for s in z:
-        for t in w:
-            random.append([s, t])
-    random = np.array(random)
+        random = []
+        for s in z:
+            for t in w:
+                random.append([s, t])
+        random = np.array(random)
+    else:
+        random = np.array([z])
 
     new_points[:, index_random] = random
 

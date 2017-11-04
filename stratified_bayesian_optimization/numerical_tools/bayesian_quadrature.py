@@ -133,6 +133,8 @@ class BayesianQuadrature(object):
         if self.expectation['parameter'] == TASKS:
             n_tasks = self.parameters_distribution.get(TASKS)
             self.arguments_expectation['domain_random'] = np.arange(n_tasks).reshape((n_tasks, 1))
+        elif self.parameters_distribution is not None:
+            self.arguments_expectation['parameters_dist'] = self.parameters_distribution
 
         self.cache_quadratures = {}
         self.cache_posterior_mean = {}
@@ -235,7 +237,9 @@ class BayesianQuadrature(object):
         :param parameters_kernel: np.array(l)
         :return: np.array(m)
         """
-        f = lambda x: self.gp.evaluate_cov(x, parameters_kernel)
+
+        n = self.quadrature.dimension_domain
+        f = lambda x: self.gp.evaluate_cross_cov(x[0:n], x[n:], parameters_kernel)
 
         parameters = {
             'f': f,
