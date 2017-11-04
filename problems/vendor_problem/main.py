@@ -50,7 +50,7 @@ def integrate_toy_example(x):
     :return: [float]
     """
     val = simulation(x, 1000, n_customers, n_products, cost, sell_price, seed=1)
-    return [val[0]]
+    return val
 
 def main(n_samples, *params):
 #    print 'Anything printed here will end up in the output directory for job #:', str(2)
