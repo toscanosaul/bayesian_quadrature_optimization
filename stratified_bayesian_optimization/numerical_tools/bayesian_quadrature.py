@@ -734,8 +734,6 @@ class BayesianQuadrature(object):
 
         if n_samples_parameters==0:
             #TODO: CHECK THIS
-            logger.info('optimization of posterior mean using: %s' % method_opt)
-
             optimization = Optimization(
                 method_opt,
                 objective_function,

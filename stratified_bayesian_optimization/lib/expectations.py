@@ -4,7 +4,7 @@ import numpy as np
 
 from scipy.stats import gamma
 
-N_SAMPLES = 10000
+N_SAMPLES = 1000
 
 
 def uniform_finite(f, point, index_points, domain_random, index_random, weights=None, double=False):
