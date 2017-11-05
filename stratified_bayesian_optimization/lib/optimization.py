@@ -8,6 +8,10 @@ from stratified_bayesian_optimization.lib.constant import (
     LBFGS_NAME, SGD_NAME, NEWTON_CG_NAME, TRUST_N_CG, DOGLEG)
 from stratified_bayesian_optimization.lib.stochastic_gradient_descent import SGD
 
+from stratified_bayesian_optimization.initializers.log import SBOLog
+
+logger = SBOLog(__name__)
+
 
 class Optimization(object):
 
@@ -129,6 +133,7 @@ class Optimization(object):
 
 
     def SGD(self, start, n, *args, **kwargs):
+        logger.info('sgd function')
 
         if not self.minimize:
             def grad(x, *args, **kwargs):

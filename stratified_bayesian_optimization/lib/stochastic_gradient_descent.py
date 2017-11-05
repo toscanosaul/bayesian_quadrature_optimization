@@ -1,8 +1,10 @@
 from __future__ import absolute_import
 
-from stratified_bayesian_optimization.initializers.log import SBOLog
+
 
 import numpy as np
+
+from stratified_bayesian_optimization.initializers.log import SBOLog
 
 logger = SBOLog(__name__)
 

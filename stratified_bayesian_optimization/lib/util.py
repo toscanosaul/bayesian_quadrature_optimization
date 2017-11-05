@@ -737,6 +737,7 @@ def wrapper_optimize(point, self, *args):
     return self.optimize(point, *args)
 
 def wrapper_sgd(point_rs, self, *args, **kwargs):
+    logger.info('wrapper sgd function')
     point = point_rs[0]
     rs = point_rs[1]
 
