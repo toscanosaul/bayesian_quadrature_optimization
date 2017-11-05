@@ -735,7 +735,7 @@ class BayesianQuadrature(object):
         if n_samples_parameters==0:
             #TODO: CHECK THIS
             logger.info('optimization of posterior mean using: %s' % method_opt)
-            
+
             optimization = Optimization(
                 method_opt,
                 objective_function,
@@ -781,7 +781,6 @@ class BayesianQuadrature(object):
             for j in xrange(n_restart_):
                 point_dict[j] = [start[j, :], random_seeds[j]]
 
-        logger.info('optimization of posterior mean start to run')
 
         optimal_solutions = Parallel.run_function_different_arguments_parallel(
             opt_method, point_dict, *args)

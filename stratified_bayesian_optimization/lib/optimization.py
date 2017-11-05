@@ -133,8 +133,6 @@ class Optimization(object):
 
 
     def SGD(self, start, n, *args, **kwargs):
-        logger.info('sgd function')
-
         if not self.minimize:
             def grad(x, *args, **kwargs):
                 return -1.0 * self.gradient(x, *args, **kwargs)

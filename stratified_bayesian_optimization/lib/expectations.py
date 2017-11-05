@@ -4,6 +4,8 @@ import numpy as np
 
 from scipy.stats import gamma
 
+N_SAMPLES = 10000
+
 
 def uniform_finite(f, point, index_points, domain_random, index_random, weights=None, double=False):
     """
@@ -43,7 +45,7 @@ def uniform_finite(f, point, index_points, domain_random, index_random, weights=
     values = f(new_points)
     return np.average(values, axis=0, weights=weights)
 
-def gamma_expect(f, point, index_points, index_random, parameters_dist, n_samples=100000,
+def gamma_expect(f, point, index_points, index_random, parameters_dist, n_samples=N_SAMPLES,
                  double=False):
     """
     Computes the expectation of f(z), where z=(point, x) which is equal to:
@@ -122,7 +124,7 @@ def gradient_uniform_finite(f, point, index_points, domain_random, index_random,
     return gradient
 
 def gradient_gamma(f, point, index_points, index_random, points_2, parameters_kernel,
-                   parameters_dist, n_samples=100000):
+                   parameters_dist, n_samples=N_SAMPLES):
 
     a = parameters_dist['a'][0]
     scale = parameters_dist['scale'][0]
@@ -180,7 +182,7 @@ def hessian_uniform_finite(f, point, index_points, domain_random, index_random, 
     return hessian
 
 def hessian_gamma(f, point, index_points, index_random, points_2, parameters_kernel,
-                  parameters_dist, n_samples=100000):
+                  parameters_dist, n_samples=N_SAMPLES):
 
     a = parameters_dist['a'][0]
     scale = parameters_dist['scale'][0]
@@ -236,7 +238,7 @@ def gradient_uniform_finite_resp_candidate(f, candidate_point, index_points, dom
     return gradients
 
 def gradient_gamma_resp_candidate(f, candidate_point, index_points, index_random, points,
-                                  parameters_kernel, parameters_dist, n_samples=100000):
+                                  parameters_kernel, parameters_dist, n_samples=N_SAMPLES):
     a = parameters_dist['a'][0]
     scale = parameters_dist['scale'][0]
 
