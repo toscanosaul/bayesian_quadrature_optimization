@@ -206,11 +206,14 @@ class GPFittingGaussian(object):
                                                      **slice_parameters))
 
         if self.start_point_sampler is not None and len(self.start_point_sampler) > 0:
-            self.samples_parameters.append(np.array(self.start_point_sampler))
+            if len(self.samples_parameters) == 0:
+                self.samples_parameters.append(np.array(self.start_point_sampler))
         else:
+            self.samples_parameters = []
             self.samples_parameters.append(self.get_value_parameters_model)
             if self.n_burning > 0:
                 parameters = self.sample_parameters(float(self.n_burning) / (self.thinning + 1))
+                self.samples_parameters = []
                 self.samples_parameters.append(parameters[-1])
                 self.start_point_sampler = parameters[-1]
             else:
@@ -550,6 +553,7 @@ class GPFittingGaussian(object):
             previously computed.
         :return: gp-model instance
         """
+
         model = cls(**s)
         if use_only_training_points:
             model.data = model.convert_from_list_to_numpy(model.training_data)

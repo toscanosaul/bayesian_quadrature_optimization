@@ -1808,6 +1808,9 @@ class SBO(object):
                 candidate_points.append(point)
             candidate_points = np.array(candidate_points)
 
+            logger.info("candidate solutions are: ")
+            logger.info(candidate_points)
+
             output = self.evaluate_mc_bayesian_candidate_points_no_restarts(
                 candidate_points, n_parameters, default_n_samples, default_restarts_mc,
                 n_threads=0, compute_max_mean=True, compute_gradient=True,
