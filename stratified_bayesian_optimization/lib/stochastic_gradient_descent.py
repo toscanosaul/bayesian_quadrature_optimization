@@ -32,9 +32,7 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
     point = start
     v = np.zeros(len(start))
     for i in xrange(maxepoch):
-        logger.info('echoch %d'%i)
         for j in xrange(n):
-            logger.info('iteration %d'%j)
             v = momentum * v + learning_rate * gradient(point, *args, **kwargs)
             point -= v
             if project:
