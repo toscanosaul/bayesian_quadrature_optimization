@@ -41,14 +41,19 @@ class BGO(object):
         :return: BGO
         # TO DO: It now only returns domain
         """
+
+        random_seed = spec.get('random_seed')
+        method_optimization = spec.get('method_optimization')
+
         logger.info("Training GP model")
+        logger.info("Random seed is: %d" % random_seed)
+        logger.info("Algorithm used is:")
+        logger.info(method_optimization)
 
         gp_model = GPFittingService.from_dict(spec)
         noise = spec.get('noise')
         quadrature = None
         acquisition_function = None
-
-        method_optimization = spec.get('method_optimization')
 
         domain = DomainService.from_dict(spec)
 
@@ -77,7 +82,6 @@ class BGO(object):
 
         problem_name = spec.get('problem_name')
         training_name = spec.get('training_name')
-        random_seed = spec.get('random_seed')
         n_samples = spec.get('n_samples')
         minimize = spec.get('minimize')
         n_iterations = spec.get('n_iterations')
