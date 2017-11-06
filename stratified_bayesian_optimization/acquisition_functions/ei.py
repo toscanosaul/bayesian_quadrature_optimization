@@ -176,7 +176,7 @@ class EI(object):
 
     def optimize(self, start=None, random_seed=None, parallel=True, n_restarts=10,
                  n_best_restarts=0, n_samples_parameters=0, start_new_chain=False,
-                 maxepoch=11):
+                 maxepoch=11, **kwargs):
         """
         Optimizes EI
 
@@ -313,7 +313,7 @@ class EI(object):
         return optimal_solutions.get(ind_max)
 
     def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed,
-                         n_samples_parameters):
+                         n_samples_parameters, **kwargs):
         """
         Write the results of the optimization.
 

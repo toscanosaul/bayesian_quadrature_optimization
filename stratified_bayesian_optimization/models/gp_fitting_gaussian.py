@@ -24,7 +24,9 @@ from stratified_bayesian_optimization.lib.constant import (
     LBFGS_NAME,
     SAME_CORRELATION,
     RESULTS_DIR,
+    EI_METHOD,
     SGD_NAME,
+    DEBUGGING_DIR,
 )
 from stratified_bayesian_optimization.lib.util_gp_fitting import (
     get_kernel_default,
@@ -1535,6 +1537,22 @@ class GPFittingGaussian(object):
         self.cache_sol_chol_y_unbiased = {}
         self.best_solution = {}
         self.cache_cov_n = {}
+
+    def write_debug_data(self, problem_name, model_type, training_name, n_training, random_seed,
+                         method=EI_METHOD, n_samples_parameters=0):
+        """
+        Write information about the different optimizations realized.
+
+        :param problem_name: (str)
+        :param model_type: (str)
+        :param training_name: (str)
+        :param n_training: (int)
+        :param random_seed: (int)
+        :param method: (str)
+        :param n_samples_parameters: int
+        """
+
+        pass
 
 
 class GradientGPFittingGaussian(object):
