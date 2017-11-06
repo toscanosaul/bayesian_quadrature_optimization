@@ -105,7 +105,7 @@ def toy_example(x, cuda=False):
     :return: [float]
 
     """
-    
+
     points = {}
     for task in xrange(n_folds):
         point = deepcopy(x)
