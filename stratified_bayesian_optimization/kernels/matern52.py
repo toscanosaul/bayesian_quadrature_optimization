@@ -148,7 +148,7 @@ class Matern52(AbstractKernel):
 
         if bounds is not None:
             # a= 0.05 0.324
-            diffs = [float(bound[1] - bound[0]) / 0.01 for bound in bounds]
+            diffs = [float(bound[1] - bound[0]) / 0.001 for bound in bounds]
             prior = UniformPrior(dimension, dimension * [SMALLEST_POSITIVE_NUMBER], diffs)
             bounds = [(SMALLEST_POSITIVE_NUMBER, diff) for diff in diffs]
         else:
