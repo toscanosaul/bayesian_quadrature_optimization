@@ -24,6 +24,7 @@ from stratified_bayesian_optimization.lib.constant import (
     LBFGS_NAME,
     SAME_CORRELATION,
     RESULTS_DIR,
+    SGD_NAME,
 )
 from stratified_bayesian_optimization.lib.util_gp_fitting import (
     get_kernel_default,
@@ -40,6 +41,15 @@ from stratified_bayesian_optimization.lib.util import (
     combine_vectors,
     separate_vector,
     wrapper_GPFittingGaussian,
+    wrapper_objective_acquisition_function,
+    wrapper_gradient_posterior_mean_gp_model,
+    wrapper_posterior_mean_gp_model,
+    wrapper_optimize,
+    wrapper_sgd,
+    wrapper_evaluate_gradient_sample_params_gp,
+)
+from stratified_bayesian_optimization.services.domain import (
+    DomainService,
 )
 from stratified_bayesian_optimization.lib.optimization import Optimization
 from stratified_bayesian_optimization.initializers.log import SBOLog
@@ -173,6 +183,8 @@ class GPFittingGaussian(object):
 
         self.best_solution = {} # Historical best solution for EI.
         self.cache_cov_n = {} # Cache computations of the cov_n
+
+        self.optimization_results = []
 
         self.set_parameters_kernel()
         self.set_samplers()
@@ -1230,7 +1242,7 @@ class GPFittingGaussian(object):
         }
 
     def gradient_posterior_parameters(self, point, var_noise=None, mean=None,
-                                      parameters_kernel=None, parallel=True):
+                                      parameters_kernel=None, parallel=True, only_mean=False):
         """
         Computes the gradient of the posterior parameters of the GP.
 
@@ -1262,11 +1274,175 @@ class GPFittingGaussian(object):
                                                                     parameters_kernel)
         grad_mu = np.dot(grad_cross_cov.transpose(), solve)
 
+        if only_mean:
+            {'mean': grad_mu, 'cov': None}
+
         vec_cov = self.evaluate_cross_cov(point, self.data['points'], parameters_kernel)
         solve_2 = cho_solve(chol, grad_cross_cov)
         grad_cov = -2.0 * np.dot(vec_cov, solve_2)
 
         return {'mean': grad_mu, 'cov': grad_cov}
+
+    def evaluate_gradient_sample_params(self, point, random_seed=None):
+        """
+        Computes the gradient of EI taking a random sample of the parameters of the model.
+
+        :param point: np.array(n)
+        :return: np.array(n)
+        """
+
+        if random_seed is not None:
+            np.random.seed(random_seed)
+        point = point.reshape((1, len(point)))
+
+        params = self.sample_parameters(1)[0]
+
+        return self.gradient_posterior_parameters(
+            point, var_noise=params[0], mean=params[1], parameters_kernel=params[2:],
+            only_mean=True)['mean']
+
+    def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False, n_restarts=100,
+                                n_best_restarts=10, parallel=True, n_treads=0, var_noise=None,
+                                mean=None, parameters_kernel=None, n_samples_parameters=0,
+                                start_new_chain=False, method_opt=None, maxepoch=10):
+        """
+        Optimize the posterior mean.
+
+        :param start: np.array(n)
+        :param random_seed: float
+        :param minimize: boolean
+        :param n_restarts: int
+        :param n_best_restarts: int
+        :param parallel: (boolean)
+        :param n_treads: (int)
+        :param var_noise: float
+        :param mean: float
+        :param parameters_kernel: np.array(l)
+        :param n_samples_parameters: int
+        :param start_new_chain: boolean
+        :param method_opt: str
+        :return: dictionary with the results of the optimization
+        """
+
+        if random_seed is not None:
+            np.random.seed(random_seed)
+
+        if method_opt is None:
+            method_opt = LBFGS_NAME
+
+        if n_samples_parameters > 0:
+            method_opt = SGD_NAME
+
+        if start_new_chain and n_samples_parameters > 0:
+            self.start_new_chain()
+            self.sample_parameters(n_samples_parameters)
+
+        bounds = self.bounds
+
+        if n_samples_parameters == 0:
+            if var_noise is None:
+                var_noise = self.var_noise.value[0]
+
+            if parameters_kernel is None:
+                parameters_kernel = self.kernel.hypers_values_as_array
+
+            if mean is None:
+                mean = self.mean.value[0]
+
+            index_cache = (var_noise, mean, tuple(parameters_kernel))
+        else:
+            index_cache = 'mc_mean'
+
+        if start is None:
+            start_points = DomainService.get_points_domain(n_restarts, bounds,
+                                                           type_bounds=self.type_bounds)
+
+            start = np.array(start_points)
+            n_restart_ = start.shape[0]
+
+            if n_restart_ > n_best_restarts and n_best_restarts > 0:
+                point_dict = {}
+                for j in xrange(start.shape[0]):
+                    point_dict[j] = start[j, :]
+                args = (False, None, True, 0, self, n_samples_parameters)
+                ei_values = Parallel.run_function_different_arguments_parallel(
+                    wrapper_posterior_mean_gp_model, point_dict, *args)
+                values = [ei_values[i] for i in ei_values]
+                values_index = sorted(range(len(values)), key=lambda k: values[k])
+                values_index = values_index[-n_best_restarts:]
+                start = []
+                for j in values_index:
+                    start.append(point_dict[j])
+                start = np.array(start)
+                n_restart_ = start.shape[0]
+        else:
+            n_restart_ = 1
+
+        n_restarts = n_restart_
+
+        objective_function = wrapper_posterior_mean_gp_model
+        grad_function = wrapper_gradient_posterior_mean_gp_model
+
+        if n_samples_parameters == 0:
+            #TODO: CHECK THIS
+            optimization = Optimization(
+                method_opt,
+                objective_function,
+                bounds,
+                grad_function,
+                minimize=False)
+
+            args = (False, None, parallel, 0, optimization, self, n_samples_parameters)
+
+            opt_method = wrapper_optimize
+
+            point_dict = {}
+            for j in xrange(n_restarts):
+                point_dict[j] = start[j, :]
+        else:
+
+            #TODO CHANGE wrapper_objective_voi, wrapper_grad_voi_sgd TO NO SOLVE MAX_a_{n+1} in
+            #TODO: parallel for the several starting points
+
+            args_ = (self, n_samples_parameters)
+
+            optimization = Optimization(
+                method_opt,
+                objective_function,
+                bounds,
+                wrapper_evaluate_gradient_sample_params_gp,
+                minimize=False,
+                full_gradient=grad_function,
+                args=args_, debug=True,
+                **{'maxepoch': maxepoch}
+            )
+
+            args = (False, None, parallel, 0, optimization, n_samples_parameters, self)
+
+            #TODO: THINK ABOUT N_THREADS. Do we want to run it in parallel?
+
+            opt_method = wrapper_sgd
+
+            random_seeds = np.random.randint(0, 4294967295, n_restarts)
+            point_dict = {}
+            for j in xrange(n_restarts):
+                point_dict[j] = [start[j, :], random_seeds[j]]
+
+        optimal_solutions = Parallel.run_function_different_arguments_parallel(
+            opt_method, point_dict, *args)
+
+        maximum_values = []
+        for j in xrange(n_restarts):
+            maximum_values.append(optimal_solutions.get(j)['optimal_value'])
+
+        ind_max = np.argmax(maximum_values)
+
+        logger.info("Results of the optimization of the EI: ")
+        logger.info(optimal_solutions.get(ind_max))
+
+        self.optimization_results.append(optimal_solutions.get(ind_max))
+
+        return optimal_solutions.get(ind_max)
 
     def log_prob_parameters(self, parameters):
         """

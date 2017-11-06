@@ -17,10 +17,12 @@ from stratified_bayesian_optimization.lib.constant import (
     DOGLEG,
     LBFGS_NAME,
     SGD_NAME,
+    EI_METHOD,
 )
 from stratified_bayesian_optimization.lib.distances import Distances
 from stratified_bayesian_optimization.entities.objective import Objective
 from stratified_bayesian_optimization.acquisition_functions.sbo import SBO
+from stratified_bayesian_optimization.acquisition_functions.ei import EI
 from stratified_bayesian_optimization.acquisition_functions.multi_task import MultiTasks
 from stratified_bayesian_optimization.services.training_data import TrainingDataService
 
@@ -42,6 +44,7 @@ class BGO(object):
         logger.info("Training GP model")
 
         gp_model = GPFittingService.from_dict(spec)
+        noise = spec.get('noise')
         quadrature = None
         acquisition_function = None
 
@@ -69,13 +72,13 @@ class BGO(object):
                                             model_only_x=True)
             acquisition_function = MultiTasks(quadrature,
                                              quadrature.parameters_distribution.get(TASKS))
-
+        elif method_optimization == EI_METHOD:
+            acquisition_function = EI(gp_model, noisy_evaluations=noise)
 
         problem_name = spec.get('problem_name')
         training_name = spec.get('training_name')
         random_seed = spec.get('random_seed')
         n_samples = spec.get('n_samples')
-        noise = spec.get('noise')
         minimize = spec.get('minimize')
         n_iterations = spec.get('n_iterations')
         name_model = spec.get('name_model')
@@ -84,7 +87,6 @@ class BGO(object):
         number_points_each_dimension_debug = spec.get('number_points_each_dimension_debug')
         n_samples_parameters = spec.get('n_samples_parameters', 0)
         use_only_training_points = spec.get('use_only_training_points', True)
-
 
         bgo = cls(acquisition_function, gp_model, n_iterations, problem_name, training_name,
                   random_seed, n_training, name_model, method_optimization, minimize=minimize,
@@ -190,6 +192,8 @@ class BGO(object):
 
         if self.method_optimization == SBO_METHOD or self.method_optimization == MULTI_TASK_METHOD:
             model = self.quadrature
+        else:
+            model = self.gp_model
 
         noise = None
 

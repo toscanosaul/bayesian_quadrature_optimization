@@ -28,7 +28,6 @@ if __name__ == '__main__':
 
     multiple_spec = MultipleSpecEntity.from_json(args.multiple_spec)
 
-
     spec = SpecService.generate_specs(n_spec, multiple_spec)
 
     result = BGO.run_spec(spec)

@@ -824,6 +824,31 @@ def wrapper_objective_acquisition_function(point, self, n_samples_parameters=0, 
 
     return value
 
+def wrapper_posterior_mean_gp_model(point, self, n_samples_parameters=0, *params):
+    point = point.reshape((1, len(point)))
+
+    if n_samples_parameters == 0:
+        value = self.compute_posterior_parameters(point, *params, only_mean=True)['mean']
+    else:
+        def evaluate(point, var_noise=None, mean=None, parameters_kernel=None):
+            return self.compute_posterior_parameters(
+                point, var_noise, mean, parameters_kernel, only_mean=True)['mean']
+        value = BayesianEvaluations.evaluate(evaluate, point, self, n_samples_parameters,
+                                             None, *params)[0]
+    return value
+
+def wrapper_gradient_posterior_mean_gp_model(point, self, n_samples_parameters=0, *params):
+    point = point.reshape((1, len(point)))
+    if n_samples_parameters == 0:
+        value = self.gradient_posterior_parameters(point, *params, only_mean=True)['mean']
+    else:
+        def evaluate(point, var_noise=None, mean=None, parameters_kernel=None):
+            return self.gradient_posterior_parameters(
+                point, var_noise, mean, parameters_kernel, only_mean=True)['mean']
+        value = BayesianEvaluations.evaluate(evaluate, point, self, n_samples_parameters,
+                                             None, *params)[0]
+    return value
+
 def wrapper_gradient_acquisition_function(point, self, n_samples_parameters=0, *params):
     """
     Wrapper of the gradient of an acquisition function that's not SBO or KG.
@@ -873,4 +898,7 @@ def wrapper_evaluate_gradient_ei_sample_params(point, self):
     return self.evaluate_gradient_sample_params(point)
 
 def wrapper_evaluate_gradient_sample_params_bq(point, self):
+    return self.evaluate_gradient_sample_params(point)
+
+def wrapper_evaluate_gradient_sample_params_gp(point, self):
     return self.evaluate_gradient_sample_params(point)

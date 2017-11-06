@@ -23,6 +23,7 @@ def simulation(x, runlength, n_customers, n_products, cost, sell_price, mu=1.0, 
     :param seed: int
     :return: [(float) mean of the profit, (float) variance of the profit]
     """
+    x = [int(y) for y in x]
 
     if seed is not None:
         np.random.seed(seed)
