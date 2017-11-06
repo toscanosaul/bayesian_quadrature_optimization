@@ -1076,7 +1076,7 @@ class SpecService(object):
                 #     for i in xrange(len())
                 # for problem in problem_names[0]:
                   #  for method in methods:
-
+                    method = methods[i]
                     key = (problem, training, n_training, method)
                     aggregated_results[key] = {}
 
