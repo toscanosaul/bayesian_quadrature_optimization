@@ -30,7 +30,7 @@ logger = SBOLog(__name__)
 
 
 class BGO(object):
-    _possible_optimization_methods = [SBO_METHOD, MULTI_TASK_METHOD]
+    _possible_optimization_methods = [SBO_METHOD, MULTI_TASK_METHOD, EI_METHOD]
 
     @classmethod
     def from_spec(cls, spec):
