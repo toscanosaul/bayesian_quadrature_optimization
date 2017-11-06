@@ -1050,6 +1050,7 @@ class SpecService(object):
             results = JSONFile.read(file_path)
             results = results['objective_values']
 
+        #    key_dict = (problem_name, training_name, n_training, method)
             key_dict = (problem_name, training_name, n_training, method)
             if key_dict not in results_dict:
                 results_dict[key_dict] = \
@@ -1064,46 +1065,53 @@ class SpecService(object):
         methods = set(multiple_spec.get('method_optimizations'))
 
         aggregated_results = {}
-        for problem in problem_names:
-            for training in training_names:
-                for n_training in n_trainings:
-                    for method in methods:
+        for training in training_names:
+            for n_training in n_trainings:
+                for i in xrange(len(methods)):
+                    if len(problem_names) == len(methods):
+                        problem = problem_names[i]
+                    else:
+                        problem = problem_names[0]
+                # if len(problem_names) == len(methods):
+                #     for i in xrange(len())
+                # for problem in problem_names[0]:
+                  #  for method in methods:
 
-                        key = (problem, training, n_training, method)
-                        aggregated_results[key] = {}
+                    key = (problem, training, n_training, method)
+                    aggregated_results[key] = {}
 
-                        results = results_dict[key]
+                    results = results_dict[key]
 
-                        for iteration in xrange(min(len(results), total_iterations)):
-                            if len(results[iteration]) > 0:
-                                values = results[iteration]
-                                mean = np.mean(values)
-                                std = np.std(values)
-                                n_samples = len(results[iteration])
-                                ci_low =  mean -1.96 * std / np.sqrt(n_samples)
-                                ci_up = mean + 1.96 * std / np.sqrt(n_samples)
+                    for iteration in xrange(min(len(results), total_iterations)):
+                        if len(results[iteration]) > 0:
+                            values = results[iteration]
+                            mean = np.mean(values)
+                            std = np.std(values)
+                            n_samples = len(results[iteration])
+                            ci_low =  mean -1.96 * std / np.sqrt(n_samples)
+                            ci_up = mean + 1.96 * std / np.sqrt(n_samples)
 
-                                aggregated_results[key][iteration] = {}
-                                aggregated_results[key][iteration]['mean'] = mean
-                                aggregated_results[key][iteration]['std'] = std
-                                aggregated_results[key][iteration]['n_samples'] = n_samples
-                                aggregated_results[key][iteration]['ci_low'] = ci_low
-                                aggregated_results[key][iteration]['ci_up'] = ci_up
-                            else:
-                                break
+                            aggregated_results[key][iteration] = {}
+                            aggregated_results[key][iteration]['mean'] = mean
+                            aggregated_results[key][iteration]['std'] = std
+                            aggregated_results[key][iteration]['n_samples'] = n_samples
+                            aggregated_results[key][iteration]['ci_low'] = ci_low
+                            aggregated_results[key][iteration]['ci_up'] = ci_up
+                        else:
+                            break
 
-                        if len(aggregated_results[key]) > 0:
-                            dir = path.join(PROBLEM_DIR, problem, AGGREGATED_RESULTS)
+                    if len(aggregated_results[key]) > 0:
+                        dir = path.join(PROBLEM_DIR, problem, AGGREGATED_RESULTS)
 
-                            if not os.path.exists(dir):
-                                os.mkdir(dir)
+                        if not os.path.exists(dir):
+                            os.mkdir(dir)
 
-                            file_name = cls._aggregated_results(
-                                problem_name=problem,
-                                training_name=training,
-                                n_points=n_training,
-                                method=method,
-                            )
+                        file_name = cls._aggregated_results(
+                            problem_name=problem,
+                            training_name=training,
+                            n_points=n_training,
+                            method=method,
+                        )
 
-                            file_path = path.join(dir, file_name)
-                            JSONFile.write(aggregated_results[key], file_path)
+                        file_path = path.join(dir, file_name)
+                        JSONFile.write(aggregated_results[key], file_path)
