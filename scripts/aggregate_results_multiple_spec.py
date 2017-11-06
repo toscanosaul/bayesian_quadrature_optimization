@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     same_rs = int(args.same_rs)
 
-    if args.sign == -1:
+    if int(args.sign) == -1:
         sign = True
     else:
         sign = False
