@@ -976,6 +976,8 @@ class SpecService(object):
         if rs_up is not None:
             same_random_seeds = True
 
+        problem_methods = []
+
         if same_random_seeds:
             random_seeds = {}
             for method in set(multiple_spec.get('method_optimizations')):
@@ -1052,6 +1054,9 @@ class SpecService(object):
 
         #    key_dict = (problem_name, training_name, n_training, method)
             key_dict = (problem_name, training_name, n_training, method)
+
+            if (problem_name, method) not in problem_methods:
+                problem_methods.append((problem_name, method))
             if key_dict not in results_dict:
                 results_dict[key_dict] = \
                     [[] for _ in range(min(n_iterations + 1, total_iterations))]
@@ -1067,16 +1072,15 @@ class SpecService(object):
         aggregated_results = {}
         for training in training_names:
             for n_training in n_trainings:
-                for i in xrange(len(methods)):
-                    if len(problem_names) == len(methods):
-                        problem = problem_names[i]
-                    else:
-                        problem = problem_names[0]
+                for i in xrange(len(problem_methods)):
+                    problem = problem_methods[i][0]
+                    method = problem_methods[i][1]
+
                 # if len(problem_names) == len(methods):
                 #     for i in xrange(len())
                 # for problem in problem_names[0]:
                   #  for method in methods:
-                    method = methods[i]
+
                     key = (problem, training, n_training, method)
                     aggregated_results[key] = {}
 
