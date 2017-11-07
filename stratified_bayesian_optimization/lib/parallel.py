@@ -68,7 +68,11 @@ class Parallel(object):
                 if all_success:
                     raise e
                 else:
-                    logger.info("job failed" )
+                    logger.info("job failed")
+                    logger.info(key)
+                    logger.info(argument)
+                    logger.info(args)
+                    logger.info(kwargs)
         return results
 
     @staticmethod
