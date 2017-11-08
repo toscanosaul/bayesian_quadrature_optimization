@@ -29,7 +29,9 @@ if __name__ == '__main__':
     parser.add_argument('--sign', help='the results are multiplied by sign', default=-1)
     parser.add_argument('--rs_lw', help='number of iterations', default=0)
     parser.add_argument('--rs_up', help='number of iterations', default=-1)
+    parser.add_argument('--only_plot', help='only plot', default=0)
     parser.add_argument('--same_rs', help='0', default=0)
+    parser.add_argument('--y_label', help='e.g. y_label')
 
     args = parser.parse_args()
 
@@ -38,6 +40,11 @@ if __name__ == '__main__':
     rs_up = int(args.rs_up)
 
     same_rs = int(args.same_rs)
+
+    if int(args.only_plot) == 0:
+        only_plot = False
+    else:
+        only_plot = True
 
     if int(args.sign) == -1:
         sign = True
@@ -58,9 +65,9 @@ if __name__ == '__main__':
     multiple_spec_file = args.specfile
     multiple_spec = MultipleSpecEntity.from_json(multiple_spec_file)
 
-    SpecService.collect_multi_spec_results(
-        multiple_spec, total_iterations=n_iterations, rs_lw=rs_lw, rs_up=rs_up,
-        same_random_seeds=same_rs, sign=sign)
+    if not only_plot:
+        SpecService.collect_multi_spec_results(
+            multiple_spec, total_iterations=n_iterations, rs_lw=rs_lw, rs_up=rs_up,
+            same_random_seeds=same_rs, sign=sign)
 
-
-    plot_aggregate_results(multiple_spec)
+    plot_aggregate_results(multiple_spec, y_label=args.y_label, n_iterations=n_iterations)

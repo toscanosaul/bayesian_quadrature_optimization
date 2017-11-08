@@ -26,19 +26,21 @@ _aggregated_results = 'results_{problem_name}_{training_name}_{n_points}_{method
 _aggregated_results_plot = 'plot_{problem_name}_{training_name}_{n_points}.pdf'.format
 
 
-def plot_aggregate_results(multiple_spec, negative=True, square=True):
+def plot_aggregate_results(multiple_spec, negative=True, square=True, title_plot=None,
+                           y_label=None, n_iterations=None):
     """
 
-    :param multiple_spec: (str) Name of the file with the aggregate results
+    :param multiple_spec: (multiple_spec entity) Name of the files with the aggregate results
     :return:
     """
 
-    problem_names = set(multiple_spec.get('problem_names'))
+    problem_names = list(set(multiple_spec.get('problem_names')))
     training_names = set(multiple_spec.get('training_names'))
     n_trainings = set(multiple_spec.get('n_trainings'))
     methods = set(multiple_spec.get('method_optimizations'))
 
     results = {}
+    file_path_plot = None
     for problem in problem_names:
         dir = path.join(PROBLEM_DIR, problem, AGGREGATED_RESULTS)
         if not os.path.exists(dir):
@@ -51,8 +53,12 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True):
                     n_points=n_training,
                 )
 
-                file_path_plot = path.join(dir, file_name)
+                if file_path_plot is None:
+                    file_path_plot = path.join(dir, file_name)
                 for method in methods:
+                    if method in results:
+                        continue
+
                     file_name = _aggregated_results(
                         problem_name=problem,
                         training_name=training,
@@ -70,6 +76,9 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True):
                     x_axis = list(data.keys())
                     x_axis = [int(i) for i in x_axis]
                     x_axis.sort()
+
+                    if n_iterations is not None:
+                        x_axis = x_axis[0:n_iterations]
 
                     y_values = []
                     ci_u = []
@@ -96,7 +105,16 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True):
         plt.plot(x_axis, ci_u, '--', color=col, label="95% CI")
         plt.plot(x_axis, ci_l, '--', color=col)
 
-    plt.xlabel('Number of Samples', fontsize=24)
-    plt.ylabel('Cross Validation Error', fontsize=24)
+
+    if title_plot is None:
+        title_plot = problem_names[0]
+
+    if y_label is None:
+        y_label = 'Cross Validation Error'
+
+    plt.xlabel('Number of Samples', fontsize=22)
+    plt.ylabel(y_label, fontsize=22)
     plt.legend(loc=3, ncol=2, mode="expand", borderaxespad=0.)
+    plt.title(title_plot, fontsize=22)
+    plt.subplots_adjust(left=0.13, right=0.99, top=0.92, bottom=0.12)
     plt.savefig(file_path_plot)
