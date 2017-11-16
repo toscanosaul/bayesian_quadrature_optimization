@@ -21,6 +21,9 @@ from stratified_bayesian_optimization.lib.constant import (
     AGGREGATED_RESULTS,
 )
 from stratified_bayesian_optimization.util.json_file import JSONFile
+from stratified_bayesian_optimization.initializers.log import SBOLog
+
+logger = SBOLog(__name__)
 
 _aggregated_results = 'results_{problem_name}_{training_name}_{n_points}_{method}.json'.format
 _aggregated_results_plot = 'plot_{problem_name}_{training_name}_{n_points}.pdf'.format
@@ -54,6 +57,7 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True, title_plot
                 )
 
                 if file_path_plot is None:
+                    logger.info('problem is: %s' % dir)
                     file_path_plot = path.join(dir, file_name)
                 for method in methods:
                     if method in results:
