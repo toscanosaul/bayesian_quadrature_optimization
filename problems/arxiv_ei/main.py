@@ -90,7 +90,7 @@ def toy_example(x):
         # values.append(val[0])
 
     errors = Parallel.run_function_different_arguments_parallel(
-        error_per_fold, points)
+        error_per_fold, points, parallel=False)
 
     values = convert_dictionary_to_list(errors)
 
