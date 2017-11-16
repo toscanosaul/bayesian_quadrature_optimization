@@ -32,8 +32,11 @@ if __name__ == '__main__':
     parser.add_argument('--only_plot', help='only plot', default=0)
     parser.add_argument('--same_rs', help='0', default=0)
     parser.add_argument('--y_label', help='e.g. y_label')
+    parser.add_argument('--repeat_ei', help='e.g. repeat each result of ei 5 times', default=1)
 
     args = parser.parse_args()
+
+    repeat_ei = int(args.repeat_ei)
 
     n_iterations = int(args.niter)
     rs_lw = int(args.rs_lw)
@@ -70,4 +73,5 @@ if __name__ == '__main__':
             multiple_spec, total_iterations=n_iterations, rs_lw=rs_lw, rs_up=rs_up,
             same_random_seeds=same_rs, sign=sign)
 
-    plot_aggregate_results(multiple_spec, y_label=args.y_label, n_iterations=n_iterations)
+    plot_aggregate_results(multiple_spec, y_label=args.y_label, n_iterations=n_iterations,
+                           repeat_ei=repeat_ei)
