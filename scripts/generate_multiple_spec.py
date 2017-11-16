@@ -109,7 +109,7 @@ if __name__ == '__main__':
     n_samples_parameters_mean = [20]
     maxepoch_mean = [20]
     threshold_sbo = [0.001]
-    parallel_training = [True]
+    parallel_training = [False]
     noises = [False]
     n_sampless = [0]
     parameters_distributions = [None]

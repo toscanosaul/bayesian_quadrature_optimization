@@ -115,7 +115,7 @@ def toy_example(x, cuda=False):
         # values.append(val[0])
 
     errors = Parallel.run_function_different_arguments_parallel(
-        error_per_fold, points, parallel=False)
+        error_per_fold, points, parallel=True)
 
     values = convert_dictionary_to_list(errors)
 
