@@ -19,6 +19,7 @@ from stratified_bayesian_optimization.lib.constant import (
     PROBLEM_DIR,
     PARTIAL_RESULTS,
     AGGREGATED_RESULTS,
+    EI_METHOD,
 )
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.initializers.log import SBOLog
@@ -30,7 +31,7 @@ _aggregated_results_plot = 'plot_{problem_name}_{training_name}_{n_points}.pdf'.
 
 
 def plot_aggregate_results(multiple_spec, negative=True, square=True, title_plot=None,
-                           y_label=None, n_iterations=None):
+                           y_label=None, n_iterations=None, repeat_ei=1):
     """
 
     :param multiple_spec: (multiple_spec entity) Name of the files with the aggregate results
@@ -81,6 +82,12 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True, title_plot
                     x_axis = [int(i) for i in x_axis]
                     x_axis.sort()
 
+                    if repeat_ei > 1 and method == EI_METHOD:
+                        new_x = []
+                        for i in x_axis:
+                            new_x += range(i * repeat_ei, (i + 1) * repeat_ei)
+                        x_axis = new_x
+
                     if n_iterations is not None:
                         x_axis = x_axis[0:n_iterations]
 
@@ -89,9 +96,13 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True, title_plot
                     ci_l = []
 
                     for i in x_axis:
-                        y_values.append(data[str(i)]['mean'])
-                        ci_u.append(data[str(i)]['ci_up'])
-                        ci_l.append(data[str(i)]['ci_low'])
+                        if repeat_ei > 1 and method == EI_METHOD:
+                            j = i / repeat_ei
+                        else:
+                            j = i
+                        y_values.append(data[str(j)]['mean'])
+                        ci_u.append(data[str(j)]['ci_up'])
+                        ci_l.append(data[str(j)]['ci_low'])
 
                     results[method] = [x_axis, y_values, ci_u, ci_l]
 
