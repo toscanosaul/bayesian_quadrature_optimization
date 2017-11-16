@@ -1058,12 +1058,13 @@ class SpecService(object):
             for iteration in xrange(min(len(results), total_iterations)):
                 results_dict[key_dict][iteration].append(f(sign * results[iteration]))
 
-        problem_names = set(multiple_spec.get('problem_names'))
+        problem_names = list(set(multiple_spec.get('problem_names')))
         training_names = set(multiple_spec.get('training_names'))
         n_trainings = set(multiple_spec.get('n_trainings'))
         methods = set(multiple_spec.get('method_optimizations'))
 
         aggregated_results = {}
+
         for problem in problem_names:
             for training in training_names:
                 for n_training in n_trainings:
@@ -1071,6 +1072,9 @@ class SpecService(object):
 
                         key = (problem, training, n_training, method)
                         aggregated_results[key] = {}
+
+                        if key not in results_dict:
+                            continue
 
                         results = results_dict[key]
 
