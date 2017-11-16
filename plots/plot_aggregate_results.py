@@ -91,7 +91,7 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True, title_plot
 
                     results[method] = [x_axis, y_values, ci_u, ci_l]
 
-    colors = ['b', 'r']
+    colors = ['b', 'r', 'g']
 
     plt.figure()
 
