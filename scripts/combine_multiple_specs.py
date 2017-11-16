@@ -40,16 +40,33 @@ if __name__ == '__main__':
 
     n_specs = len(spec_1.keys())
 
+    keys = set(spec_1.keys() + spec_2.keys())
 
-    for key in spec_1:
-        values_1 = spec_1[key]
-        values_2 = spec_2[key]
+    rs_1 = len(spec_1['random_seeds'])
+    rs_2 = len(spec_1['random_seeds'])
+
+
+    for key in keys:
+        values_1 = None
+        values_2 = None
+        if key in spec_1:
+            values_1 = spec_1[key]
+        if key in spec_2:
+            values_2 = spec_2[key]
+        if values_1 is None:
+            values_1 = rs_1 * [None]
+
+        if values_2 is None:
+            values_2 = rs_2 * [None]
+
         new_spec[key] = []
-        for i in xrange(len(values_1)):
-            value_1 = values_1[i]
-            value_2 = values_2[i]
-            new_spec[key] += [value_1]
-            new_spec[key] += [value_2]
+        for i in xrange(max(len(values_1), len(values_2))):
+            if i < len(values_1):
+                value_1 = values_1[i]
+                new_spec[key] += [value_1]
+            if i < len(values_2):
+                value_2 = values_2[i]
+                new_spec[key] += [value_2]
 
     # for key in spec_1:
     #     value_1 = spec_1[key]
