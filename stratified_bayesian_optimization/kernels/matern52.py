@@ -312,8 +312,12 @@ class Matern52(AbstractKernel):
         n = data['points'].shape[0]
 
         for i in xrange(dimension):
-            points = [abs(data['points'][j, i] - data['points'][h, i])
-                      for j in xrange(n) for h in xrange(n)]
+            if n > 1:
+                points = [abs(data['points'][j, i] - data['points'][h, i])
+                          for j in xrange(n) for h in xrange(n)]
+            else:
+                points = [0.324]
+
             diffs_training_data_x.append(np.mean(points) / 0.324)
 
         return {

@@ -413,8 +413,11 @@ class GPFittingGaussian(object):
             mean_value = [mu]
 
         if var_noise_value is None:
-            var_evaluations = np.var(self.training_data_as_array['evaluations'])
-            var_noise_value = [var_evaluations]
+            if len(self.training_data_as_array['evaluations']) > 1:
+                var_evaluations = np.var(self.training_data_as_array['evaluations'])
+                var_noise_value = [var_evaluations]
+            else:
+                var_noise_value = [0.1]
 
         if kernel_values is None:
             kernel_parameters_values = define_prior_parameters_using_data(
