@@ -14,6 +14,10 @@ import sys
 
 import itertools
 
+import numpy as np
+from scipy.linalg import lapack
+from scipy import linalg
+
 from stratified_bayesian_optimization.lib.constant import (
     UNIFORM_FINITE,
     LBFGS_NAME,
@@ -211,11 +215,17 @@ class SBO(object):
         hessian_b = hessian_params['b']
         hessian = hessian_a + sample * hessian_b
 
-        diag = np.diag(np.diagonal(hessian))
-        diag_2 = np.diag(hessian)
-        if np.count_nonzero(hessian - diag) == 0 and np.any(diag_2 < 0):
-            for i in xrange(hessian.shape[0]):
-                hessian[i, i] = max(0, hessian[i, i])
+        diag_cov = np.diag(hessian)
+        max_tries = 6
+        n_tries = 0
+        jitter = max(1e-10, diag_cov.mean() * 1e-6)
+        while np.any(diag_cov < 0.) and n_tries < max_tries and np.isfinite(jitter):
+            hessian += np.eye(hessian.shape[0]) * jitter
+            n_tries += 1
+            jitter *= 10
+
+        if np.any(diag_cov < 0.):
+            logger.info('Hessian is not pos definite')
 
         return hessian
 
