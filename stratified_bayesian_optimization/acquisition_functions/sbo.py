@@ -211,6 +211,12 @@ class SBO(object):
         hessian_b = hessian_params['b']
         hessian = hessian_a + sample * hessian_b
 
+        diag = np.diag(np.diagonal(hessian))
+        diag_2 = np.diag(hessian)
+        if np.count_nonzero(hessian - diag) == 0 and np.any(diag_2 < 0):
+            for i in xrange(hessian.shape[0]):
+                hessian[i, i] = max(0, hessian[i, i])
+
         return hessian
 
     def evaluate_sbo_by_sample(self, candidate_point, sample, start=None,
@@ -1774,8 +1780,8 @@ class SBO(object):
             #TODO: THINK ABOUT N_THREADS. Do we want to run it in parallel?
             N = max(n_samples * n_samples_parameters, n_samples_parameters, n_samples)
             bayesian = True
-            if n_samples_parameters==0:
-                bayesian=False
+            if n_samples_parameters == 0:
+                bayesian = False
 
             args = (False, None, parallel, 0, optimization, N, self, monte_carlo, bayesian,
                     n_restarts_mc, n_best_restarts_mc, n_threads, False, method_opt_mc)
