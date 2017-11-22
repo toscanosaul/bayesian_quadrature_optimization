@@ -216,17 +216,18 @@ class SBO(object):
         hessian = hessian_a + sample * hessian_b
 
         diag_cov = np.diag(hessian)
-        max_tries = 6
-        n_tries = 0
-        jitter = abs(diag_cov.mean()) * 1e-6
-        while np.any(diag_cov < 0.) and n_tries < max_tries and np.isfinite(jitter):
-            hessian += np.eye(hessian.shape[0]) * jitter
-            diag_cov = np.diag(hessian)
-            n_tries += 1
-            jitter *= 10
+        if np.any(diag_cov < 0.) and np.min(diag_cov) > -1e-6:
+            max_tries = 6
+            n_tries = 0
+            jitter = min(abs(diag_cov.mean()) * 1e-6, 1e-6)
+            while np.any(diag_cov < 0.) and n_tries < max_tries and np.isfinite(jitter):
+                hessian += np.eye(hessian.shape[0]) * jitter
+                diag_cov = np.diag(hessian)
+                n_tries += 1
+                jitter *= 10
 
-        if np.any(diag_cov < 0.):
-            logger.info('Hessian is not pos definite')
+            if np.any(diag_cov < 0.):
+                logger.info('Hessian is not pos definite')
 
         return hessian
 
