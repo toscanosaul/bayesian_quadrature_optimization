@@ -218,7 +218,7 @@ class SBO(object):
         diag_cov = np.diag(hessian)
         max_tries = 6
         n_tries = 0
-        jitter = max(1e-10, diag_cov.mean() * 1e-6)
+        jitter = abs(diag_cov.mean()) * 1e-6
         while np.any(diag_cov < 0.) and n_tries < max_tries and np.isfinite(jitter):
             hessian += np.eye(hessian.shape[0]) * jitter
             diag_cov = np.diag(hessian)
