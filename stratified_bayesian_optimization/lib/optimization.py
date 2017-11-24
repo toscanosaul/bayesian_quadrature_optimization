@@ -39,6 +39,7 @@ class Optimization(object):
         """
         self.optimizer_name = optimizer_name
         self.optimizer = self._get_optimizer(optimizer_name)
+        self.optimizer_default = self._get_optimizer(LBFGS_NAME)
         self.function = function
         self.gradient = grad
         self.bounds = bounds
@@ -109,11 +110,18 @@ class Optimization(object):
                     return -1.0 * self.hessian(x, *args)
 
             if self.optimizer_name in self._hessian_methods:
-                opt = self.optimizer(
-                    f, start,
-                    fprime=grad, hessian=hessian,
-                    args=args, tol=self.tol,
-                    bounds=self.bounds, **self.optimization_options)
+                try:
+                    opt = self.optimizer(
+                        f, start,
+                        fprime=grad, hessian=hessian,
+                        args=args, tol=self.tol,
+                        bounds=self.bounds, **self.optimization_options)
+                except Exception as e:
+                    opt = self.optimizer_default(
+                        f, start,
+                        fprime=grad,
+                        args=args,
+                        bounds=self.bounds, **self.optimization_options)
             else:
                 opt = self.optimizer(
                     f, start,
