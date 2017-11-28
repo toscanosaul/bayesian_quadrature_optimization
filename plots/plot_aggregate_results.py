@@ -114,7 +114,7 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True, title_plot
     for id, method in enumerate(results):
         label = str(method)
         if label == SBO_METHOD:
-            label == 'ibo'
+            label = 'ibo'
         x_axis = results[method][0]
         y_values = results[method][1]
         ci_u = results[method][2]
