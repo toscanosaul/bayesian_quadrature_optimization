@@ -20,6 +20,7 @@ from stratified_bayesian_optimization.lib.constant import (
     PARTIAL_RESULTS,
     AGGREGATED_RESULTS,
     EI_METHOD,
+    SBO_METHOD,
 )
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.initializers.log import SBOLog
@@ -111,12 +112,15 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True, title_plot
     plt.figure()
 
     for id, method in enumerate(results):
+        label = str(method)
+        if label == SBO_METHOD:
+            label == 'ibo'
         x_axis = results[method][0]
         y_values = results[method][1]
         ci_u = results[method][2]
         ci_l = results[method][3]
         col = colors[id]
-        plt.plot(x_axis, y_values, color=col, linewidth=2.0, label=str(method))
+        plt.plot(x_axis, y_values, color=col, linewidth=2.0, label=label)
         plt.plot(x_axis, ci_u, '--', color=col, label="95% CI")
         plt.plot(x_axis, ci_l, '--', color=col)
 
