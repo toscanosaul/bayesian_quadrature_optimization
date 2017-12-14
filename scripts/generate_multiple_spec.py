@@ -164,7 +164,7 @@ if __name__ == '__main__':
     # n_sampless = [0]
     # parameters_distributions = None
 
-    #multi_Task
+    #multi_Task/sbo
     dim_x = [6]
     bounds_domain_x = [[(1, 11), (4, 500), (0, 1), (3, 50), (100, 1000), (2, 6)]]
     problem_name = ['cnn_cifar10']
@@ -175,7 +175,7 @@ if __name__ == '__main__':
                       [0, 1, 2, 3, 4]]]
     #old bounds: [[0.01, 1.01], [0.01, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
     n_training = [10]
-    random_seed = range(51, 200)
+    random_seed = range(1, 200)
     n_specs = len(random_seed)
     type_bounds = [[0, 0, 0, 0, 0, 0, 1]]
     x_domain = [[0, 1, 2, 3, 4, 5]]
@@ -196,10 +196,10 @@ if __name__ == '__main__':
     n_best_restarts_mc = [0]
     factr_mc = [1e12]
     maxiter_mc = [10]
-    n_restarts = [100]
-    n_best_restarts = [10]
+    n_restarts = [10]
+    n_best_restarts = [0]
     use_only_training_points = [True]
-    method_optimization = [MULTI_TASK_METHOD]
+    method_optimization = [SBO_METHOD]
     n_samples_parameters = [5]
     n_restarts_mean = [100]
     n_best_restarts_mean = [10]

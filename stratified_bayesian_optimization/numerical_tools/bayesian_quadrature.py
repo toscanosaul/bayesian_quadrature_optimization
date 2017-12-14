@@ -956,7 +956,7 @@ class BayesianQuadrature(object):
         new_cross_cov = np.diag(self.gp.evaluate_cross_cov(candidate_points, candidate_points,
                                                    parameters_kernel))
 
-        denominator = new_cross_cov - np.einsum('ij,ij->j', cross_cov, solve_2)
+        denominator = new_cross_cov - np.einsum('ij,ij->j', cross_cov, solve_2) + var_noise
         denominator = np.clip(denominator, 0, None)
         denominator = np.sqrt(denominator)
 
@@ -1015,7 +1015,7 @@ class BayesianQuadrature(object):
 
             new_cross_cov = np.diag(self.gp.evaluate_cross_cov(candidate_point, candidate_point,
                                                        parameters_kernel))
-            denominator = new_cross_cov - np.einsum('ij,ij->j', cross_cov, solve_2)
+            denominator = new_cross_cov - np.einsum('ij,ij->j', cross_cov, solve_2) + var_noise
             denominator = np.clip(denominator, 0, None)
             denominator = np.sqrt(denominator)
             if cache:
@@ -1314,7 +1314,7 @@ class BayesianQuadrature(object):
         new_cross_cov = self.gp.evaluate_cross_cov(candidate_point, candidate_point,
                                                    parameters_kernel)
 
-        denominator = new_cross_cov - np.dot(cross_cov, solve_2)
+        denominator = new_cross_cov - np.dot(cross_cov, solve_2) + var_noise
         denominator = np.clip(denominator[0, 0], 0, None)
 
         b_value = numerator / np.sqrt(denominator)
@@ -1375,13 +1375,13 @@ class BayesianQuadrature(object):
         # beta_1 = self.gp.evaluate_cov(candidate_point, parameters_kernel) - \
         #          np.dot(gamma.transpose(), solve_1)
 
-        vec_covs, b_new =  self.get_vec_covs(cache, points, parameters_kernel, candidate_point,
+        vec_covs, b_new = self.get_vec_covs(cache, points, parameters_kernel, candidate_point,
                                              parallel, keep_indexes=keep_indexes,
                                              monte_carlo=monte_carlo, n_threads=n_threads)
 
         solve_2 = cho_solve(chol, vec_covs.transpose())
 
-        beta_1 =  beta_1 ** (-0.5)
+        beta_1 = beta_1 ** (-0.5)
 
         beta_2 = b_new[:, 0] - np.dot(vec_covs, solve_1)
 
