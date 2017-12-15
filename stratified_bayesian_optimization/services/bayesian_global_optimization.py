@@ -180,6 +180,9 @@ class BGO(object):
 
         :return: Objective
         """
+        start_ei = True
+        if self.quadrature is not None and self.quadrature.task_continue:
+            start_ei = False
 
         if n_samples_parameters > 0 and n_samples_parameters_mean == 0:
             n_samples_parameters_mean = n_samples_parameters
@@ -231,7 +234,7 @@ class BGO(object):
                 n_best_restarts_mc=n_best_restarts_mc, n_restarts=n_restarts,
                 n_best_restarts=n_best_restarts, n_samples_parameters=n_samples_parameters,
                 start_new_chain=False, method_opt_mc=method_opt_mc, maxepoch=maxepoch,
-                **opt_params_mc)
+                start_ei=start_ei, **opt_params_mc)
 
             value_sbo = new_point_sol['optimal_value']
             new_point = new_point_sol['solution']

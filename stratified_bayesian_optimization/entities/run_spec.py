@@ -18,6 +18,14 @@ from stratified_bayesian_optimization.entities.domain import (
     BoundsEntity,
 )
 
+from schematics.exceptions import ValidationError
+from schematics.types import BaseType
+
+class NetlocType(BaseType):
+    def validate_netloc(self, value):
+        pass
+
+
 
 class RunSpecEntity(Model):
     problem_name = StringType(required=True)
@@ -47,7 +55,7 @@ class RunSpecEntity(Model):
 
     x_domain = ListType(IntType, required=False)
     distribution = StringType(required=False)
-    parameters_distribution = DictType(ListType(FloatType), required=False)
+    parameters_distribution = NetlocType(required=False)
 
     minimize = BooleanType(required=True)
     n_iterations = IntType(required=True)
@@ -286,7 +294,8 @@ class MultipleSpecEntity(Model):
     # New parameters due Bayesian quadrature
     x_domains = ListType(ListType(IntType), required=False)
     distributions = ListType(StringType, required=False)
-    parameters_distributions = ListType(DictType(ListType(FloatType)), required=False)
+   # parameters_distributions = ListType(DictType(ListType(FloatType)), required=False)
+    parameters_distributions = NetlocType(required=False)
 
     minimizes = ListType(BooleanType, required=False)
     n_iterationss = ListType(IntType, required=False)

@@ -8,7 +8,7 @@ import os
 
 from scipy.stats import norm
 from random import shuffle
-
+from scipy.optimize import brute
 from copy import deepcopy
 
 import itertools
@@ -21,6 +21,10 @@ from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.lib.util import (
     wrapper_objective_acquisition_function,
 )
+from stratified_bayesian_optimization.lib.la_functions import (
+    cholesky,
+    cho_solve,
+)
 
 logger = SBOLog(__name__)
 
@@ -28,7 +32,7 @@ logger = SBOLog(__name__)
 class SDE(object):
 
 
-    def __init__(self, gp, n_tasks):
+    def __init__(self, gp, n_tasks, domain_xe, x_domain, weights):
         """
         See http://www3.stat.sinica.edu.tw/statistica/oldpdf/A10n46.pdf
         Only uses Matern Kernel
@@ -37,18 +41,134 @@ class SDE(object):
         """
         self.gp = gp
         self.n_tasks = n_tasks
+        self.domain_xe = domain_xe # range of values as a list
+        self.x_domain = x_domain # [0, 1,2, .., x_domain-1] dimension of domain of x
+        self.weights = weights
 
-    def estimate_variance_gp(self, parameters_kernel):
-        cov = self.gp.evaluate_cov(None, parameters_kernel)
-        chol =
-        chol, cov = self.gp._chol_cov_including_noise(var_noise, parameters_kernel)
+    def estimate_variance_gp(self, parameters_kernel, chol=None):
+        historical_points = self.data['points']
+        if chol is None:
+            cov = self.gp.evaluate_cov(historical_points, parameters_kernel)
+            chol = cholesky(cov, max_tries=7)
 
         y = self.gp.data['evaluations']
-        part_1 = np.dot(y, solve)
-        part_2 = np.dot()
+        n = chol.shape[0]
+        z = np.ones(n)
 
-    def posterior_distribution_length_scale(self):
-        a =
+        solve = cho_solve(chol, y)
+        part_1 = np.dot(y, solve)
+
+        solve_2 = cho_solve(chol, z)
+        part_2 = np.dot(z, solve_2)
+
+        beta = np.dot(z, solve) / part_2
+        part_2 *= (beta ** 2)
+
+        return (part_1 - part_2 ) / (n - 1), beta
+
+
+    def log_posterior_distribution_length_scale(self, parameters_kernel):
+        historical_points = self.data['points']
+        cov = self.gp.evaluate_cov(historical_points, parameters_kernel)
+
+        n = cov.shape[0]
+        y = np.ones(n)
+        chol = cholesky(cov, max_tries=7)
+        determinant_cov = np.product(np.diag(chol)) ** 2
+
+        solve = cho_solve(chol, y)
+        part_1 = np.dot(y, solve)
+        var = self.estimate_variance_gp(parameters_kernel, chol=chol)[0]
+
+        objective = \
+            -(n-1) * 0.5 * np.log(var) - 0.5 * np.log(determinant_cov) - 0.5 * np.log(part_1)
+
+        return -1.0 * objective
+
+
+    def sample_variable(self, parameters_kernel, n_samples):
+        historical_points = self.gp.data['points']
+        var, beta = self.estimate_variance_gp(parameters_kernel)
+        y = self.gp.data['evaluations']
+        n = len(y)
+        z = np.ones(n)
+
+        create_vector = np.zeros((historical_points.shape[0] * len(self.domain_xe), y.shape[1]))
+
+        for i in xrange(historical_points.shape[0]):
+            for j in xrange(len(self.domain_xe)):
+                first_part = historical_points[i][0:self.x_domain]
+                point = np.concatenate((first_part, np.array(self.domain_xe[j])))
+                create_vector[(i-1)*len(self.domain_xe) + j] = point
+
+        cov = self.gp.evaluate_cov(historical_points, parameters_kernel)
+        chol = cholesky(cov, max_tries=7)
+
+        matrix_cov = self.gp.kernel.evaluate.evaluate_cross_cov_defined_by_params(
+            parameters_kernel, self.gp.data, create_vector)
+        solve = np.dot(matrix_cov.transpose() ,cho_solve(chol, y - beta * z))
+
+        mean = z * beta + solve
+
+
+        chi = np.random.chisq(n-1, n_samples)
+        chi = (n-1) * var / chi
+
+        samples = []
+        for i in xrange(n_samples):
+            sample = np.random.multivariate_normal(mean, chi[i] * cov)
+            samples.append(sample)
+
+        return samples
+
+    def ei_given_sample(self, sample, parameters_kernel):
+        M = np.min(sample)
+        n = len(sample)
+        one = np.ones(2 * n)
+        historical_points = self.gp.data['points']
+        y = self.gp.data['evaluations']
+        Z = np.concatenate((y, sample))
+
+
+        create_vector = np.zeros((historical_points.shape[0] * len(self.domain_xe), y.shape[1]))
+
+        for i in xrange(historical_points.shape[0]):
+            for j in xrange(len(self.domain_xe)):
+                first_part = historical_points[i][0:self.x_domain]
+                point = np.concatenate((first_part, np.array(self.domain_xe[j])))
+                create_vector[(i-1)*len(self.domain_xe) + j] = point
+
+        new_vector = np.concatenate((historical_points, create_vector))
+
+        C = self.gp.kernel.evaluate.evaluate_cross_cov_defined_by_params(
+            parameters_kernel, new_vector, new_vector)
+        chol = cholesky(C, max_tries=7)
+
+        solv = cho_solve(chol, Z)
+        solv_2 = cho_solve(chol, one)
+
+        bc = np.dot(one, solv) / np.dot(one, solv_2)
+
+        c = np.dot(self.weights, )
+
+        part_1 = np.dot(c, cho_solve(chol, Z - bc * one))
+        mc = bc  +
+
+
+
+    def ei_objective(self, x, samples):
+
+
+
+    def control_variable_ei(self, parameters_kernel):
+        samples = self.sample_variable(parameters_kernel, 100)
+
+
+
+    def optimize(self, **kwargs):
+        parameters = brute(self.log_posterior_distribution_length_scale, ranges=())
+
+
 
     def estimate_length_scale(self):
 

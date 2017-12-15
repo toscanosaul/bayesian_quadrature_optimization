@@ -24,6 +24,7 @@ def uniform_finite(f, point, index_points, domain_random, index_random, weights=
     :param double: boolean
     :return: np.array
     """
+    domain_random = np.array(domain_random)
 
     dim_random = domain_random.shape[1]
 
@@ -105,6 +106,7 @@ def gradient_uniform_finite(f, point, index_points, domain_random, index_random,
     :param parameters_kernel: np.array(n)
     :return: np.array(kxm)
     """
+    domain_random = np.array(domain_random)
 
     dim_random = domain_random.shape[1]
 
@@ -161,6 +163,7 @@ def hessian_uniform_finite(f, point, index_points, domain_random, index_random, 
     :param parameters_kernel:
     :return: np.array(mxkxk)
     """
+    domain_random = np.array(domain_random)
 
     dim_random = domain_random.shape[1]
 
@@ -221,6 +224,7 @@ def gradient_uniform_finite_resp_candidate(f, candidate_point, index_points, dom
     :param parameters_kernel: np.array(n)
     :return: np.array(kxm)
     """
+    domain_random = np.array(domain_random)
 
     dim_random = domain_random.shape[1]
 

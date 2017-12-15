@@ -66,6 +66,8 @@ UNIFORM_FINITE = 'uniform_finite'
 TASKS = 'n_tasks'
 EXPONENTIAL = 'exponential'
 GAMMA = 'gamma'
+WEIGHTED_UNIFORM_FINITE = 'weighted_uniform_finite'
+WEIGHTS = 'weights'
 
 #Cache Quadrature
 QUADRATURES = 'quadrature'

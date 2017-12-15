@@ -26,6 +26,8 @@ from stratified_bayesian_optimization.lib.constant import (
     BAYESIAN_QUADRATURE,
     SBO_METHOD,
     SGD_NAME,
+    WEIGHTED_UNIFORM_FINITE,
+    WEIGHTS,
 )
 from stratified_bayesian_optimization.lib.la_functions import (
     cho_solve,
@@ -88,7 +90,14 @@ class BayesianQuadrature(object):
             'grad_expectation_candidate': gradient_gamma_resp_candidate,
             'hessian_expectation': hessian_gamma,
             'parameter': None,
-        }
+        },
+        WEIGHTED_UNIFORM_FINITE: {
+            'expectation': uniform_finite,
+            'grad_expectation': gradient_uniform_finite,
+            'grad_expectation_candidate': gradient_uniform_finite_resp_candidate,
+            'hessian_expectation': hessian_uniform_finite,
+            'parameter': None,
+        },
     }
 
     def __init__(self, gp_model, x_domain, distribution, parameters_distribution=None,
@@ -131,9 +140,17 @@ class BayesianQuadrature(object):
 
         self.arguments_expectation = {}
 
+        self.task_continue = False
+
         if self.expectation['parameter'] == TASKS:
             n_tasks = self.parameters_distribution.get(TASKS)
             self.arguments_expectation['domain_random'] = np.arange(n_tasks).reshape((n_tasks, 1))
+        elif distribution == WEIGHTED_UNIFORM_FINITE:
+            parameters_distribution = {'weights': np.array(self.parameters_distribution['weights'])}
+            parameters_distribution['domain_random'] = \
+                np.array(self.parameters_distribution['domain_random'])
+            self.arguments_expectation = parameters_distribution
+            self.task_continue = True
         elif self.parameters_distribution is not None:
             self.arguments_expectation['parameters_dist'] = self.parameters_distribution
 
@@ -160,6 +177,9 @@ class BayesianQuadrature(object):
         else:
             self.type_bounds = deepcopy(self.gp.type_bounds)
 
+        if not model_only_x and self.task_continue:
+            self.type_bounds = deepcopy(self.gp.type_bounds)
+
 
         self.tasks = []
         if self.gp.bounds != [] and self.separate_tasks:
@@ -168,6 +188,9 @@ class BayesianQuadrature(object):
             self.bounds = [
                 self.gp.bounds[i] for i in xrange(len(self.gp.bounds)) if i in self.x_domain]
         else:
+            self.bounds = deepcopy(self.gp.bounds)
+
+        if not model_only_x and self.task_continue:
             self.bounds = deepcopy(self.gp.bounds)
 
         self.type_kernel = self.gp.type_kernel

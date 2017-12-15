@@ -97,8 +97,12 @@ class SBO(object):
         self.discretization = discretization_domain
 
         self.bounds_opt = deepcopy(self.bq.bounds)
-        if self.bq.separate_tasks:
+        if self.bq.separate_tasks and not self.bq.task_continue:
             self.bounds_opt.append([None, None])
+        elif self.bq.separate_tasks:
+            for i in self.bq.w_domain:
+                bound = self.bounds_opt[i]
+                self.bounds_opt[i] = [bound[0], bound[-1]]
         self.opt_separing_domain = False
 
         # Bounds or list of number of points of the domain
@@ -1657,7 +1661,7 @@ class SBO(object):
             n_best_restarts -= 1
 
         if start is None:
-            if self.bq.separate_tasks and n_restarts > 0:
+            if self.bq.separate_tasks and n_restarts > 0 and not self.bq.task_continue:
                 tasks = self.bq.tasks
                 n_tasks = len(tasks)
 
@@ -1844,6 +1848,16 @@ class SBO(object):
             maximum_values.append(optimal_solutions.get(j)['optimal_value'])
 
         ind_max = np.argmax(maximum_values)
+
+        if self.bq.task_continue:
+            solution = optimal_solutions.get(ind_max)['solution']
+            for i in range(self.bq.gp.type_bounds):
+                if self.bq.gp.type_bounds[i] == 1:
+                    value = solution[i]
+                    bounds = self.bq.gp.bounds[i]
+                    new_value = bounds[np.argmin(np.abs(np.array(bounds) - value))]
+                    solution[i] = new_value
+            optimal_solutions[ind_max]['solution'] = solution
 
         logger.info("Results of the optimization of the SBO: ", *self.args_handler)
         logger.info(optimal_solutions.get(ind_max), *self.args_handler)
