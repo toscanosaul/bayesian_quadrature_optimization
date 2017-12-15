@@ -1851,7 +1851,7 @@ class SBO(object):
 
         if self.bq.task_continue:
             solution = optimal_solutions.get(ind_max)['solution']
-            for i in range(self.bq.gp.type_bounds):
+            for i in range(len(self.bq.gp.type_bounds)):
                 if self.bq.gp.type_bounds[i] == 1:
                     value = solution[i]
                     bounds = self.bq.gp.bounds[i]
