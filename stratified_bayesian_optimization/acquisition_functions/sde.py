@@ -51,7 +51,7 @@ class SDE(object):
         self.parameters = None
 
     def estimate_variance_gp(self, parameters_kernel, chol=None):
-        historical_points = self.data['points']
+        historical_points = self.gp.data['points']
         if chol is None:
             cov = self.gp.evaluate_cov(historical_points, parameters_kernel)
             chol = cholesky(cov, max_tries=7)
@@ -73,7 +73,7 @@ class SDE(object):
 
 
     def log_posterior_distribution_length_scale(self, parameters_kernel):
-        historical_points = self.data['points']
+        historical_points = self.gp.data['points']
         cov = self.gp.evaluate_cov(historical_points, parameters_kernel)
 
         n = cov.shape[0]
@@ -293,10 +293,9 @@ class SDE(object):
 
     def iteration_algorithm(self, n_restarts=10):
         if self.parameters is None:
-            start = self.gp.sample_parameters_posterior(1)[2, :]
+            start = self.gp.sample_parameters_posterior(1)[0][2:]
             parameters = scipy.optimize.minimize(
-                self.log_posterior_distribution_length_scale, start, method='Nelder-Mead')[
-                'solution']
+                self.log_posterior_distribution_length_scale, start, method='Nelder-Mead')['x']
             self.parameters = parameters
         else:
             parameters = self.parameters
@@ -304,14 +303,14 @@ class SDE(object):
         samples = self.sample_variable(parameters, 100)
 
 
-        bounds = [tuple(bound) for bound in self.gp.bounds][0:self.x_domain]
+        bounds = [tuple(bound) for bound in [self.gp.bounds[i] for i in range(self.x_domain)]]
         start = DomainService.get_points_domain(
             n_restarts, self.gp.bounds[0:self.x_domain], type_bounds=self.gp.type_bounds[0:self.x_domain])
         # do in parallel
 
         control = scipy.optimize.minimize(
             self.ei_objective, start[0], args=(samples, parameters), method='Nelder-Mead',
-            bounds=bounds)['solution']
+            bounds=bounds)['x']
 
         environment = self.get_environment(control, parameters)
 
@@ -319,12 +318,11 @@ class SDE(object):
 
     def optimize_mean(self, n_restarts):
         if self.parameters is None:
-            start = self.gp.sample_parameters_posterior(1)[2, :]
+            start = self.gp.sample_parameters_posterior(1)[0][2:]
             parameters = scipy.optimize.minimize(
-                self.log_posterior_distribution_length_scale, start, method='Nelder-Mead')[
-                'solution']
+                self.log_posterior_distribution_length_scale, start, method='Nelder-Mead')['x']
             self.parameters = parameters
-        bounds = [tuple(bound) for bound in self.gp.bounds][0:self.x_domain]
+        bounds = [tuple(bound) for bound in [self.gp.bounds[i] for i in range(self.x_domain)]]
         start = DomainService.get_points_domain(
             n_restarts, self.gp.bounds[0:self.x_domain], type_bounds=self.gp.type_bounds[0:self.x_domain])
 
@@ -332,9 +330,8 @@ class SDE(object):
         solution = scipy.optimize.minimize(
             self.mean_objective, start[0], args=(self.parameters, ), method='Nelder-Mead',
             bounds=bounds)
+        new_solution = {'solution': solution['x'], 'optimal_value': solution['fun']}
         return solution
-
-
 
     def mean_objective(self, candidate_point, parameters_kernel):
         """

@@ -1849,15 +1849,15 @@ class SBO(object):
 
         ind_max = np.argmax(maximum_values)
 
-        if self.bq.task_continue:
-            solution = optimal_solutions.get(ind_max)['solution']
-            for i in range(len(self.bq.gp.type_bounds)):
-                if self.bq.gp.type_bounds[i] == 1:
-                    value = solution[i]
-                    bounds = self.bq.gp.bounds[i]
-                    new_value = bounds[np.argmin(np.abs(np.array(bounds) - value))]
-                    solution[i] = new_value
-            optimal_solutions[ind_max]['solution'] = solution
+        # if self.bq.task_continue:
+        #     solution = optimal_solutions.get(ind_max)['solution']
+        #     for i in range(len(self.bq.gp.type_bounds)):
+        #         if self.bq.gp.type_bounds[i] == 1:
+        #             value = solution[i]
+        #             bounds = self.bq.gp.bounds[i]
+        #             new_value = bounds[np.argmin(np.abs(np.array(bounds) - value))]
+        #             solution[i] = new_value
+        #     optimal_solutions[ind_max]['solution'] = solution
 
         logger.info("Results of the optimization of the SBO: ", *self.args_handler)
         logger.info(optimal_solutions.get(ind_max), *self.args_handler)
