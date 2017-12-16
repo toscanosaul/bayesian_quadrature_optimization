@@ -18,6 +18,7 @@ from stratified_bayesian_optimization.lib.constant import (
     LBFGS_NAME,
     SGD_NAME,
     EI_METHOD,
+    SDE_METHOD,
 )
 from stratified_bayesian_optimization.lib.distances import Distances
 from stratified_bayesian_optimization.entities.objective import Objective
@@ -25,12 +26,13 @@ from stratified_bayesian_optimization.acquisition_functions.sbo import SBO
 from stratified_bayesian_optimization.acquisition_functions.ei import EI
 from stratified_bayesian_optimization.acquisition_functions.multi_task import MultiTasks
 from stratified_bayesian_optimization.services.training_data import TrainingDataService
+from stratified_bayesian_optimization.acquisition_functions.sde import SDE
 
 logger = SBOLog(__name__)
 
 
 class BGO(object):
-    _possible_optimization_methods = [SBO_METHOD, MULTI_TASK_METHOD, EI_METHOD]
+    _possible_optimization_methods = [SBO_METHOD, MULTI_TASK_METHOD, EI_METHOD, SDE_METHOD]
 
     @classmethod
     def from_spec(cls, spec):
@@ -79,6 +81,12 @@ class BGO(object):
                                              quadrature.parameters_distribution.get(TASKS))
         elif method_optimization == EI_METHOD:
             acquisition_function = EI(gp_model, noisy_evaluations=noise)
+        elif method_optimization == SDE_METHOD:
+            x_domain = len(spec.get('x_domain'))
+            parameters_distribution = spec.get('parameters_distribution')
+            domain_random = np.array(parameters_distribution['parameters_distribution'])
+            weights = np.array(parameters_distribution['weights'])
+            acquisition_function = SDE(gp_model, x_domain, domain_random, weights)
 
         problem_name = spec.get('problem_name')
         training_name = spec.get('training_name')
@@ -209,10 +217,14 @@ class BGO(object):
         else:
             method_opt_mu = DOGLEG
 
-        optimize_mean = model.optimize_posterior_mean(
-            minimize=self.minimize, n_restarts=n_restarts_mean,
-            n_best_restarts=n_best_restarts_mean, n_samples_parameters=n_samples_parameters_mean,
-            start_new_chain=True, method_opt=method_opt_mu, maxepoch=maxepoch_mean)
+        if self.method_optimization == SDE_METHOD:
+            optimize_mean = self.acquisition_function.optimize_mean(
+                n_restarts=n_restarts_mean)
+        else:
+            optimize_mean = model.optimize_posterior_mean(
+                minimize=self.minimize, n_restarts=n_restarts_mean,
+                n_best_restarts=n_best_restarts_mean, n_samples_parameters=n_samples_parameters_mean,
+                start_new_chain=True, method_opt=method_opt_mu, maxepoch=maxepoch_mean)
 
         optimal_value = \
             self.objective.add_point(optimize_mean['solution'], optimize_mean['optimal_value'][0])

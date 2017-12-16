@@ -78,6 +78,7 @@ B_NEW = 'quadratures_with_candidate'
 SBO_METHOD = 'sbo'
 MULTI_TASK_METHOD = 'multi_task'
 EI_METHOD = 'ei'
+SDE_METHOD = 'sde'
 
 #Directory of solutions of BGO in the different iterations
 PARTIAL_RESULTS = 'partial_results'
