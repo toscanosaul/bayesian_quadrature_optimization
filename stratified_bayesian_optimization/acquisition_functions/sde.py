@@ -542,7 +542,10 @@ class SDE(object):
             results_opt.append(sol.get(i))
         ind_max = np.argmax(solutions)
 
-        return results_opt[ind_max]
+        sol = results_opt[ind_max]
+        sol['optimal_value'] = [sol['optimal_value']]
+
+        return sol
 
 
     def mean_objective(self, candidate_point, parameters_kernel):
@@ -555,7 +558,7 @@ class SDE(object):
         return self.compute_mc_given_sample(sample, candidate_point, parameters_kernel)[0]
 
     def optimize(self, n_restarts=10, n_samples=10, **kwargs):
-        return {'solution': self.iteration_algorithm(n_restarts, n_samples), 'value': 0}
+        return {'solution': self.iteration_algorithm(n_restarts, n_samples), 'optimal_value': 0}
 
 
     def clean_cache(self):
