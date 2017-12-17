@@ -567,3 +567,6 @@ class SDE(object):
         """
         self.gp.clean_cache()
         self.parameters = None
+
+    def write_debug_data(self, *args, **kwargs):
+        return 0
