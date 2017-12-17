@@ -3,9 +3,9 @@ from __future__ import absolute_import
 from scipy.optimize import fmin_l_bfgs_b
 
 from stratified_bayesian_optimization.lib.optimization_methods import (
-    newton_cg, trust_ncg, dogleg)
+    newton_cg, trust_ncg, dogleg, nelder_mead)
 from stratified_bayesian_optimization.lib.constant import (
-    LBFGS_NAME, SGD_NAME, NEWTON_CG_NAME, TRUST_N_CG, DOGLEG)
+    LBFGS_NAME, SGD_NAME, NEWTON_CG_NAME, TRUST_N_CG, DOGLEG, NELDER)
 from stratified_bayesian_optimization.lib.stochastic_gradient_descent import SGD
 
 from stratified_bayesian_optimization.initializers.log import SBOLog
@@ -15,6 +15,7 @@ logger = SBOLog(__name__)
 
 class Optimization(object):
 
+    _gradient_free_ = [NELDER]
     _optimizers_ = [LBFGS_NAME, SGD_NAME, NEWTON_CG_NAME, TRUST_N_CG, DOGLEG]
     _hessian_methods = [NEWTON_CG_NAME, TRUST_N_CG, DOGLEG]
 
@@ -76,6 +77,9 @@ class Optimization(object):
         if optimizer_name == DOGLEG:
             return dogleg
 
+        if optimizer_name == NELDER:
+            return nelder_mead
+
     def optimize(self, start, *args):
         """
 
@@ -102,8 +106,10 @@ class Optimization(object):
         else:
             def f(x, *args):
                 return -1.0 * self.function(x, *args)
-            def grad(x, *args):
-                return -1.0 * self.gradient(x, *args)
+
+            if self.gradient is not None:
+                def grad(x, *args):
+                    return -1.0 * self.gradient(x, *args)
 
             if self.hessian is not None:
                 def hessian(x, *args):
@@ -122,6 +128,11 @@ class Optimization(object):
                         fprime=grad,
                         args=args,
                         bounds=self.bounds, **self.optimization_options)
+            elif self.optimizer_name in self._gradient_free_:
+                opt = self.optimizer(
+                    f, start,
+                    args=args,
+                    bounds=self.bounds)
             else:
                 opt = self.optimizer(
                     f, start,

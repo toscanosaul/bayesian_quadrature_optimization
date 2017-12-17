@@ -48,6 +48,7 @@ SGD_NAME = 'sgd'
 NEWTON_CG_NAME = 'newton_cg'
 TRUST_N_CG = 'trust-ncg'
 DOGLEG = 'dogleg'
+NELDER = 'Nelder-Mead'
 
 # Constants
 SMALLEST_POSITIVE_NUMBER = 1e-10

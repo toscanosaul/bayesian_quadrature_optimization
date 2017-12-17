@@ -714,6 +714,9 @@ def wrapper_evaluate_gradient_sample(point, self, *args):
     """
     return self.evaluate_gradient_sample(point, *args)
 
+def wrapper_log_posterior_distribution_length_scale(point, self):
+    return self.log_posterior_distribution_length_scale(point)
+
 def wrapper_evaluate_hessian_sample(point, self, *args):
     """
 
@@ -724,6 +727,15 @@ def wrapper_evaluate_hessian_sample(point, self, *args):
     """
     return self.evaluate_hessian_sample(point, *args)
 
+
+def wrapper_mean_objective(point, self, parameters):
+    return self.mean_objective(point, parameters)
+
+def wrapper_ei_objective(point, self, samples, parameters):
+    return self.ei_objective(point, samples, parameters)
+
+def wrapper_evaluate_squared_error(point, self, control, parameters):
+    return self.evaluate_squared_error(point, control, parameters)
 
 def wrapper_optimize(point, self, *args):
     """
