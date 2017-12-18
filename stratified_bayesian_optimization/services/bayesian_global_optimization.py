@@ -27,6 +27,7 @@ from stratified_bayesian_optimization.acquisition_functions.ei import EI
 from stratified_bayesian_optimization.acquisition_functions.multi_task import MultiTasks
 from stratified_bayesian_optimization.services.training_data import TrainingDataService
 from stratified_bayesian_optimization.acquisition_functions.sde import SDE
+from stratified_bayesian_optimization.util.json_file import JSONFile
 
 logger = SBOLog(__name__)
 
@@ -106,6 +107,17 @@ class BGO(object):
                   number_points_each_dimension_debug=number_points_each_dimension_debug,
                   n_samples_parameters=n_samples_parameters,
                   use_only_training_points=use_only_training_points)
+
+        if n_training < len(bgo.gp_model.training_data['evaluations']):
+            extra_iterations = len(bgo.gp_model.training_data['evaluations']) - n_training
+            data = JSONFile.read(bgo.objective.file_path)
+            bgo.objective.evaluated_points = data['evaluated_points'][0:extra_iterations]
+            bgo.objective.objective_values = data['model_objective_values'][0:extra_iterations]
+            bgo.objective.model_objective_values = \
+                data['model_objective_values'][0:extra_iterations]
+            bgo.objective.standard_deviation_evaluations = data['standard_deviation_evaluations']
+
+
 
         return bgo
 
