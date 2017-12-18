@@ -56,7 +56,7 @@ class TrainingDataService(object):
     def get_training_data(cls, problem_name, training_name, bounds_domain, n_training=5,
                           points=None, noise=False, n_samples=None,
                           random_seed=DEFAULT_RANDOM_SEED, parallel=True, type_bounds=None,
-                          cache=True):
+                          cache=True, gp_path_cache=None):
         """
 
         :param problem_name: str
@@ -76,6 +76,11 @@ class TrainingDataService(object):
         :param cache: (boolean) Try to get model from cache
         :return: {'points': [[float]], 'evaluations': [float], 'var_noise': [float] or []}
         """
+
+        if gp_path_cache is not None:
+            data = JSONFile.read(gp_path_cache)
+            if data is not None:
+                return data['data']
 
         logger.info("Getting training data")
 

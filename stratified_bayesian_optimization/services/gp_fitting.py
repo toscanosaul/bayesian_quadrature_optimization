@@ -174,6 +174,9 @@ class GPFittingService(object):
 
         if use_only_training_points:
             f_name = cls._get_filename(model_type, problem_name, type_kernel, training_name)
+            f_name_cache = cls._get_filename_modified(model_type, problem_name, type_kernel,
+                                                training_name, optimization_method,
+                                                n_samples_parameters)
         else:
             f_name = cls._get_filename_modified(model_type, problem_name, type_kernel,
                                                 training_name, optimization_method,
@@ -181,10 +184,13 @@ class GPFittingService(object):
 
         gp_dir = path.join(GP_DIR, problem_name)
 
+
         if not os.path.exists(gp_dir):
             os.mkdir(gp_dir)
 
         gp_path = path.join(gp_dir, f_name)
+
+        gp_path_cache = path.join(gp_dir, f_name_cache)
 
         if cache:
             data = JSONFile.read(gp_path)
@@ -205,7 +211,8 @@ class GPFittingService(object):
                                                                   random_seed=random_seed,
                                                                   type_bounds=type_bounds,
                                                                   cache=cache,
-                                                                  parallel=parallel_training)
+                                                                  parallel=parallel_training,
+                                                                  gp_path_cache=gp_path_cache)
 
         logger.info("Training %s" % model_type.__name__)
 
