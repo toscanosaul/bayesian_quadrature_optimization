@@ -686,7 +686,7 @@ class BayesianQuadrature(object):
         :return: dictionary with the results of the optimization
         """
         candidate_point = None
-        if candidate_values is not None:
+        if candidate_values is not None and len(candidate_values) > 0:
             sort_ind = sorted(range(len(candidate_values)), key=lambda k: candidate_values[k])
             ind = sort_ind[-1]
             candidate_point = candidate_solutions[ind]

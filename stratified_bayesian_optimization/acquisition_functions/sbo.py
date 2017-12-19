@@ -1739,7 +1739,6 @@ class SBO(object):
                     start_points.append(new_points[i])
                 start_points = np.array(start_points)
 
-
             if n_restarts > 0:
                 start = np.array(start_points)
                 if n_best_restarts > 0 and n_best_restarts < n_restarts:
