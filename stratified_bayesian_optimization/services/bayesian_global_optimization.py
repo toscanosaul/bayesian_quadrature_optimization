@@ -112,7 +112,7 @@ class BGO(object):
             extra_iterations = len(bgo.gp_model.training_data['evaluations']) - n_training
             data = JSONFile.read(bgo.objective.file_path)
             bgo.objective.evaluated_points = data['evaluated_points'][0:extra_iterations]
-            bgo.objective.objective_values = data['model_objective_values'][0:extra_iterations]
+            bgo.objective.objective_values = data['objective_values'][0:extra_iterations]
             bgo.objective.model_objective_values = \
                 data['model_objective_values'][0:extra_iterations]
             bgo.objective.standard_deviation_evaluations = data['standard_deviation_evaluations']
