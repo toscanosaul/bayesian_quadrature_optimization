@@ -665,7 +665,8 @@ class BayesianQuadrature(object):
     def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False, n_restarts=1000,
                                 n_best_restarts=100, parallel=True, n_treads=0, var_noise=None,
                                 mean=None, parameters_kernel=None, n_samples_parameters=0,
-                                start_new_chain=False, method_opt=None, maxepoch=10):
+                                start_new_chain=False, method_opt=None, maxepoch=10,
+                                candidate_solutions=None, candidate_values=None):
         """
         Optimize the posterior mean.
 
@@ -684,6 +685,11 @@ class BayesianQuadrature(object):
         :param method_opt: str
         :return: dictionary with the results of the optimization
         """
+        candidate_point = None
+        if candidate_values is not None:
+            sort_ind = sorted(range(len(candidate_values)), key=lambda k: candidate_values[k])
+            ind = sort_ind[-1]
+            candidate_point = candidate_solutions[ind]
 
         logger.info("starting_optimization of posterior mean", *self.args_handler)
 
@@ -745,6 +751,11 @@ class BayesianQuadrature(object):
                 for i in values_index:
                     start_.append(start[i, :])
                 start = np.array(start_)
+                n_restart_ = start.shape[0]
+            if candidate_point is not None:
+                candidate_point = np.array(candidate_point)
+                candidate_point = candidate_point.reshape((1, len(candidate_point)))
+                start = np.concatenate((start, candidate_point), axis=0)
                 n_restart_ = start.shape[0]
         else:
             n_restart_ = 1

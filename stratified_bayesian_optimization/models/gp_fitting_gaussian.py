@@ -1309,7 +1309,8 @@ class GPFittingGaussian(object):
     def optimize_posterior_mean(self, start=None, random_seed=None, minimize=False, n_restarts=100,
                                 n_best_restarts=10, parallel=True, n_treads=0, var_noise=None,
                                 mean=None, parameters_kernel=None, n_samples_parameters=0,
-                                start_new_chain=False, method_opt=None, maxepoch=10):
+                                start_new_chain=False, method_opt=None, maxepoch=10,
+                                candidate_solutions=None, candidate_values=None):
         """
         Optimize the posterior mean.
 

@@ -1711,8 +1711,34 @@ class SBO(object):
                 start_points = np.array(start_points)
                 # start_points = np.concatenate((start_points, task_chosen), axis=1)
             elif n_restarts > 0:
-                start_points = DomainService.get_points_domain(
-                    n_restarts, bounds, type_bounds=self.bq.type_bounds)
+                new_points = DomainService.get_points_domain(
+                    100, bounds, type_bounds=self.bq.type_bounds)
+                current_points = np.array(self.bq.gp.data['points'])
+
+                distances = Distances.dist_square_length_scale(
+                    np.ones(len(new_points[0])), new_points, current_points)
+                max_distances = np.min(distances, axis=1)
+
+                sort_dist_ind = sorted(range(len(max_distances)), key=lambda k: max_distances[k])
+
+                md = int(np.ceil(len(max_distances) / 2.0))
+                uq = int(np.ceil(len(max_distances) / 4.0))
+                lw = int(np.ceil(len(max_distances) / 8.0))
+
+                index_1 = n_restarts / 2
+                index_2 = n_restarts - index_1
+                index_1 = np.random.choice(range(uq, md), index_1, replace=False)
+                index_2 = np.random.choice(range(lw, uq), index_2, replace=False)
+
+                index_1 = [sort_dist_ind[t] for t in index_1]
+                index_2 = [sort_dist_ind[t] for t in index_2]
+                index = index_1 + index_2
+
+                start_points = []
+                for i in index:
+                    start_points.append(new_points[i])
+                start_points = np.array(start_points)
+
 
             if n_restarts > 0:
                 start = np.array(start_points)
