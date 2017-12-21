@@ -217,9 +217,9 @@ class BGO(object):
             if n_iterat < len(self.gp_model.training_data['evaluations']):
                 extra_iterations = len(self.gp_model.training_data['evaluations']) - n_iterat
                 self.objective.evaluated_points = self.objective.evaluated_points[0:extra_iterations]
-                self.objective.objective_values = self.objective.evaluated_points[0:extra_iterations]
+                self.objective.objective_values = self.objective.objective_values[0:extra_iterations]
                 self.objective.model_objective_values = \
-                    self.objective.evaluated_points['model_objective_values'][0:extra_iterations]
+                    self.objective.model_objective_values[0:extra_iterations]
 
         start_ei = True
         if self.quadrature is not None and self.quadrature.task_continue:
