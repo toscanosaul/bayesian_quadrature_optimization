@@ -414,59 +414,6 @@ if __name__ == '__main__':
 
     #BRANIN-SBO
 
-    # domain_random = [[0.25, 0.2], [0.25, 0.4], [0.25, 0.6], [0.25, 0.8],
-    #                           [0.5, 0.2], [0.5, 0.4], [0.5, 0.6], [0.5, 0.8],
-    #                           [0.75, 0.2], [0.75, 0.4], [0.75, 0.6], [0.75, 0.8]]
-    #
-    # dim_x = [2]
-    # bounds_domain_x = [[(0, 1), (0, 1)]]
-    # problem_name = ['branin']
-    # training_name = [None]
-    # type_kernel = [[SCALED_KERNEL, MATERN52_NAME]]
-    # dimensions = [[4]]
-    # bounds_domain = [[[0, 1], [0, 1], [0.25, 0.5, 0.75], [0.2, 0.4, 0.6, 0.8]]]
-    # n_training = [12]
-    # random_seed = range(1, 101)
-    # n_specs = len(random_seed)
-    # type_bounds = [[0, 0, 1, 1]]
-    # x_domain = [[0, 1]]
-    # number_points_each_dimension = [[6, 6]]
-    # mle = [False]
-    # distribution = [WEIGHTED_UNIFORM_FINITE]
-    # parallel = [True]
-    # thinning = [10]
-    # n_burning = [500]
-    # max_steps_out = [1000]
-    # n_iterations = [100]
-    # same_correlation = [True]
-    # debug = [False]
-    # number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
-    # monte_carlo_sbo = [True]
-    # n_samples_mc = [5]
-    # n_restarts_mc = [5]
-    # n_best_restarts_mc = [0]
-    # factr_mc = [1e12]
-    # maxiter_mc = [10]
-    # n_restarts = [10]
-    # n_best_restarts = [0]
-    # use_only_training_points = [True]
-    # method_optimization = [SBO_METHOD]
-    # n_samples_parameters = [5]
-    # n_restarts_mean = [100]
-    # n_best_restarts_mean = [10]
-    # method_opt_mc = [DOGLEG]
-    # maxepoch = [10]
-    # n_samples_parameters_mean = [20]
-    # maxepoch_mean = [20]
-    # threshold_sbo = [0.001]
-    # parallel_training = [False]
-    # noises = [False]
-    # n_sampless = [0]
-    # parameters_distributions = [{'weights': [0.0375, 0.0875, 0.0875, 0.0375, 0.0750, 0.1750,
-    #                                          0.1750, 0.0750, 0.0375, 0.0875, 0.0875, 0.0375],
-    #                              'domain_random': domain_random}]
-
-    #branin-sde
     domain_random = [[0.25, 0.2], [0.25, 0.4], [0.25, 0.6], [0.25, 0.8],
                               [0.5, 0.2], [0.5, 0.4], [0.5, 0.6], [0.5, 0.8],
                               [0.75, 0.2], [0.75, 0.4], [0.75, 0.6], [0.75, 0.8]]
@@ -475,7 +422,7 @@ if __name__ == '__main__':
     bounds_domain_x = [[(0, 1), (0, 1)]]
     problem_name = ['branin']
     training_name = [None]
-    type_kernel = [[MATERN52_NAME]]
+    type_kernel = [[SCALED_KERNEL, MATERN52_NAME]]
     dimensions = [[4]]
     bounds_domain = [[[0, 1], [0, 1], [0.25, 0.5, 0.75], [0.2, 0.4, 0.6, 0.8]]]
     n_training = [12]
@@ -495,7 +442,7 @@ if __name__ == '__main__':
     debug = [False]
     number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
     monte_carlo_sbo = [True]
-    n_samples_mc = [50]
+    n_samples_mc = [5]
     n_restarts_mc = [5]
     n_best_restarts_mc = [0]
     factr_mc = [1e12]
@@ -503,10 +450,10 @@ if __name__ == '__main__':
     n_restarts = [10]
     n_best_restarts = [0]
     use_only_training_points = [True]
-    method_optimization = [SDE_METHOD]
+    method_optimization = [SBO_METHOD]
     n_samples_parameters = [5]
-    n_restarts_mean = [10]
-    n_best_restarts_mean = [0]
+    n_restarts_mean = [100]
+    n_best_restarts_mean = [10]
     method_opt_mc = [DOGLEG]
     maxepoch = [10]
     n_samples_parameters_mean = [20]
@@ -518,6 +465,60 @@ if __name__ == '__main__':
     parameters_distributions = [{'weights': [0.0375, 0.0875, 0.0875, 0.0375, 0.0750, 0.1750,
                                              0.1750, 0.0750, 0.0375, 0.0875, 0.0875, 0.0375],
                                  'domain_random': domain_random}]
+    optimize_only_posterior_means = [True]
+
+    # #branin-sde
+    # domain_random = [[0.25, 0.2], [0.25, 0.4], [0.25, 0.6], [0.25, 0.8],
+    #                           [0.5, 0.2], [0.5, 0.4], [0.5, 0.6], [0.5, 0.8],
+    #                           [0.75, 0.2], [0.75, 0.4], [0.75, 0.6], [0.75, 0.8]]
+    #
+    # dim_x = [2]
+    # bounds_domain_x = [[(0, 1), (0, 1)]]
+    # problem_name = ['branin']
+    # training_name = [None]
+    # type_kernel = [[MATERN52_NAME]]
+    # dimensions = [[4]]
+    # bounds_domain = [[[0, 1], [0, 1], [0.25, 0.5, 0.75], [0.2, 0.4, 0.6, 0.8]]]
+    # n_training = [12]
+    # random_seed = range(1, 101)
+    # n_specs = len(random_seed)
+    # type_bounds = [[0, 0, 1, 1]]
+    # x_domain = [[0, 1]]
+    # number_points_each_dimension = [[6, 6]]
+    # mle = [False]
+    # distribution = [WEIGHTED_UNIFORM_FINITE]
+    # parallel = [True]
+    # thinning = [10]
+    # n_burning = [500]
+    # max_steps_out = [1000]
+    # n_iterations = [100]
+    # same_correlation = [True]
+    # debug = [False]
+    # number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
+    # monte_carlo_sbo = [True]
+    # n_samples_mc = [50]
+    # n_restarts_mc = [5]
+    # n_best_restarts_mc = [0]
+    # factr_mc = [1e12]
+    # maxiter_mc = [10]
+    # n_restarts = [10]
+    # n_best_restarts = [0]
+    # use_only_training_points = [True]
+    # method_optimization = [SDE_METHOD]
+    # n_samples_parameters = [5]
+    # n_restarts_mean = [10]
+    # n_best_restarts_mean = [0]
+    # method_opt_mc = [DOGLEG]
+    # maxepoch = [10]
+    # n_samples_parameters_mean = [20]
+    # maxepoch_mean = [20]
+    # threshold_sbo = [0.001]
+    # parallel_training = [False]
+    # noises = [False]
+    # n_sampless = [0]
+    # parameters_distributions = [{'weights': [0.0375, 0.0875, 0.0875, 0.0375, 0.0750, 0.1750,
+    #                                          0.1750, 0.0750, 0.0375, 0.0875, 0.0875, 0.0375],
+    #                              'domain_random': domain_random}]
 
     specs = SpecService.generate_dict_multiple_spec(
         n_specs=n_specs, problem_names=problem_name, dim_xs=dim_x, bounds_domain_xs=bounds_domain_x,
@@ -536,7 +537,8 @@ if __name__ == '__main__':
         n_best_restarts_mcs=n_best_restarts_mc, maxepochs=maxepoch, method_opt_mcs=method_opt_mc,
         n_samples_parameters_means=n_samples_parameters_mean, maxepoch_means=maxepoch_mean,
         threshold_sbos=threshold_sbo, parallel_trainings=parallel_training, noises=noises,
-        n_sampless=n_sampless, parameters_distributions=parameters_distributions
+        n_sampless=n_sampless, parameters_distributions=parameters_distributions,
+        optimize_only_posterior_means=optimize_only_posterior_means
     )
 
     print ujson.dumps(specs, indent=4)

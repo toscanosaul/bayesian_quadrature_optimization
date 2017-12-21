@@ -102,6 +102,8 @@ class RunSpecEntity(Model):
 
     parallel_training = BooleanType(required=False)
 
+    optimize_only_posterior_mean = BooleanType(required=False)
+
     @classmethod
     def from_json(cls, specfile):
         """
@@ -167,6 +169,7 @@ class RunSpecEntity(Model):
 
         cache = spec.get('cache', True)
         debug = spec.get('debug', False)
+        optimize_only_posterior_mean = spec.get('optimize_only_posterior_mean', False)
 
         same_correlation = spec.get('same_correlation', False)
 
@@ -221,6 +224,7 @@ class RunSpecEntity(Model):
             'type_kernel': type_kernel,
             'dimensions': dimensions,
             'mle': mle,
+            'optimize_only_posterior_mean': optimize_only_posterior_mean,
             'thinning': thinning,
             'n_burning': n_burning,
             'max_steps_out': max_steps_out,
@@ -340,6 +344,8 @@ class MultipleSpecEntity(Model):
 
     parallel_trainings = ListType(BooleanType, required=False)
 
+    optimize_only_posterior_means = ListType(BooleanType, required=False)
+
     # TODO - Complete all the other needed params
 
     @classmethod
@@ -382,6 +388,8 @@ class MultipleSpecEntity(Model):
         training_names = spec.get('training_names')
         bounds_domains = spec.get('bounds_domains')
         n_trainings = spec.get('n_trainings', n_specs * [10])
+
+        optimize_only_posterior_means = spec.get('optimize_only_posterior_means', n_specs * [False])
 
         type_boundss = spec.get('type_boundss', [len(bd) * [0] for bd in bounds_domains])
 
@@ -502,6 +510,7 @@ class MultipleSpecEntity(Model):
             'var_noise_values': var_noise_values,
             'threshold_sbos': threshold_sbos,
             'parallel_trainings': parallel_trainings,
+            'optimize_only_posterior_means': optimize_only_posterior_means,
         })
 
         return cls(entry)

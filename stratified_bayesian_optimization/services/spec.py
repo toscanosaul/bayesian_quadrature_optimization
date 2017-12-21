@@ -236,7 +236,8 @@ class SpecService(object):
             n_restartss=None, n_best_restartss=None, n_best_restarts_mcs=None,
             n_samples_parameterss=None, n_restarts_means=None, n_best_restarts_means=None,
             method_opt_mcs=None, maxepochs=None, n_samples_parameters_means=None,
-            maxepoch_means=None, threshold_sbos=None, parallel_trainings=None):
+            maxepoch_means=None, threshold_sbos=None, parallel_trainings=None,
+            optimize_only_posterior_means=None):
 
         """
         Generate dict that represents multiple run specs
@@ -289,6 +290,8 @@ class SpecService(object):
 
         :return: dict
         """
+        if optimize_only_posterior_means is None:
+            optimize_only_posterior_means = [False]
         if caches is None:
             caches = [True]
 
@@ -437,6 +440,9 @@ class SpecService(object):
             number_points_each_dimensions = []
             for dim_x in dim_xs:
                 number_points_each_dimensions.append(dim_x * [10])
+
+        if len(optimize_only_posterior_means) != n_specs:
+            optimize_only_posterior_means = n_specs * optimize_only_posterior_means
 
         if len(number_points_each_dimensions) != n_specs:
             number_points_each_dimensions = n_specs * number_points_each_dimensions
@@ -649,6 +655,7 @@ class SpecService(object):
             'maxepoch_means': maxepoch_means,
             'threshold_sbos': threshold_sbos,
             'parallel_trainings': parallel_trainings,
+            'optimize_only_posterior_means': optimize_only_posterior_means,
         }
 
     @classmethod

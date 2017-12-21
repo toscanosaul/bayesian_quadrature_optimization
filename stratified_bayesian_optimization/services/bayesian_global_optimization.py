@@ -170,7 +170,7 @@ class BGO(object):
                  n_restarts=10, n_best_restarts=0, n_samples_parameters=0, n_restarts_mean=1000,
                  n_best_restarts_mean=100, method_opt_mc=None, maxepoch=10,
                  n_samples_parameters_mean=0, maxepoch_mean=20, threshold_sbo=None,
-                 **opt_params_mc):
+                 optimize_only_posterior_mean=False, **opt_params_mc):
         """
         Optimize objective over the domain.
         :param random_seed: int
@@ -200,6 +200,15 @@ class BGO(object):
 
         :return: Objective
         """
+        if optimize_only_posterior_mean:
+            # only for noisless problems
+            chosen_points = self.gp_model.data.copy()
+            n_training = len(self.gp_model.training_data['evaluations'])
+            total_points = len(chosen_points['evaluations']) - n_training
+            self.gp_model.data['evaluations'] = self.gp_model.data['evaluations'][0: n_training]
+            self.gp_model.data['points'] = self.gp_model.data['points'][0: n_training]
+
+
         start_ei = True
         if self.quadrature is not None and self.quadrature.task_continue:
             start_ei = False
@@ -253,14 +262,19 @@ class BGO(object):
                 self.random_seed, 0, n_points_by_dimension=self.number_points_each_dimension_debug)
 
         for iteration in xrange(self.n_iterations):
-
-            new_point_sol = self.acquisition_function.optimize(
-                parallel=self.parallel, start=start, monte_carlo=monte_carlo_sbo,
-                n_samples=n_samples_mc, n_restarts_mc=n_restarts_mc,
-                n_best_restarts_mc=n_best_restarts_mc, n_restarts=n_restarts,
-                n_best_restarts=n_best_restarts, n_samples_parameters=n_samples_parameters,
-                start_new_chain=False, method_opt_mc=method_opt_mc, maxepoch=maxepoch,
-                start_ei=start_ei, **opt_params_mc)
+            evaluation = None
+            if not optimize_only_posterior_mean or iteration >= total_points:
+                new_point_sol = self.acquisition_function.optimize(
+                    parallel=self.parallel, start=start, monte_carlo=monte_carlo_sbo,
+                    n_samples=n_samples_mc, n_restarts_mc=n_restarts_mc,
+                    n_best_restarts_mc=n_best_restarts_mc, n_restarts=n_restarts,
+                    n_best_restarts=n_best_restarts, n_samples_parameters=n_samples_parameters,
+                    start_new_chain=False, method_opt_mc=method_opt_mc, maxepoch=maxepoch,
+                    start_ei=start_ei, **opt_params_mc)
+            else:
+                point = chosen_points['points'][n_training + iteration + 1, :]
+                new_point_sol = {'optimal_value': 0.0, 'solution': point}
+                evaluation = chosen_points['evaluations'][n_training + iteration + 1]
 
             value_sbo = new_point_sol['optimal_value']
             new_point = new_point_sol['solution']
@@ -282,8 +296,9 @@ class BGO(object):
 
             self.acquisition_function.clean_cache()
 
-            evaluation = TrainingDataService.evaluate_function(self.objective.module, new_point,
-                                                               self.n_samples)
+            if evaluation is None:
+                evaluation = TrainingDataService.evaluate_function(self.objective.module, new_point,
+                                                                   self.n_samples)
 
             if self.objective.noise:
                 noise = np.array([evaluation[1]])
@@ -370,6 +385,8 @@ class BGO(object):
 
         threshold_sbo = spec.get('threshold_sbo')
 
+        optimize_only_posterior_mean = spec.get('optimize_only_posterior_mean', False)
+
         # WE CAN STILL ADD THE DOMAIN IF NEEDED FOR THE KG
         result = bgo.optimize(debug=debug, n_samples_mc=n_samples_mc, n_restarts_mc=n_restarts_mc,
                               n_best_restarts_mc=n_best_restarts_mc,
@@ -381,5 +398,7 @@ class BGO(object):
                               random_seed=bgo.random_seed, method_opt_mc=method_opt_mc,
                               n_samples_parameters_mean=n_samples_parameters_mean,
                               maxepoch_mean=maxepoch_mean,
-                              maxepoch=maxepoch, threshold_sbo=threshold_sbo, **opt_params_mc)
+                              maxepoch=maxepoch, threshold_sbo=threshold_sbo,
+                              optimize_only_posterior_mean=optimize_only_posterior_mean,
+                              **opt_params_mc)
         return result

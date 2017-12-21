@@ -686,10 +686,10 @@ class BayesianQuadrature(object):
         :return: dictionary with the results of the optimization
         """
         candidate_point = None
-        if candidate_values is not None and len(candidate_values) > 0:
-            sort_ind = sorted(range(len(candidate_values)), key=lambda k: candidate_values[k])
-            ind = sort_ind[-1]
-            candidate_point = candidate_solutions[ind]
+        # if candidate_values is not None and len(candidate_values) > 0:
+        #     sort_ind = sorted(range(len(candidate_values)), key=lambda k: candidate_values[k])
+        #     ind = sort_ind[-1]
+        #     candidate_point = candidate_solutions[ind]
 
         logger.info("starting_optimization of posterior mean", *self.args_handler)
 
@@ -831,6 +831,23 @@ class BayesianQuadrature(object):
 
         max_ = np.max(maximum_values)
         ind_max = np.argmax(maximum_values)
+
+        if candidate_solutions is not None:
+            n = len(candidate_values)
+            values = []
+            point_dict = {}
+            args = (False, None, True, 0, self, var_noise, mean, parameters_kernel,
+                    n_samples_parameters)
+            for j in range(n):
+                point_dict[j] = start[j, :]
+            values = Parallel.run_function_different_arguments_parallel(
+                wrapper_objective_posterior_mean_bq, point_dict, *args)
+            ind_max_2 = np.argmax(values)
+
+            if np.max(values) > max_:
+                solution = values[ind_max_2]
+                value = np.max(values)
+                optimal_solutions[ind_max] = {'solution': solution, 'optimal_value': [value]}
 
         logger.info("Results of the optimization of the posterior mean: ", *self.args_handler)
         logger.info(optimal_solutions.get(ind_max), *self.args_handler)
