@@ -753,11 +753,16 @@ class SpecService(object):
 
         parallel_trainings = multiple_spec.get('parallel_trainings')[n_spec]
 
+        optimize_only_posterior_mean = multiple_spec.get('optimize_only_posterior_means')[n_spec]
+        start_optimize_posterior_mean = multiple_spec.get('start_optimize_posterior_means')[n_spec]
+
         entry = {}
 
         entry.update({
             'problem_name': problem_names,
             'dim_x': dim_xs,
+            'optimize_only_posterior_mean': optimize_only_posterior_mean,
+            'start_optimize_posterior_mean': start_optimize_posterior_mean,
             'choose_noise': choose_noises,
             'bounds_domain_x': bounds_domain_xs,
             'number_points_each_dimension': number_points_each_dimensions,
