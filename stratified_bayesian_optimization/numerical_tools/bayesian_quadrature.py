@@ -839,14 +839,18 @@ class BayesianQuadrature(object):
             args = (False, None, True, 0, self, var_noise, mean, parameters_kernel,
                     n_samples_parameters)
             for j in range(n):
-                point_dict[j] = start[j, :]
+                point_dict[j] = np.array(candidate_solutions[j])
             values = Parallel.run_function_different_arguments_parallel(
                 wrapper_objective_posterior_mean_bq, point_dict, *args)
-            ind_max_2 = np.argmax(values)
 
-            if np.max(values) > max_:
-                solution = values[ind_max_2]
-                value = np.max(values)
+            values_candidates = []
+            for j in range(n):
+                values_candidates.append(values[j])
+            ind_max_2 = np.argmax(values_candidates)
+
+            if np.max(values_candidates) > max_:
+                solution = point_dict[ind_max_2]
+                value = np.max(values_candidates)
                 optimal_solutions[ind_max] = {'solution': solution, 'optimal_value': [value]}
 
         logger.info("Results of the optimization of the posterior mean: ", *self.args_handler)

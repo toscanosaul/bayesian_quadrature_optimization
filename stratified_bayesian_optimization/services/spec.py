@@ -237,7 +237,7 @@ class SpecService(object):
             n_samples_parameterss=None, n_restarts_means=None, n_best_restarts_means=None,
             method_opt_mcs=None, maxepochs=None, n_samples_parameters_means=None,
             maxepoch_means=None, threshold_sbos=None, parallel_trainings=None,
-            optimize_only_posterior_means=None):
+            optimize_only_posterior_means=None, start_optimize_posterior_means=None):
 
         """
         Generate dict that represents multiple run specs
@@ -292,6 +292,9 @@ class SpecService(object):
         """
         if optimize_only_posterior_means is None:
             optimize_only_posterior_means = [False]
+
+        if start_optimize_posterior_means is None:
+            start_optimize_posterior_means = [0]
         if caches is None:
             caches = [True]
 
@@ -388,6 +391,9 @@ class SpecService(object):
 
         if len(dim_xs) != n_specs:
             dim_xs = n_specs * dim_xs
+
+        if len(start_optimize_posterior_means) != n_specs:
+            start_optimize_posterior_means = n_specs * start_optimize_posterior_means
 
         if len(bounds_domain_xs) != n_specs:
             bounds_domain_xs = n_specs * bounds_domain_xs
@@ -656,6 +662,7 @@ class SpecService(object):
             'threshold_sbos': threshold_sbos,
             'parallel_trainings': parallel_trainings,
             'optimize_only_posterior_means': optimize_only_posterior_means,
+            'start_optimize_posterior_means': start_optimize_posterior_means,
         }
 
     @classmethod

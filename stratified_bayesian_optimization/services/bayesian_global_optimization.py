@@ -170,7 +170,8 @@ class BGO(object):
                  n_restarts=10, n_best_restarts=0, n_samples_parameters=0, n_restarts_mean=1000,
                  n_best_restarts_mean=100, method_opt_mc=None, maxepoch=10,
                  n_samples_parameters_mean=0, maxepoch_mean=20, threshold_sbo=None,
-                 optimize_only_posterior_mean=False, **opt_params_mc):
+                 optimize_only_posterior_mean=False, start_optimize_posterior_mean=0,
+                 **opt_params_mc):
         """
         Optimize objective over the domain.
         :param random_seed: int
@@ -203,10 +204,14 @@ class BGO(object):
         if optimize_only_posterior_mean:
             # only for noisless problems
             chosen_points = self.gp_model.data.copy()
-            n_training = len(self.gp_model.training_data['evaluations'])
-            total_points = len(chosen_points['evaluations']) - n_training
-            self.gp_model.data['evaluations'] = self.gp_model.data['evaluations'][0: n_training]
-            self.gp_model.data['points'] = self.gp_model.data['points'][0: n_training]
+            n_training = self.n_training
+            total_points = \
+                len(chosen_points['evaluations']) - n_training - start_optimize_posterior_mean
+            self.gp_model.clean_cache()
+            self.gp_model.data['evaluations'] = \
+                self.gp_model.data['evaluations'][0: n_training + start_optimize_posterior_mean]
+            self.gp_model.data['points'] =\
+                self.gp_model.data['points'][0: n_training + start_optimize_posterior_mean, :]
 
 
         start_ei = True
@@ -272,9 +277,11 @@ class BGO(object):
                     start_new_chain=False, method_opt_mc=method_opt_mc, maxepoch=maxepoch,
                     start_ei=start_ei, **opt_params_mc)
             else:
-                point = chosen_points['points'][n_training + iteration + 1, :]
+                point = \
+                    chosen_points['points'][n_training + start_optimize_posterior_mean + iteration, :]
                 new_point_sol = {'optimal_value': 0.0, 'solution': point}
-                evaluation = chosen_points['evaluations'][n_training + iteration + 1]
+                evaluation = \
+                    chosen_points['evaluations'][n_training + start_optimize_posterior_mean + iteration]
 
             value_sbo = new_point_sol['optimal_value']
             new_point = new_point_sol['solution']
@@ -386,6 +393,7 @@ class BGO(object):
         threshold_sbo = spec.get('threshold_sbo')
 
         optimize_only_posterior_mean = spec.get('optimize_only_posterior_mean', False)
+        start_optimize_posterior_mean = spec.get('start_optimize_posterior_mean', 0)
 
         # WE CAN STILL ADD THE DOMAIN IF NEEDED FOR THE KG
         result = bgo.optimize(debug=debug, n_samples_mc=n_samples_mc, n_restarts_mc=n_restarts_mc,
@@ -400,5 +408,6 @@ class BGO(object):
                               maxepoch_mean=maxepoch_mean,
                               maxepoch=maxepoch, threshold_sbo=threshold_sbo,
                               optimize_only_posterior_mean=optimize_only_posterior_mean,
+                              start_optimize_posterior_mean=start_optimize_posterior_mean,
                               **opt_params_mc)
         return result

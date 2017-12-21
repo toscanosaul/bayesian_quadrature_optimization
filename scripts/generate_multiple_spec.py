@@ -466,6 +466,7 @@ if __name__ == '__main__':
                                              0.1750, 0.0750, 0.0375, 0.0875, 0.0875, 0.0375],
                                  'domain_random': domain_random}]
     optimize_only_posterior_means = [True]
+    start_optimize_posterior_means = [30]
 
     # #branin-sde
     # domain_random = [[0.25, 0.2], [0.25, 0.4], [0.25, 0.6], [0.25, 0.8],
@@ -538,7 +539,8 @@ if __name__ == '__main__':
         n_samples_parameters_means=n_samples_parameters_mean, maxepoch_means=maxepoch_mean,
         threshold_sbos=threshold_sbo, parallel_trainings=parallel_training, noises=noises,
         n_sampless=n_sampless, parameters_distributions=parameters_distributions,
-        optimize_only_posterior_means=optimize_only_posterior_means
+        optimize_only_posterior_means=optimize_only_posterior_means,
+        start_optimize_posterior_means=start_optimize_posterior_means,
     )
 
     print ujson.dumps(specs, indent=4)
