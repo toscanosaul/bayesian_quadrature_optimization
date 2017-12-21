@@ -288,6 +288,7 @@ class BGO(object):
                 new_point_sol = {'optimal_value': 0.0, 'solution': point}
                 evaluation = \
                     chosen_points['evaluations'][n_training + start_optimize_posterior_mean + iteration]
+                evaluation = [evaluation]
 
             value_sbo = new_point_sol['optimal_value']
             new_point = new_point_sol['solution']
