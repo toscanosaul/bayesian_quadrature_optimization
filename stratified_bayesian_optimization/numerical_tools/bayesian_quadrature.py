@@ -849,13 +849,13 @@ class BayesianQuadrature(object):
                 candidate_values = []
 
             n = len(candidate_values) + len(vertex)
-            candidate_solutions += vertex
+            candidate_solutions_2 = candidate_solutions + vertex
             values = []
             point_dict = {}
             args = (False, None, True, 0, self, var_noise, mean, parameters_kernel,
                     n_samples_parameters)
             for j in range(n):
-                point_dict[j] = np.array(candidate_solutions[j])
+                point_dict[j] = np.array(candidate_solutions_2[j])
             values = Parallel.run_function_different_arguments_parallel(
                 wrapper_objective_posterior_mean_bq, point_dict, *args)
 
