@@ -709,6 +709,13 @@ class BayesianQuadrature(object):
         bounds_x = [self.gp.bounds[i] for i in xrange(len(self.gp.bounds)) if i in
                     self.x_domain]
 
+        dim_x = len(bounds_x)
+        vertex = None
+        if dim_x < 6:
+            vertex = []
+            for point in itertools.product(*bounds_x):
+                vertex.append(point)
+
         if n_samples_parameters == 0:
             if var_noise is None:
                 var_noise = self.gp.var_noise.value[0]
@@ -832,8 +839,17 @@ class BayesianQuadrature(object):
         max_ = np.max(maximum_values)
         ind_max = np.argmax(maximum_values)
 
-        if candidate_solutions is not None:
-            n = len(candidate_values)
+
+
+        if candidate_solutions is not None or vertex is not None:
+            if vertex is None:
+                vertex = []
+            if candidate_solutions is None:
+                candidate_solutions = []
+                candidate_values = []
+
+            n = len(candidate_values) + len(vertex)
+            candidate_solutions += vertex
             values = []
             point_dict = {}
             args = (False, None, True, 0, self, var_noise, mean, parameters_kernel,
