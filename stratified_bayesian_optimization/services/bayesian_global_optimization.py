@@ -213,14 +213,12 @@ class BGO(object):
             self.gp_model.data['points'] =\
                 self.gp_model.data['points'][0: n_training + start_optimize_posterior_mean, :]
 
-            n_iterat = start_optimize_posterior_mean + n_training
-            if start_optimize_posterior_mean > 0:
-                self.objective.evaluated_points = \
-                    self.objective.evaluated_points[0:start_optimize_posterior_mean]
-                self.objective.objective_values = \
-                    self.objective.objective_values[0:start_optimize_posterior_mean]
-                self.objective.model_objective_values = \
-                    self.objective.model_objective_values[0:start_optimize_posterior_mean]
+            self.objective.evaluated_points = \
+                self.objective.evaluated_points[0:start_optimize_posterior_mean]
+            self.objective.objective_values = \
+                self.objective.objective_values[0:start_optimize_posterior_mean]
+            self.objective.model_objective_values = \
+                self.objective.model_objective_values[0:start_optimize_posterior_mean]
 
         start_ei = True
         if self.quadrature is not None and self.quadrature.task_continue:
