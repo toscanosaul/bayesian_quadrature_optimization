@@ -867,6 +867,7 @@ class BayesianQuadrature(object):
             if np.max(values_candidates) > max_:
                 solution = point_dict[ind_max_2]
                 value = np.max(values_candidates)
+                optimal_solutions = {}
                 optimal_solutions[ind_max] = {'solution': solution, 'optimal_value': [value]}
 
         logger.info("Results of the optimization of the posterior mean: ", *self.args_handler)
