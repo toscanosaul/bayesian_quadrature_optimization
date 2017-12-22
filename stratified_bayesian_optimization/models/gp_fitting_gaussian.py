@@ -219,7 +219,7 @@ class GPFittingGaussian(object):
             indexes = [i for i in range(self.dimension_parameters) if i not in
                        self.length_scale_indexes]
             ignore_index = None
-            if not self.noise:
+            if not self.noise or self.data.get('var_noise') is not None:
                 ignore_index = [0, 1]
             self.slice_samplers.append(SliceSampling(wrapper_log_prob, indexes,
                                                      ignore_index=ignore_index, **slice_parameters))
@@ -331,7 +331,7 @@ class GPFittingGaussian(object):
             self.kernel_values, self.mean_value, self.var_noise_value, self.type_kernel,
             self.dimensions, **self.additional_kernel_parameters)
 
-        if not self.noise:
+        if not self.noise or self.data.get('var_noise') is not None:
             self.mean_value = [0.0]
             self.var_noise_value = [0.0]
 
@@ -350,14 +350,14 @@ class GPFittingGaussian(object):
         if self.var_noise_value is None:
             self.var_noise_value = list(prior_parameters_values['var_noise_value'])
 
-        if self.noise:
+        if self.noise and self.data.get('var_noise') is None:
             self.mean = ParameterEntity(
                 MEAN_NAME, np.array(self.mean_value), GaussianPrior(1, self.mean_value[0], 1.0))
         else:
             self.mean = ParameterEntity(
                 MEAN_NAME, np.array([0.0]), Constant(1, 0.0))
 
-        if self.noise:
+        if self.noise and self.data.get('var_noise') is None:
             self.var_noise = ParameterEntity(
                 VAR_NOISE_NAME, np.array(self.var_noise_value),
                 NonNegativePrior(1, HorseShoePrior(1, self.var_noise_value[0])),
