@@ -856,7 +856,7 @@ class BayesianQuadrature(object):
             candidate_solutions_2 = candidate_solutions + vertex
             values = []
             point_dict = {}
-            args = (False, None, True, 0, self, var_noise, mean, parameters_kernel,
+            args = (False, None, parallel, 0, self, var_noise, mean, parameters_kernel,
                     n_samples_parameters)
             for j in range(n):
                 point_dict[j] = np.array(candidate_solutions_2[j])
