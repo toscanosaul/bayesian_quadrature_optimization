@@ -133,6 +133,10 @@ class BayesianQuadrature(object):
         self.expectation = self._expectations_map[distribution]
         self.distribution = distribution
 
+        self.var_noise = None
+        if self.gp.noise and self.gp.data.get('var_noise') is not None:
+            self.var_noise = np.mean(self.gp.data.get('var_noise'))
+
         self.tasks = False
         if self.distribution == UNIFORM_FINITE:
             self.tasks = True
@@ -1026,7 +1030,10 @@ class BayesianQuadrature(object):
         new_cross_cov = np.diag(self.gp.evaluate_cross_cov(candidate_points, candidate_points,
                                                    parameters_kernel))
 
-        denominator = new_cross_cov - np.einsum('ij,ij->j', cross_cov, solve_2) + var_noise
+        add_noise = self.var_noise
+        if add_noise is None:
+            add_noise = var_noise
+        denominator = new_cross_cov - np.einsum('ij,ij->j', cross_cov, solve_2) + add_noise
         denominator = np.clip(denominator, 0, None)
         denominator = np.sqrt(denominator)
 
@@ -1085,7 +1092,10 @@ class BayesianQuadrature(object):
 
             new_cross_cov = np.diag(self.gp.evaluate_cross_cov(candidate_point, candidate_point,
                                                        parameters_kernel))
-            denominator = new_cross_cov - np.einsum('ij,ij->j', cross_cov, solve_2) + var_noise
+            add_noise = self.var_noise
+            if add_noise is None:
+                add_noise = var_noise
+            denominator = new_cross_cov - np.einsum('ij,ij->j', cross_cov, solve_2) + add_noise
             denominator = np.clip(denominator, 0, None)
             denominator = np.sqrt(denominator)
             if cache:
@@ -1383,8 +1393,10 @@ class BayesianQuadrature(object):
 
         new_cross_cov = self.gp.evaluate_cross_cov(candidate_point, candidate_point,
                                                    parameters_kernel)
-
-        denominator = new_cross_cov - np.dot(cross_cov, solve_2) + var_noise
+        add_noise = self.var_noise
+        if add_noise is None:
+            add_noise = var_noise
+        denominator = new_cross_cov - np.dot(cross_cov, solve_2) + add_noise
         denominator = np.clip(denominator[0, 0], 0, None)
 
         b_value = numerator / np.sqrt(denominator)
@@ -1576,6 +1588,10 @@ class BayesianQuadrature(object):
         # (a solution for every set of parameters of the model)
         self.best_solution = {}
         self.cache_sample = {}
+
+        self.var_noise = None
+        if self.gp.noise and self.gp.data.get('var_noise') is not None:
+            self.var_noise = np.mean(self.gp.data.get('var_noise'))
 
     def generate_evaluations(self, problem_name, model_type, training_name, n_training,
                              random_seed, iteration, n_points_by_dimension=None):
