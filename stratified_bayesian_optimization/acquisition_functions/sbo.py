@@ -260,13 +260,20 @@ class SBO(object):
         bounds_x = [self.bounds_opt[i] for i in xrange(len(self.bounds_opt)) if i in
                     self.bq.x_domain]
 
+        dim_x = len(bounds_x)
+        vertex = None
+        if dim_x < 6:
+            vertex = []
+            for point in itertools.product(*bounds_x):
+                vertex.append(point)
+
         if var_noise is None:
             index_cache = 'mc_mean'
         else:
             index_cache = (var_noise, mean, tuple(parameters_kernel))
 
         if start is None:
-            start_points =  DomainService.get_points_domain(n_restarts + 1, bounds_x,
+            start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
                                                         type_bounds=len(bounds_x) * [0])
             if index_cache in self.bq.optimal_solutions and \
                             len(self.bq.optimal_solutions[index_cache]) > 0:
@@ -332,8 +339,30 @@ class SBO(object):
                 results_opt.append(results)
                 solutions.append(results['optimal_value'])
 
+        max_ = np.max(solutions)
         arg_max = results_opt[np.argmax(solutions)]['solution']
-        return {'max': np.max(solutions), 'optimum': arg_max}
+
+        if vertex is not None:
+            n = len(vertex)
+            point_dict = {}
+            args = (False, None, parallel, 0, self, candidate_point, sample, var_noise, mean,
+                    parameters_kernel)
+
+            for j in range(n):
+                point_dict[j] = np.array(vertex[j])
+            values = Parallel.run_function_different_arguments_parallel(
+                wrapper_evaluate_sample, point_dict, *args)
+
+            values_candidates = []
+            for j in range(n):
+                values_candidates.append(values[j])
+            ind_max_2 = np.argmax(values_candidates)
+
+            if np.max(values_candidates) > max_:
+                max_ = np.max(values_candidates)
+                arg_max = point_dict[ind_max_2]
+
+        return {'max': max_, 'optimum': arg_max}
 
     def generate_samples_starting_points_evaluate_mc(self, n_samples, n_restarts, cache=True):
 

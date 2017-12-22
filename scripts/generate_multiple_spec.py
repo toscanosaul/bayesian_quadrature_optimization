@@ -19,6 +19,7 @@ from stratified_bayesian_optimization.lib.constant import (
     GAMMA,
     WEIGHTED_UNIFORM_FINITE,
     SDE_METHOD,
+    LBFGS_NAME,
 )
 
 if __name__ == '__main__':
@@ -454,7 +455,7 @@ if __name__ == '__main__':
     n_samples_parameters = [5]
     n_restarts_mean = [100]
     n_best_restarts_mean = [10]
-    method_opt_mc = [DOGLEG]
+    method_opt_mc = [LBFGS_NAME]
     maxepoch = [10]
     n_samples_parameters_mean = [20]
     maxepoch_mean = [20]
@@ -465,7 +466,7 @@ if __name__ == '__main__':
     parameters_distributions = [{'weights': [0.0375, 0.0875, 0.0875, 0.0375, 0.0750, 0.1750,
                                              0.1750, 0.0750, 0.0375, 0.0875, 0.0875, 0.0375],
                                  'domain_random': domain_random}]
-    optimize_only_posterior_means = [True]
+    optimize_only_posterior_means = [False]
     start_optimize_posterior_means = [0]
 
 
