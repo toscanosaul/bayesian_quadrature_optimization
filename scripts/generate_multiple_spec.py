@@ -468,6 +468,7 @@ if __name__ == '__main__':
     optimize_only_posterior_means = [True]
     start_optimize_posterior_means = [0]
 
+
     # #branin-sde
     # domain_random = [[0.25, 0.2], [0.25, 0.4], [0.25, 0.6], [0.25, 0.8],
     #                           [0.5, 0.2], [0.5, 0.4], [0.5, 0.6], [0.5, 0.8],

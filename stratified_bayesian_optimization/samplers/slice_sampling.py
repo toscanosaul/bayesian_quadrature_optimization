@@ -9,7 +9,7 @@ from stratified_bayesian_optimization.lib.util import (
 
 class SliceSampling(object):
 
-    def __init__(self, log_prob, indexes, **slice_sampling_params):
+    def __init__(self, log_prob, indexes, ignore_index=None, **slice_sampling_params):
         """
         For details of the procedure see  Slice Sampling by Radford Neal (2003).
 
@@ -17,6 +17,8 @@ class SliceSampling(object):
             log_prob(point, *args_log_prob) (the point is the full vector. It doesn't matter
             if we're sampling only a subset of the full vector).
         :param indexes: ([int]) indexes of the parameters to be sampled.
+        :param ignore_index: ([int]) we do not move the index of indexes if component_wise is
+            selected.
         :param slice_sampling_params:
             - sigma: (float) Parameter to randomly choose the x interval:
                 upper ~ U(0, sigma), lower = upper - sigma.
@@ -32,6 +34,10 @@ class SliceSampling(object):
             - doubling_step: (boolean) If true, the doubling procedure is used. Otherwise, the
                 stepping out procedure is used if ste_out is true.
         """
+        if ignore_index is None:
+            ignore_index = []
+        self.ignore_index = ignore_index
+
         self.log_prob = log_prob
         self.indexes = indexes
         self.sigma = slice_sampling_params.get('sigma', 1.0)
@@ -58,10 +64,11 @@ class SliceSampling(object):
             npr.shuffle(dims)
             new_point = point.copy()
             for d in dims:
-                direction = np.zeros(dimensions)
-                direction[d] = 1.0
-                new_point = self.direction_slice(direction, new_point, fixed_parameters,
-                                                 *args_log_prob)
+                if d not in self.ignore_index:
+                    direction = np.zeros(dimensions)
+                    direction[d] = 1.0
+                    new_point = self.direction_slice(direction, new_point, fixed_parameters,
+                                                     *args_log_prob)
         else:
             direction = npr.randn(dimensions)
             direction = direction / np.sqrt(np.sum(direction ** 2))
@@ -243,7 +250,6 @@ class SliceSampling(object):
 
         :return: (np.array(n)) Sample a new point
         """
-
         upper = self.sigma * npr.rand()
         lower = upper - self.sigma
         llh = np.log(npr.rand()) + self.directional_log_prob(0.0, direction, point,

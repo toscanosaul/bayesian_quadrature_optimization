@@ -6,29 +6,26 @@ import numpy as np
 from scipy.stats import norm
 
 
-class GaussianPrior(AbstractPrior):
+class Constant(AbstractPrior):
 
-    def __init__(self, dimension, mu, sigma):
+    def __init__(self, dimension, value):
         """
 
         :param dimension: int
-        :param mu: float
-        :param sigma: float
+        :param value: float
         """
-        super(GaussianPrior, self).__init__(dimension)
-        self.mu = mu
-        self.sigma = sigma
+        super(Constant, self).__init__(dimension)
+        self.constant = value
 
     def logprob(self, x):
         """
         :param x: np.array(n)
         :return: float
         """
-
-        if self.sigma == 0:
-            return self.mu == x[0]
-
-        return np.sum(norm.logpdf(x, loc=self.mu, scale=self.sigma))
+        if self.constant == x[0]:
+            return 0.0
+        else:
+            return - np.inf
 
     def sample(self, samples, random_seed=None):
         """
@@ -37,7 +34,7 @@ class GaussianPrior(AbstractPrior):
         :param random_seed: int
         :return: np.array(samples, self.dimension)
         """
-        if self.sigma == 0:
-            return self.mu
-
-        return self.mu + np.random.randn(samples, self.dimension) * self.sigma
+        z = samples * [self.constant]
+        z = np.array(z)
+        z = z.reshape((len(z), 1))
+        return z

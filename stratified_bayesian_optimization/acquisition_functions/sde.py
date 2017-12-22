@@ -503,7 +503,7 @@ class SDE(object):
 
         return np.concatenate((control, environment))
 
-    def optimize_mean(self, n_restarts=10):
+    def optimize_mean(self, n_restarts=10, candidate_solutions=None, candidate_values=None):
         """
         Checked
         :param n_restarts:
@@ -544,6 +544,29 @@ class SDE(object):
 
         sol = results_opt[ind_max]
         sol['optimal_value'] = [sol['optimal_value']]
+
+        if candidate_solutions is not None:
+
+            n = len(candidate_values)
+            candidate_solutions_2 = candidate_solutions
+            values = []
+            point_dict = {}
+            args = (False, None, True, 0, self, parameters)
+            for j in range(n):
+                point_dict[j] = np.array(candidate_solutions_2[j])
+            values = Parallel.run_function_different_arguments_parallel(
+                wrapper_mean_objective, point_dict, *args)
+            values_candidates = []
+            for j in range(n):
+                values_candidates.append(values[j])
+            ind_max_2 = np.argmax(values_candidates)
+
+            if np.max(values_candidates) > sol['optimal_value'][0]:
+                solution = point_dict[ind_max_2]
+                value = np.max(values_candidates)
+                sol = {}
+                sol['optimal_value'] = [value]
+                sol['solution'] = solution
 
         return sol
 

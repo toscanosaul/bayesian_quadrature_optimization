@@ -839,8 +839,6 @@ class BayesianQuadrature(object):
         max_ = np.max(maximum_values)
         ind_max = np.argmax(maximum_values)
 
-
-
         if candidate_solutions is not None or vertex is not None:
             if vertex is None:
                 vertex = []

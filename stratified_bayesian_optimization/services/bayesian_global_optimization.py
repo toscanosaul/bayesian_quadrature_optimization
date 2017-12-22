@@ -205,6 +205,8 @@ class BGO(object):
             # only for noisless problems
             chosen_points = self.gp_model.data.copy()
             n_training = self.n_training
+            start_optimize_posterior_mean = np.min(len(chosen_points['evaluations']) - n_training,
+                                                   start_optimize_posterior_mean)
             total_points = \
                 len(chosen_points['evaluations']) - n_training - start_optimize_posterior_mean
             self.gp_model.clean_cache()
@@ -251,7 +253,9 @@ class BGO(object):
 
         if self.method_optimization == SDE_METHOD:
             optimize_mean = self.acquisition_function.optimize_mean(
-                n_restarts=n_restarts_mean)
+                n_restarts=n_restarts_mean,
+                candidate_solutions=self.objective.evaluated_points,
+                candidate_values=self.objective.objective_values)
         else:
             optimize_mean = model.optimize_posterior_mean(
                 minimize=self.minimize, n_restarts=n_restarts_mean,
@@ -326,7 +330,9 @@ class BGO(object):
 
             if self.method_optimization == SDE_METHOD:
                 optimize_mean = self.acquisition_function.optimize_mean(
-                    n_restarts=n_restarts_mean)
+                    n_restarts=n_restarts_mean,
+                    candidate_solutions=self.objective.evaluated_points,
+                    candidate_values=self.objective.objective_values)
             else:
                 optimize_mean = model.optimize_posterior_mean(
                     minimize=self.minimize, n_restarts=n_restarts_mean,

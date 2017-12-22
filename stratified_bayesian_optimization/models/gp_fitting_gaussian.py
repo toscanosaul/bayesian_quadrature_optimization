@@ -60,6 +60,7 @@ from stratified_bayesian_optimization.entities.parameter import ParameterEntity
 from stratified_bayesian_optimization.priors.non_negative import NonNegativePrior
 from stratified_bayesian_optimization.priors.horseshoe import HorseShoePrior
 from stratified_bayesian_optimization.priors.gaussian import GaussianPrior
+from stratified_bayesian_optimization.priors.constant import Constant
 from stratified_bayesian_optimization.samplers.slice_sampling import SliceSampling
 from stratified_bayesian_optimization.util.json_file import JSONFile
 from stratified_bayesian_optimization.lib.la_functions import (
@@ -78,7 +79,8 @@ class GPFittingGaussian(object):
                  kernel_values=None, mean_value=None, var_noise_value=None, thinning=0, n_burning=0,
                  start_point_sampler=None, max_steps_out=1, data=None, random_seed=None,
                  type_bounds=None, training_name=None, problem_name=None,
-                 name_model='gp_fitting_gaussian', samples_parameters=None, **kernel_parameters):
+                 name_model='gp_fitting_gaussian', samples_parameters=None, noise=False,
+                 **kernel_parameters):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL].
@@ -128,6 +130,8 @@ class GPFittingGaussian(object):
         self.name_model = name_model
         self.training_name = training_name
         self.problem_name = problem_name
+
+        self.noise = noise
 
         self.type_kernel = type_kernel
 
@@ -214,7 +218,11 @@ class GPFittingGaussian(object):
             }
             indexes = [i for i in range(self.dimension_parameters) if i not in
                        self.length_scale_indexes]
-            self.slice_samplers.append(SliceSampling(wrapper_log_prob, indexes, **slice_parameters))
+            ignore_index = None
+            if not self.noise:
+                ignore_index = [0, 1]
+            self.slice_samplers.append(SliceSampling(wrapper_log_prob, indexes,
+                                                     ignore_index=ignore_index, **slice_parameters))
             slice_parameters['component_wise'] = True
             self.slice_samplers.append(SliceSampling(wrapper_log_prob, self.length_scale_indexes,
                                                      **slice_parameters))
@@ -323,6 +331,10 @@ class GPFittingGaussian(object):
             self.kernel_values, self.mean_value, self.var_noise_value, self.type_kernel,
             self.dimensions, **self.additional_kernel_parameters)
 
+        if not self.noise:
+            self.mean_value = [0.0]
+            self.var_noise_value = [0.0]
+
         parameters_priors = prior_parameters_values['kernel_values']
 
         parameters_priors = parameters_kernel_from_list_to_dict(parameters_priors, self.type_kernel,
@@ -338,13 +350,23 @@ class GPFittingGaussian(object):
         if self.var_noise_value is None:
             self.var_noise_value = list(prior_parameters_values['var_noise_value'])
 
-        self.mean = ParameterEntity(
-            MEAN_NAME, np.array(self.mean_value), GaussianPrior(1, self.mean_value[0], 1.0))
+        if self.noise:
+            self.mean = ParameterEntity(
+                MEAN_NAME, np.array(self.mean_value), GaussianPrior(1, self.mean_value[0], 1.0))
+        else:
+            self.mean = ParameterEntity(
+                MEAN_NAME, np.array([0.0]), Constant(1, 0.0))
 
-        self.var_noise = ParameterEntity(
-            VAR_NOISE_NAME, np.array(self.var_noise_value),
-            NonNegativePrior(1, HorseShoePrior(1, self.var_noise_value[0])),
-            bounds=[(SMALLEST_POSITIVE_NUMBER, None)])
+        if self.noise:
+            self.var_noise = ParameterEntity(
+                VAR_NOISE_NAME, np.array(self.var_noise_value),
+                NonNegativePrior(1, HorseShoePrior(1, self.var_noise_value[0])),
+                bounds=[(SMALLEST_POSITIVE_NUMBER, None)])
+        else:
+            self.var_noise = ParameterEntity(
+                VAR_NOISE_NAME, np.array([0.0]),
+                Constant(1, 0.0),
+                bounds=[(0.0, 0.0)])
 
         self.kernel = get_kernel_default(self.type_kernel, self.dimensions, self.bounds,
                                          np.array(self.kernel_values), parameters_priors,
@@ -1462,7 +1484,6 @@ class GPFittingGaussian(object):
         :return: float
         """
         lp = 0.0
-
         parameters_model = self.get_parameters_model
         index = 0
         for parameter in parameters_model:
