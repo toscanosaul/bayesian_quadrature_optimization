@@ -1623,7 +1623,7 @@ class SBO(object):
                     parameters_dict[i] = parameter
 
             if len(parameters_dict) > 0:
-                args = (False, None, parallel, 0, self.bq, random_seed, DOGLEG, 100)
+                args = (False, None, parallel, 0, self.bq, random_seed, LBFGS_NAME, 100)
 
                 sol = Parallel.run_function_different_arguments_parallel(
                     wrapper_optimize_posterior_mean, parameters_dict, *args)
