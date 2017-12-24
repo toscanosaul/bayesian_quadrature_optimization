@@ -622,6 +622,7 @@ class SBO(object):
         for l in xrange(n_candidate_points):
             gradients = []
             values_parameters = []
+            gradient_nan = False
             candidate_point = candidate_points[l:l+1, :]
             for k in xrange(n_samples_parameters):
                 optimum_values = np.zeros((n_samples, len(self.bq.x_domain)))
@@ -644,7 +645,7 @@ class SBO(object):
 
                 values_parameters.append(np.mean(max_values) - max_mean)
 
-                if compute_gradient:
+                if compute_gradient and not gradient_nan:
                     gradient_b = self.bq.gradient_vector_b(
                         candidate_point, optimum_values, var_noise=param[0], mean=param[1],
                         parameters_kernel=param[2:], cache=True, parallel=True, monte_carlo=True,
@@ -654,9 +655,16 @@ class SBO(object):
                     gradient_approx = np.mean(gradient_, axis=0)
                     gradients.append(gradient_approx)
 
+                    if gradient_b is np.nan:
+                        gradient_nan = True
+                        gradients = np.nan
+
 
             if compute_gradient:
-                gradient[l, :] = np.mean(gradients, axis=0)
+                if gradient_nan:
+                    gradient[l, :] = np.array(candidate_points.shape[1] * [np.nan])
+                else:
+                    gradient[l, :] = np.mean(gradients, axis=0)
             evaluations[l] = np.mean(values_parameters)
 
         return {'evaluations': evaluations, 'gradient': gradient}
