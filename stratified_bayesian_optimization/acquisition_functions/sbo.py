@@ -1120,9 +1120,12 @@ class SBO(object):
 
         grad = self.evaluate_gradient_given_sample_given_parameters(
             point, sample, params, n_restarts, n_best_restarts, n_threads, parallel,
-            method_opt=method_opt, **opt_params_mc)[0, :]
+            method_opt=method_opt, **opt_params_mc)
 
-        return grad
+        if grad is np.nan:
+            return grad
+        
+        return grad[0, :]
 
     def objective_voi_bayesian(self, point, monte_carlo, n_samples_parameters, n_samples,
                                n_restarts, n_best_restarts, n_threads, method_opt=None,
@@ -1897,7 +1900,7 @@ class SBO(object):
 
             for j in xrange(n_restarts):
                 optimal_solutions[j]['optimal_value'] = evaluations[j]
-                optimal_solutions[j]['gradient'] = gradients[j,:]
+                optimal_solutions[j]['gradient'] = gradients[j, :]
 
         maximum_values = []
         for j in xrange(n_restarts):
@@ -1917,6 +1920,32 @@ class SBO(object):
 
         logger.info("Results of the optimization of the SBO: ", *self.args_handler)
         logger.info(optimal_solutions.get(ind_max), *self.args_handler)
+
+        if optimal_solutions.get(ind_max)['gradient'] == 'unavailable':
+            new_points = DomainService.get_points_domain(
+                100, self.bq.bounds, type_bounds=self.bq.type_bounds)
+            current_points = np.array(self.bq.gp.data['points'])
+
+            distances = Distances.dist_square_length_scale(
+                np.ones(len(new_points[0])), new_points, current_points)
+            max_distances = np.min(distances, axis=1)
+
+            sort_dist_ind = sorted(range(len(max_distances)), key=lambda k: max_distances[k])
+
+            md = int(np.ceil(len(max_distances) / 2.0))
+            uq = int(np.ceil(len(max_distances) / 4.0))
+            lw = int(np.ceil(len(max_distances) / 8.0))
+
+            index_1 = n_restarts / 2
+            index_2 = n_restarts - index_1
+            index_1 = np.random.choice(range(uq, md), index_1, replace=False)
+            index_2 = np.random.choice(range(lw, uq), index_2, replace=False)
+
+            index_1 = [sort_dist_ind[t] for t in index_1]
+            index_2 = [sort_dist_ind[t] for t in index_2]
+            index = index_1 + index_2
+            i = np.random.randint(0, len(index))
+            optimal_solutions.get(ind_max)['solution'] = new_points[i]
 
         self.optimization_results.append(optimal_solutions.get(ind_max))
 
