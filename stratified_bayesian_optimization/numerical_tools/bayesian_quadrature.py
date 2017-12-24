@@ -1161,7 +1161,7 @@ class BayesianQuadrature(object):
         if denominator != 0:
             b_value = numerator / denominator[None, :]
         else:
-            b_value = 0
+            b_value = np.array([0])
 
         return {'a': mu_n, 'b': b_value}
 
@@ -1210,6 +1210,7 @@ class BayesianQuadrature(object):
             gradient_b = gradient_b[:, 0]
         else:
             gradient_b = np.zeros(len(gradient_a))
+
         return {'a': gradient_a, 'b': gradient_b}
 
     def compute_hessian_parameters_for_sample(
