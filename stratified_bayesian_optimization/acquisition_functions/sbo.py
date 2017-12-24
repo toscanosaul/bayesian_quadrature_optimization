@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import numpy as np
 from scipy.stats import norm
+import math
 
 from os import path
 import os
@@ -1025,6 +1026,8 @@ class SBO(object):
                                                mean=mean, parameters_kernel=parameters_kernel,
                                                cache=True, parallel=False, monte_carlo=True,
                                                n_threads=0)
+        if gradient_b is np.nan:
+            return np.nan
 
         gradient = gradient_b * sample
 
@@ -1124,7 +1127,7 @@ class SBO(object):
 
         if grad is np.nan:
             return grad
-        
+
         return grad[0, :]
 
     def objective_voi_bayesian(self, point, monte_carlo, n_samples_parameters, n_samples,
