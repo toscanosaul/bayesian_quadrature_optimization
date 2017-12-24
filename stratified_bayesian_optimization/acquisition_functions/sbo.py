@@ -1951,8 +1951,8 @@ class SBO(object):
             uq = int(np.ceil(len(max_distances) / 4.0))
             lw = int(np.ceil(len(max_distances) / 8.0))
 
-            index_1 = n_restarts / 2
-            index_2 = n_restarts - index_1
+            index_1 = 10 / 2
+            index_2 = 10 - index_1
             index_1 = np.random.choice(range(uq, md), index_1, replace=False)
             index_2 = np.random.choice(range(lw, uq), index_2, replace=False)
 
@@ -1960,7 +1960,8 @@ class SBO(object):
             index_2 = [sort_dist_ind[t] for t in index_2]
             index = index_1 + index_2
             i = np.random.randint(0, len(index))
-            optimal_solutions.get(ind_max)['solution'] = np.array(new_points[i])
+
+            optimal_solutions.get(ind_max)['solution'] = np.array(new_points[index[i]])
             optimal_solutions.get(ind_max)['gradient'] = 'unavailable'
 
         self.optimization_results.append(optimal_solutions.get(ind_max))
