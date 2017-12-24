@@ -1074,7 +1074,7 @@ class SpecService(object):
                 results_dict[key_dict] = \
                     [[] for _ in range(min(n_iterations + 1, total_iterations))]
 
-            for iteration in range(min(total_iterations, n_iterations + 1)):
+            for iteration in range(min(total_iterations, n_iterations + 1, len(results))):
                 results_dict[key_dict][iteration].append(f(sign * results[iteration]))
 
         problem_names = list(set(multiple_spec.get('problem_names')))
