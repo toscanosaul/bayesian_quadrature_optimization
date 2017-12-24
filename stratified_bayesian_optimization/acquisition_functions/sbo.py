@@ -1961,6 +1961,7 @@ class SBO(object):
             index = index_1 + index_2
             i = np.random.randint(0, len(index))
             optimal_solutions.get(ind_max)['solution'] = new_points[i]
+            optimal_solutions.get(ind_max)['gradient'] = 'unavailable'
 
         self.optimization_results.append(optimal_solutions.get(ind_max))
 
