@@ -649,11 +649,20 @@ class SBO(object):
                         candidate_point, optimum_values, var_noise=param[0], mean=param[1],
                         parameters_kernel=param[2:], cache=True, parallel=True, monte_carlo=True,
                         n_threads=n_threads)
-                    gradient_ = gradient_b * samples
-                    gradient_approx = np.mean(gradient_, axis=0)
-                    gradients.append(gradient_approx)
+
+                    if gradient_b is np.nan:
+                        gradients = np.nan
+                    else:
+                        gradient_ = gradient_b * samples
+                        gradient_approx = np.mean(gradient_, axis=0)
+                        gradients.append(gradient_approx)
+
+
             if compute_gradient:
-                gradient[l, :] = np.mean(gradients, axis=0)
+                if gradients is np.nan:
+                    gradient = np.nan
+                else:
+                    gradient[l, :] = np.mean(gradients, axis=0)
             evaluations[l] = np.mean(values_parameters)
 
         return {'evaluations': evaluations, 'gradient': gradient}
