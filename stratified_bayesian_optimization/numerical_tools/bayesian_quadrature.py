@@ -1455,7 +1455,7 @@ class BayesianQuadrature(object):
         solve_1 = additional_parameters.get('solve_2')[:, 0]
         beta_1 = additional_parameters.get('denominator') ** 2
 
-        if beta_1 == 0:
+        if beta_1[0] == 0:
             return np.nan
 
         historical_points = self.gp.data['points']
