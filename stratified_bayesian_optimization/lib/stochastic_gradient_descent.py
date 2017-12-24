@@ -34,7 +34,13 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
     for i in xrange(maxepoch):
         previous = point.copy()
         for j in xrange(n):
-            v = momentum * v + learning_rate * gradient(point, *args, **kwargs)
+            gradient_ = gradient(point, *args, **kwargs)
+            if gradient_ is np.nan:
+                norm_point = np.sqrt(np.sum(point ** 2))
+                perturbation = norm_point * 1e-6
+                point = point + np.random.uniform(-perturbation, perturbation, size=len(point))
+                gradient_ = gradient(point, *args, **kwargs)
+            v = momentum * v + learning_rate * gradient_
             point -= v
             if project:
                 for dim, bound in enumerate(bounds):

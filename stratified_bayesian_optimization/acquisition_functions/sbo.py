@@ -262,7 +262,7 @@ class SBO(object):
 
         dim_x = len(bounds_x)
         vertex = None
-        if dim_x < 6:
+        if dim_x < 7:
             vertex = []
             for point in itertools.product(*bounds_x):
                 vertex.append(point)
@@ -1076,6 +1076,8 @@ class SBO(object):
                                                    mean=param[1], parameters_kernel=param[2:],
                                                    cache=True, parallel=True, monte_carlo=True,
                                                    n_threads=n_threads)
+            if gradient_b is np.nan:
+                return np.nan
 
             gradient = gradient_b * samples
 

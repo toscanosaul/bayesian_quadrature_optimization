@@ -717,7 +717,7 @@ class BayesianQuadrature(object):
 
         dim_x = len(bounds_x)
         vertex = None
-        if dim_x < 6:
+        if dim_x < 7:
             vertex = []
             for point in itertools.product(*bounds_x):
                 vertex.append(point)
@@ -1157,7 +1157,11 @@ class BayesianQuadrature(object):
         denominator = additional_parameters['denominator']
 
         numerator = b_new - np.dot(vec_covs, solve_2)
-        b_value = numerator / denominator[None, :]
+
+        if denominator != 0:
+            b_value = numerator / denominator[None, :]
+        else:
+            b_value = 0
 
         return {'a': mu_n, 'b': b_value}
 
@@ -1199,10 +1203,13 @@ class BayesianQuadrature(object):
         denominator = additional_parameters.get('denominator')
         solve_2 = additional_parameters.get('solve_2')
 
-        gradient_new = self.evaluate_grad_quadrature_cross_cov(point, candidate_point,
-                                                           parameters_kernel)
-        gradient_b = (gradient_new - np.dot(gradient, solve_2)) / denominator
-        gradient_b = gradient_b[:, 0]
+        if denominator != 0:
+            gradient_new = self.evaluate_grad_quadrature_cross_cov(point, candidate_point,
+                                                               parameters_kernel)
+            gradient_b = (gradient_new - np.dot(gradient, solve_2)) / denominator
+            gradient_b = gradient_b[:, 0]
+        else:
+            gradient_b = np.zeros(len(gradient_a))
         return {'a': gradient_a, 'b': gradient_b}
 
     def compute_hessian_parameters_for_sample(
@@ -1242,10 +1249,13 @@ class BayesianQuadrature(object):
         denominator = additional_parameters.get('denominator')
         solve_2 = additional_parameters.get('solve_2')[:, 0]
 
-        hessian_new = \
-            self.evaluate_hessian_cross_cov(point, candidate_point, parameters_kernel)[0, :]
+        if denominator != 0:
+            hessian_new = \
+                self.evaluate_hessian_cross_cov(point, candidate_point, parameters_kernel)[0, :]
 
-        hessian_b = (hessian_new - np.einsum('ijk,i->jk', hessian, solve_2)) / denominator
+            hessian_b = (hessian_new - np.einsum('ijk,i->jk', hessian, solve_2)) / denominator
+        else:
+            hessian_b = np.zeros(hessian_a.shape)
 
         return {'a': hessian_a, 'b': hessian_b}
 
@@ -1444,8 +1454,10 @@ class BayesianQuadrature(object):
         solve_1 = additional_parameters.get('solve_2')[:, 0]
         beta_1 = additional_parameters.get('denominator') ** 2
 
-        historical_points = self.gp.data['points']
+        if beta_1 == 0:
+            return np.nan
 
+        historical_points = self.gp.data['points']
 
 
         grad_gamma = self.gp.evaluate_grad_cross_cov_respect_point(candidate_point,

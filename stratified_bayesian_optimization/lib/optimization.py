@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 from scipy.optimize import fmin_l_bfgs_b
 
+import numpy as np
+
 from stratified_bayesian_optimization.lib.optimization_methods import (
     newton_cg, trust_ncg, dogleg, nelder_mead)
 from stratified_bayesian_optimization.lib.constant import (
@@ -174,6 +176,8 @@ class Optimization(object):
         if self.debug:
             value_objective = self.function(opt, *self.args)
             gradient = self.full_gradient(opt, *self.args)
+            if gradient is np.nan:
+                gradient = 'unavailable'
 
         return {
             'solution': opt,
