@@ -1161,7 +1161,7 @@ class BayesianQuadrature(object):
         if denominator != 0:
             b_value = numerator / denominator[None, :]
         else:
-            b_value = np.array([0])
+            b_value = np.array([[0]])
 
         return {'a': mu_n, 'b': b_value}
 
