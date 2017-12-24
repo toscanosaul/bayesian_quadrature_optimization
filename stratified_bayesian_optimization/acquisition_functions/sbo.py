@@ -650,19 +650,13 @@ class SBO(object):
                         parameters_kernel=param[2:], cache=True, parallel=True, monte_carlo=True,
                         n_threads=n_threads)
 
-                    if gradient_b is np.nan:
-                        gradients = np.nan
-                    else:
-                        gradient_ = gradient_b * samples
-                        gradient_approx = np.mean(gradient_, axis=0)
-                        gradients.append(gradient_approx)
+                    gradient_ = gradient_b * samples
+                    gradient_approx = np.mean(gradient_, axis=0)
+                    gradients.append(gradient_approx)
 
 
             if compute_gradient:
-                if gradients is np.nan:
-                    gradient = np.nan
-                else:
-                    gradient[l, :] = np.mean(gradients, axis=0)
+                gradient[l, :] = np.mean(gradients, axis=0)
             evaluations[l] = np.mean(values_parameters)
 
         return {'evaluations': evaluations, 'gradient': gradient}
@@ -1933,7 +1927,8 @@ class SBO(object):
         logger.info("Results of the optimization of the SBO: ", *self.args_handler)
         logger.info(optimal_solutions.get(ind_max), *self.args_handler)
 
-        if optimal_solutions.get(ind_max)['gradient'] == 'unavailable':
+        vect_gradient = optimal_solutions.get(ind_max)['gradient']
+        if vect_gradient == 'unavailable' or np.any(np.isnan(vect_gradient)):
             new_points = DomainService.get_points_domain(
                 100, self.bq.bounds, type_bounds=self.bq.type_bounds)
             current_points = np.array(self.bq.gp.data['points'])
