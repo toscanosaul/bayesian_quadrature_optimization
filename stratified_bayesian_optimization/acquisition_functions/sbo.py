@@ -1937,31 +1937,56 @@ class SBO(object):
 
         vect_gradient = optimal_solutions.get(ind_max)['gradient']
         if vect_gradient == 'unavailable' or np.any(np.isnan(vect_gradient)):
-            new_points = DomainService.get_points_domain(
-                100, self.bq.bounds, type_bounds=self.bq.type_bounds)
-            current_points = np.array(self.bq.gp.data['points'])
+            point_boundary = True
+            for i in range(len(bounds)):
+                bound = bounds[i]
+                if bound[0] != point[i] and bound[1] != point[i]:
+                    point_boundary = False
+                    break
 
-            distances = Distances.dist_square_length_scale(
-                np.ones(len(new_points[0])), new_points, current_points)
-            max_distances = np.min(distances, axis=1)
 
-            sort_dist_ind = sorted(range(len(max_distances)), key=lambda k: max_distances[k])
+            if not point_boundary:
+                new_points = DomainService.get_points_domain(
+                    100, self.bq.bounds, type_bounds=self.bq.type_bounds)
+                current_points = np.array(self.bq.gp.data['points'])
 
-            md = int(np.ceil(len(max_distances) / 2.0))
-            uq = int(np.ceil(len(max_distances) / 4.0))
-            lw = int(np.ceil(len(max_distances) / 8.0))
+                if not self.bq.task_continue and self.bq.separate_tasks:
+                    current_points = current_points[:, 0:-1]
 
-            index_1 = 10 / 2
-            index_2 = 10 - index_1
-            index_1 = np.random.choice(range(uq, md), index_1, replace=False)
-            index_2 = np.random.choice(range(lw, uq), index_2, replace=False)
+                distances = Distances.dist_square_length_scale(
+                    np.ones(len(new_points[0])), new_points, current_points)
+                max_distances = np.min(distances, axis=1)
 
-            index_1 = [sort_dist_ind[t] for t in index_1]
-            index_2 = [sort_dist_ind[t] for t in index_2]
-            index = index_1 + index_2
-            i = np.random.randint(0, len(index))
+                sort_dist_ind = sorted(range(len(max_distances)), key=lambda k: max_distances[k])
 
-            optimal_solutions.get(ind_max)['solution'] = np.array(new_points[index[i]])
+                md = int(np.ceil(len(max_distances) / 2.0))
+                uq = int(np.ceil(len(max_distances) / 4.0))
+                lw = int(np.ceil(len(max_distances) / 8.0))
+
+                index_1 = 10 / 2
+                index_2 = 10 - index_1
+                index_1 = np.random.choice(range(uq, md), index_1, replace=False)
+                index_2 = np.random.choice(range(lw, uq), index_2, replace=False)
+
+                index_1 = [sort_dist_ind[t] for t in index_1]
+                index_2 = [sort_dist_ind[t] for t in index_2]
+                index = index_1 + index_2
+                i = np.random.randint(0, len(index))
+
+                if not self.bq.task_continue and self.bq.separate_tasks:
+                    task = optimal_solutions.get(ind_max)['solution'][-1]
+                    new_point = np.concatenate((new_points[i], [task]))
+                else:
+                    new_point = np.array(new_points[index[i]])
+            else:
+                if not self.bq.task_continue and self.bq.separate_tasks:
+                    task = optimal_solutions.get(ind_max)['solution'][-1]
+                    new_point = 0
+                else:
+                    new_point = 0
+
+
+            optimal_solutions.get(ind_max)['solution'] = new_point
             optimal_solutions.get(ind_max)['gradient'] = 'unavailable'
 
         self.optimization_results.append(optimal_solutions.get(ind_max))

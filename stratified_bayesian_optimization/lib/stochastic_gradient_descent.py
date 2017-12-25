@@ -31,6 +31,8 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
 
     point = start
     v = np.zeros(len(start))
+    times_out_boundary = 0
+
     for i in xrange(maxepoch):
         previous = point.copy()
         for j in xrange(n):
@@ -48,6 +50,12 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
                         point[dim] = max(bound[0], point[dim])
                     if bound[1] is not None:
                         point[dim] = min(bound[1], point[dim])
+                    v = np.zeros(len(start))
+                    times_out_boundary += 1
+
+                    if times_out_boundary > 1:
+                        momentum = 0
+                        learning_rate *= 0.5
 
         den_norm = (np.sqrt(np.sum(previous ** 2)))
 

@@ -545,7 +545,7 @@ class SDE(object):
         sol = results_opt[ind_max]
         sol['optimal_value'] = [sol['optimal_value']]
 
-        if candidate_solutions is not None:
+        if candidate_solutions is not None and len(candidate_solutions) > 0:
 
             n = len(candidate_values)
             candidate_solutions_2 = candidate_solutions
