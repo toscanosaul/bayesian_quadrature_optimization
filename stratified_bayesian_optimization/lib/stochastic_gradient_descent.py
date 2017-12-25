@@ -81,11 +81,11 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
                         point[dim] = min(bound[1], point[dim])
                     v = np.zeros(len(start))
                     times_out_boundary += 1
-
-                    if times_out_boundary > 1:
-                        momentum = 0
-                        learning_rate *= 0.5
-                        v = np.zeros(len(start))
+                    #
+                    # if times_out_boundary > 1:
+                    momentum = 0
+                    learning_rate *= 0.5
+                    v = np.zeros(len(start))
 
         den_norm = (np.sqrt(np.sum(previous ** 2)))
 
