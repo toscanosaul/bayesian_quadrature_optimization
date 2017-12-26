@@ -10,9 +10,10 @@ logger = SBOLog(__name__)
 
 
 def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, momentum=0.5,
-        maxepoch=250):
+        maxepoch=250, adam=True, betas=None, eps=1e-8):
     """
     SGD to minimize sum(i=0 -> n) (1/n) * f(x). Batch sizes are of size 1.
+    ADAM: https://arxiv.org/pdf/1412.6980.pdf
     :param start: np.array(n)
     :param gradient:
     :param n:
@@ -29,13 +30,21 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
     if bounds is not None:
         project = True
 
+    if betas is None:
+        betas = (0.9, 0.999)
+
+    m0 = np.zeros(len(start))
+    v0 = np.zeros(len(start))
+
     point = start
     v = np.zeros(len(start))
     times_out_boundary = 0
+    t_ = 0
 
     for iteration in xrange(maxepoch):
         previous = point.copy()
         for j in xrange(n):
+            t_ += 1
             gradient_ = gradient(point, *args, **kwargs)
 
             if gradient_ is np.nan:
@@ -63,8 +72,15 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
                 point = point + perturbation
                 gradient_ = gradient(point, *args, **kwargs)
 
-            v = momentum * v + gradient_
-            point -= learning_rate * v
+            if not adam:
+                v = momentum * v + gradient_
+                point -= learning_rate * v
+            else:
+                m0 = betas[0] * m0 + (1 - betas[0]) * gradient_
+                v0 = betas[1] * v0 + (1 - betas[1]) * (gradient_ ** 2)
+                m_1 = m0 / (1 - (betas[0]) ** (t_))
+                v_1 = v0 / (1 - (betas[1]) ** (t_))
+                point = point - learning_rate * m_1 / (np.sqrt(v_1) + eps)
 
             in_domain = True
             if project:
@@ -79,13 +95,6 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
                         point[dim] = max(bound[0], point[dim])
                     if bound[1] is not None:
                         point[dim] = min(bound[1], point[dim])
-                    v = np.zeros(len(start))
-                    times_out_boundary += 1
-                    #
-                    # if times_out_boundary > 1:
-                    momentum = 0
-                    learning_rate *= 0.5
-                    v = np.zeros(len(start))
 
         den_norm = (np.sqrt(np.sum(previous ** 2)))
 
