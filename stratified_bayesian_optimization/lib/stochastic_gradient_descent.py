@@ -74,6 +74,7 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
 
             if not adam:
                 v = momentum * v + gradient_
+                old_p = point.copy()
                 point -= learning_rate * v
             else:
                 m0 = betas[0] * m0 + (1 - betas[0]) * gradient_
@@ -95,6 +96,8 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
                         point[dim] = max(bound[0], point[dim])
                     if bound[1] is not None:
                         point[dim] = min(bound[1], point[dim])
+                    if not adam:
+                        v[dim] = (point[dim] - old_p[dim]) / learning_rate
 
         den_norm = (np.sqrt(np.sum(previous ** 2)))
 
