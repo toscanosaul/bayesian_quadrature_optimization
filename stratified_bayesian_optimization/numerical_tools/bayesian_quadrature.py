@@ -1607,6 +1607,7 @@ class BayesianQuadrature(object):
         self.var_noise = None
         if self.gp.noise and self.gp.data.get('var_noise') is not None:
             self.var_noise = np.mean(self.gp.data.get('var_noise'))
+        self.optimal_solutions = {}
 
     def generate_evaluations(self, problem_name, model_type, training_name, n_training,
                              random_seed, iteration, n_points_by_dimension=None):

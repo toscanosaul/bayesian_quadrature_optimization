@@ -1631,32 +1631,32 @@ class SBO(object):
         elif n_samples_parameters > 0 and len(self.bq.gp.samples_parameters) < n_parameters:
             self.bq.gp.sample_parameters(n_parameters - len(self.bq.gp.samples_parameters))
 
-        if n_samples_parameters > 0 and compute_max_mean_bayesian:
-            parameters = self.bq.gp.samples_parameters[-n_parameters:]
-
-            parameters_dict = {}
-            for i, parameter in enumerate(parameters):
-                index_cache = (parameter[0], parameter[1], tuple(parameter[2:]))
-
-                if index_cache not in self.bq.max_mean:
-                    parameters_dict[i] = parameter
-
-            if len(parameters_dict) > 0:
-                args = (False, None, parallel, 0, self.bq, random_seed, LBFGS_NAME, 100)
-
-                sol = Parallel.run_function_different_arguments_parallel(
-                    wrapper_optimize_posterior_mean, parameters_dict, *args)
-
-                for i in sol:
-                    opt = sol.get(i)
-                    par = parameters_dict[i]
-                    index_cache = (par[0], par[1], tuple(par[2:]))
-                    self.bq.max_mean[index_cache] = opt['optimal_value']
-
-                    if index_cache not in self.bq.optimal_solutions:
-                        self.bq.optimal_solutions[index_cache] = []
-
-                    self.bq.optimal_solutions[index_cache].append(opt)
+        # if n_samples_parameters > 0 and compute_max_mean_bayesian:
+        #     parameters = self.bq.gp.samples_parameters[-n_parameters:]
+        #
+        #     parameters_dict = {}
+        #     for i, parameter in enumerate(parameters):
+        #         index_cache = (parameter[0], parameter[1], tuple(parameter[2:]))
+        #
+        #         if index_cache not in self.bq.max_mean:
+        #             parameters_dict[i] = parameter
+        #
+        #     if len(parameters_dict) > 0:
+        #         args = (False, None, parallel, 0, self.bq, random_seed, LBFGS_NAME, 100)
+        #
+        #         sol = Parallel.run_function_different_arguments_parallel(
+        #             wrapper_optimize_posterior_mean, parameters_dict, *args)
+        #
+        #         for i in sol:
+        #             opt = sol.get(i)
+        #             par = parameters_dict[i]
+        #             index_cache = (par[0], par[1], tuple(par[2:]))
+        #             self.bq.max_mean[index_cache] = opt['optimal_value']
+        #
+        #             if index_cache not in self.bq.optimal_solutions:
+        #                 self.bq.optimal_solutions[index_cache] = []
+        #
+        #             self.bq.optimal_solutions[index_cache].append(opt)
 
         bounds = self.bq.bounds
 
