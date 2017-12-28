@@ -86,7 +86,10 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
             in_domain = True
             if project:
                 for dim, bound in enumerate(bounds):
-                    if point[dim] < bound[0] or point[dim] > bound[1]:
+                    if bound[0] is not None and point[dim] < bound[0]:
+                        in_domain = False
+                        break
+                    if bound[1] is not None and point[dim] > bound[1]:
                         in_domain = False
                         break
 
