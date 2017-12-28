@@ -121,12 +121,12 @@ if __name__ == '__main__':
 
     # #cnn
     dim_x = [6]
-    bounds_domain_x = [[(1, 11), (4, 500), (0, 1), (3, 50), (100, 1000), (2, 6)]]
+    bounds_domain_x = [[(1, 11), (4, 500), (0, 1), (3, 10), (100, 1000), (2, 6)]]
     problem_name = ['cnn_cifar10']
     training_name = [None]
     type_kernel = [[PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]]
     dimensions = [[7, 6, 5]]
-    bounds_domain = [[[1, 11], [4, 500], [0, 1], [3, 50], [100, 1000], [2, 6],
+    bounds_domain = [[[1, 11], [4, 500], [0, 1], [3, 10], [100, 1000], [2, 6],
                       [0, 1, 2, 3, 4]]]
     #old bounds: [[0.01, 1.01], [0.01, 2.1], [1, 21], [1, 201], [0, 1, 2, 3, 4]]
     n_training = [10]
