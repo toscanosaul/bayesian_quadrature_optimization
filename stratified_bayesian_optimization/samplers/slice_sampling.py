@@ -71,6 +71,9 @@ class SliceSampling(object):
                                                      *args_log_prob)
         else:
             direction = npr.randn(dimensions)
+            for d in self.ignore_index:
+                direction[d] = 0.0
+
             direction = direction / np.sqrt(np.sum(direction ** 2))
             new_point = self.direction_slice(direction, point, fixed_parameters, *args_log_prob)
 

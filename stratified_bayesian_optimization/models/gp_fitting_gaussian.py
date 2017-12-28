@@ -1351,6 +1351,8 @@ class GPFittingGaussian(object):
         :param method_opt: str
         :return: dictionary with the results of the optimization
         """
+        if candidate_solutions is not None and len(candidate_solutions) == 0:
+            candidate_solutions = None
 
         if random_seed is not None:
             np.random.seed(random_seed)
@@ -1464,6 +1466,31 @@ class GPFittingGaussian(object):
             maximum_values.append(optimal_solutions.get(j)['optimal_value'])
 
         ind_max = np.argmax(maximum_values)
+        max_ = np.max(maximum_values)
+
+        if candidate_solutions is not None:
+            n = len(candidate_values)
+            candidate_solutions_2 = candidate_solutions
+            values = []
+            point_dict = {}
+
+            args = (False, None, parallel, 0, self, n_samples_parameters, var_noise, mean,
+                    parameters_kernel)
+            for j in range(n):
+                point_dict[j] = np.array(candidate_solutions_2[j])
+            values = Parallel.run_function_different_arguments_parallel(
+                wrapper_posterior_mean_gp_model, point_dict, *args)
+
+            values_candidates = []
+            for j in range(n):
+                values_candidates.append(values[j])
+            ind_max_2 = np.argmax(values_candidates)
+
+            if np.max(values_candidates) > max_:
+                solution = point_dict[ind_max_2]
+                value = np.max(values_candidates)
+                optimal_solutions = {}
+                optimal_solutions[ind_max] = {'solution': solution, 'optimal_value': [value]}
 
         logger.info("Results of the optimization of the EI: ")
         logger.info(optimal_solutions.get(ind_max))

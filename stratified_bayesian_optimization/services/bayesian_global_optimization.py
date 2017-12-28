@@ -259,7 +259,8 @@ class BGO(object):
         else:
             optimize_mean = model.optimize_posterior_mean(
                 minimize=self.minimize, n_restarts=n_restarts_mean,
-                n_best_restarts=n_best_restarts_mean, n_samples_parameters=n_samples_parameters_mean,
+                n_best_restarts=n_best_restarts_mean,
+                n_samples_parameters=n_samples_parameters_mean,
                 start_new_chain=True, method_opt=method_opt_mu, maxepoch=maxepoch_mean,
                 candidate_solutions=self.objective.evaluated_points,
                 candidate_values=self.objective.objective_values)
