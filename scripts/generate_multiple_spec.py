@@ -155,7 +155,7 @@ if __name__ == '__main__':
     n_best_restarts = [0]
     use_only_training_points = [True]
     method_optimization = [SBO_METHOD]
-    n_samples_parameters = [5]
+    n_samples_parameters = [2]
     n_restarts_mean = [100]
     n_best_restarts_mean = [10]
     method_opt_mc = [LBFGS_NAME]
