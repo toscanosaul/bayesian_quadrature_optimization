@@ -48,7 +48,7 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
         for j in xrange(n):
             gradient_ = gradient(point, *args, **kwargs)
 
-            if gradient_ is np.nan:
+            while gradient_ is np.nan:
                 norm_point = np.sqrt(np.sum(point ** 2))
                 perturbation = norm_point * 1e-6
 
