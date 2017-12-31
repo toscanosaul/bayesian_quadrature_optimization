@@ -27,6 +27,7 @@ from stratified_bayesian_optimization.lib.constant import (
     EI_METHOD,
     SGD_NAME,
     DEBUGGING_DIR,
+    DEFAULT_N_PARAMETERS,
 )
 from stratified_bayesian_optimization.lib.util_gp_fitting import (
     get_kernel_default,
@@ -1365,7 +1366,7 @@ class GPFittingGaussian(object):
 
         if start_new_chain and n_samples_parameters > 0:
             self.start_new_chain()
-            self.sample_parameters(n_samples_parameters)
+            self.sample_parameters(DEFAULT_N_PARAMETERS)
 
         bounds = self.bounds
 
@@ -1394,7 +1395,7 @@ class GPFittingGaussian(object):
                 point_dict = {}
                 for j in xrange(start.shape[0]):
                     point_dict[j] = start[j, :]
-                args = (False, None, True, 0, self, n_samples_parameters)
+                args = (False, None, True, 0, self, DEFAULT_N_PARAMETERS)
                 ei_values = Parallel.run_function_different_arguments_parallel(
                     wrapper_posterior_mean_gp_model, point_dict, *args)
                 values = [ei_values[i] for i in ei_values]
@@ -1434,7 +1435,7 @@ class GPFittingGaussian(object):
             #TODO CHANGE wrapper_objective_voi, wrapper_grad_voi_sgd TO NO SOLVE MAX_a_{n+1} in
             #TODO: parallel for the several starting points
 
-            args_ = (self, n_samples_parameters)
+            args_ = (self, DEFAULT_N_PARAMETERS)
 
             optimization = Optimization(
                 method_opt,
@@ -1474,7 +1475,7 @@ class GPFittingGaussian(object):
             values = []
             point_dict = {}
 
-            args = (False, None, parallel, 0, self, n_samples_parameters, var_noise, mean,
+            args = (False, None, parallel, 0, self, DEFAULT_N_PARAMETERS, var_noise, mean,
                     parameters_kernel)
             for j in range(n):
                 point_dict[j] = np.array(candidate_solutions_2[j])

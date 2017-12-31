@@ -29,6 +29,7 @@ from stratified_bayesian_optimization.lib.constant import (
     DEBUGGING_DIR,
     BAYESIAN_QUADRATURE,
     SGD_NAME,
+    DEFAULT_N_PARAMETERS,
 )
 from stratified_bayesian_optimization.services.domain import (
     DomainService,
@@ -197,10 +198,10 @@ class EI(object):
         if start_new_chain:
             if self.gp.name_model == BAYESIAN_QUADRATURE:
                 self.gp.gp.start_new_chain()
-                self.gp.gp.sample_parameters(n_samples_parameters)
+                self.gp.gp.sample_parameters(DEFAULT_N_PARAMETERS)
             else:
                 self.gp.start_new_chain()
-                self.gp.sample_parameters(n_samples_parameters)
+                self.gp.sample_parameters(DEFAULT_N_PARAMETERS)
 
         bounds = self.gp.bounds
 
@@ -234,7 +235,7 @@ class EI(object):
             point_dict = {}
             for j in xrange(start.shape[0]):
                 point_dict[j] = start[j, :]
-            args = (False, None, True, 0, self, n_samples_parameters)
+            args = (False, None, True, 0, self, DEFAULT_N_PARAMETERS)
             ei_values = Parallel.run_function_different_arguments_parallel(
                 wrapper_objective_acquisition_function, point_dict, *args)
             values = [ei_values[i] for i in ei_values]
@@ -272,7 +273,7 @@ class EI(object):
             #TODO CHANGE wrapper_objective_voi, wrapper_grad_voi_sgd TO NO SOLVE MAX_a_{n+1} in
             #TODO: parallel for the several starting points
 
-            args_ = (self, n_samples_parameters)
+            args_ = (self, DEFAULT_N_PARAMETERS)
 
             optimization = Optimization(
                 SGD_NAME,

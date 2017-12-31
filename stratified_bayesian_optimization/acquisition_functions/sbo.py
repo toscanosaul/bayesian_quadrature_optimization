@@ -1665,8 +1665,8 @@ class SBO(object):
         values_ei = []
         if start_ei and not self.bq.separate_tasks:
             ei = EI(self.bq.gp)
-            opt_ei = ei.optimize(n_restarts=100, n_samples_parameters=n_parameters,
-                                 parallel=parallel, n_best_restarts=10)
+            opt_ei = ei.optimize(n_restarts=100, n_samples_parameters=5,
+                                 parallel=parallel, n_best_restarts=10, maxepoch=50)
             st_ei = opt_ei['solution']
             st_ei = st_ei.reshape((1, len(st_ei)))
             n_restarts -= 1
@@ -1678,7 +1678,7 @@ class SBO(object):
             mk = MultiTasks(quadrature_2, quadrature_2.parameters_distribution.get(TASKS))
             st_ei = mk.optimize(parallel=True, n_restarts=100,
                                 n_best_restarts=10,
-                                n_samples_parameters=n_parameters, maxepoch=3)
+                                n_samples_parameters=5, maxepoch=50)
             st_ei = st_ei['solution']
             # st_ei = mk.optimize_first(parallel=True, start=None, n_restarts=100,
             #                           n_best_restarts=10,

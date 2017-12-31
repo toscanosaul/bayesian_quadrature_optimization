@@ -28,6 +28,8 @@ from stratified_bayesian_optimization.lib.constant import (
     SGD_NAME,
     WEIGHTED_UNIFORM_FINITE,
     WEIGHTS,
+    DEFAULT_N_SAMPLES,
+    DEFAULT_N_PARAMETERS,
 )
 from stratified_bayesian_optimization.lib.la_functions import (
     cho_solve,
@@ -710,7 +712,7 @@ class BayesianQuadrature(object):
 
         if start_new_chain and n_samples_parameters > 0:
             self.gp.start_new_chain()
-            self.gp.sample_parameters(n_samples_parameters)
+            self.gp.sample_parameters(DEFAULT_N_PARAMETERS)
 
         bounds_x = [self.gp.bounds[i] for i in xrange(len(self.gp.bounds)) if i in
                     self.x_domain]
@@ -753,7 +755,7 @@ class BayesianQuadrature(object):
                 values = []
                 point_dict = {}
                 args = (False, None, True, 0, self, var_noise, mean, parameters_kernel,
-                        n_samples_parameters)
+                        DEFAULT_N_PARAMETERS)
                 for j in xrange(n_restart_):
                     point_dict[j] = start[j, :]
                 values = Parallel.run_function_different_arguments_parallel(
@@ -802,7 +804,7 @@ class BayesianQuadrature(object):
             #TODO CHANGE wrapper_objective_voi, wrapper_grad_voi_sgd TO NO SOLVE MAX_a_{n+1} in
             #TODO: parallel for the several starting points
 
-            args_ = (self, var_noise, mean, parameters_kernel, n_samples_parameters)
+            args_ = (self, var_noise, mean, parameters_kernel, DEFAULT_N_PARAMETERS)
 
             optimization = Optimization(
                 method_opt,
@@ -857,7 +859,7 @@ class BayesianQuadrature(object):
             values = []
             point_dict = {}
             args = (False, None, parallel, 0, self, var_noise, mean, parameters_kernel,
-                    n_samples_parameters)
+                    DEFAULT_N_PARAMETERS)
             for j in range(n):
                 point_dict[j] = np.array(candidate_solutions_2[j])
             values = Parallel.run_function_different_arguments_parallel(

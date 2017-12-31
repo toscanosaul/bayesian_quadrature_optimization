@@ -21,6 +21,9 @@ from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.lib.util import (
     wrapper_objective_acquisition_function,
 )
+from stratified_bayesian_optimization.lib.constant import (
+    DEFAULT_N_PARAMETERS,
+)
 
 logger = SBOLog(__name__)
 
@@ -86,7 +89,7 @@ class MultiTasks(object):
         values = []
         for i in xrange(self.n_tasks):
             point = np.concatenate((x, np.array([i])))
-            val = wrapper_objective_acquisition_function(point, self.ei_tasks, n_samples_parameters)
+            val = wrapper_objective_acquisition_function(point, self.ei_tasks, DEFAULT_N_PARAMETERS)
             values.append(val)
 
         return np.argmax(values), values[np.argmax(values)]
@@ -108,7 +111,7 @@ class MultiTasks(object):
 
         if n_samples_parameters > 0 and start_new_chain:
             self.bq.gp.start_new_chain()
-            self.bq.gp.sample_parameters(n_samples_parameters)
+            self.bq.gp.sample_parameters(DEFAULT_N_PARAMETERS)
 
         point = self.optimize_first(random_seed=random_seed, parallel=parallel,
                                     n_restarts=n_restarts,
