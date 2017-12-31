@@ -9,7 +9,7 @@ from stratified_bayesian_optimization.initializers.log import SBOLog
 logger = SBOLog(__name__)
 
 
-def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, momentum=0.5,
+def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, momentum=0.9,
         maxepoch=250, adam=True, betas=None, eps=1e-8):
     """
     SGD to minimize sum(i=0 -> n) (1/n) * f(x). Batch sizes are of size 1.
@@ -43,8 +43,9 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
 
     for iteration in xrange(maxepoch):
         previous = point.copy()
+        t_ += 1
+        grad = []
         for j in xrange(n):
-            t_ += 1
             gradient_ = gradient(point, *args, **kwargs)
 
             if gradient_ is np.nan:
@@ -71,36 +72,38 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
                 perturbation = np.array(perturbation)
                 point = point + perturbation
                 gradient_ = gradient(point, *args, **kwargs)
+            grad.appen(gradient_)
+        gradient_ = np.mean(np.array(grad), axis=0)
 
-            if not adam:
-                v = momentum * v + gradient_
-                old_p = point.copy()
-                point -= learning_rate * v
-            else:
-                m0 = betas[0] * m0 + (1 - betas[0]) * gradient_
-                v0 = betas[1] * v0 + (1 - betas[1]) * (gradient_ ** 2)
-                m_1 = m0 / (1 - (betas[0]) ** (t_))
-                v_1 = v0 / (1 - (betas[1]) ** (t_))
-                point = point - learning_rate * m_1 / (np.sqrt(v_1) + eps)
+        if not adam:
+            v = momentum * v + gradient_
+            old_p = point.copy()
+            point -= learning_rate * v
+        else:
+            m0 = betas[0] * m0 + (1 - betas[0]) * gradient_
+            v0 = betas[1] * v0 + (1 - betas[1]) * (gradient_ ** 2)
+            m_1 = m0 / (1 - (betas[0]) ** (t_))
+            v_1 = v0 / (1 - (betas[1]) ** (t_))
+            point = point - learning_rate * m_1 / (np.sqrt(v_1) + eps)
 
-            in_domain = True
-            if project:
-                for dim, bound in enumerate(bounds):
-                    if bound[0] is not None and point[dim] < bound[0]:
-                        in_domain = False
-                        break
-                    if bound[1] is not None and point[dim] > bound[1]:
-                        in_domain = False
-                        break
+        in_domain = True
+        if project:
+            for dim, bound in enumerate(bounds):
+                if bound[0] is not None and point[dim] < bound[0]:
+                    in_domain = False
+                    break
+                if bound[1] is not None and point[dim] > bound[1]:
+                    in_domain = False
+                    break
 
-            if project and not in_domain:
-                for dim, bound in enumerate(bounds):
-                    if bound[0] is not None:
-                        point[dim] = max(bound[0], point[dim])
-                    if bound[1] is not None:
-                        point[dim] = min(bound[1], point[dim])
-                    if not adam:
-                        v[dim] = (point[dim] - old_p[dim]) / learning_rate
+        if project and not in_domain:
+            for dim, bound in enumerate(bounds):
+                if bound[0] is not None:
+                    point[dim] = max(bound[0], point[dim])
+                if bound[1] is not None:
+                    point[dim] = min(bound[1], point[dim])
+                if not adam:
+                    v[dim] = (point[dim] - old_p[dim]) / learning_rate
 
         den_norm = (np.sqrt(np.sum(previous ** 2)))
 
