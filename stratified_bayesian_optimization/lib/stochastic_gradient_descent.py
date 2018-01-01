@@ -72,7 +72,7 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
                 perturbation = np.array(perturbation)
                 point = point + perturbation
                 gradient_ = gradient(point, *args, **kwargs)
-            grad.appen(gradient_)
+            grad.append(gradient_)
         gradient_ = np.mean(np.array(grad), axis=0)
 
         if not adam:
