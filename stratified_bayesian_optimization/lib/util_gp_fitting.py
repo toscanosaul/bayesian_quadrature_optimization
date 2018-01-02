@@ -178,11 +178,16 @@ def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2=Non
         for i in xrange(1, index):
             index_tasks += dimensions[i]
         n_tasks = dimensions[index]
-        tasks_index = data['points'][:, index_tasks]
-        task_data = data.copy()
-        task_data['points'] = tasks_index.reshape((len(tasks_index), 1))
+
+        if n_tasks > 1:
+            tasks_index = data['points'][:, index_tasks]
+            task_data = data.copy()
+            task_data['points'] = tasks_index.reshape((len(tasks_index), 1))
+        else:
+            task_data = None
         task_parameters = TasksKernel.define_prior_parameters(task_data, n_tasks,
-                                                              same_correlation=same_correlation)
+                                                              same_correlation=same_correlation,
+                                                              var_evaluations=sigma2)
         parameters_priors[LOWER_TRIANG_NAME] = task_parameters[LOWER_TRIANG_NAME]
 
     if MATERN52_NAME in type_kernel:

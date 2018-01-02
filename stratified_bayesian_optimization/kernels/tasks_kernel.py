@@ -18,6 +18,7 @@ from stratified_bayesian_optimization.lib.util import (
 )
 from stratified_bayesian_optimization.priors.gaussian import GaussianPrior
 from stratified_bayesian_optimization.priors.multivariate_normal import MultivariateNormalPrior
+from stratified_bayesian_optimization.priors.log_normal_square import LogNormalSquare
 
 
 class TasksKernel(AbstractKernel):
@@ -100,7 +101,7 @@ class TasksKernel(AbstractKernel):
         :return: ([(name_param, name_params)]) name_params can be other list if name_param
             represents several parameters (like an array), otherwise name_params=None.
         """
-        return [(self.lower_triang.name, [(i, None) for i in xrange(self.dimension_parameters)])]
+        return [(self.lower_triang.name, [(i, None) for i in range(self.dimension_parameters)])]
 
     def set_parameters(self, lower_triang=None):
         """
@@ -173,7 +174,8 @@ class TasksKernel(AbstractKernel):
             dimension, default_values, **kwargs)
 
         if dimension == 1:
-            kernel.lower_triang.prior = GaussianPrior(1, default_values[0], 1.0)
+            kernel.lower_triang.prior = LogNormalSquare(1, 1.0, np.sqrt(default_values[0]))
+            kernel.lower_triang.bounds = [(SMALLEST_POSITIVE_NUMBER, None)]
         else:
             cov = np.eye(n_params)
             kernel.lower_triang.prior = MultivariateNormalPrior(n_params, default_values, cov)
@@ -196,6 +198,13 @@ class TasksKernel(AbstractKernel):
 
         if self.base_cov_matrix is not None:
             return
+
+        if self.n_tasks == 1:
+            covM = np.zeros((self.n_tasks, self.n_tasks))
+            covM[0, 0] = self.lower_triang.value[0]
+            L = covM
+            self.chol_base_cov_matrix = L
+            self.base_cov_matrix = covM
 
         if not self.same_correlation:
             count = 0
@@ -387,7 +396,7 @@ class TasksKernel(AbstractKernel):
         return gradient
 
     @staticmethod
-    def define_prior_parameters(data, dimension, same_correlation=False):
+    def define_prior_parameters(data, dimension, same_correlation=False, var_evaluations=None):
         """
         Defines value of the parameters of the prior distributions of the kernel's parameters.
 
@@ -399,6 +408,9 @@ class TasksKernel(AbstractKernel):
             LOWER_TRIANG_NAME: [float],
         }
         """
+
+        if dimension == 1:
+            return {LOWER_TRIANG_NAME: [var_evaluations]}
 
         tasks_index = data['points'][:, 0]
         data_by_tasks = {}

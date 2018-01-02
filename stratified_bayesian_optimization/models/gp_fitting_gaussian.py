@@ -328,6 +328,7 @@ class GPFittingGaussian(object):
         """
         Defines the mean and var_noise parameters. It also defines the kernel.
         """
+
         prior_parameters_values = self.get_values_parameters_from_data(
             self.kernel_values, self.mean_value, self.var_noise_value, self.type_kernel,
             self.dimensions, **self.additional_kernel_parameters)
