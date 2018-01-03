@@ -23,7 +23,8 @@ def PMF(num_user, num_item, train, val, epsilon=0.1, lamb=0.01, maxepoch=50, num
    #
    # # num_batches = int(pairs_tr / 256.0)
    #  num_batches = 9 # tal vez es mejor idea
-    batch_size = pairs_tr / num_batches
+
+    batch_size = int(ceil((pairs_tr / float(num_batches))))
 
     w1_M1 = 0.1 * np.random.randn(num_item, num_feat)  # movie feature vectors
     w1_P1 = 0.1 * np.random.rand(num_user, num_feat)  # User feature vectors
@@ -37,6 +38,12 @@ def PMF(num_user, num_item, train, val, epsilon=0.1, lamb=0.01, maxepoch=50, num
         for batch in range(num_batches):
             next_ = min(batch_size * (batch + 1), pairs_tr)
             batch_idx = np.arange(batch_size * batch, next_)
+            res = batch_size * (batch + 1) - next_
+            if res > 0:
+                extra = np.arange(0, res)
+                batch_idx = np.concatenate((extra, batch_idx))
+
+            length_batch = len(batch_idx)
 
             batch_uID = np.array(train[shuffled_order[batch_idx], 0] - 1, dtype='int32')  # userID
             batch_itID = np.array(train[shuffled_order[batch_idx], 1] - 1, dtype='int32')  # itemID
@@ -69,10 +76,10 @@ def PMF(num_user, num_item, train, val, epsilon=0.1, lamb=0.01, maxepoch=50, num
 
             ##update with momentum
 
-            w1_M1_inc = momentum * w1_M1_inc + epsilon * dw_m / float(batch_size)
+            w1_M1_inc = momentum * w1_M1_inc + epsilon * dw_m / float(length_batch)
             w1_M1 = w1_M1 - w1_M1_inc
 
-            w1_P1_inc = momentum * w1_P1_inc + epsilon * dw_p / float(batch_size)
+            w1_P1_inc = momentum * w1_P1_inc + epsilon * dw_p / float(length_batch)
             w1_P1 = w1_P1 - w1_P1_inc
     ###compute validation error
 
