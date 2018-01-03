@@ -27,7 +27,7 @@ def toy_example(x):
     val = train_logistic(momentum=momentum, lr=lr, batch_size=batch_size, alpha=alpha,
                          maxepoch=maxepoch)
 
-    return [val[2]]
+    return [-1.0 * val[2]]
 
 def integrate_toy_example(x):
     """
@@ -36,7 +36,7 @@ def integrate_toy_example(x):
     :return: [float]
     """
 
-    return [toy_example(x)]
+    return toy_example(x)
 
 
 def main(*params):
