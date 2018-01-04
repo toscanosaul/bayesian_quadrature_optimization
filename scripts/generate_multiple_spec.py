@@ -163,7 +163,6 @@ if __name__ == '__main__':
     maxepoch = [50]
     n_samples_parameters_mean = [5]
     maxepoch_mean = [50]
-    #I should have used 50 instead of 20
     threshold_sbo = [0.001]
     parallel_training = [False]
     noises = [False]
@@ -547,7 +546,7 @@ if __name__ == '__main__':
     n_specs = len(random_seed)
     type_bounds = [[0, 0, 0, 0, 0, 1]]
     x_domain = [[0, 1, 2, 3, 4]]
-    number_points_each_dimension = [[6, 6, 11, 6, 1, 1]]
+    number_points_each_dimension = [[6, 6, 11, 6, 1]]
     mle = [False]
     distribution = [UNIFORM_FINITE]
     parallel = [True]

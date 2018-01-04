@@ -101,6 +101,8 @@ class BGO(object):
         n_samples_parameters = spec.get('n_samples_parameters', 0)
         use_only_training_points = spec.get('use_only_training_points', True)
 
+        n_iterations = n_iterations - (len(gp_model.training_data['evaluations']) - n_training)
+
         bgo = cls(acquisition_function, gp_model, n_iterations, problem_name, training_name,
                   random_seed, n_training, name_model, method_optimization, minimize=minimize,
                   n_samples=n_samples, noise=noise, quadrature=quadrature, parallel=parallel,

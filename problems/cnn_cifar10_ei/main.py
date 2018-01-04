@@ -105,6 +105,7 @@ def toy_example(x, cuda=False):
     :return: [float]
 
     """
+
     x = list(x)
     points = {}
     for task in xrange(n_folds):
@@ -115,7 +116,7 @@ def toy_example(x, cuda=False):
         # values.append(val[0])
 
     errors = Parallel.run_function_different_arguments_parallel(
-        error_per_fold, points, parallel=True)
+        error_per_fold, points, parallel=False)
 
     values = convert_dictionary_to_list(errors)
 
