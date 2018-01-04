@@ -1476,8 +1476,7 @@ class GPFittingGaussian(object):
             values = []
             point_dict = {}
 
-            args = (False, None, parallel, 0, self, DEFAULT_N_PARAMETERS, var_noise, mean,
-                    parameters_kernel)
+            args = (False, None, parallel, 0, self, DEFAULT_N_PARAMETERS)
             for j in range(n):
                 point_dict[j] = np.array(candidate_solutions_2[j])
             values = Parallel.run_function_different_arguments_parallel(
