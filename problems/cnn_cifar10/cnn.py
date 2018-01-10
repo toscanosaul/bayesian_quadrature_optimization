@@ -69,7 +69,7 @@ def weights_init(m):
 
 def train_nn(random_seed, n_epochs=2, batch_size=4, lr=0.001, weight_decay=0,
              number_chanels_first=6, number_hidden_units=120,
-             size_kernel=5, cuda=False, trainset=None, testset=None):
+             size_kernel=5, cuda=False, trainset=None, testset=None, num_workers=2):
 
     torch.manual_seed(1)
 
@@ -114,10 +114,10 @@ def train_nn(random_seed, n_epochs=2, batch_size=4, lr=0.001, weight_decay=0,
 
     net = Net()
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
-                                              shuffle=True, num_workers=2)
+                                              shuffle=True, num_workers=num_workers)
 
     testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
-                                             shuffle=False, num_workers=2)
+                                             shuffle=False, num_workers=num_workers)
     if random_seed is not None:
         if not cuda:
             torch.manual_seed(random_seed)

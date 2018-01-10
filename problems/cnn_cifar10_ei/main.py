@@ -92,7 +92,7 @@ def error_per_fold(x, cuda=False):
     val = train_nn(
         random_seed=1, n_epochs=n_epochs, batch_size=batch_size, lr=lr, weight_decay=0.0,
         number_chanels_first=number_chanels_first, number_hidden_units=number_hidden_units,
-        size_kernel=size_kernel, cuda=cuda, trainset=training, testset=validation)
+        size_kernel=size_kernel, cuda=cuda, trainset=training, testset=validation, num_workers=0)
 
     val = -1.0 * val
     return [val]
