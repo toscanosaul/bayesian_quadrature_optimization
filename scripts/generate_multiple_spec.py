@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # script used to generate spec file to run BGO
     # ARXIV
     # dim_x = [4]
-    # bounds_domain_x = [[(0.01, 5.0), (0.0, 2.1), (1, 21), (1, 201)]]
+    # bounds_domain_x = [[(0.01, 5.0), g(0.0, 2.1), (1, 21), (1, 201)]]
     # problem_name = ['arxiv']
     # training_name = [None]
     # type_kernel = [[PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]]
@@ -446,7 +446,7 @@ if __name__ == '__main__':
     thinning = [10]
     n_burning = [500]
     max_steps_out = [1000]
-    n_iterations = [100]
+    n_iterations = [60]
     same_correlation = [True]
     debug = [False]
     number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
