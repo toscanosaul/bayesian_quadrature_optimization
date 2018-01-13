@@ -203,8 +203,6 @@ class BGO(object):
 
         :return: Objective
         """
-        if self.n_iterations <= 0:
-            return 0
 
         if optimize_only_posterior_mean:
             # only for noisless problems
