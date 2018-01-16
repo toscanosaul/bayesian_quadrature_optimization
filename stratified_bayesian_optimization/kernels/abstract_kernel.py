@@ -17,7 +17,7 @@ class AbstractKernel(object):
         self.name = name
         self.dimension = dimension
         self.dimension_parameters = dimension_parameters
-
+        asdada
     @property
     def hypers(self):
         raise NotImplementedError("Not implemented")
