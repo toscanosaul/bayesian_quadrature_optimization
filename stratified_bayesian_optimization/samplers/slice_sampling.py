@@ -118,12 +118,19 @@ class SliceSampling(object):
             return True
 
         while (U - L) > 1.1 * self.sigma:
+
+            old_U = U
+            old_L = L
+
             middle = 0.5 * (L + U)
 
             if z < middle:
                 U = middle
             else:
                 L = middle
+
+            if U == old_U and L == old_L:
+                return False
 
             D = (middle > 0 and z >= middle) or (middle <= 0 and z < middle)
 
