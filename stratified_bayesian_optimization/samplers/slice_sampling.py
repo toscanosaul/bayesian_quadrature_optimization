@@ -74,6 +74,9 @@ class SliceSampling(object):
             for d in self.ignore_index:
                 direction[d] = 0.0
 
+            if np.all(direction == 0):
+                return point
+
             direction = direction / np.sqrt(np.sum(direction ** 2))
             new_point = self.direction_slice(direction, point, fixed_parameters, *args_log_prob)
 

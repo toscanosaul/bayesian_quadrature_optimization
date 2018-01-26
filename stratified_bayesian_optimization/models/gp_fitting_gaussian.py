@@ -1514,6 +1514,7 @@ class GPFittingGaussian(object):
         lp = 0.0
         parameters_model = self.get_parameters_model
         index = 0
+
         for parameter in parameters_model:
             dimension = parameter.dimension
             lp += parameter.log_prior(parameters[index: index + dimension])
