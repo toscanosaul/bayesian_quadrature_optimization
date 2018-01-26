@@ -492,7 +492,7 @@ if __name__ == '__main__':
     dimensions = [[4]]
     bounds_domain = [[[0, 1], [0, 1], [0.25, 0.5, 0.75], [0.2, 0.4, 0.6, 0.8]]]
     n_training = [12]
-    random_seed = range(2, 201)
+    random_seed = range(1, 501)
     n_specs = len(random_seed)
     type_bounds = [[0, 0, 1, 1]]
     x_domain = [[0, 1]]
