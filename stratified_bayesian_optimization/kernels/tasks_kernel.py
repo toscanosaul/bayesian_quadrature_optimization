@@ -438,21 +438,22 @@ class TasksKernel(AbstractKernel):
                         if not same_correlation:
                             cov_estimate[i, j] = 1.0
                         else:
-                            mean_ = np.mean(data['evaluations'])
-                            a = data['evaluations']
-                            b = data['evaluations']
-                            d_n = len(a)
-                            cov_estimate[i, j] = np.sum((a - mean_) * (b - mean_)) / (d_n - 1.0)
+                            cov_estimate[i, j] = var_evaluations
                     else:
                         if not same_correlation:
                             cov_estimate[i, j] = 0.0
                             cov_estimate[j, i] = 0.0
                         else:
+                            n_eval = len(data['evaluations'])
+                            z = data['evaluations'][0: n_eval/2]
+                            z = z - np.mean(z)
 
-                            mean_ = np.mean(data['evaluations'])
-                            a = data_by_tasks[i][0][0:d]
-                            b = data_by_tasks[j][0][0:d]
-                            cov_estimate[i, j] = np.sum((a - mean_) * (b - mean_))
+                            z_2 = data['evaluations'][n_eval / 2: n_eval]
+                            z_2 = z_2 - np.mean(z_2)
+
+                            cov = [z1 * z2 for z1 in z for z2 in z_2]
+                            cov = np.mean(cov)
+                            cov_estimate[i, j] = cov
                             cov_estimate[j, i] = cov_estimate[i, j]
                 else:
                     mu1 = data_by_tasks[i][1]
