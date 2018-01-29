@@ -79,7 +79,7 @@ class BGO(object):
                                             parameters_distribution=parameters_distribution,
                                             model_only_x=True, tasks=True)
             acquisition_function = MultiTasks(quadrature,
-                                             quadrature.parameters_distribution.get(TASKS))
+                                             quadrature.n_tasks)
         elif method_optimization == EI_METHOD:
             acquisition_function = EI(gp_model, noisy_evaluations=noise)
         elif method_optimization == SDE_METHOD:
