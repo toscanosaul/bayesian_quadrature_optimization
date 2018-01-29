@@ -1123,7 +1123,7 @@ class SpecService(object):
                                 n_samples = len(results[iteration])
 
                                 if data_aggregate is not None:
-                                    aggregate_iteration = data_aggregate[iteration]
+                                    aggregate_iteration = data_aggregate[str(iteration)]
                                     mean_aggregate = aggregate_iteration['mean']
                                     n_samples_ag = aggregate_iteration['n_samples']
                                     std_ag = aggregate_iteration['std']
