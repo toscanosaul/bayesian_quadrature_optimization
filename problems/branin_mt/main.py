@@ -34,7 +34,7 @@ def toy_example(x):
     """
     x1 = x[0]
     x4 = x[1]
-    index = int([2])
+    index = int(x[2])
 
     ind_x2 = int(index / 4.0)
     ind_x3 = index % 4
