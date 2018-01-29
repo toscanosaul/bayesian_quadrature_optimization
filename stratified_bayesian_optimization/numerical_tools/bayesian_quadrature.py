@@ -103,7 +103,7 @@ class BayesianQuadrature(object):
     }
 
     def __init__(self, gp_model, x_domain, distribution, parameters_distribution=None,
-                 model_only_x=False):
+                 model_only_x=False, tasks=None):
         """
 
         :param gp_model: gp_fitting_gaussian instance
@@ -114,6 +114,7 @@ class BayesianQuadrature(object):
             -UNIFORM_FINITE: dict{TASKS: int}
         :param model_only_x (boolean) If True, we keep only the type bounds and bounds of x. So,
             we can use BQ with other methods like EI.
+        :param tasks (boolean)
         """
         self.gp = gp_model
         self.name_model = BAYESIAN_QUADRATURE
@@ -139,10 +140,13 @@ class BayesianQuadrature(object):
         if self.gp.noise and self.gp.data.get('var_noise') is not None:
             self.var_noise = np.mean(self.gp.data.get('var_noise'))
 
-        self.tasks = False
+        if tasks is not None:
+            self.tasks = tasks
         if self.distribution == UNIFORM_FINITE:
             self.tasks = True
             self.n_tasks = self.parameters_distribution.get(TASKS)
+        elif self.distribution == WEIGHTED_UNIFORM_FINITE:
+            self.n_tasks = len(self.parameters_distribution.get('weights'))
 
         self.arguments_expectation = {}
 

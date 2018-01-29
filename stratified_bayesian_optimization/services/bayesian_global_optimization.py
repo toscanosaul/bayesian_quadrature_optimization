@@ -77,7 +77,7 @@ class BGO(object):
             parameters_distribution = spec.get('parameters_distribution')
             quadrature = BayesianQuadrature(gp_model, x_domain, distribution,
                                             parameters_distribution=parameters_distribution,
-                                            model_only_x=True)
+                                            model_only_x=True, tasks=True)
             acquisition_function = MultiTasks(quadrature,
                                              quadrature.parameters_distribution.get(TASKS))
         elif method_optimization == EI_METHOD:
