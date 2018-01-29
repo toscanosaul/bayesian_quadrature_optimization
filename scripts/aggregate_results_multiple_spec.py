@@ -38,12 +38,6 @@ if __name__ == '__main__':
         help='name of the method to combine its aggregate results with new runs',
         default=None)
 
-
-
-
-
-
-
     args = parser.parse_args()
 
     combine_method = args.combine_aggregate_results
