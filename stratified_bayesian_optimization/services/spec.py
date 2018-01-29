@@ -964,7 +964,8 @@ class SpecService(object):
 
     @classmethod
     def collect_multi_spec_results(cls, multiple_spec, total_iterations=None, sign=True, sqr=False,
-                                   same_random_seeds=False, rs_lw=0, rs_up=None):
+                                   same_random_seeds=False, rs_lw=0, rs_up=None,
+                                   combine_method=None):
         """
         Writes the files with the aggregated results
         :param multiple_spec:
@@ -972,6 +973,9 @@ class SpecService(object):
         :param sign: (boolean) If true, we multiply the results by -1
         :param sqr: (boolean) If true, we take the square root of the results
         :param same_random_seeds: (boolean) If true, we use the same random seeds for both problems
+        :param combine_method: (str) Name of the method to combine its aggregate results with new
+            runs. The aggregate results should be located in the path: aggregate_results/respaldo/
+            It does not work with same_random_seeds
         :return:
         """
 
@@ -1095,15 +1099,55 @@ class SpecService(object):
                         if key not in results_dict:
                             continue
 
+                        data_aggregate = None
+                        if combine_method is not None and combine_method == method:
+                            dir_aggregate = path.join(
+                                PROBLEM_DIR, problem, AGGREGATED_RESULTS, 'respaldo')
+                            file_name_aggregate = cls._aggregated_results(
+                                problem_name=problem,
+                                training_name=training,
+                                n_points=n_training,
+                                method=method,
+                            )
+                            file_path_aggregate = path.join(dir_aggregate, file_name_aggregate)
+                            data_aggregate = JSONFile.read(file_path_aggregate)
+
                         results = results_dict[key]
 
                         for iteration in xrange(min(len(results), total_iterations)):
                             if len(results[iteration]) > 0:
                                 values = results[iteration]
+
                                 mean = np.mean(values)
                                 std = np.std(values)
                                 n_samples = len(results[iteration])
-                                ci_low =  mean -1.96 * std / np.sqrt(n_samples)
+
+                                if data_aggregate is not None:
+                                    aggregate_iteration = data_aggregate[iteration]
+                                    mean_aggregate = aggregate_iteration['mean']
+                                    n_samples_ag = aggregate_iteration['n_samples']
+                                    std_ag = aggregate_iteration['std']
+
+                                    old_mean = mean
+
+                                    n_old_samples = float(n_samples)
+
+                                    n_samples += n_samples_ag
+
+                                    n_samples_ag = float(n_samples_ag)
+                                    mean = (n_old_samples * mean) + \
+                                           (mean_aggregate * float(n_samples_ag))
+                                    mean /= float(n_samples)
+
+                                    std_old = n_old_samples * (std ** 2)
+                                    std_ag = n_samples_ag * (std_ag ** 2)
+                                    third_term = n_old_samples * ((old_mean - mean) ** 2)
+                                    fourth_term = n_samples_ag * ((mean_aggregate - mean) ** 2)
+
+                                    std = std_old + std_ag + third_term + fourth_term
+                                    std = np.sqrt(std / float(n_samples))
+
+                                ci_low = mean - 1.96 * std / np.sqrt(n_samples)
                                 ci_up = mean + 1.96 * std / np.sqrt(n_samples)
 
                                 aggregated_results[key][iteration] = {}

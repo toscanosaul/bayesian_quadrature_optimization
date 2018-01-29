@@ -33,8 +33,20 @@ if __name__ == '__main__':
     parser.add_argument('--same_rs', help='0', default=0)
     parser.add_argument('--y_label', help='e.g. y_label')
     parser.add_argument('--repeat_ei', help='e.g. repeat each result of ei 5 times', default=1)
+    parser.add_argument(
+        '--combine_aggregate_results',
+        help='name of the method to combine its aggregate results with new runs',
+        default=None)
+
+
+
+
+
+
 
     args = parser.parse_args()
+
+    combine_method = args.combine_aggregate_results
 
     repeat_ei = int(args.repeat_ei)
 
@@ -71,7 +83,7 @@ if __name__ == '__main__':
     if not only_plot:
         SpecService.collect_multi_spec_results(
             multiple_spec, total_iterations=n_iterations, rs_lw=rs_lw, rs_up=rs_up,
-            same_random_seeds=same_rs, sign=sign)
+            same_random_seeds=same_rs, sign=sign, combine_method=combine_method)
 
     plot_aggregate_results(multiple_spec, y_label=args.y_label, n_iterations=n_iterations,
                            repeat_ei=repeat_ei)
