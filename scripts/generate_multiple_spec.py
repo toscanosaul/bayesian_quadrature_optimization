@@ -577,7 +577,7 @@ if __name__ == '__main__':
     n_samples_parameters_mean = [5]
     maxepoch_mean = [50]
     threshold_sbo = [0.001]
-    parallel_training = [True]
+    parallel_training = [False]
     noises = [False]
     n_sampless = [0]
     domain_random = [[0], [1], [2],[3],[4],[5],[6],[7],[8],[9],[10],[11]]
