@@ -140,8 +140,12 @@ class BayesianQuadrature(object):
         if self.gp.noise and self.gp.data.get('var_noise') is not None:
             self.var_noise = np.mean(self.gp.data.get('var_noise'))
 
+        self.tasks = False
         if tasks is not None:
             self.tasks = tasks
+        else:
+            self.tasks = False
+            
         if self.distribution == UNIFORM_FINITE:
             self.tasks = True
             self.n_tasks = self.parameters_distribution.get(TASKS)
