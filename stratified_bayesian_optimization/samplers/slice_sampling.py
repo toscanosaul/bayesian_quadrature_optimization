@@ -73,7 +73,6 @@ class SliceSampling(object):
             direction = npr.randn(dimensions)
             for d in self.ignore_index:
                 direction[d] = 0.0
-
             if np.all(direction == 0):
                 return point
 

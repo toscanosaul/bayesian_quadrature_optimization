@@ -175,7 +175,7 @@ def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2=Non
         same_correlation = kernel_parameters.get(SAME_CORRELATION, False)
         index = type_kernel.index(TASKS_KERNEL_NAME)
         index_tasks = 0
-        for i in xrange(1, index):
+        for i in range(1, index):
             index_tasks += dimensions[i]
         n_tasks = dimensions[index]
 

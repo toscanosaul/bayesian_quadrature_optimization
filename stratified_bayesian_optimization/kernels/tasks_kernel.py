@@ -166,6 +166,7 @@ class TasksKernel(AbstractKernel):
         if parameters_priors is None:
             parameters_priors = {}
 
+
         if default_values is None:
             tasks_kernel_chol = parameters_priors.get(LOWER_TRIANG_NAME, n_params * [0.0])
             default_values = np.array(tasks_kernel_chol)
@@ -179,6 +180,7 @@ class TasksKernel(AbstractKernel):
         else:
             cov = np.eye(n_params)
             kernel.lower_triang.prior = MultivariateNormalPrior(n_params, default_values, cov)
+
 
         return kernel
 
@@ -436,10 +438,22 @@ class TasksKernel(AbstractKernel):
                         if not same_correlation:
                             cov_estimate[i, j] = 1.0
                         else:
-                            cov_estimate[i, j] = 0.0
+                            mean_ = np.mean(data['evaluations'])
+                            a = data['evaluations']
+                            b = data['evaluations']
+                            d_n = len(a)
+                            cov_estimate[i, j] = np.sum((a - mean_) * (b - mean_)) / (d_n - 1.0)
                     else:
-                        cov_estimate[i, j] = 0.0
-                        cov_estimate[j, i] = 0.0
+                        if not same_correlation:
+                            cov_estimate[i, j] = 0.0
+                            cov_estimate[j, i] = 0.0
+                        else:
+
+                            mean_ = np.mean(data['evaluations'])
+                            a = data_by_tasks[i][0][0:d]
+                            b = data_by_tasks[j][0][0:d]
+                            cov_estimate[i, j] = np.sum((a - mean_) * (b - mean_))
+                            cov_estimate[j, i] = cov_estimate[i, j]
                 else:
                     mu1 = data_by_tasks[i][1]
                     mu2 = data_by_tasks[j][1]
@@ -451,14 +465,14 @@ class TasksKernel(AbstractKernel):
         if same_correlation:
             var = [cov_estimate[i, i] for i in xrange(dimension)]
             task_params = []
-            task_params.append(np.log ( max(np.mean(var), 0.1)))
+            task_params.append(np.log(max(np.mean(var), 0.1)))
 
             if dimension == 1:
                 return {LOWER_TRIANG_NAME: task_params}
 
             cov = [cov_estimate[i, j] for i in xrange(dimension) for j in xrange(dimension) if
                    i != j]
-            task_params.append(np.log (max (np.mean(cov), 0.1)))
+            task_params.append(np.log(max(np.mean(cov), 0.1)))
 
             return {LOWER_TRIANG_NAME: task_params}
 
