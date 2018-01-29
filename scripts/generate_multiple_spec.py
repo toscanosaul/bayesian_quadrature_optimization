@@ -423,9 +423,9 @@ if __name__ == '__main__':
 
     #BRANIN-SBO
 
-    # domain_random = [[0.25, 0.2], [0.25, 0.4], [0.25, 0.6], [0.25, 0.8],
-    #                           [0.5, 0.2], [0.5, 0.4], [0.5, 0.6], [0.5, 0.8],
-    #                           [0.75, 0.2], [0.75, 0.4], [0.75, 0.6], [0.75, 0.8]]
+    domain_random = [[0.25, 0.2], [0.25, 0.4], [0.25, 0.6], [0.25, 0.8],
+                              [0.5, 0.2], [0.5, 0.4], [0.5, 0.6], [0.5, 0.8],
+                              [0.75, 0.2], [0.75, 0.4], [0.75, 0.6], [0.75, 0.8]]
     #
     # dim_x = [2]
     # bounds_domain_x = [[(0, 1), (0, 1)]]
@@ -480,21 +480,73 @@ if __name__ == '__main__':
 
 
     #branin-sde
-    domain_random = [[0.25, 0.2], [0.25, 0.4], [0.25, 0.6], [0.25, 0.8],
-                              [0.5, 0.2], [0.5, 0.4], [0.5, 0.6], [0.5, 0.8],
-                              [0.75, 0.2], [0.75, 0.4], [0.75, 0.6], [0.75, 0.8]]
+    # domain_random = [[0.25, 0.2], [0.25, 0.4], [0.25, 0.6], [0.25, 0.8],
+    #                           [0.5, 0.2], [0.5, 0.4], [0.5, 0.6], [0.5, 0.8],
+    #                           [0.75, 0.2], [0.75, 0.4], [0.75, 0.6], [0.75, 0.8]]
+    #
+    # dim_x = [2]
+    # bounds_domain_x = [[(0, 1), (0, 1)]]
+    # problem_name = ['branin']
+    # training_name = [None]
+    # type_kernel = [[MATERN52_NAME]]
+    # dimensions = [[4]]
+    # bounds_domain = [[[0, 1], [0, 1], [0.25, 0.5, 0.75], [0.2, 0.4, 0.6, 0.8]]]
+    # n_training = [12]
+    # random_seed = range(1, 501)
+    # n_specs = len(random_seed)
+    # type_bounds = [[0, 0, 1, 1]]
+    # x_domain = [[0, 1]]
+    # number_points_each_dimension = [[6, 6]]
+    # mle = [False]
+    # distribution = [WEIGHTED_UNIFORM_FINITE]
+    # parallel = [True]
+    # thinning = [10]
+    # n_burning = [500]
+    # max_steps_out = [1000]
+    # n_iterations = [46]
+    # same_correlation = [True]
+    # debug = [False]
+    # number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
+    # monte_carlo_sbo = [True]
+    # n_samples_mc = [50]
+    # n_restarts_mc = [5]
+    # n_best_restarts_mc = [0]
+    # factr_mc = [1e12]
+    # maxiter_mc = [10]
+    # n_restarts = [10]
+    # n_best_restarts = [0]
+    # use_only_training_points = [True]
+    # method_optimization = [SDE_METHOD]
+    # n_samples_parameters = [5]
+    # n_restarts_mean = [10]
+    # n_best_restarts_mean = [0]
+    # method_opt_mc = [DOGLEG]
+    # maxepoch = [10]
+    # n_samples_parameters_mean = [20]
+    # maxepoch_mean = [20]
+    # threshold_sbo = [0.001]
+    # parallel_training = [False]
+    # noises = [False]
+    # n_sampless = [0]
+    # parameters_distributions = [{'weights': [0.0375, 0.0875, 0.0875, 0.0375, 0.0750, 0.1750,
+    #                                          0.1750, 0.0750, 0.0375, 0.0875, 0.0875, 0.0375],
+    #                              'domain_random': domain_random}]
+    # optimize_only_posterior_means = [False]
+    # start_optimize_posterior_means = [0]
+
+    #multi_task branin
 
     dim_x = [2]
     bounds_domain_x = [[(0, 1), (0, 1)]]
-    problem_name = ['branin']
+    problem_name = ['branin_mt']
     training_name = [None]
-    type_kernel = [[MATERN52_NAME]]
-    dimensions = [[4]]
-    bounds_domain = [[[0, 1], [0, 1], [0.25, 0.5, 0.75], [0.2, 0.4, 0.6, 0.8]]]
+    type_kernel = [[PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]]
+    dimensions = [[3, 2, 12]]
+    bounds_domain = [[[0, 1], [0, 1], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]]
     n_training = [12]
     random_seed = range(1, 501)
     n_specs = len(random_seed)
-    type_bounds = [[0, 0, 1, 1]]
+    type_bounds = [[0, 0, 1]]
     x_domain = [[0, 1]]
     number_points_each_dimension = [[6, 6]]
     mle = [False]
@@ -508,29 +560,31 @@ if __name__ == '__main__':
     debug = [False]
     number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
     monte_carlo_sbo = [True]
-    n_samples_mc = [50]
+    n_samples_mc = [5]
     n_restarts_mc = [5]
     n_best_restarts_mc = [0]
     factr_mc = [1e12]
     maxiter_mc = [10]
-    n_restarts = [10]
-    n_best_restarts = [0]
+    n_restarts = [100]
+    n_best_restarts = [10]
     use_only_training_points = [True]
-    method_optimization = [SDE_METHOD]
+    method_optimization = [MULTI_TASK_METHOD]
     n_samples_parameters = [5]
-    n_restarts_mean = [10]
-    n_best_restarts_mean = [0]
-    method_opt_mc = [DOGLEG]
-    maxepoch = [10]
-    n_samples_parameters_mean = [20]
-    maxepoch_mean = [20]
+    n_restarts_mean = [100]
+    n_best_restarts_mean = [10]
+    method_opt_mc = [LBFGS_NAME]
+    maxepoch = [50]
+    n_samples_parameters_mean = [5]
+    maxepoch_mean = [50]
     threshold_sbo = [0.001]
-    parallel_training = [False]
+    parallel_training = [True]
     noises = [False]
     n_sampless = [0]
+    domain_random = [[0], [1], [2],[3],[4],[5],[6],[7],[8],[9],[10],[11]]
     parameters_distributions = [{'weights': [0.0375, 0.0875, 0.0875, 0.0375, 0.0750, 0.1750,
                                              0.1750, 0.0750, 0.0375, 0.0875, 0.0875, 0.0375],
                                  'domain_random': domain_random}]
+
     optimize_only_posterior_means = [False]
     start_optimize_posterior_means = [0]
 

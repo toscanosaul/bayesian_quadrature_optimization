@@ -34,7 +34,7 @@ def toy_example(x):
     x2 = x[2]
     x3 = x[3]
 
-    result = branin(15*x1-5,15*x2) * branin(15*x3-5,15*x4)
+    result = branin(15*x1-5, 15*x2) * branin(15*x3-5,15*x4)
 
     return [result]
 
