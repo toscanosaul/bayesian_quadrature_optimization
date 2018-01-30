@@ -176,6 +176,7 @@ def get_default_values_kernel(kernel_name, dim, same_correlation=False, **parame
     if kernel_name[0] == TASKS_KERNEL_NAME:
         n_params = get_number_parameters_kernel(kernel_name, dim,
                                                 **{SAME_CORRELATION: same_correlation})
+
         tasks_kernel_chol = parameters_priors.get(LOWER_TRIANG_NAME, n_params * [0.0])
         return tasks_kernel_chol
 

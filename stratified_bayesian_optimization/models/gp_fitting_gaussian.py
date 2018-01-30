@@ -342,7 +342,6 @@ class GPFittingGaussian(object):
         parameters_priors = parameters_kernel_from_list_to_dict(parameters_priors, self.type_kernel,
                                                                 self.dimensions)
 
-
         if self.kernel_values is None:
             self.kernel_values = list(
                 get_default_values_kernel(self.type_kernel, self.dimensions, **parameters_priors))
@@ -1515,7 +1514,6 @@ class GPFittingGaussian(object):
         lp = 0.0
         parameters_model = self.get_parameters_model
         index = 0
-
         for parameter in parameters_model:
             dimension = parameter.dimension
             lp += parameter.log_prior(parameters[index: index + dimension])
@@ -1523,6 +1521,7 @@ class GPFittingGaussian(object):
 
         if not np.isinf(lp):
             lp += self.log_likelihood(parameters[0], parameters[1], parameters[2:])
+
         return lp
 
     def sample_new_observations(self, point, n_samples, random_seed=None):

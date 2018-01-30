@@ -19,6 +19,7 @@ from stratified_bayesian_optimization.lib.util import (
 from stratified_bayesian_optimization.priors.gaussian import GaussianPrior
 from stratified_bayesian_optimization.priors.multivariate_normal import MultivariateNormalPrior
 from stratified_bayesian_optimization.priors.log_normal_square import LogNormalSquare
+from stratified_bayesian_optimization.priors.uniform import UniformPrior
 
 
 class TasksKernel(AbstractKernel):
@@ -149,7 +150,7 @@ class TasksKernel(AbstractKernel):
                 is to compute priors in a smart way.
         :param default_values: np.array(k)
         :param parameters_priors: {
-                        LOWER_TRIANG_NAME: [float]
+                        LOWER_TRIANG_NAME: [float],
                     }
         :param kwargs: {SAME_CORRELATION: boolean}
 
@@ -174,12 +175,16 @@ class TasksKernel(AbstractKernel):
         kernel = TasksKernel.define_kernel_from_array(
             dimension, default_values, **kwargs)
 
-        if dimension == 1:
-            kernel.lower_triang.prior = LogNormalSquare(1, 1.0, np.sqrt(default_values[0]))
-            kernel.lower_triang.bounds = [(SMALLEST_POSITIVE_NUMBER, None)]
+        if np.all(default_values == 0.0):
+            kernel.lower_triang.prior = \
+                UniformPrior(n_params, n_params * [-1.0], n_params * [1.0])
         else:
-            cov = np.eye(n_params)
-            kernel.lower_triang.prior = MultivariateNormalPrior(n_params, default_values, cov)
+            if dimension == 1:
+                kernel.lower_triang.prior = LogNormalSquare(1, 1.0, np.sqrt(default_values[0]))
+                kernel.lower_triang.bounds = [(SMALLEST_POSITIVE_NUMBER, None)]
+            else:
+                cov = np.eye(n_params)
+                kernel.lower_triang.prior = MultivariateNormalPrior(n_params, default_values, cov)
 
 
         return kernel
@@ -416,13 +421,24 @@ class TasksKernel(AbstractKernel):
 
         tasks_index = data['points'][:, 0]
         data_by_tasks = {}
-        for i in xrange(dimension):
+        enough_data = True
+        for i in range(dimension):
             index_task = np.where(tasks_index == i)[0]
             if len(index_task) > 0:
                 data_by_tasks[i] = [data['evaluations'][index_task],
                                     np.mean(data['evaluations'][index_task])]
             else:
                 data_by_tasks[i] = [[]]
+            if len(index_task) < 2:
+                enough_data = False
+
+        if not same_correlation:
+            n_params = get_number_parameters_kernel([TASKS_KERNEL_NAME], [dimension])
+        else:
+            n_params = min(dimension, 2)
+
+        if not enough_data:
+            return {LOWER_TRIANG_NAME:  n_params * [0.0]}
 
         # Can we include the variance of noisy evaluations in a smart way to get better estimators?
 
@@ -444,17 +460,19 @@ class TasksKernel(AbstractKernel):
                             cov_estimate[i, j] = 0.0
                             cov_estimate[j, i] = 0.0
                         else:
-                            n_eval = len(data['evaluations'])
-                            z = data['evaluations'][0: n_eval/2]
-                            z = z - np.mean(z)
-
-                            z_2 = data['evaluations'][n_eval / 2: n_eval]
-                            z_2 = z_2 - np.mean(z_2)
-
-                            cov = [z1 * z2 for z1 in z for z2 in z_2]
-                            cov = np.mean(cov)
-                            cov_estimate[i, j] = cov
-                            cov_estimate[j, i] = cov_estimate[i, j]
+                            # n_eval = len(data['evaluations'])
+                            # z = data['evaluations'][0: n_eval/2]
+                            # z = z - np.mean(z)
+                            #
+                            # z_2 = data['evaluations'][n_eval / 2: n_eval]
+                            # z_2 = z_2 - np.mean(z_2)
+                            #
+                            # cov = [z1 * z2 for z1 in z for z2 in z_2]
+                            # cov = np.mean(cov)
+                            # cov_estimate[i, j] = cov
+                            # cov_estimate[j, i] = cov_estimate[i, j]
+                            cov_estimate[i, j] = 0
+                            cov_estimate[j, i] = 0
                 else:
                     mu1 = data_by_tasks[i][1]
                     mu2 = data_by_tasks[j][1]
@@ -464,15 +482,18 @@ class TasksKernel(AbstractKernel):
                     cov_estimate[j, i] = cov_estimate[i, j]
 
         if same_correlation:
-            var = [cov_estimate[i, i] for i in xrange(dimension)]
+            var = [cov_estimate[i, i] for i in range(dimension)]
             task_params = []
             task_params.append(np.log(max(np.mean(var), 0.1)))
 
             if dimension == 1:
                 return {LOWER_TRIANG_NAME: task_params}
 
-            cov = [cov_estimate[i, j] for i in xrange(dimension) for j in xrange(dimension) if
-                   i != j]
+            cov = [cov_estimate[i, j] for i in range(dimension) for j in range(dimension) if
+                   i != j and cov_estimate[i, j] != 0]
+            if np.all(np.array(cov) == 0):
+                return {LOWER_TRIANG_NAME: task_params}
+
             task_params.append(np.log(max(np.mean(cov), 0.1)))
 
             return {LOWER_TRIANG_NAME: task_params}
@@ -483,19 +504,19 @@ class TasksKernel(AbstractKernel):
                 if i == j:
                     value = np.sqrt(
                         max(cov_estimate[i, j] -
-                            np.sum(np.array([l_params[(i, h)] for h in xrange(i)]) ** 2),
+                            np.sum(np.array([l_params[(i, h)] for h in range(i)]) ** 2),
                             SMALLEST_POSITIVE_NUMBER))
                     l_params[(i, j)] = value
                     continue
                 ls_val = np.sum(
-                    [l_params[(i, h)] * l_params[(j, h)] for h in xrange(min(i, j))])
+                    [l_params[(i, h)] * l_params[(j, h)] for h in range(min(i, j))])
                 d = min(i, j)
                 value = (cov_estimate[(i, j)] - ls_val) / l_params[(d, d)]
                 l_params[(i, j)] = value
 
         task_params = []
-        for i in xrange(dimension):
-            for j in xrange(i + 1):
+        for i in range(dimension):
+            for j in range(i + 1):
                 value = l_params[(i, j)]
                 task_params.append(np.log(max(value, 0.0001)))
 
