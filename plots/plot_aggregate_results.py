@@ -136,4 +136,5 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True, title_plot
     plt.legend(loc=3, ncol=2, mode="expand", borderaxespad=0.)
 #    plt.title(title_plot, fontsize=22)
     plt.subplots_adjust(left=0.13, right=0.99, top=0.92, bottom=0.12)
+    plt.tight_layout()
     plt.savefig(file_path_plot)

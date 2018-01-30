@@ -1003,7 +1003,7 @@ class SpecService(object):
             random_seeds = {}
             for method in set(multiple_spec.get('method_optimizations')):
                 random_seeds[method] = []
-            for i in xrange(n_specs):
+            for i in range(n_specs):
                 problem_name = multiple_spec.get('problem_names')[i]
                 dir = path.join(PROBLEM_DIR, problem_name, PARTIAL_RESULTS)
 
@@ -1033,7 +1033,7 @@ class SpecService(object):
 
             methods = list(set(multiple_spec.get('method_optimizations')))
             random_seeds_check = set(random_seeds[methods[0]])
-            for i in xrange(1, len(methods)):
+            for i in range(1, len(methods)):
                 random_seeds_check = random_seeds_check.intersection(random_seeds[methods[i]])
 
             if rs_up is not None:

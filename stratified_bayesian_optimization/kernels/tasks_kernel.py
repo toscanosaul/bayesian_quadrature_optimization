@@ -167,7 +167,6 @@ class TasksKernel(AbstractKernel):
         if parameters_priors is None:
             parameters_priors = {}
 
-
         if default_values is None:
             tasks_kernel_chol = parameters_priors.get(LOWER_TRIANG_NAME, n_params * [0.0])
             default_values = np.array(tasks_kernel_chol)
@@ -185,7 +184,6 @@ class TasksKernel(AbstractKernel):
             else:
                 cov = np.eye(n_params)
                 kernel.lower_triang.prior = MultivariateNormalPrior(n_params, default_values, cov)
-
 
         return kernel
 
