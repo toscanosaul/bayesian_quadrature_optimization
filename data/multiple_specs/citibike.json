@@ -1,0 +1,1 @@
+{"method_optimizations":["kg","ei","sbo"],"choose_noises":[true,true,true],"bounds_domains":[[[0,1]],[[0,1]],[[0,1]]],"methods":["kg","ei","sbo"],"dim_xs":[1,1,1],"bounds_domain_xs":[[[0,1]],[[0,1]],[[0,1]]],"threshold_sbos":[0.1,0.1,0.1],"training_names":[null,null,null],"n_trainings":[50,50,50],"problem_names":["citi_bike_mt","citi_bike_mt","citi_bike_mt"]}
