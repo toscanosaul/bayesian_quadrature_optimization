@@ -154,9 +154,10 @@ def startInitialConfiguration (X,m,data,cluster,bikeData,files=False):
             setBikes=int(resT/nElm)
             if setBikes==0:
                # index2=np.where(A[inds,0]>0)[0]
-                A[indx2[0:resT],1]+=1
-                A[indx2[0:resT],0]-=1
-                break
+               for index_A in range(int(resT)):
+                    A[int(indx2[index_A]),1]+=1
+                    A[int(indx2[index_A]),0]-=1
+               break
             index2=np.where((A[indx2,0]-setBikes)<0)[0] #indices where no all bikes can be placed
             index3=set(range(0,nElm))-set(index2) #indices where all bikes can be placed
             index3=np.array(list(index3))
