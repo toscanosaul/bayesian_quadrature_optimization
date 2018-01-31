@@ -92,8 +92,9 @@ def computeProbability(w,parLambda,nDays):
     probs*=(1.0/nDays)
     return np.sum(probs)
 
-L=3610
-M=4410
+
+L=3829
+M=4194
 wTemp=np.array(range(L,M))
 probsTemp=np.zeros(M-L)
 for i in range(M-L):
