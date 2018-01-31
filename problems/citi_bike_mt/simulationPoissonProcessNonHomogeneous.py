@@ -44,7 +44,7 @@ def PoissonProcess(T,lamb,A,N,randst):
     lambSum=(np.sum(lamb[0][0,:]))
     nElements=len(lamb[0][0,:])
     for j in xrange(nElements):
-        prob[lamb[0][2,j]+(lamb[0][1,j])*nStations]=(float(lamb[0][0,j])/(lambSum))
+        prob[int(lamb[0][2,j]+(lamb[0][1,j])*nStations)]=(float(lamb[0][0,j])/(lambSum))
     X=randst.multinomial(N,prob,size=1)[0]
     nArrivals=np.sum(X)
     TIME=[]
