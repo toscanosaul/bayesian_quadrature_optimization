@@ -161,6 +161,7 @@ def startInitialConfiguration (X,m,data,cluster,bikeData,files=False):
             index2=np.where((A[indx2,0]-setBikes)<0)[0] #indices where no all bikes can be placed
             index3=set(range(0,nElm))-set(index2) #indices where all bikes can be placed
             index3=np.array(list(index3))
+            index3 = index3.astype(int)
             tempA=A[indx2[index2],0]
             A[indx2[index2],1]+=tempA
             A[indx2[index2],0]-=tempA #docks
