@@ -62,30 +62,6 @@ for i in xrange(n1):
     indsTemp=np.array([a[0] for a in temp])
     upperX[i]=np.sum(temBikes[indsTemp])
 
-#n_samples=5
-def toy_example(n_samples, x):
-    """
-
-
-    :param x: [float, float, int, int, int]
-    :return: [float]
-    """
-    ind = None
-    simulations = np.zeros(n_samples)
-    # w is between 650 and 8900
-    w = [int(x[-1]) + 650]
-
-    x = x[0: -1]
-    x = [int(i) for i in x]
-    x.append(numberBikes - np.sum(x))
-    x = np.array(x)
-    for i in range(n_samples):
-        simulations[i] = unhappyPeople(TimeHours, w, x, nSets,
-                           data, cluster, bikeData, poissonParameters, nDays,
-                           Avertices, poissonArray, exponentialTimes, randomSeed=ind)
-
-    return [np.mean(simulations), float(np.var(simulations)) / n_samples]
-
 ##weights of w
 def computeProbability(w,parLambda,nDays):
     probs=poisson.pmf(w,mu=np.array(parLambda))
@@ -99,6 +75,32 @@ wTemp=np.array(range(L,M))
 probsTemp=np.zeros(M-L)
 for i in range(M-L):
     probsTemp[i]=computeProbability(wTemp[i],poissonParameters,nDays)
+
+
+#n_samples=5
+def toy_example(n_samples, x):
+    """
+
+
+    :param x: [float, float, int, int, int]
+    :return: [float]
+    """
+    ind = None
+    simulations = np.zeros(n_samples)
+    # w is between L and and M
+    w = [int(x[-1]) + L]
+
+    x = x[0: -1]
+    x = [int(i) for i in x]
+    x.append(numberBikes - np.sum(x))
+    x = np.array(x)
+    for i in range(n_samples):
+        simulations[i] = unhappyPeople(TimeHours, w, x, nSets,
+                           data, cluster, bikeData, poissonParameters, nDays,
+                           Avertices, poissonArray, exponentialTimes, randomSeed=ind)
+
+    return [np.mean(simulations), float(np.var(simulations)) / n_samples]
+
 
 
 def simulatorW(n, ind=False):
