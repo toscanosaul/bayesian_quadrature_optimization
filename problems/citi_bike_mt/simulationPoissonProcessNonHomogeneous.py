@@ -146,7 +146,7 @@ def startInitialConfiguration (X,m,data,cluster,bikeData,files=False):
        # setBikes=X[i]/len(temp)
         
         resT=X[i]
-        inds=np.array([a[0] for a in temp])
+        inds=np.array([int(a[0]) for a in temp])
         indx=np.where(A[inds,0]>0)[0]
         nElm=len(indx)
         indx2=inds[indx]
