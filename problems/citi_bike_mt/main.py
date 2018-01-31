@@ -136,7 +136,6 @@ def integrate_toy_example(x):
     x.append(numberBikes - np.sum(x))
     x = np.array(x)
     N = 1000
-    N=1
     estimator = N
     W, indexes = simulatorW(estimator, True)
     result = np.zeros(estimator)
