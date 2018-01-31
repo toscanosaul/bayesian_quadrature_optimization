@@ -673,7 +673,7 @@ if __name__ == '__main__':
     training_name = [None]
     type_kernel = [[PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]]
     dimensions = [[4, 3, n_tasks]]
-    bounds_domain = [[[0, numberBikes], [0, numberBikes], [0, numberBikes], range(n_tasks)]]
+    bounds_domain = [[[0, upperX[0]], [0, upperX[1]], [0, upperX[2]], range(n_tasks)]]
     n_training = [50]
     random_seed = range(1, 501)
     n_specs = len(random_seed)
