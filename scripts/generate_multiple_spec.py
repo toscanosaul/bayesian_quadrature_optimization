@@ -4,6 +4,7 @@ from scipy.stats import gamma
 import numpy as np
 from scipy.stats import poisson
 import json
+import os
 
 from stratified_bayesian_optimization.services.spec import SpecService
 from stratified_bayesian_optimization.lib.constant import (
