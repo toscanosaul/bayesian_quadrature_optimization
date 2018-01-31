@@ -114,8 +114,8 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
                 if np.sum(point) > simplex_domain:
                     point = simplex_domain * (point / np.sum(point))
 
-            if simplex_domain - np.sum(point) > 3717.0:
-                point = (simplex_domain - 3717.0) * (point / np.sum(point))
+                if simplex_domain - np.sum(point) > 3717.0:
+                    point = (simplex_domain - 3717.0) * (point / np.sum(point))
             if not adam:
                 for dim, bound in enumerate(bounds):
                     v[dim] = (point[dim] - old_p[dim]) / learning_rate
