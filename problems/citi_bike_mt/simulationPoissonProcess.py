@@ -210,19 +210,20 @@ def unhappyPeople(T, N, X, m, lamb, A, date, exponentialTimes, data, cluster, bi
     for i in xrange(nTimes):
         currentTime = Times[i, 0]
         while (dropTimes and currentTime > dropTimes[0][0]):
-            if state[dropTimes[0][1], 0] > 0:
-                state[dropTimes[0][1], 0] = state[dropTimes[0][1], 0] - 1
-                state[dropTimes[0][1], 1] += 1
+            if state[int(dropTimes[0][1]), 0] > 0:
+                state[int(dropTimes[0][1]), 0] = state[int(dropTimes[0][1]), 0] - 1
+                state[int(dropTimes[0][1]), 1] += 1
                 dropTimes.pop(0)
             else:
                 unHappy += 1
-                j = findBikeStation(state, dropTimes[0][1])
+                j = findBikeStation(state, int(dropTimes[0][1]))
                 state[j, 0] = state[j, 0] - 1
                 state[j, 1] = state[j, 1] + 1
                 dropTimes.pop(0)
-        bikePickUp = Times[i, 1]
-        bikeDrop = Times[i, 2]
-        timeUsed = np.random.exponential(exponentialTimes[bikePickUp, bikeDrop])
+        bikePickUp = int(Times[i, 1])
+        bikeDrop = int(Times[i, 2])
+
+        timeUsed = np.random.exponential(exponentialTimes[int(bikePickUp), int(bikeDrop)])
         dropTimes.append((currentTime + timeUsed, bikeDrop))
         dropTimes = sorted(dropTimes, key=lambda x: x[0])
         if state[bikePickUp, 1] == 0:
