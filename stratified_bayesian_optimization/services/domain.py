@@ -135,7 +135,7 @@ class DomainService(object):
                 s[j, 2] = np.floor(s[j, 2])
                 s[j, 3] = simplex_domain - np.sum(s[j, 0:3])
                 # 3717 is an upper bound for the last entry of the vector in the simplex
-
+            points = s
             if type_bounds[-1] == 1:
                 entry = cls.get_point_one_dimension_domain(n_samples, bounds_domain[-1],
                                                            type_bounds=type_bounds[-1])
