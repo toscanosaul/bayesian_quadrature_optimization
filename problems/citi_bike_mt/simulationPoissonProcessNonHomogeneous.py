@@ -232,7 +232,7 @@ def unhappyPeople (T,N,X,m,data,cluster,bikeData,parLambda,nDays,A,poissonArray,
     exponentialTimes2=np.zeros((nStations,nStations))
     nExp=len(exponentialTimes[0,:])
     for i in range(nExp):
-        exponentialTimes2[exponentialTimes[1,i],exponentialTimes[2,i]]=exponentialTimes[0,i]
+        exponentialTimes2[int(exponentialTimes[1,i]),int(exponentialTimes[2,i])]=exponentialTimes[0,i]
     poissonParam=poissonArray[ind]
 
     unHappy=0
@@ -261,9 +261,9 @@ def unhappyPeople (T,N,X,m,data,cluster,bikeData,parLambda,nDays,A,poissonArray,
     for i in xrange(nTimes):
         currentTime=Times[i,0]
         while (dropTimes and currentTime>dropTimes[0][0]):
-            if state[dropTimes[0][1],0]>0:
-                state[dropTimes[0][1],0]=state[dropTimes[0][1],0]-1
-                state[dropTimes[0][1],1]+=1
+            if state[int(dropTimes[0][1]),0]>0:
+                state[int(dropTimes[0][1]),0]=state[int(dropTimes[0][1]),0]-1
+                state[int(dropTimes[0][1]),1]+=1
                 dropTimes.pop(0)
             else:
                 unHappy+=1
@@ -271,8 +271,8 @@ def unhappyPeople (T,N,X,m,data,cluster,bikeData,parLambda,nDays,A,poissonArray,
                 state[j,0]=state[j,0]-1
                 state[j,1]=state[j,1]+1
                 dropTimes.pop(0)
-        bikePickUp=Times[i,1]
-        bikeDrop=Times[i,2]
+        bikePickUp=int(Times[i,1])
+        bikeDrop=int(Times[i,2])
 
         if state[bikePickUp,1]==0:
             unHappy+=1
