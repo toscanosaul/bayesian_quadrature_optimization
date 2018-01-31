@@ -594,54 +594,78 @@ if __name__ == '__main__':
 
     ##citibike_mt
     ############################### Parameters needed
-    TimeHours = 4.0
-    numberBikes = 6000
-
-    fil = "problems/citi_bike_mt/2014-05PoissonParameters.txt"
-    nSets = 4
-    from problems.citi_bike_mt.simulationPoissonProcess import generateSets
-    A, lamb = generateSets(nSets, fil)
-
     n1 = 4
-    n2 = 4
-    parameterSetsPoisson = np.zeros(n2)
-    for j in range(n2):
-        parameterSetsPoisson[j] = np.sum(lamb[j])
+    n2 = 1
 
-    exponentialTimes = np.loadtxt("problems/citi_bike_mt/2014-05" + "ExponentialTimes.txt")
+    nDays = 365
+
+    nSets = 4
+
+    fil = "poissonDays.txt"
+    fil = "problems/citi_bike_mt/" + fil
+    poissonParameters = np.loadtxt(fil)
+
+    ###readData
+
+    poissonArray = [[] for i in xrange(nDays)]
+    exponentialTimes = [[] for i in xrange(nDays)]
+
+    for i in xrange(nDays):
+        fil = "daySparse" + "%d" % i + "ExponentialTimesNonHom.txt"
+        fil2 = os.path.join("problems/citi_bike_mt/SparseNonHomogeneousPP2", fil)
+        poissonArray[i].append(np.loadtxt(fil2))
+
+        fil = "daySparse" + "%d" % i + "PoissonParametersNonHom.txt"
+        fil2 = os.path.join("problems/citi_bike_mt/SparseNonHomogeneousPP2", fil)
+        exponentialTimes[i].append(np.loadtxt(fil2))
+
+    numberStations = 329
+    Avertices = [[]]
+    for j in range(numberStations):
+        for k in range(numberStations):
+            Avertices[0].append((j, k))
+
     with open('problems/citi_bike_mt/json.json') as data_file:
         data = json.load(data_file)
 
-    f = open('problems/citi_bike_mt/'+str(4) + "-cluster.txt", 'r')
+    f = open('problems/citi_bike_mt/' + str(4) + "-cluster.txt", 'r')
     cluster = eval(f.read())
     f.close()
 
     bikeData = np.loadtxt("problems/citi_bike_mt/bikesStationsOrdinalIDnumberDocks.txt", skiprows=1)
 
-    range_for_w = []
-    number_points_dimension = []
-    for i in range(n2):
-        upper = poisson.ppf(0.52, parameterSetsPoisson[i])
-        lower = poisson.ppf(0.48, parameterSetsPoisson[i])
-        range_for_w.append(range(int(lower), int(upper) + 1))
-        number_points_dimension.append(int(upper) + 1 - int(lower))
-    seq_tasks = np.cumprod(number_points_dimension)
-    number_tasks = seq_tasks[-1]
-    n_tasks=seq_tasks[-1]
+    TimeHours = 4.0
+    numberBikes = 6000
 
-    weights = []
-    for i in range_for_w[3]:
-        for j in range_for_w[2]:
-            for k in range_for_w[1]:
-                for t in range_for_w[0]:
-                    weight = 1.0
-                    z = [t, k, j, i]
-                    for l in range(4):
-                        weight *= poisson.pmf(z[l], parameterSetsPoisson[l])
-                    weights.append(weight)
+    poissonParameters *= TimeHours
+
+    ###upper bounds for X
+    upperX = np.zeros(n1)
+    temBikes = bikeData[:, 2]
+    for i in xrange(n1):
+        temp = cluster[i]
+        indsTemp = np.array([a[0] for a in temp])
+        upperX[i] = np.sum(temBikes[indsTemp])
+
+
+    ##weights of w
+    def computeProbability(w, parLambda, nDays):
+        probs = poisson.pmf(w, mu=np.array(parLambda))
+        probs *= (1.0 / nDays)
+        return np.sum(probs)
+
+
+    L = 650
+    M = 8900
+    wTemp = np.array(range(L, M))
+    probsTemp = np.zeros(M - L)
+    for i in range(M - L):
+        probsTemp[i] = computeProbability(wTemp[i], poissonParameters, nDays)
+
+    n_tasks = M - L
     ###################
     dim_x = [3]
-    bounds_domain_x = [[(0, numberBikes), (0, numberBikes), (0, numberBikes)]]
+    bounds_domain_x = [[(0, upperX[0]), (0, upperX[1]), (0, upperX[2])]]
     simplex_domain = [numberBikes]
 
     problem_name = ['citi_bike_mt']
@@ -686,7 +710,7 @@ if __name__ == '__main__':
     parallel_training = [False]
     n_sampless = [5]
     domain_random = [[i] for i in range(n_tasks)]
-    parameters_distributions = [{'weights': weights,
+    parameters_distributions = [{'weights': list(probsTemp),
                                  'domain_random': domain_random}]
 
     optimize_only_posterior_means = [False]
