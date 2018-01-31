@@ -230,7 +230,7 @@ def unhappyPeople (T,N,X,m,data,cluster,bikeData,parLambda,nDays,A,poissonArray,
         probs=probs/np.sum(probs)
         ind=randst.choice(range(nDays),size=1,p=probs)
         
-    exponentialTimes=timesArray[ind][0]
+    exponentialTimes=timesArray[int(ind)][0]
     exponentialTimes2=np.zeros((nStations,nStations))
     nExp=len(exponentialTimes[0,:])
     for i in range(nExp):
