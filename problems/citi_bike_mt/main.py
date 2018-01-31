@@ -94,7 +94,7 @@ def computeProbability(w,parLambda,nDays):
 
 
 L=3829
-M=4194
+M=4010
 wTemp=np.array(range(L,M))
 probsTemp=np.zeros(M-L)
 for i in range(M-L):
