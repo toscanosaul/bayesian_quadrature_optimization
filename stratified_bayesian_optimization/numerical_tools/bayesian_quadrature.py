@@ -728,7 +728,7 @@ class BayesianQuadrature(object):
 
         dim_x = len(bounds_x)
         vertex = None
-        if dim_x < 7:
+        if dim_x < 7 and self.simplex_domain is None:
             vertex = []
             for point in itertools.product(*bounds_x):
                 vertex.append(point)
