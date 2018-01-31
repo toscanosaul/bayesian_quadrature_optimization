@@ -656,8 +656,8 @@ if __name__ == '__main__':
         return np.sum(probs)
 
 
-    L = 650
-    M = 8900
+    L = 3610
+    M = 4410
     wTemp = np.array(range(L, M))
     probsTemp = np.zeros(M - L)
     for i in range(M - L):
