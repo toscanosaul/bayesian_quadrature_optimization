@@ -7,7 +7,7 @@ a station at one location within the city, and ride it
 to a station with an available dock in some other location
 within the city.
 """
-
+from __future__ import absolute_import
 import numpy as np
 from math import *
 from geopy.distance import vincenty
@@ -17,7 +17,7 @@ from scipy.stats import poisson
 
 nBikes = 6000
 nStations = 329
-distancesBikeStations = np.loadtxt("distanceBikeStations.txt")
+distancesBikeStations = np.loadtxt("problems/citi_bike_mt/distanceBikeStations.txt")
 
 
 def PoissonProcess(T, lamb, A, N):
@@ -110,7 +110,7 @@ def startInitialConfiguration(X, m, data, cluster, bikeData, files=False):
     """
     A = np.zeros((nStations, 2))
     if files:
-        f = open(str(m) + "-initialConfiguration.txt", 'w')
+        f = open('problems/citi_bike_mt/' + str(m) + "-initialConfiguration.txt", 'w')
         f.write("docks" + "," + "bickes" + "," + "ID" + "," + "total" + "," +
                 "bikes/total" + "," + "latitude" + "," + "longitude" +
                 "," + "streets")
@@ -239,24 +239,24 @@ if __name__ == '__main__':
     nStations = 329
     m = 4
     date = "2014-05"
-    fil = "2014-05PoissonParameters.txt"
+    fil = "problems/citi_bike_mt/2014-05PoissonParameters.txt"
     T = 4.0  ##the rate of the PP is per hour, so this is from 7:00 to 11:00
     A, lamb = generateSets(nSets, fil)
     N = np.zeros(nSets)
-    exponentialTimes = np.loadtxt(date + "ExponentialTimes.txt")
+    exponentialTimes = np.loadtxt('problems/citi_bike_mt/' + date + "ExponentialTimes.txt")
     for i in range(nSets):
         N[i] = SimulateNt(A[i], lamb[i], T)
 
-    exponentialTimes = np.loadtxt(date + "ExponentialTimes.txt")
+    exponentialTimes = np.loadtxt('problems/citi_bike_mt/' + date + "ExponentialTimes.txt")
 
-    with open('json.json') as data_file:
+    with open('problems/citi_bike_mt/json.json') as data_file:
         data = json.load(data_file)
 
-    f = open(str(m) + "-cluster.txt", 'r')
+    f = open('problems/citi_bike_mt/' + str(m) + "-cluster.txt", 'r')
     cluster = eval(f.read())
     f.close()
 
-    bikeData = np.loadtxt("bikesStationsOrdinalIDnumberDocks.txt", skiprows=1)
+    bikeData = np.loadtxt("problems/citi_bike_mt/bikesStationsOrdinalIDnumberDocks.txt", skiprows=1)
 
     print unhappyPeople(T, N, np.array([1500, 1500, 1500, 1500]), m, lamb, A, date,
                         exponentialTimes,

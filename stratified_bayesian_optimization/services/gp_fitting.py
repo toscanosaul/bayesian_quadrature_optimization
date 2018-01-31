@@ -58,6 +58,7 @@ class GPFittingService(object):
             'optimization_method': spec.get('method_optimization'),
             'n_samples_parameters': spec.get('n_samples_parameters', 0),
             'parallel_training': spec.get('parallel_training', True),
+            'simplex_domain': spec.get('simplex_domain', None)
         }
 
         return cls.get_gp(**entry)
@@ -122,7 +123,7 @@ class GPFittingService(object):
                n_samples=None, random_seed=DEFAULT_RANDOM_SEED, kernel_values=None, mean_value=None,
                var_noise_value=None, cache=True, same_correlation=False,
                use_only_training_points=True, optimization_method=None, n_samples_parameters=0,
-               parallel_training=True):
+               parallel_training=True, simplex_domain=None):
         """
         Fetch a GP model from file if it exists, otherwise train a new model and save it locally.
 
@@ -212,7 +213,8 @@ class GPFittingService(object):
                                                                   type_bounds=type_bounds,
                                                                   cache=cache,
                                                                   parallel=parallel_training,
-                                                                  gp_path_cache=gp_path_cache)
+                                                                  gp_path_cache=gp_path_cache,
+                                                                  simplex_domain=simplex_domain)
 
         logger.info("Training %s" % model_type.__name__)
 
@@ -222,7 +224,8 @@ class GPFittingService(object):
                                     type_bounds=type_bounds, training_name=training_name,
                                     problem_name=problem_name, kernel_values=kernel_values,
                                     mean_value=mean_value, var_noise_value=var_noise_value,
-                                    same_correlation=same_correlation)
+                                    same_correlation=same_correlation,
+                                    simplex_domain=simplex_domain)
 
         JSONFile.write(gp_model.serialize(), gp_path)
 

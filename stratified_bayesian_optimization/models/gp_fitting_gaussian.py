@@ -81,7 +81,7 @@ class GPFittingGaussian(object):
                  start_point_sampler=None, max_steps_out=1, data=None, random_seed=None,
                  type_bounds=None, training_name=None, problem_name=None,
                  name_model='gp_fitting_gaussian', samples_parameters=None, noise=False,
-                 **kernel_parameters):
+                 simplex_domain=None, **kernel_parameters):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL].
@@ -137,6 +137,7 @@ class GPFittingGaussian(object):
         self.type_kernel = type_kernel
 
         self.additional_kernel_parameters = kernel_parameters
+        self.simplex_domain = simplex_domain
 
         self.class_kernel = get_kernel_class(type_kernel[0])
         self.bounds = bounds_domain
@@ -1017,7 +1018,7 @@ class GPFittingGaussian(object):
     def train(cls, type_kernel, dimensions, mle, training_data, bounds_domain, thinning=0,
               n_burning=0, max_steps_out=1, random_seed=None, type_bounds=None, training_name=None,
               problem_name=None, kernel_values=None, mean_value=None, var_noise_value=None,
-              same_correlation=False):
+              same_correlation=False, simplex_domain=None):
         """
         :param type_kernel: [(str)] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
@@ -1054,7 +1055,8 @@ class GPFittingGaussian(object):
                      thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out,
                      type_bounds=type_bounds, random_seed=random_seed, training_name=training_name,
                      problem_name=problem_name, kernel_values=kernel_values, mean_value=mean_value,
-                     var_noise_value=var_noise_value, **{SAME_CORRELATION: same_correlation})
+                     var_noise_value=var_noise_value, simplex_domain=simplex_domain,
+                     **{SAME_CORRELATION: same_correlation})
 
             return gp.fit_gp_regression()
 
@@ -1062,7 +1064,8 @@ class GPFittingGaussian(object):
                    thinning=thinning, n_burning=n_burning, max_steps_out=max_steps_out,
                    type_bounds=type_bounds, random_seed=random_seed, training_name=training_name,
                    problem_name=problem_name, kernel_values=kernel_values, mean_value=mean_value,
-                   var_noise_value=var_noise_value, **{SAME_CORRELATION: same_correlation})
+                   var_noise_value=var_noise_value, simplex_domain=simplex_domain,
+                   **{SAME_CORRELATION: same_correlation})
 
     def evaluate_cross_cov(self, points_1, points_2, parameters_kernel):
         """

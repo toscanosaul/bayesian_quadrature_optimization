@@ -2,6 +2,8 @@ import ujson
 
 from scipy.stats import gamma
 import numpy as np
+from scipy.stats import poisson
+import json
 
 from stratified_bayesian_optimization.services.spec import SpecService
 from stratified_bayesian_optimization.lib.constant import (
@@ -23,6 +25,7 @@ from stratified_bayesian_optimization.lib.constant import (
 )
 
 if __name__ == '__main__':
+    simplex_domain = None
     # usage: python -m scripts.generate_multiple_spec > data/multiple_specs/multiple_test_spec.json
 
     # script used to generate spec file to run BGO
@@ -536,19 +539,122 @@ if __name__ == '__main__':
 
     #multi_task branin
 
-    dim_x = [2]
-    bounds_domain_x = [[(0, 1), (0, 1)]]
-    problem_name = ['branin_mt']
+    # dim_x = [2]
+    # bounds_domain_x = [[(0, 1), (0, 1)]]
+    # problem_name = ['branin_mt']
+    # training_name = [None]
+    # type_kernel = [[PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]]
+    # dimensions = [[3, 2, 12]]
+    # bounds_domain = [[[0, 1], [0, 1], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]]
+    # n_training = [12]
+    # random_seed = range(1, 501)
+    # n_specs = len(random_seed)
+    # type_bounds = [[0, 0, 1]]
+    # x_domain = [[0, 1]]
+    # number_points_each_dimension = [[6, 6]]
+    # mle = [False]
+    # distribution = [WEIGHTED_UNIFORM_FINITE]
+    # parallel = [True]
+    # thinning = [10]
+    # n_burning = [500]
+    # max_steps_out = [1000]
+    # n_iterations = [46]
+    # same_correlation = [True]
+    # debug = [False]
+    # number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
+    # monte_carlo_sbo = [True]
+    # n_samples_mc = [5]
+    # n_restarts_mc = [5]
+    # n_best_restarts_mc = [0]
+    # factr_mc = [1e12]
+    # maxiter_mc = [10]
+    # n_restarts = [100]
+    # n_best_restarts = [10]
+    # use_only_training_points = [True]
+    # method_optimization = [MULTI_TASK_METHOD]
+    # n_samples_parameters = [5]
+    # n_restarts_mean = [100]
+    # n_best_restarts_mean = [10]
+    # method_opt_mc = [LBFGS_NAME]
+    # maxepoch = [50]
+    # n_samples_parameters_mean = [5]
+    # maxepoch_mean = [50]
+    # threshold_sbo = [0.001]
+    # parallel_training = [False]
+    # noises = [False]
+    # n_sampless = [0]
+    # domain_random = [[0], [1], [2],[3],[4],[5],[6],[7],[8],[9],[10],[11]]
+    # parameters_distributions = [{'weights': [0.0375, 0.0875, 0.0875, 0.0375, 0.0750, 0.1750,
+    #                                          0.1750, 0.0750, 0.0375, 0.0875, 0.0875, 0.0375],
+    #                              'domain_random': domain_random}]
+    #
+    # optimize_only_posterior_means = [False]
+    # start_optimize_posterior_means = [0]
+
+
+    ##citibike_mt
+    ############################### Parameters needed
+    TimeHours = 4.0
+    numberBikes = 6000
+
+    fil = "problems/citi_bike_mt/2014-05PoissonParameters.txt"
+    nSets = 4
+    from problems.citi_bike_mt.simulationPoissonProcess import generateSets
+    A, lamb = generateSets(nSets, fil)
+
+    n1 = 4
+    n2 = 4
+    parameterSetsPoisson = np.zeros(n2)
+    for j in range(n2):
+        parameterSetsPoisson[j] = np.sum(lamb[j])
+
+    exponentialTimes = np.loadtxt("problems/citi_bike_mt/2014-05" + "ExponentialTimes.txt")
+    with open('problems/citi_bike_mt/json.json') as data_file:
+        data = json.load(data_file)
+
+    f = open('problems/citi_bike_mt/'+str(4) + "-cluster.txt", 'r')
+    cluster = eval(f.read())
+    f.close()
+
+    bikeData = np.loadtxt("problems/citi_bike_mt/bikesStationsOrdinalIDnumberDocks.txt", skiprows=1)
+
+    range_for_w = []
+    number_points_dimension = []
+    for i in range(n2):
+        upper = poisson.ppf(0.52, parameterSetsPoisson[i])
+        lower = poisson.ppf(0.48, parameterSetsPoisson[i])
+        range_for_w.append(range(int(lower), int(upper) + 1))
+        number_points_dimension.append(int(upper) + 1 - int(lower))
+    seq_tasks = np.cumprod(number_points_dimension)
+    number_tasks = seq_tasks[-1]
+    n_tasks=seq_tasks[-1]
+
+    weights = []
+    for i in range_for_w[3]:
+        for j in range_for_w[2]:
+            for k in range_for_w[1]:
+                for t in range_for_w[0]:
+                    weight = 1.0
+                    z = [t, k, j, i]
+                    for l in range(4):
+                        weight *= poisson.pmf(z[l], parameterSetsPoisson[l])
+                    weights.append(weight)
+    ###################
+    dim_x = [3]
+    bounds_domain_x = [[(0, numberBikes), (0, numberBikes), (0, numberBikes)]]
+    simplex_domain = [numberBikes]
+
+    problem_name = ['citi_bike_mt']
     training_name = [None]
     type_kernel = [[PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]]
-    dimensions = [[3, 2, 12]]
-    bounds_domain = [[[0, 1], [0, 1], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]]
-    n_training = [12]
+    dimensions = [[4, 3, n_tasks]]
+    bounds_domain = [[[0, numberBikes], [0, numberBikes], [0, numberBikes], range(n_tasks)]]
+    n_training = [50]
     random_seed = range(1, 501)
     n_specs = len(random_seed)
-    type_bounds = [[0, 0, 1]]
-    x_domain = [[0, 1]]
-    number_points_each_dimension = [[6, 6]]
+    type_bounds = [[0, 0, 0, 1]]
+    x_domain = [[0, 1, 2]]
+    number_points_each_dimension = [[6, 6, 6]]
     mle = [False]
     distribution = [WEIGHTED_UNIFORM_FINITE]
     parallel = [True]
@@ -578,15 +684,15 @@ if __name__ == '__main__':
     maxepoch_mean = [50]
     threshold_sbo = [0.001]
     parallel_training = [False]
-    noises = [False]
-    n_sampless = [0]
-    domain_random = [[0], [1], [2],[3],[4],[5],[6],[7],[8],[9],[10],[11]]
-    parameters_distributions = [{'weights': [0.0375, 0.0875, 0.0875, 0.0375, 0.0750, 0.1750,
-                                             0.1750, 0.0750, 0.0375, 0.0875, 0.0875, 0.0375],
+    n_sampless = [5]
+    domain_random = [[i] for i in range(n_tasks)]
+    parameters_distributions = [{'weights': weights,
                                  'domain_random': domain_random}]
 
     optimize_only_posterior_means = [False]
     start_optimize_posterior_means = [0]
+    noises = [True]
+
 
 
     ##mnist-kg
@@ -661,6 +767,7 @@ if __name__ == '__main__':
         n_sampless=n_sampless, parameters_distributions=parameters_distributions,
         optimize_only_posterior_means=optimize_only_posterior_means,
         start_optimize_posterior_means=start_optimize_posterior_means,
+        simplex_domain=simplex_domain
     )
 
     print ujson.dumps(specs, indent=4)

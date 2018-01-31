@@ -56,7 +56,7 @@ class TrainingDataService(object):
     def get_training_data(cls, problem_name, training_name, bounds_domain, n_training=5,
                           points=None, noise=False, n_samples=None,
                           random_seed=DEFAULT_RANDOM_SEED, parallel=True, type_bounds=None,
-                          cache=True, gp_path_cache=None):
+                          cache=True, gp_path_cache=None, simplex_domain=None):
         """
 
         :param problem_name: str
@@ -114,7 +114,7 @@ class TrainingDataService(object):
 
         if points is None or len(points) == 0:
             points = cls.get_points_domain(n_training, bounds_domain, random_seed, training_name,
-                                           problem_name, type_bounds)
+                                           problem_name, type_bounds, simplex_domain=simplex_domain)
 
         name_module = cls.get_name_module(problem_name)
         module = __import__(name_module, globals(), locals(), -1)
@@ -158,7 +158,7 @@ class TrainingDataService(object):
 
     @classmethod
     def get_points_domain(cls, n_training, bounds_domain, random_seed, training_name, problem_name,
-                          type_bounds=None):
+                          type_bounds=None, simplex_domain=None):
         """
         Get random points in the domain.
 
@@ -188,7 +188,8 @@ class TrainingDataService(object):
         if points is not None:
             return points
         points = DomainService.get_points_domain(n_training, bounds_domain, type_bounds=type_bounds,
-                                                 random_seed=random_seed)
+                                                 random_seed=random_seed,
+                                                 simplex_domain=simplex_domain)
 
         JSONFile.write(points, training_path)
 

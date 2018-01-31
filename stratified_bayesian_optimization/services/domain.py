@@ -90,7 +90,8 @@ class DomainService(object):
         return DomainEntity(entry)
 
     @classmethod
-    def get_points_domain(cls, n_samples, bounds_domain, type_bounds=None, random_seed=None):
+    def get_points_domain(cls, n_samples, bounds_domain, type_bounds=None, random_seed=None,
+                          simplex_domain=None):
         """
         Returns a list with points in the domain
         :param n_samples: int
@@ -111,12 +112,29 @@ class DomainService(object):
 
         points = []
 
-        for j in xrange(len(bounds_domain)):
+        if simplex_domain is not None:
+            dim_domain = len(bounds_domain) - 1
+            # Only works assuming that the domain is over the integers
+            #TODO: This is only for the citibike problem. We should add 500 as a parameter, and other considerations
+            points = (simplex_domain / float(dim_domain)) * np.ones((1, dim_domain))
+            if n_samples > 1:
+                temp = np.random.dirichlet(np.ones(dim_domain+1), n_samples - 1)
+                temp = (simplex_domain - 500.0 * (dim_domain+1)) * temp + 500.0
+                temp = temp[:, 0:dim_domain]
+                temp = np.floor(temp)
+                points = np.concatenate((points, temp), 0)
+            entry = cls.get_point_one_dimension_domain(n_samples, bounds_domain[-1],
+                                                       type_bounds=type_bounds[-1])
+            points = [list(points[i, :]) + [entry[i]] for i in range(n_samples)]
+
+            return points
+
+        for j in range(len(bounds_domain)):
             entry = cls.get_point_one_dimension_domain(n_samples, bounds_domain[j],
                                                        type_bounds=type_bounds[j])
             points.append(entry)
 
-        return [[point[j] for point in points] for j in xrange(n_samples)]
+        return [[point[j] for point in points] for j in range(n_samples)]
 
     @classmethod
     def get_point_one_dimension_domain(cls, n_samples, bounds, type_bounds=0):

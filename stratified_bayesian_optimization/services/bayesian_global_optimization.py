@@ -54,6 +54,8 @@ class BGO(object):
         logger.info(method_optimization)
 
         gp_model = GPFittingService.from_dict(spec)
+
+        simplex_domain = spec.get('simplex_domain', None)
         noise = spec.get('noise')
         quadrature = None
         acquisition_function = None
@@ -101,6 +103,7 @@ class BGO(object):
         n_samples_parameters = spec.get('n_samples_parameters', 0)
         use_only_training_points = spec.get('use_only_training_points', True)
 
+
         n_iterations = n_iterations - (len(gp_model.training_data['evaluations']) - n_training)
 
         bgo = cls(acquisition_function, gp_model, n_iterations, problem_name, training_name,
@@ -138,7 +141,6 @@ class BGO(object):
         self.acquisition_function.args_handler = (True, name_model, problem_name, kernel_name,
                                                   training_name, n_training, random_seed,
                                                   n_samples_parameters)
-
         self.acquisition_function.clean_cache()
         self.gp_model = gp_model
 

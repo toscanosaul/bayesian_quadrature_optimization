@@ -120,7 +120,6 @@ class SliceSampling(object):
             return True
 
         while (U - L) > 1.1 * self.sigma:
-
             old_U = U
             old_L = L
 
@@ -232,7 +231,6 @@ class SliceSampling(object):
             new_z = (upper - lower) * npr.rand() + lower
             new_llh = self.directional_log_prob(new_z, direction, point, fixed_parameters,
                                                 *args_log_prob)
-
             if np.isnan(new_llh):
                 raise Exception("Slice sampler got a NaN")
 

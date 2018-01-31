@@ -117,6 +117,7 @@ class BayesianQuadrature(object):
         :param tasks (boolean)
         """
         self.gp = gp_model
+        self.simplex_domain = self.gp.simplex_domain
         self.name_model = BAYESIAN_QUADRATURE
         if parameters_distribution == {}:
             parameters_distribution = None
@@ -747,8 +748,9 @@ class BayesianQuadrature(object):
             index_cache = 'mc_mean'
 
         if start is None:
-            start_points = DomainService.get_points_domain(n_restarts + 1, bounds_x,
-                                                        type_bounds=len(self.x_domain) * [0])
+            start_points = DomainService.get_points_domain(
+                n_restarts + 1, bounds_x, type_bounds=len(self.x_domain) * [0],
+                simplex_domain=self.simplex_domain)
             if index_cache in self.optimal_solutions and \
                             len(self.optimal_solutions[index_cache]) > 0:
                 start = self.optimal_solutions[index_cache][-1]['solution']
@@ -821,7 +823,7 @@ class BayesianQuadrature(object):
                 wrapper_evaluate_gradient_sample_params_bq,
                 minimize=False,
                 full_gradient=grad_function,
-                args=args_, debug=True,
+                args=args_, debug=True, simplex_domain=self.simplex_domain,
                 **{'maxepoch': maxepoch}
             )
 

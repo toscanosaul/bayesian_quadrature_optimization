@@ -22,7 +22,8 @@ class Optimization(object):
     _hessian_methods = [NEWTON_CG_NAME, TRUST_N_CG, DOGLEG]
 
     def __init__(self, optimizer_name, function, bounds, grad, hessian=None, minimize=True,
-                 full_gradient=None, debug=True, args=None, tol=None, **kwargs):
+                 full_gradient=None, debug=True, args=None, tol=None, simplex_domain=None,
+                 **kwargs):
         """
         Class used to minimize function.
 
@@ -54,6 +55,7 @@ class Optimization(object):
         self.full_gradient = full_gradient
         self.hessian = hessian
         self.tol = tol
+        self.simplex_domain = simplex_domain
 
 
     @staticmethod
@@ -167,6 +169,7 @@ class Optimization(object):
             args=args,
             kwargs=kwargs,
             bounds=self.bounds,
+            simplex_domain=self.simplex_domain,
             **self.optimization_options
         )
 

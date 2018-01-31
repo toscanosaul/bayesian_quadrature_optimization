@@ -44,6 +44,8 @@ class RunSpecEntity(Model):
     random_seed = IntType(required=True)
     parallel = BooleanType(required=False)
 
+    simplex_domain = IntType(required=False)
+
     name_model = StringType(required=False)
     type_kernel = ListType(StringType, required=True)
     dimensions = ListType(IntType, required=True)
@@ -351,6 +353,8 @@ class MultipleSpecEntity(Model):
     optimize_only_posterior_means = ListType(BooleanType, required=False)
     start_optimize_posterior_means = ListType(IntType, required=False)
 
+    simplex_domain = ListType(FloatType, required=False)
+
     # TODO - Complete all the other needed params
 
     @classmethod
@@ -392,6 +396,7 @@ class MultipleSpecEntity(Model):
 
         training_names = spec.get('training_names')
         bounds_domains = spec.get('bounds_domains')
+        simplex_domain = spec.get('simplex_domain', n_specs * [None])
         n_trainings = spec.get('n_trainings', n_specs * [10])
 
         optimize_only_posterior_means = spec.get('optimize_only_posterior_means', n_specs * [False])
@@ -518,6 +523,7 @@ class MultipleSpecEntity(Model):
             'parallel_trainings': parallel_trainings,
             'optimize_only_posterior_means': optimize_only_posterior_means,
             'start_optimize_posterior_means': start_optimize_posterior_means,
+            'simplex_domain': simplex_domain,
         })
 
         return cls(entry)

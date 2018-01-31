@@ -10,7 +10,7 @@ logger = SBOLog(__name__)
 
 
 def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, momentum=0.9,
-        maxepoch=250, adam=True, betas=None, eps=1e-8):
+        maxepoch=250, adam=True, betas=None, eps=1e-8, simplex_domain=None):
     """
     SGD to minimize sum(i=0 -> n) (1/n) * f(x). Batch sizes are of size 1.
     ADAM: https://arxiv.org/pdf/1412.6980.pdf
@@ -27,7 +27,7 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
     """
 
     project = False
-    if bounds is not None:
+    if bounds is not None or simplex_domain is not None:
         project = True
 
     if betas is None:
@@ -95,6 +95,9 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
                 if bound[1] is not None and point[dim] > bound[1]:
                     in_domain = False
                     break
+                if simplex_domain is not None:
+                    if np.sum(point) > simplex_domain:
+                        in_domain = False
 
         if project and not in_domain:
             for dim, bound in enumerate(bounds):
@@ -102,7 +105,11 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
                     point[dim] = max(bound[0], point[dim])
                 if bound[1] is not None:
                     point[dim] = min(bound[1], point[dim])
-                if not adam:
+            if simplex_domain is not None:
+                if np.sum(point) > simplex_domain:
+                    point = simplex_domain * (point / np.sum(point))
+            if not adam:
+                for dim, bound in enumerate(bounds):
                     v[dim] = (point[dim] - old_p[dim]) / learning_rate
 
         den_norm = (np.sqrt(np.sum(previous ** 2)))

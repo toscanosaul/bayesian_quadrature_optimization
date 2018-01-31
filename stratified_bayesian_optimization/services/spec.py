@@ -237,7 +237,8 @@ class SpecService(object):
             n_samples_parameterss=None, n_restarts_means=None, n_best_restarts_means=None,
             method_opt_mcs=None, maxepochs=None, n_samples_parameters_means=None,
             maxepoch_means=None, threshold_sbos=None, parallel_trainings=None,
-            optimize_only_posterior_means=None, start_optimize_posterior_means=None):
+            optimize_only_posterior_means=None, start_optimize_posterior_means=None,
+            simplex_domain=None):
 
         """
         Generate dict that represents multiple run specs
@@ -290,6 +291,10 @@ class SpecService(object):
 
         :return: dict
         """
+
+        if simplex_domain is None:
+            simplex_domain = [None]
+
         if optimize_only_posterior_means is None:
             optimize_only_posterior_means = [False]
 
@@ -452,6 +457,9 @@ class SpecService(object):
 
         if len(number_points_each_dimensions) != n_specs:
             number_points_each_dimensions = n_specs * number_points_each_dimensions
+
+        if len(simplex_domain) != n_specs:
+            simplex_domain = n_specs * simplex_domain
 
         if number_points_each_dimension_debugs is None:
             number_points_each_dimension_debugs = []
@@ -663,6 +671,7 @@ class SpecService(object):
             'parallel_trainings': parallel_trainings,
             'optimize_only_posterior_means': optimize_only_posterior_means,
             'start_optimize_posterior_means': start_optimize_posterior_means,
+            'simplex_domain': simplex_domain,
         }
 
     @classmethod
@@ -756,9 +765,12 @@ class SpecService(object):
         optimize_only_posterior_mean = multiple_spec.get('optimize_only_posterior_means')[n_spec]
         start_optimize_posterior_mean = multiple_spec.get('start_optimize_posterior_means')[n_spec]
 
+        simplex_domain = multiple_spec.get('simplex_domain')[n_spec]
+
         entry = {}
 
         entry.update({
+            'simplex_domain': simplex_domain,
             'problem_name': problem_names,
             'dim_x': dim_xs,
             'optimize_only_posterior_mean': optimize_only_posterior_mean,

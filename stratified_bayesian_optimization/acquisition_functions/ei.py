@@ -67,6 +67,7 @@ class EI(object):
 
         self.bounds_opt = deepcopy(self.gp.bounds)
 
+        self.simplex_domain = self.gp.simplex_domain
         if self.gp.separate_tasks and not self.gp.model_only_x and \
                         self.gp.name_model == BAYESIAN_QUADRATURE:
             self.bounds_opt.append([None, None])
@@ -216,18 +217,20 @@ class EI(object):
                 task_chosen = np.zeros((n_restarts, 1))
                 n_task_per_group = n_restarts / n_tasks
 
-                for i in xrange(n_tasks):
-                    for j in xrange(n_task_per_group):
+                for i in range(n_tasks):
+                    for j in range(n_task_per_group):
                         tk = ind[j + i * n_task_per_group]
                         task_chosen[tk, 0] = i
 
                 start_points = DomainService.get_points_domain(
-                    n_restarts, bounds, type_bounds=self.gp.type_bounds)
+                    n_restarts, bounds, type_bounds=self.gp.type_bounds,
+                    simplex_domain=self.simplex_domain)
 
                 start_points = np.concatenate((start_points, task_chosen), axis=1)
             else:
                 start_points = DomainService.get_points_domain(
-                    n_restarts, bounds, type_bounds=self.gp.type_bounds)
+                    n_restarts, bounds, type_bounds=self.gp.type_bounds,
+                    simplex_domain=self.simplex_domain)
 
             start = np.array(start_points)
 
@@ -282,7 +285,7 @@ class EI(object):
                 wrapper_evaluate_gradient_ei_sample_params,
                 minimize=False,
                 full_gradient=grad_function,
-                args=args_, debug=True,
+                args=args_, debug=True, simplex_domain=self.simplex_domain,
                 **{'maxepoch': maxepoch}
             )
 

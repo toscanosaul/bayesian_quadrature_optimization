@@ -40,7 +40,6 @@ def uniform_finite(f, point, index_points, domain_random, index_random, weights=
         if weights is not None:
             weights = weights.reshape((1, len(weights)))
             weights = np.dot(weights.transpose(), weights)
-
         return np.average(values, weights=weights)
 
     values = f(new_points)
