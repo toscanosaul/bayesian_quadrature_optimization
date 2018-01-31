@@ -164,12 +164,12 @@ def startInitialConfiguration (X,m,data,cluster,bikeData,files=False):
             tempA=A[indx2[index2],0]
             A[indx2[index2],1]+=tempA
             A[indx2[index2],0]-=tempA #docks
-            A[indx2[index3],1]+=setBikes
-            A[indx2[index3],0]-=setBikes
+            A[indx2[index3.astype(int)],1]+=setBikes
+            A[indx2[index3.astype(int)],0]-=setBikes
             
             res2=np.sum(-A[indx2[index2],1]+setBikes)
             resT=(resT%nElm)+res2
-            indx=np.where(A[inds,0]>0)[0]
+            indx=np.where(A[inds.astype(int),0]>0)[0]
             indx2=inds[indx]
             nElm=len(indx)
      #   print A
