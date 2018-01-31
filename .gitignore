@@ -5,7 +5,7 @@
 
 #Java
 *.class
-
+citibike_mt.json
 log/
 tmp/
 /out/

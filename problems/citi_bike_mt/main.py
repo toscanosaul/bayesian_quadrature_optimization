@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import numpy as np
 import os
 
-from problems.citi_bike_mt.simulationPoissonProcessNonHomogeneous import *
+from problems.citi_bike_mt.simulationPoissonProcessNonHomogeneous_2 import *
 
 n1=4
 n2=1
@@ -118,6 +118,8 @@ def simulatorW(n, ind=False):
 
 import multiprocessing as mp
 
+g=unhappyPeople
+
 def g2(x,w,day,i):
     return g(TimeHours,w,x,nSets,
                          data,cluster,bikeData,poissonParameters,nDays,
@@ -130,7 +132,11 @@ def integrate_toy_example(x):
           x
           N: number of samples used to estimate g(x)
     """
+    x = [int(i) for i in x]
+    x.append(numberBikes - np.sum(x))
+    x = np.array(x)
     N = 1000
+    N=1
     estimator = N
     W, indexes = simulatorW(estimator, True)
     result = np.zeros(estimator)
