@@ -113,7 +113,10 @@ class DomainService(object):
         points = []
 
         if simplex_domain is not None:
-            dim_domain = len(bounds_domain) - 1
+            if type_bounds[-1] == 1:
+                dim_domain = len(bounds_domain) - 1
+            else:
+                dim_domain = len(bounds_domain)
             # Only works assuming that the domain is over the integers
             #TODO: This is only for the citibike problem. We should add 500 as a parameter, and other considerations
             points = (simplex_domain / float(dim_domain)) * np.ones((1, dim_domain))
@@ -123,9 +126,13 @@ class DomainService(object):
                 temp = temp[:, 0:dim_domain]
                 temp = np.floor(temp)
                 points = np.concatenate((points, temp), 0)
-            entry = cls.get_point_one_dimension_domain(n_samples, bounds_domain[-1],
-                                                       type_bounds=type_bounds[-1])
-            points = [list(points[i, :]) + [entry[i]] for i in range(n_samples)]
+
+            if type_bounds[-1] == 1:
+                entry = cls.get_point_one_dimension_domain(n_samples, bounds_domain[-1],
+                                                           type_bounds=type_bounds[-1])
+                points = [list(points[i, :]) + [entry[i]] for i in range(n_samples)]
+            else:
+                points = [list(points[i, :]) for i in range(n_samples)]
 
             return points
 
