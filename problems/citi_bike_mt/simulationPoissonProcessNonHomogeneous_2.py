@@ -235,7 +235,7 @@ def unhappyPeople (T,N,X,m,data,cluster,bikeData,parLambda,nDays,A,poissonArray,
     nExp=len(exponentialTimes[0,:])
     for i in range(nExp):
         exponentialTimes2[int(exponentialTimes[1,i]),int(exponentialTimes[2,i])]=exponentialTimes[0,i]
-    poissonParam=poissonArray[ind]
+    poissonParam=poissonArray[int(ind)]
 
     unHappy=0
     state=startInitialConfiguration(X,m,data,cluster,bikeData,nDays)
