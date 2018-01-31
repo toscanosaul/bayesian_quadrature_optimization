@@ -113,19 +113,27 @@ class DomainService(object):
         points = []
 
         if simplex_domain is not None:
+
+
             if type_bounds[-1] == 1:
                 dim_domain = len(bounds_domain) - 1
             else:
                 dim_domain = len(bounds_domain)
             # Only works assuming that the domain is over the integers
-            #TODO: This is only for the citibike problem. We should add 500 as a parameter, and other considerations
-            points = (simplex_domain / float(dim_domain)) * np.ones((1, dim_domain))
-            if n_samples > 1:
-                temp = np.random.dirichlet(np.ones(dim_domain+1), n_samples - 1)
-                temp = (simplex_domain - 500.0 * (dim_domain+1)) * temp + 500.0
-                temp = temp[:, 0:dim_domain]
-                temp = np.floor(temp)
-                points = np.concatenate((points, temp), 0)
+            #TODO: This is only for the citibike problem. We should add 100 as a parameter, and other considerations
+            lower = 100
+            s = np.random.uniform(0, 1, (n_samples, 4))
+            s[:, 0] = s[:, 0] * bounds_domain[0] + (1 - s[:, 0]) * lower
+            s[:, 0] = np.floor(s[:, 0])
+
+            for j in range(n_samples):
+                s[j, 1] = s[j, 1] * min(bounds_domain[1], simplex_domain - 2 * lower - s[j, 0]) + (1 - s[
+                    j, 1]) * lower
+                s[j, 1] = np.floor(s[j, 1])
+                s[j, 2] = s[j, 2] * min(simplex_domain - s[j, 0] - s[j, 1] - lower, bounds_domain[2]) + (1 - s[
+                    j, 2]) * max(simplex_domain - s[j, 0] - s[j, 1] - 3717, lower)
+                s[j, 2] = np.floor(s[j, 2])
+                s[j, 3] = simplex_domain - np.sum(s[j, 0:3])
 
             if type_bounds[-1] == 1:
                 entry = cls.get_point_one_dimension_domain(n_samples, bounds_domain[-1],

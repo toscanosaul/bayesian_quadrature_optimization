@@ -125,7 +125,7 @@ def g2(x,w,day,i):
                          data,cluster,bikeData,poissonParameters,nDays,
 			 Avertices,poissonArray,exponentialTimes,day,i)
 
-def integrate_toy_example(x):
+def integrate_toy_example(x, N=1000):
     """Estimate g(x)=E(f(x,w,z))
 
        Args:
@@ -135,7 +135,6 @@ def integrate_toy_example(x):
     x = [int(i) for i in x]
     x.append(numberBikes - np.sum(x))
     x = np.array(x)
-    N = 1000
     estimator = N
     W, indexes = simulatorW(estimator, True)
     result = np.zeros(estimator)
