@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     if spec_1.get('random_seeds') is None:
         spec_1['random_seeds'] = 3 * [1]
-        
+
     rs_1 = len(spec_1['random_seeds'])
     rs_2 = len(spec_2['random_seeds'])
 
