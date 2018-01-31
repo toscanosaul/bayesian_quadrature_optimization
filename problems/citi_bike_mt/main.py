@@ -84,13 +84,13 @@ def toy_example(n_samples, x):
 
     return [np.mean(simulations), float(np.var(simulations))/float(n_samples)]
 
-def integrate_toy_example(x, N=100):
+def integrate_toy_example(x):
     """
 
     :param x: [float, float]
     :return: [float]
     """
-
+    N=100
     x = [int(i) for i in x]
     x.append(numberBikes - np.sum(x))
     x = np.array(x)
@@ -109,6 +109,6 @@ def main(*params):
 #    print 'Anything printed here will end up in the output directory for job #:', str(2)
     return toy_example(*params)
 
-def main_objective(*params):
+def main_objective(n_samples, *params):
     # Integrate out the task parameter
     return integrate_toy_example(*params)
