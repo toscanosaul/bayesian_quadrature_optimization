@@ -73,9 +73,7 @@ def toy_example(n_samples, x):
     ind = None
     simulations = np.zeros(n_samples)
     # w is between 650 and 8900
-    w = [int(x[-1])]
-    w += 650
-
+    w = [int(x[-1]) + 650]
 
     x = x[0: -1]
     x = [int(i) for i in x]
