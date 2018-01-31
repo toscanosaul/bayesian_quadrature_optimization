@@ -226,7 +226,7 @@ def unhappyPeople (T,N,X,m,data,cluster,bikeData,parLambda,nDays,A,poissonArray,
     if ind is None:
         probs=poisson.pmf(int(N[0]),mu=np.array(parLambda))
         probs=probs/np.sum(probs)
-        ind=randst.choice(range(nDays),size=1,p=probs)
+        ind=int(randst.choice(range(nDays),size=1,p=probs))
         
     exponentialTimes=timesArray[ind][0]
     exponentialTimes2=np.zeros((nStations,nStations))
