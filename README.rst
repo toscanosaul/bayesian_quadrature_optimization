@@ -1,5 +1,5 @@
 ========================================
-stratified_bayesian_optimization
+integrated_bayesian_optimization
 ========================================
 
 * Documentation:
