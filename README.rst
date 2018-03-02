@@ -1,8 +1,7 @@
 ========================================
 Bayesian Quadrature Optimization
 ========================================
-
-
+Bayesian Quadrature Optimization is a software package to perform Bayesian optimization. In particular, it includes the algorithm Bayesian Quadrature Optimization from the paper 'Bayesian Optimization with Expensive Integrands' by Saul Toscano-Palmerin and Peter Frazier. 
 
 * Documentation:
 
