@@ -1,16 +1,18 @@
 ========================================
-integrated_bayesian_optimization
+Bayesian Quadrature Optimization
 ========================================
+
+
 
 * Documentation:
 
 Features
 --------
 
-* Run SBO locally:
+* Run BQO locally:
 
 ```
-python -m
+python -m 
 ```
 
 Installation
