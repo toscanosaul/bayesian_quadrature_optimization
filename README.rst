@@ -37,6 +37,8 @@ Documentation
 
 8) n_iterations is the number of points chosen by the BO method.
 
+* Optional Arguments:
+
 9) (Optional) (int) random_seed to run the BO method.
 
 10) (Optional) (int) n_training is the number of training points for the BO method.
