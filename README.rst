@@ -43,10 +43,16 @@ Documentation
 
 11) (Optional) Define problem_name as a string. If None, problem_name='user_problem'
 
+12) (Optional) (int) n_restarts, Number of starting points to optimize the acquisition function. Default is 10.
+
+13) (Optional) (int) n_restarts_mean, Number of starting points to optimize the posterior mean. Default is 100.
+
+14) (Optional) (int) n_best_restarts_mean,  Number of best starting points chosen from the n_restart points. Default is 10.
+
 12) sol = bgo(
     g, bounds_domain_x, integrand_function=f, bounds_domain_w=bounds_domain_w, type_bounds=type_bounds,
     name_method=name_method, n_iterations=n_iterations, random_seed=random_seed, n_training=n_training, 
-    problem_name=problem_name)
+    problem_name=problem_name, n_restarts=n_restarts, n_restarts_mean=n_restarts_mean, n_best_restarts_mean=n_best_restarts_mean)
 
 13) The output sol is a dictionary. The entry 'optimal_solution' contains the solution given by the BO algorithm, and 'optimal_value' is the objective function evaluated at the 'optimal_solution'.
    
