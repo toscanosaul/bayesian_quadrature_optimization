@@ -53,6 +53,5 @@ Documentation
 * Files generated:
  
  1) The training data is written in problems/problem_name/data
- 2) The Guassian process model is written as a json file in data/gp_models/problem_name. The entry 'data' contains all the training data
-  plus the points that have been chosen by the Bayesian optimization algorithm.
+ 2) The Guassian process model is written as a json file in data/gp_models/problem_name. The entry 'data' contains all the training data plus the points that have been chosen by the Bayesian optimization algorithm.
  3) The results of the algorithm are written in problems/problem_name/partial_results
