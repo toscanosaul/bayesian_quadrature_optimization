@@ -49,10 +49,21 @@ Documentation
 
 14) (Optional) (int) n_best_restarts_mean,  Number of best starting points chosen from the n_restart points. Default is 10.
 
+15) (Optional) (int) maxepoch: Maximum number of iterations of the SGD when optimizing the acquisition function. Default is 50.
+
+16) (Optional) (int) maxepoch_mean: Maxepoch for the optimization of the posterior mean. Default is 50.
+
+17) (Optional) (int) n_burning: Number of burnings samples for slice sampling. Default is 500.
+
+18) (Optional) (int) thinning: Thinning parameter for slice sampling to obtain a sample of hyperparameters. Default is 50.
+
+18) (Optional) (int) thinning
+
 15) sol = bgo(
     g, bounds_domain_x, integrand_function=f, bounds_domain_w=bounds_domain_w, type_bounds=type_bounds,
     name_method=name_method, n_iterations=n_iterations, random_seed=random_seed, n_training=n_training, 
-    problem_name=problem_name, n_restarts=n_restarts, n_restarts_mean=n_restarts_mean, n_best_restarts_mean=n_best_restarts_mean)
+    problem_name=problem_name, n_restarts=n_restarts, n_restarts_mean=n_restarts_mean, n_best_restarts_mean=n_best_restarts_mean,
+    maxepoch=maxepoch, maxepoch_mean=maxepoch_mean, n_burning=n_burning, thinning=thinning)
 
 16) The output sol is a dictionary. The entry 'optimal_solution' contains the solution given by the BO algorithm, and 'optimal_value' is the objective function evaluated at the 'optimal_solution'.
    
