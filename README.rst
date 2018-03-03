@@ -59,7 +59,7 @@ Documentation
 
 18) (Optional) (int) thinning: Thinning parameter for slice sampling to obtain a sample of hyperparameters. Default is 50.
 
-* Run BGO:
+* Run BQO:
 
 19) sol = bgo(
     g, bounds_domain_x, integrand_function=f, bounds_domain_w=bounds_domain_w, type_bounds=type_bounds,
