@@ -73,11 +73,14 @@ The algorithms implemented maximize the objective function.
 
 * Run BQO:
 
-25) sol = bgo(
+25) 
+```
+sol = bgo(
     g, bounds_domain_x, integrand_function=f, bounds_domain_w=bounds_domain_w, type_bounds=type_bounds,
     name_method=name_method, n_iterations=n_iterations, random_seed=random_seed, n_training=n_training, 
     problem_name=problem_name, n_restarts=n_restarts, n_restarts_mean=n_restarts_mean, n_best_restarts_mean=n_best_restarts_mean,
     maxepoch=maxepoch, maxepoch_mean=maxepoch_mean, n_burning=n_burning, thinning=thinning, default_n_samples_parameters=default_n_samples_parameters, default_n_samples=default_n_samples, distribution=distribution, parameters_distribution=parameters_distribution, noise=noise, n_samples_noise=n_samples_noise)
+```
 
 26) The output sol is a dictionary. The entry 'optimal_solution' contains the solution given by the BO algorithm, and 'optimal_value' is the objective function evaluated at the 'optimal_solution'.
    
@@ -90,4 +93,6 @@ The algorithms implemented maximize the objective function.
  Examples
 -------------
 Examples can be found [here](https://github.com/toscanosaul/bayesian_quadrature_optimization/tree/master/examples)  
+
+
 
