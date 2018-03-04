@@ -61,7 +61,7 @@ Documentation
 
 19) (Optional) (int) default_n_samples_parameters: Number of samples of Z for the discretization-free estimation of the BQO. Default is 20.
 
-20) (Optional) (int) default_n_samples: Number of samples of the hyperparameters to estimate BQO. Default is 100. 
+20) (Optional) (int) default_n_samples: Number of samples of hyperparameters to estimate BQO. Default is 100. 
 
 * Run BQO:
 
