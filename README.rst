@@ -18,6 +18,7 @@ make test
 
 Documentation
 -------------
+The algorithms implemented maximize the objective function.
 
 * Steps to use BQO:
 
