@@ -64,15 +64,23 @@ The algorithms implemented maximize the objective function.
 
 20) (Optional) (int) default_n_samples: Number of samples of hyperparameters to estimate BQO. Default is 20. 
 
+21) (Optional) (str) distribution: probability distribution for the Bayesian quadrature (i.e. the distribution of W). Default: 'uniform_finite' when there are tasks, and 'gamma' when there are no tasks. The other possible distributions are 'exponential' and 'weighted_uniform_finite'. Additional distributions should be coded.
+
+22) (Optional) parameters_distribution: {str: float}
+
+23) (Optional) (boolean) noise: True if the evaluations of the integrand function are noisy. Default value is False.
+
+24) (Optional) (int) n_samples_noise:  If noise is true, we take n_samples of the function to estimate its value. Default vale is 0.
+
 * Run BQO:
 
-21) sol = bgo(
+25) sol = bgo(
     g, bounds_domain_x, integrand_function=f, bounds_domain_w=bounds_domain_w, type_bounds=type_bounds,
     name_method=name_method, n_iterations=n_iterations, random_seed=random_seed, n_training=n_training, 
     problem_name=problem_name, n_restarts=n_restarts, n_restarts_mean=n_restarts_mean, n_best_restarts_mean=n_best_restarts_mean,
-    maxepoch=maxepoch, maxepoch_mean=maxepoch_mean, n_burning=n_burning, thinning=thinning, default_n_samples_parameters=default_n_samples_parameters, default_n_samples=default_n_samples)
+    maxepoch=maxepoch, maxepoch_mean=maxepoch_mean, n_burning=n_burning, thinning=thinning, default_n_samples_parameters=default_n_samples_parameters, default_n_samples=default_n_samples, distribution=distribution, parameters_distribution=parameters_distribution, noise=noise, n_samples_noise=n_samples_noise)
 
-22) The output sol is a dictionary. The entry 'optimal_solution' contains the solution given by the BO algorithm, and 'optimal_value' is the objective function evaluated at the 'optimal_solution'.
+26) The output sol is a dictionary. The entry 'optimal_solution' contains the solution given by the BO algorithm, and 'optimal_value' is the objective function evaluated at the 'optimal_solution'.
    
 * Files generated:
  
