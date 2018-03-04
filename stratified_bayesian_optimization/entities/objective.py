@@ -18,7 +18,8 @@ class Objective(object):
                 'samples_params_{n_samples_parameters}.json'.format
 
     def __init__(self, problem_name, training_name, random_seed, n_training, n_samples=None,
-                 noise=False, method=SBO_METHOD, n_samples_parameters=0):
+                 noise=False, method=SBO_METHOD, n_samples_parameters=0, objective_function=None,
+                 training_function=None):
         """
 
         :param problem_name: (str)
@@ -41,8 +42,16 @@ class Objective(object):
         self.n_training = n_training
         self.problem_name = problem_name
         self.training_name = training_name
-        name_module = TrainingDataService.get_name_module(problem_name)
-        self.module = __import__(name_module, globals(), locals(), -1)
+
+        self.objective_function = objective_function
+        self.training_function = training_function
+
+        if objective_function is None:
+            name_module = TrainingDataService.get_name_module(problem_name)
+            self.module = __import__(name_module, globals(), locals(), -1)
+        else:
+            self.module = None
+
         self.method = method
         self.n_samples_parameters = n_samples_parameters
 
@@ -74,7 +83,9 @@ class Objective(object):
         self.evaluated_points.append(list(point))
         self.model_objective_values.append(model_objective_value)
 
-        eval = self.evaluate_objective(self.module, list(point), n_samples=self.n_samples)
+        eval = self.evaluate_objective(
+            self.module, list(point), n_samples=self.n_samples,
+            objective_function=self.objective_function)
         self.objective_values.append(eval[0])
 
         if self.noise:
@@ -106,7 +117,7 @@ class Objective(object):
         self.standard_deviation_evaluations = data['standard_deviation_evaluations']
 
     @staticmethod
-    def evaluate_objective(module, point, n_samples=None):
+    def evaluate_objective(module, point, n_samples=None, objective_function=None):
         """
         Evalute the objective function.
 
@@ -117,6 +128,12 @@ class Objective(object):
         """
 
         if n_samples is None or n_samples == 0:
-            return module.main_objective(point)
+            if module is not None:
+                return module.main_objective(point)
+            else:
+                return objective_function(point)
         else:
-            return module.main_objective(n_samples, point)
+            if module is not None:
+                return module.main_objective(n_samples, point)
+            else:
+                return objective_function(point)

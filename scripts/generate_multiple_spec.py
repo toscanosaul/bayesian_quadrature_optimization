@@ -32,7 +32,7 @@ if __name__ == '__main__':
     # script used to generate spec file to run BGO
     # ARXIV
     # dim_x = [4]
-    # bounds_domain_x = [[(0.01, 5.0), g(0.0, 2.1), (1, 21), (1, 201)]]
+    # bounds_domain_x = [[(0.01, 5.0), (0.0, 2.1), (1, 21), (1, 201)]]
     # problem_name = ['arxiv']
     # training_name = [None]
     # type_kernel = [[PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]]

@@ -130,7 +130,7 @@ class BGO(object):
                  random_seed, n_training, name_model, method_optimization, minimize=False,
                  n_samples=None, noise=False, quadrature=None, parallel=True,
                  number_points_each_dimension_debug=None, n_samples_parameters=0,
-                 use_only_training_points=True):
+                 use_only_training_points=True, objective_function=None, training_function=None):
 
         self.acquisition_function = acquisition_function
 
@@ -156,7 +156,9 @@ class BGO(object):
         self.training_name = training_name
         self.name_model = name_model
         self.objective = Objective(problem_name, training_name, random_seed, n_training, n_samples,
-                                   noise, self.method_optimization, n_samples_parameters)
+                                   noise, self.method_optimization, n_samples_parameters,
+                                   objective_function=objective_function,
+                                   training_function=training_function)
 
         if not use_only_training_points:
             self.objective.set_data_from_file()
@@ -175,7 +177,8 @@ class BGO(object):
                  n_best_restarts_mean=100, method_opt_mc=None, maxepoch=10,
                  n_samples_parameters_mean=0, maxepoch_mean=20, threshold_sbo=None,
                  optimize_only_posterior_mean=False, start_optimize_posterior_mean=0,
-                 **opt_params_mc):
+                 optimize_mean_each_iteration=True, default_n_samples_parameters=None,
+                 default_n_samples=None, **opt_params_mc):
         """
         Optimize objective over the domain.
         :param random_seed: int
@@ -203,7 +206,10 @@ class BGO(object):
             -'factr': int
             -'maxiter': int
 
-        :return: Objective
+        :return: {
+            'optimal_solution': optimize_mean['solution'],
+            'optimal_value': optimal_value,
+        }
         """
 
         if optimize_only_posterior_mean:
@@ -256,33 +262,39 @@ class BGO(object):
         else:
             method_opt_mu = DOGLEG
 
-        if self.method_optimization == SDE_METHOD:
-            optimize_mean = self.acquisition_function.optimize_mean(
-                n_restarts=n_restarts_mean,
-                candidate_solutions=self.objective.evaluated_points,
-                candidate_values=self.objective.objective_values)
-        else:
-            optimize_mean = model.optimize_posterior_mean(
-                minimize=self.minimize, n_restarts=n_restarts_mean,
-                n_best_restarts=n_best_restarts_mean,
-                n_samples_parameters=n_samples_parameters_mean,
-                start_new_chain=True, method_opt=method_opt_mu, maxepoch=maxepoch_mean,
-                candidate_solutions=self.objective.evaluated_points,
-                candidate_values=self.objective.objective_values)
+        if optimize_mean_each_iteration or 0 == self.n_iterations:
+            if self.method_optimization == SDE_METHOD:
+                optimize_mean = self.acquisition_function.optimize_mean(
+                    n_restarts=n_restarts_mean,
+                    candidate_solutions=self.objective.evaluated_points,
+                    candidate_values=self.objective.objective_values)
+            else:
+                optimize_mean = model.optimize_posterior_mean(
+                    minimize=self.minimize, n_restarts=n_restarts_mean,
+                    n_best_restarts=n_best_restarts_mean,
+                    n_samples_parameters=n_samples_parameters_mean,
+                    start_new_chain=True, method_opt=method_opt_mu, maxepoch=maxepoch_mean,
+                    candidate_solutions=self.objective.evaluated_points,
+                    candidate_values=self.objective.objective_values)
 
-        optimal_value = \
-            self.objective.add_point(optimize_mean['solution'], optimize_mean['optimal_value'][0])
+            optimal_value = \
+                self.objective.add_point(
+                    optimize_mean['solution'], optimize_mean['optimal_value'][0])
 
-        model.write_debug_data(self.problem_name, self.name_model, self.training_name,
-                               self.n_training, self.random_seed, self.method_optimization,
-                               n_samples_parameters)
+            model.write_debug_data(self.problem_name, self.name_model, self.training_name,
+                                   self.n_training, self.random_seed, self.method_optimization,
+                                   n_samples_parameters)
 
         if debug:
             model.generate_evaluations(
                 self.problem_name, self.name_model, self.training_name, self.n_training,
                 self.random_seed, 0, n_points_by_dimension=self.number_points_each_dimension_debug)
 
-        for iteration in xrange(self.n_iterations):
+        start_new_chain_acquisition_function = False
+        if optimize_mean_each_iteration:
+            start_new_chain_acquisition_function = True
+
+        for iteration in range(self.n_iterations):
             evaluation = None
             if not optimize_only_posterior_mean or iteration >= total_points:
                 new_point_sol = self.acquisition_function.optimize(
@@ -290,8 +302,10 @@ class BGO(object):
                     n_samples=n_samples_mc, n_restarts_mc=n_restarts_mc,
                     n_best_restarts_mc=n_best_restarts_mc, n_restarts=n_restarts,
                     n_best_restarts=n_best_restarts, n_samples_parameters=n_samples_parameters,
-                    start_new_chain=False, method_opt_mc=method_opt_mc, maxepoch=maxepoch,
-                    start_ei=start_ei, **opt_params_mc)
+                    start_new_chain=start_new_chain_acquisition_function,
+                    method_opt_mc=method_opt_mc, maxepoch=maxepoch, start_ei=start_ei,
+                    default_n_samples_parameters=default_n_samples_parameters,
+                    default_n_samples=default_n_samples, **opt_params_mc)
             else:
                 point = \
                     chosen_points['points'][n_training + start_optimize_posterior_mean + iteration, :]
@@ -321,8 +335,14 @@ class BGO(object):
             self.acquisition_function.clean_cache()
 
             if evaluation is None:
-                evaluation = TrainingDataService.evaluate_function(self.objective.module, new_point,
-                                                                   self.n_samples)
+                if self.objective.module is not None:
+                    evaluation = TrainingDataService.evaluate_function(
+                        self.objective.module, new_point, self.n_samples)
+                else:
+                    if self.n_samples == 0 or self.n_samples is None:
+                        evaluation = self.objective.training_function(new_point)
+                    else:
+                        evaluation = self.objective.training_function(new_point, self.n_samples)
 
             if self.objective.noise:
                 noise = np.array([evaluation[1]])
@@ -334,28 +354,29 @@ class BGO(object):
             GPFittingService.write_gp_model(self.gp_model, method=self.method_optimization,
                                             n_samples_parameters=n_samples_parameters)
 
-            if self.method_optimization == SDE_METHOD:
-                optimize_mean = self.acquisition_function.optimize_mean(
-                    n_restarts=n_restarts_mean,
-                    candidate_solutions=self.objective.evaluated_points,
-                    candidate_values=self.objective.objective_values)
-            else:
-                optimize_mean = model.optimize_posterior_mean(
-                    minimize=self.minimize, n_restarts=n_restarts_mean,
-                    n_best_restarts=n_best_restarts_mean,
-                    n_samples_parameters=n_samples_parameters_mean,
-                    start_new_chain=True, method_opt=method_opt_mu, maxepoch=maxepoch_mean,
-                    candidate_solutions=self.objective.evaluated_points,
-                    candidate_values=self.objective.objective_values
-                )
+            if optimize_mean_each_iteration or iteration == self.n_iterations - 1:
+                if self.method_optimization == SDE_METHOD:
+                    optimize_mean = self.acquisition_function.optimize_mean(
+                        n_restarts=n_restarts_mean,
+                        candidate_solutions=self.objective.evaluated_points,
+                        candidate_values=self.objective.objective_values)
+                else:
+                    optimize_mean = model.optimize_posterior_mean(
+                        minimize=self.minimize, n_restarts=n_restarts_mean,
+                        n_best_restarts=n_best_restarts_mean,
+                        n_samples_parameters=n_samples_parameters_mean,
+                        start_new_chain=True, method_opt=method_opt_mu, maxepoch=maxepoch_mean,
+                        candidate_solutions=self.objective.evaluated_points,
+                        candidate_values=self.objective.objective_values
+                    )
 
-            optimal_value = \
-                self.objective.add_point(optimize_mean['solution'],
-                                         optimize_mean['optimal_value'][0])
+                optimal_value = \
+                    self.objective.add_point(optimize_mean['solution'],
+                                             optimize_mean['optimal_value'][0])
 
-            model.write_debug_data(self.problem_name, self.name_model, self.training_name,
-                                   self.n_training, self.random_seed, self.method_optimization,
-                                   n_samples_parameters)
+                model.write_debug_data(self.problem_name, self.name_model, self.training_name,
+                                       self.n_training, self.random_seed, self.method_optimization,
+                                       n_samples_parameters)
 
             if debug:
                 model.generate_evaluations(
@@ -366,7 +387,6 @@ class BGO(object):
         return {
             'optimal_solution': optimize_mean['solution'],
             'optimal_value': optimal_value,
-
         }
 
     @classmethod

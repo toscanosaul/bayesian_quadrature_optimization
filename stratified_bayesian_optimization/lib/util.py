@@ -100,7 +100,8 @@ def wrapper_fit_gp_regression(self, **kwargs):
     return self.fit_gp_regression(**kwargs)
 
 
-def wrapper_evaluate_objective_function(point, cls_, name_module, n_samples):
+def wrapper_evaluate_objective_function(
+        point, cls_, name_module, n_samples, objective_function=None):
     """
     Wrapper of evaluate_function in training_data
     :param cls: TrainingDataService
@@ -111,10 +112,14 @@ def wrapper_evaluate_objective_function(point, cls_, name_module, n_samples):
     :return: float
     """
 
-    module = __import__(name_module, globals(), locals(), -1)
-
-    return cls_.evaluate_function(module, point, n_samples)
-
+    if name_module is not None:
+        module = __import__(name_module, globals(), locals(), -1)
+        return cls_.evaluate_function(module, point, n_samples)
+    else:
+        if n_samples == 0:
+            return objective_function(point)
+        else:
+            return objective_function(point, n_samples)
 
 def get_number_parameters_kernel(kernel_name, dim, **kernel_parameters):
     """

@@ -58,7 +58,8 @@ class GPFittingService(object):
             'optimization_method': spec.get('method_optimization'),
             'n_samples_parameters': spec.get('n_samples_parameters', 0),
             'parallel_training': spec.get('parallel_training', True),
-            'simplex_domain': spec.get('simplex_domain', None)
+            'simplex_domain': spec.get('simplex_domain', None),
+            'objective_function': spec.get('objective_function', None)
         }
 
         return cls.get_gp(**entry)
@@ -123,7 +124,7 @@ class GPFittingService(object):
                n_samples=None, random_seed=DEFAULT_RANDOM_SEED, kernel_values=None, mean_value=None,
                var_noise_value=None, cache=True, same_correlation=False,
                use_only_training_points=True, optimization_method=None, n_samples_parameters=0,
-               parallel_training=True, simplex_domain=None):
+               parallel_training=True, simplex_domain=None, objective_function=None):
         """
         Fetch a GP model from file if it exists, otherwise train a new model and save it locally.
 
@@ -203,18 +204,11 @@ class GPFittingService(object):
             return model_type.deserialize(data, use_only_training_points=use_only_training_points)
 
         if training_data is None or training_data == {}:
-            training_data = TrainingDataService.get_training_data(problem_name, training_name,
-                                                                  bounds_domain,
-                                                                  n_training=n_training,
-                                                                  points=points,
-                                                                  noise=noise,
-                                                                  n_samples=n_samples,
-                                                                  random_seed=random_seed,
-                                                                  type_bounds=type_bounds,
-                                                                  cache=cache,
-                                                                  parallel=parallel_training,
-                                                                  gp_path_cache=gp_path_cache,
-                                                                  simplex_domain=simplex_domain)
+            training_data = TrainingDataService.get_training_data(
+                problem_name, training_name, bounds_domain, n_training=n_training, points=points,
+                noise=noise, n_samples=n_samples, random_seed=random_seed, type_bounds=type_bounds,
+                cache=cache, parallel=parallel_training, gp_path_cache=gp_path_cache,
+                simplex_domain=simplex_domain, objective_function=objective_function)
 
         logger.info("Training %s" % model_type.__name__)
 

@@ -56,7 +56,8 @@ class TrainingDataService(object):
     def get_training_data(cls, problem_name, training_name, bounds_domain, n_training=5,
                           points=None, noise=False, n_samples=None,
                           random_seed=DEFAULT_RANDOM_SEED, parallel=True, type_bounds=None,
-                          cache=True, gp_path_cache=None, simplex_domain=None):
+                          cache=True, gp_path_cache=None, simplex_domain=None,
+                          objective_function=None):
         """
 
         :param problem_name: str
@@ -98,6 +99,9 @@ class TrainingDataService(object):
 
         training_dir = path.join(PROBLEM_DIR, problem_name, 'data')
 
+        if not os.path.exists(path.join(PROBLEM_DIR, problem_name)):
+            os.mkdir(path.join(PROBLEM_DIR, problem_name))
+
         if not os.path.exists(training_dir):
             os.mkdir(training_dir)
 
@@ -116,8 +120,12 @@ class TrainingDataService(object):
             points = cls.get_points_domain(n_training, bounds_domain, random_seed, training_name,
                                            problem_name, type_bounds, simplex_domain=simplex_domain)
 
-        name_module = cls.get_name_module(problem_name)
-        module = __import__(name_module, globals(), locals(), -1)
+        if objective_function is None:
+            name_module = cls.get_name_module(problem_name)
+            module = __import__(name_module, globals(), locals(), -1)
+        else:
+            name_module = None
+            module = None
 
         training_data = {}
         training_data['points'] = points
@@ -127,19 +135,28 @@ class TrainingDataService(object):
         if not parallel:
             for point in points:
                 if noise:
-                    evaluation = cls.evaluate_function(module, point, n_samples)
+                    if module is not None:
+                        evaluation = cls.evaluate_function(module, point, n_samples)
+                    else:
+                        evaluation = objective_function(point, n_samples)
                     training_data['var_noise'].append(evaluation[1])
                 else:
-                    evaluation = cls.evaluate_function(module, point)
+                    if module is not None:
+                        evaluation = cls.evaluate_function(module, point)
+                    else:
+                        evaluation = objective_function(point)
                 training_data['evaluations'].append(evaluation[0])
                 JSONFile.write(training_data, training_path)
             JSONFile.write(training_data, training_path)
             return training_data
 
-        kwargs = {'name_module': name_module, 'cls_': cls, 'n_samples': n_samples}
-
         arguments = convert_list_to_dictionary(points)
 
+        if name_module is not None:
+            kwargs = {'name_module': name_module, 'cls_': cls, 'n_samples': n_samples}
+        else:
+            kwargs = {'name_module': None, 'cls_': cls, 'n_samples': n_samples,
+                      'objective_function': objective_function}
 
         training_points = Parallel.run_function_different_arguments_parallel(
             wrapper_evaluate_objective_function, arguments, **kwargs)

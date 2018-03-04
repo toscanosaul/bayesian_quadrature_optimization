@@ -102,25 +102,25 @@ class DomainEntity(Model):
                 return False
         return True
 
-    def validate(self, *args, **kwargs):
-        super(DomainEntity, self).validate(*args, **kwargs)
-        if len(self.bounds_domain_x) != self.dim_x:
-            raise ModelValidationError("Wrong dimension of bounds_domain_x")
-        if self.choose_noise and self.dim_w is None:
-            raise ModelValidationError("Missing dimension of w")
-        if self.choose_noise and self.domain_w is None and self.bounds_domain_w is None:
-            raise ModelValidationError("Missing range of w")
-        if self.choose_noise and self.discretization_domain_x is None:
-            raise ModelValidationError("Missing discretization of domain of x")
-        if self.choose_noise:
-            correct_dim_x = self.check_dimension_each_entry(self.discretization_domain_x,
-                                                            self.dim_x)
-            if correct_dim_x is False:
-                raise ModelValidationError("Wrong dimensions")
-        if self.choose_noise and self.bounds_domain_w is not None:
-            if len(self.bounds_domain_w) != self.dim_w:
-                raise ModelValidationError("Wrong dimensions of the bounds of w")
-        if self.choose_noise and self.domain_w is not None:
-            correct_dim_w = self.check_dimension_each_entry(self.domain_w, self.dim_w)
-            if correct_dim_w is False:
-                raise ModelValidationError("Wrong dimensions")
+    # def validate(self, *args, **kwargs):
+    #     super(DomainEntity, self).validate(*args, **kwargs)
+    #     if len(self.bounds_domain_x) != self.dim_x:
+    #         raise ModelValidationError("Wrong dimension of bounds_domain_x")
+    #     if self.choose_noise and self.dim_w is None:
+    #         raise ModelValidationError("Missing dimension of w")
+    #     if self.choose_noise and self.domain_w is None and self.bounds_domain_w is None:
+    #         raise ModelValidationError("Missing range of w")
+    #     if self.choose_noise and self.discretization_domain_x is None:
+    #         raise ModelValidationError("Missing discretization of domain of x")
+    #     if self.choose_noise:
+    #         correct_dim_x = self.check_dimension_each_entry(self.discretization_domain_x,
+    #                                                         self.dim_x)
+    #         if correct_dim_x is False:
+    #             raise ModelValidationError("Wrong dimensions")
+    #     if self.choose_noise and self.bounds_domain_w is not None:
+    #         if len(self.bounds_domain_w) != self.dim_w:
+    #             raise ModelValidationError("Wrong dimensions of the bounds of w")
+    #     if self.choose_noise and self.domain_w is not None:
+    #         correct_dim_w = self.check_dimension_each_entry(self.domain_w, self.dim_w)
+    #         if correct_dim_w is False:
+    #             raise ModelValidationError("Wrong dimensions")
