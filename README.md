@@ -89,5 +89,5 @@ The algorithms implemented maximize the objective function.
  
  Examples
 -------------
-You can see examples [here](https://github.com/toscanosaul/bayesian_quadrature_optimization/tree/master/examples)  
+Examples can be found [here](https://github.com/toscanosaul/bayesian_quadrature_optimization/tree/master/examples)  
 
