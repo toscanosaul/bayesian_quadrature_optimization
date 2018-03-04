@@ -1,3 +1,5 @@
+* ### Bayesian Quadrature Optimization
+
 ========================================
 Bayesian Quadrature Optimization
 ========================================
