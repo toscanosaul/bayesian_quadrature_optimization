@@ -100,5 +100,18 @@ sol = bgo(
 -------------
 Examples can be found [here](https://github.com/toscanosaul/bayesian_quadrature_optimization/tree/master/examples)  
 
+Applications
+-------------
+
+### New York City’s Citi Bike
+Consider a queuing simulation based on New York City’s Citi Bike system in which system users
+may remove an available bike from a station at one location within the city and ride it to a station with
+an available dock in some other location. The optimization problem that we consider is the allocation of
+a constrained number of bikes (6000) to available docks within the city at the start of rush hour, so as to
+minimize, in simulation, the expected number of potential trips in which the rider could not find an available
+bike at their preferred origination station, or could not find an available dock at their preferred destination
+station.
+
+![citi bike simulation](https://github.com/toscanosaul/BGO/blob/master/CitiBike/animation.gif)
 
 
