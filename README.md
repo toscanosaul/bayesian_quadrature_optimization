@@ -114,4 +114,7 @@ station.
 
 ![citi bike simulation](https://github.com/toscanosaul/BGO/blob/master/CitiBike/animation.gif)
 
+###  Cross-validation of convolutional neural networks and recommendation engines
 
+###  Newsvendor problem under dynamic consumer substitution
+In this problem, we choose the initial inventory levels of the products sold, each with certain cost and price, which are assumed given. Our goal is to optimize profit.
