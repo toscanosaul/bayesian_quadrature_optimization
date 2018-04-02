@@ -500,6 +500,9 @@ class GPFittingGaussian(object):
             'var_noise': np.array(n) or None}
         """
 
+        if len(data_as_list['points']) == 0:
+            return {'points': None, 'evaluations': None, 'var_noise': None}
+
         data = {}
         n_points = len(data_as_list['points'])
         dim_point = len(data_as_list['points'][0])
