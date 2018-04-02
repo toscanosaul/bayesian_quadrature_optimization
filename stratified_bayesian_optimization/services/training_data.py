@@ -97,6 +97,9 @@ class TrainingDataService(object):
             random_seed=rs,
         )
 
+        if not os.path.exists(PROBLEM_DIR):
+            os.mkdir(PROBLEM_DIR)
+
         training_dir = path.join(PROBLEM_DIR, problem_name, 'data')
 
         if not os.path.exists(path.join(PROBLEM_DIR, problem_name)):
