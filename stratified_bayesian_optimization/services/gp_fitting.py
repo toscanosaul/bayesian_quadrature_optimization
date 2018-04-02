@@ -184,8 +184,13 @@ class GPFittingService(object):
                                                 training_name, optimization_method,
                                                 n_samples_parameters)
 
-        gp_dir = path.join(GP_DIR, problem_name)
+        if not os.path.exists('data'):
+            os.mkdir('data')
 
+        if not os.path.exists(GP_DIR):
+            os.mkdir(GP_DIR)
+
+        gp_dir = path.join(GP_DIR, problem_name)
 
         if not os.path.exists(gp_dir):
             os.mkdir(gp_dir)
