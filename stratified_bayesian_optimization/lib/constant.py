@@ -32,6 +32,7 @@ TASKS_KERNEL_NAME = 'Tasks_Kernel'
 SAME_CORRELATION = 'same_correlation'
 PRODUCT_KERNELS_SEPARABLE = 'Product_of_kernels_with_separable_domain'
 SCALED_KERNEL = 'Scaled_kernel'
+ORNSTEIN_KERNEL = 'Ornstein_kernel'
 
 # Default names for the parameters
 LENGTH_SCALE_NAME = 'length_scale'
