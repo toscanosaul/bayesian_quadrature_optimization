@@ -144,7 +144,8 @@ class GPFittingGaussian(object):
         self.bounds = bounds_domain
         self.training_data = training_data
         self.training_data_as_array = self.convert_from_list_to_numpy(training_data)
-        self.dimension_domain = self.training_data_as_array['points'].shape[1]
+     #   self.dimension_domain = self.training_data_as_array['points'].shape[1]
+        self.dimension_domain = len(bounds_domain)
         self.dimensions = dimensions
         self.type_bounds = type_bounds
 
