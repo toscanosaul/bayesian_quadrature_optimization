@@ -11,7 +11,7 @@ from stratified_bayesian_optimization.lib.util import (
 )
 from stratified_bayesian_optimization.lib.constant import (
     ORNSTEIN_KERNEL,
-    LENGTH_SCALE_NAME,
+    LENGTH_SCALE_ORNSTEIN_NAME,
     SIGMA2_NAME,
     LARGEST_NUMBER,
     SMALLEST_POSITIVE_NUMBER,
@@ -125,7 +125,7 @@ class Ornstein(AbstractKernel):
         :return: Matern52
         """
 
-        ls = ParameterEntity(LENGTH_SCALE_NAME, params[0], None)
+        ls = ParameterEntity(LENGTH_SCALE_ORNSTEIN_NAME, params[0], None)
         sigma = ParameterEntity(SIGMA2_NAME, params[1], None)
 
         return cls(dimension, sigma, ls)
@@ -149,7 +149,7 @@ class Ornstein(AbstractKernel):
             parameters_priors = {}
 
         if default_values is None:
-            ls = parameters_priors.get(LENGTH_SCALE_NAME, dimension * [1.0])
+            ls = parameters_priors.get(LENGTH_SCALE_ORNSTEIN_NAME, dimension * [1.0])
             default_values = ls
 
 
@@ -166,7 +166,7 @@ class Ornstein(AbstractKernel):
             prior = UniformPrior(dimension, dimension * [SMALLEST_POSITIVE_NUMBER], diffs)
             bounds = [(SMALLEST_POSITIVE_NUMBER, diff) for diff in diffs]
         else:
-            diffs = parameters_priors.get(LENGTH_SCALE_NAME, dimension * [LARGEST_NUMBER])
+            diffs = parameters_priors.get(LENGTH_SCALE_ORNSTEIN_NAME, dimension * [LARGEST_NUMBER])
             prior = UniformPrior(dimension, dimension * [SMALLEST_POSITIVE_NUMBER], diffs)
             bounds = [(SMALLEST_POSITIVE_NUMBER, diff) for diff in diffs]
 
@@ -322,7 +322,7 @@ class Ornstein(AbstractKernel):
         # good starting value for the parameter ls in the kernel.
 
         return {
-            LENGTH_SCALE_NAME: [1.0],
+            LENGTH_SCALE_ORNSTEIN_NAME: [1.0],
             SIGMA2_NAME: [1.0],
         }
 
@@ -352,7 +352,7 @@ class Ornstein(AbstractKernel):
 
         parameters = {}
 
-        parameters[LENGTH_SCALE_NAME] = [params[0]]
+        parameters[LENGTH_SCALE_ORNSTEIN_NAME] = [params[0]]
         parameters[SIGMA2_NAME] = [params[1]]
 
         return parameters

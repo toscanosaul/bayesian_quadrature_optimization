@@ -37,6 +37,7 @@ ORNSTEIN_KERNEL = 'Ornstein_kernel'
 # Default names for the parameters
 LENGTH_SCALE_NAME = 'length_scale'
 SIGMA2_NAME = 'sigma2'
+LENGTH_SCALE_ORNSTEIN_NAME = 'length_scale_ornstein'
 
 LOWER_TRIANG_NAME = 'lower_triangular'
 

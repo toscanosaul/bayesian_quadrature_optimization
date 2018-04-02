@@ -10,6 +10,7 @@ import numpy as np
 from stratified_bayesian_optimization.lib.constant import (
     MATERN52_NAME,
     TASKS_KERNEL_NAME,
+    ORNSTEIN_KERNEL,
     PRODUCT_KERNELS_SEPARABLE,
     MEAN_NAME,
     VAR_NOISE_NAME,
@@ -223,6 +224,12 @@ class GPFittingGaussian(object):
             ignore_index = None
             if not self.noise or self.data.get('var_noise') is not None:
                 ignore_index = [0, 1]
+
+            if ORNSTEIN_KERNEL in self.type_kernel:
+                if ignore_index is None:
+                    ignore_index = []
+                ignore_index += [2, 3]
+
             self.slice_samplers.append(SliceSampling(wrapper_log_prob, indexes,
                                                      ignore_index=ignore_index, **slice_parameters))
             slice_parameters['component_wise'] = True
