@@ -117,6 +117,10 @@ class TrainingDataService(object):
 
         if training_data is not None:
             return training_data
+
+        if n_training == 0:
+            return None
+
         np.random.seed(random_seed)
 
         if points is None or len(points) == 0:
