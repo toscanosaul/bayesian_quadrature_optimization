@@ -119,7 +119,7 @@ class TrainingDataService(object):
             return training_data
 
         if n_training == 0:
-            return None
+            return {'points': [], 'evaluations': [], 'var_noise': []}
 
         np.random.seed(random_seed)
 
