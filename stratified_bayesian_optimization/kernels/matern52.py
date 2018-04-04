@@ -45,6 +45,7 @@ class Matern52(AbstractKernel):
         This function defines the default order of the parameters.
         :return: [ParameterEntity]
         """
+
         return [self.length_scale]
 
     @property

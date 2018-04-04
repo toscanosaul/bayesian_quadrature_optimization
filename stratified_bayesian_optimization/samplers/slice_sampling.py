@@ -56,7 +56,6 @@ class SliceSampling(object):
         :param args_log_prob: additional arguments of the log_prob function.
         :return: np.array(n)
         """
-
         dimensions = len(point)
 
         if self.component_wise:
@@ -91,6 +90,7 @@ class SliceSampling(object):
             of the model (i.e. variance of noise, mean, parameters of the kernel)
         :return: float
         """
+
         new_point = point + x * direction
 
         if fixed_parameters is not None:
@@ -264,7 +264,6 @@ class SliceSampling(object):
         lower = upper - self.sigma
         llh = np.log(npr.rand()) + self.directional_log_prob(0.0, direction, point,
                                                              fixed_parameters, *args_log_prob)
-
         if self.step_out:
             upper, lower = self.find_x_interval(llh, lower, upper, direction, point,
                                                 fixed_parameters, *args_log_prob)

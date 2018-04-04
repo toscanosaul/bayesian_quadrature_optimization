@@ -13,6 +13,7 @@ from stratified_bayesian_optimization.lib.constant import (
     MATERN52_NAME,
     TASKS_KERNEL_NAME,
     PRODUCT_KERNELS_SEPARABLE,
+    ORNSTEIN_KERNEL,
 )
 from stratified_bayesian_optimization.lib.util_kernels import (
     find_define_kernel_from_array,
@@ -23,6 +24,7 @@ from stratified_bayesian_optimization.lib.util import (
 )
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
 from stratified_bayesian_optimization.kernels.tasks_kernel import TasksKernel
+from stratified_bayesian_optimization.kernels.ornstein import Ornstein
 
 
 class ProductKernels(AbstractKernel):
@@ -638,6 +640,11 @@ class ProductKernels(AbstractKernel):
             elif kernel == TASKS_KERNEL_NAME:
                 n_params = get_number_parameters_kernel([kernel], [dim], **kwargs)
                 param_dict = TasksKernel.parameters_from_list_to_dict(params[0: n_params])
+                params = params[n_params:]
+                parameters.update(param_dict)
+            elif kernel == ORNSTEIN_KERNEL:
+                n_params = 2
+                param_dict = Ornstein.parameters_from_list_to_dict(params[0: n_params])
                 params = params[n_params:]
                 parameters.update(param_dict)
 

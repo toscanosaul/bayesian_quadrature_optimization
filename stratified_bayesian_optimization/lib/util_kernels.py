@@ -3,9 +3,11 @@ from __future__ import absolute_import
 from stratified_bayesian_optimization.lib.constant import(
     MATERN52_NAME,
     TASKS_KERNEL_NAME,
+    ORNSTEIN_KERNEL,
 )
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
 from stratified_bayesian_optimization.kernels.tasks_kernel import TasksKernel
+from stratified_bayesian_optimization.kernels.ornstein import Ornstein
 
 
 def find_define_kernel_from_array(kernel_name):
@@ -20,6 +22,9 @@ def find_define_kernel_from_array(kernel_name):
 
     if kernel_name == TASKS_KERNEL_NAME:
         return TasksKernel.define_kernel_from_array
+
+    if kernel_name == ORNSTEIN_KERNEL:
+        return Ornstein.define_kernel_from_array
 
     raise NameError(kernel_name + " doesn't exist")
 
@@ -36,5 +41,8 @@ def find_kernel_constructor(kernel_name):
 
     if kernel_name == TASKS_KERNEL_NAME:
         return TasksKernel
+
+    if kernel_name == ORNSTEIN_KERNEL:
+        return Ornstein
 
     raise NameError(kernel_name + " doesn't exist")

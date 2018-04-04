@@ -14,6 +14,8 @@ from stratified_bayesian_optimization.lib.constant import(
     SCALED_KERNEL,
     SAME_CORRELATION,
     BAYESIAN_QUADRATURE,
+    ORNSTEIN_KERNEL,
+    LENGTH_SCALE_ORNSTEIN_NAME,
 )
 from stratified_bayesian_optimization.lib.affine_break_points import (
     AffineBreakPointsPrep,
@@ -145,6 +147,9 @@ def get_number_parameters_kernel(kernel_name, dim, **kernel_parameters):
         else:
             return min(dim[0], 2)
 
+    if kernel_name[0] == ORNSTEIN_KERNEL:
+        return 2
+
     if kernel_name[0] == PRODUCT_KERNELS_SEPARABLE:
         n_params = 0
         for name, dimension in zip(kernel_name[1:], dim[1:]):
@@ -168,6 +173,12 @@ def get_default_values_kernel(kernel_name, dim, same_correlation=False, **parame
     :return: [float]
     """
 
+    if kernel_name[0] == ORNSTEIN_KERNEL:
+        sigma2 = parameters_priors.get(SIGMA2_NAME, [1.0])
+
+        ls = parameters_priors.get(LENGTH_SCALE_ORNSTEIN_NAME, dim[0] * [1.0])
+        return ls + sigma2
+
     if kernel_name[0] == SCALED_KERNEL:
         sigma2 = [parameters_priors.get(SIGMA2_NAME, 1.0)]
         if kernel_name[1] == MATERN52_NAME:
@@ -187,7 +198,6 @@ def get_default_values_kernel(kernel_name, dim, same_correlation=False, **parame
 
     if kernel_name[0] == PRODUCT_KERNELS_SEPARABLE:
         values = []
-
         for name, dimension in zip(kernel_name[1:], dim[1:]):
             values += get_default_values_kernel([name], [dimension], **parameters_priors)
 
@@ -297,6 +307,10 @@ def separate_vector(vector, indexes1):
     :param indexes1: [int]
     :return: [np.array(n1), np.array(n2)] where n = n1 + n2
     """
+
+    if indexes1 is None or len(indexes1) == 0:
+        return [vector, []]
+
     dimension = len(vector)
 
     vector1 = vector[indexes1]

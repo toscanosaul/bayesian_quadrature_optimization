@@ -9,9 +9,12 @@ from stratified_bayesian_optimization.lib.constant import(
     LENGTH_SCALE_NAME,
     LOWER_TRIANG_NAME,
     SAME_CORRELATION,
+    ORNSTEIN_KERNEL,
+    LENGTH_SCALE_ORNSTEIN_NAME,
 )
 from stratified_bayesian_optimization.kernels.scaled_kernel import ScaledKernel
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
+from stratified_bayesian_optimization.kernels.ornstein import Ornstein
 from stratified_bayesian_optimization.kernels.tasks_kernel import TasksKernel
 from stratified_bayesian_optimization.kernels.product_kernels import ProductKernels
 from stratified_bayesian_optimization.lib.util import (
@@ -52,6 +55,10 @@ def get_kernel_default(kernel_name, dimension, bounds=None, default_values=None,
         return TasksKernel.define_default_kernel(dimension[0], bounds, default_values,
                                                  parameters_priors, **kernel_parameters)
 
+    if kernel_name[0] == ORNSTEIN_KERNEL:
+        return Ornstein.define_default_kernel(dimension[0], bounds, default_values,
+                                                 parameters_priors, **kernel_parameters)
+
     if kernel_name[0] == PRODUCT_KERNELS_SEPARABLE:
         values = []
         cont = 0
@@ -71,12 +78,14 @@ def get_kernel_default(kernel_name, dimension, bounds=None, default_values=None,
                 if name == TASKS_KERNEL_NAME:
                     bounds_.append(bounds[cont_b: cont_b + 1])
                     cont_b += 1
+                if name == ORNSTEIN_KERNEL:
+                    bounds_.append(bounds[cont_b: cont_b + 1])
+                    cont_b += 1
             cont += n_params
             values.append(value_kernel)
 
         if len(bounds_) > 0:
             bounds = bounds_
-
         return ProductKernels.define_default_kernel(dimension[1:], bounds, values,
                                                     parameters_priors, kernel_name[1:],
                                                     **kernel_parameters)
@@ -190,6 +199,13 @@ def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2=Non
                                                               var_evaluations=sigma2)
         parameters_priors[LOWER_TRIANG_NAME] = task_parameters[LOWER_TRIANG_NAME]
 
+    if ORNSTEIN_KERNEL in type_kernel:
+        index = data['points'].shape[1] + 1
+        parameters = \
+            ScaledKernel.define_prior_parameters(data, 1, var_evaluations=sigma2)
+        parameters_priors[SIGMA2_NAME] = [parameters[SIGMA2_NAME]]
+        parameters_priors[LENGTH_SCALE_ORNSTEIN_NAME] = [1.0]
+
     if MATERN52_NAME in type_kernel:
         m = data['points'].shape[1]
         indexes = [i for i in range(m) if i != m - index + 1]
@@ -203,5 +219,6 @@ def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2=Non
             parameters = \
                 ScaledKernel.define_prior_parameters(data, len(indexes), var_evaluations=sigma2)
             parameters_priors[SIGMA2_NAME] = parameters[SIGMA2_NAME]
+
 
     return parameters_priors

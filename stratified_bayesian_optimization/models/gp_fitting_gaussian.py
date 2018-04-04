@@ -229,10 +229,13 @@ class GPFittingGaussian(object):
             if ORNSTEIN_KERNEL in self.type_kernel:
                 if ignore_index is None:
                     ignore_index = []
-                ignore_index += [2, 3]
+                ignore_index += [2]
 
-            self.slice_samplers.append(SliceSampling(wrapper_log_prob, indexes,
-                                                     ignore_index=ignore_index, **slice_parameters))
+            if len(indexes) != len(ignore_index):
+                self.slice_samplers.append(
+                    SliceSampling(
+                        wrapper_log_prob, indexes, ignore_index=ignore_index, **slice_parameters))
+
             slice_parameters['component_wise'] = True
             self.slice_samplers.append(SliceSampling(wrapper_log_prob, self.length_scale_indexes,
                                                      **slice_parameters))
@@ -296,21 +299,26 @@ class GPFittingGaussian(object):
             for sample in xrange(n_samples):
                 start_point_ = None
                 n_try = 0
+                points = separate_vector(start_point, self.length_scale_indexes)
                 while start_point_ is None and n_try < 10:
                     try:
                         start_point_ = \
-                            self.slice_samplers[0].slice_sample(start_point, None, *(self, ))
+                            self.slice_samplers[0].slice_sample(points[0], points[1], *(self, ))
                     except Exception as e:
                         n_try += 1
                         start_point_ = None
                 if start_point_ is None:
                     logger.info('program failed to compute a sample of the parameters')
                     sys.exit(1)
-                start_point = start_point_
+                start_point = combine_vectors(start_point_, points[1], self.length_scale_indexes)
+               # start_point = start_point_
                 samples.append(start_point)
             return samples[::self.thinning + 1]
 
         for sample in xrange(n_samples):
+            print "sample"
+            print sample
+            print n_samples
             points = separate_vector(start_point, self.length_scale_indexes)
             for index, slice in enumerate(self.slice_samplers):
                 new_point_ = None
@@ -1528,9 +1536,11 @@ class GPFittingGaussian(object):
         lp = 0.0
         parameters_model = self.get_parameters_model
         index = 0
+
         for parameter in parameters_model:
             dimension = parameter.dimension
             lp += parameter.log_prior(parameters[index: index + dimension])
+
             index += dimension
 
         if not np.isinf(lp):

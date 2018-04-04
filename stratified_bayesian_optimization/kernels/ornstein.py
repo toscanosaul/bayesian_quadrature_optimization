@@ -125,13 +125,14 @@ class Ornstein(AbstractKernel):
         :return: Matern52
         """
 
-        ls = ParameterEntity(LENGTH_SCALE_ORNSTEIN_NAME, params[0], None)
-        sigma = ParameterEntity(SIGMA2_NAME, params[1], None)
+        ls = ParameterEntity(LENGTH_SCALE_ORNSTEIN_NAME, [params[0]], None)
+        sigma = ParameterEntity(SIGMA2_NAME, [params[1]], None)
 
-        return cls(dimension, sigma, ls)
+
+        return cls(sigma, ls)
 
     @classmethod
-    def define_default_kernel(cls, dimension, bounds=None, default_values=None,
+    def     define_default_kernel(cls, dimension, bounds=None, default_values=None,
                               parameters_priors=None, **kernel_parameters):
         """
         :param dimension: (int) dimension of the domain of the kernel
@@ -152,10 +153,8 @@ class Ornstein(AbstractKernel):
             ls = parameters_priors.get(LENGTH_SCALE_ORNSTEIN_NAME, dimension * [1.0])
             default_values = ls
 
-
-        default_value_sigma = [parameters_priors.get(SIGMA2_NAME, 1.0)]
-        default_values += default_value_sigma
-
+            default_value_sigma = parameters_priors.get(SIGMA2_NAME, [1.0])
+            default_values += default_value_sigma
 
         kernel = cls.define_kernel_from_array(dimension, default_values)
 
@@ -172,6 +171,8 @@ class Ornstein(AbstractKernel):
 
         kernel.ls.prior = prior
         kernel.ls.bounds = bounds
+
+        default_value_sigma = default_values[-1:]
 
         sigma2 = ParameterEntity(SIGMA2_NAME, default_value_sigma,
                                  LogNormalSquare(1, 1.0, np.sqrt(default_value_sigma)),
@@ -197,8 +198,8 @@ class Ornstein(AbstractKernel):
         :return: np.array(nxm)
         """
 
-        inputs_1 = inputs_1 / self.length_scale.value
-        inputs_2 = inputs_2 / self.length_scale.value
+        inputs_1 = inputs_1 / self.ls.value
+        inputs_2 = inputs_2 / self.ls.value
         r = np.abs(inputs_1 - inputs_2)
         cov = np.exp(-r)
 

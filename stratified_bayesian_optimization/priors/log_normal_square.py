@@ -28,6 +28,7 @@ class LogNormalSquare(AbstractPrior):
         :param x: np.array
         :return: float
         """
+
         if np.any(x <= 0):
             return -np.inf
 
