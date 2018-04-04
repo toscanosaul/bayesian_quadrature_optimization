@@ -316,9 +316,6 @@ class GPFittingGaussian(object):
             return samples[::self.thinning + 1]
 
         for sample in xrange(n_samples):
-            print "sample"
-            print sample
-            print n_samples
             points = separate_vector(start_point, self.length_scale_indexes)
             for index, slice in enumerate(self.slice_samplers):
                 new_point_ = None
