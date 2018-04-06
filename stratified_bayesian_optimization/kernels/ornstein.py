@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 import numpy as np
 
+from scipy.spatial.distance import cdist
+
 from stratified_bayesian_optimization.kernels.abstract_kernel import AbstractKernel
 from stratified_bayesian_optimization.lib.distances import Distances
 from stratified_bayesian_optimization.entities.parameter import ParameterEntity
@@ -132,7 +134,7 @@ class Ornstein(AbstractKernel):
         return cls(sigma, ls)
 
     @classmethod
-    def     define_default_kernel(cls, dimension, bounds=None, default_values=None,
+    def define_default_kernel(cls, dimension, bounds=None, default_values=None,
                               parameters_priors=None, **kernel_parameters):
         """
         :param dimension: (int) dimension of the domain of the kernel
@@ -200,7 +202,8 @@ class Ornstein(AbstractKernel):
 
         inputs_1 = inputs_1 / self.ls.value
         inputs_2 = inputs_2 / self.ls.value
-        r = np.abs(inputs_1 - inputs_2)
+
+        r = cdist(inputs_1, inputs_2, 'minkowski', p=1.)
         cov = np.exp(-r)
 
         return cov * self.sigma.value
