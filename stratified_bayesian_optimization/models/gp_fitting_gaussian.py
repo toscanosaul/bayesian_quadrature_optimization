@@ -82,7 +82,7 @@ class GPFittingGaussian(object):
                  start_point_sampler=None, max_steps_out=1, data=None, random_seed=None,
                  type_bounds=None, training_name=None, problem_name=None,
                  name_model='gp_fitting_gaussian', samples_parameters=None, noise=False,
-                 simplex_domain=None, **kernel_parameters):
+                 simplex_domain=None, define_samplers=True, **kernel_parameters):
         """
         :param type_kernel: [str] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL].
@@ -117,6 +117,8 @@ class GPFittingGaussian(object):
         :param kernel_parameters: additional kernel parameters,
             - SAME_CORRELATION: (boolean) True or False. Parameter used only for task kernel.
         :param samples_parameters: [[float]]
+        :param define_samplers: (boolean) If False, samplers for the hyperparameters are not
+            defined.
 
         """
 
@@ -197,7 +199,9 @@ class GPFittingGaussian(object):
         self.optimization_results = []
 
         self.set_parameters_kernel()
-        self.set_samplers()
+
+        if define_samplers:
+            self.set_samplers()
 
         if type_bounds is not None and len(type_bounds) > 0 and type_bounds[-1] == 1:
             self.separate_tasks = True

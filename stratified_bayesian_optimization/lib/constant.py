@@ -33,11 +33,13 @@ SAME_CORRELATION = 'same_correlation'
 PRODUCT_KERNELS_SEPARABLE = 'Product_of_kernels_with_separable_domain'
 SCALED_KERNEL = 'Scaled_kernel'
 ORNSTEIN_KERNEL = 'Ornstein_kernel'
+DIFFERENCES_KERNEL = 'Differences_kernel'
 
 # Default names for the parameters
 LENGTH_SCALE_NAME = 'length_scale'
 SIGMA2_NAME = 'sigma2'
 LENGTH_SCALE_ORNSTEIN_NAME = 'length_scale_ornstein'
+
 
 LOWER_TRIANG_NAME = 'lower_triangular'
 

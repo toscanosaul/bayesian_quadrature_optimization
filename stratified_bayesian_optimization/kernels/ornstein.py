@@ -32,7 +32,7 @@ class Ornstein(AbstractKernel):
 
         name = ORNSTEIN_KERNEL
 
-        super(Ornstein, self).__init__(name, 1, 1)
+        super(Ornstein, self).__init__(name, 1, 2)
 
         self.sigma = sigma
         self.ls = ls
