@@ -583,11 +583,9 @@ class GPFittingGaussian(object):
         samples_parameters = self.samples_parameters
         if len(samples_parameters) > 0:
             samples_parameters = [list(param) for param in samples_parameters]
-
-        print self.start_point_sampler
+        
         if self.start_point_sampler is None:
             self.start_point_sampler = []
-        print self.start_point_sampler
 
         return {
             'type_kernel': self.type_kernel,
