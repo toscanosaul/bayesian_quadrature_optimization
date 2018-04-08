@@ -124,7 +124,8 @@ class GPFittingService(object):
                n_samples=None, random_seed=DEFAULT_RANDOM_SEED, kernel_values=None, mean_value=None,
                var_noise_value=None, cache=True, same_correlation=False,
                use_only_training_points=True, optimization_method=None, n_samples_parameters=0,
-               parallel_training=True, simplex_domain=None, objective_function=None):
+               parallel_training=True, simplex_domain=None, objective_function=None,
+               define_samplers=True):
         """
         Fetch a GP model from file if it exists, otherwise train a new model and save it locally.
 
@@ -166,6 +167,8 @@ class GPFittingService(object):
         :param optimization_method: (str)
         :param n_samples_parameters: (int)
         :param parallel_training: (boolean)
+        :param define_samplers: (boolean) If False, samplers for the hyperparameters are not
+            defined.
 
         :return: (GPFittingGaussian) - An instance of GPFittingGaussian
         """
@@ -224,7 +227,7 @@ class GPFittingService(object):
                                     problem_name=problem_name, kernel_values=kernel_values,
                                     mean_value=mean_value, var_noise_value=var_noise_value,
                                     same_correlation=same_correlation,
-                                    simplex_domain=simplex_domain)
+                                    simplex_domain=simplex_domain, define_samplers=define_samplers)
 
         JSONFile.write(gp_model.serialize(), gp_path)
 

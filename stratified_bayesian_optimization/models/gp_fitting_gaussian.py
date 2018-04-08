@@ -1038,7 +1038,7 @@ class GPFittingGaussian(object):
     def train(cls, type_kernel, dimensions, mle, training_data, bounds_domain, thinning=0,
               n_burning=0, max_steps_out=1, random_seed=None, type_bounds=None, training_name=None,
               problem_name=None, kernel_values=None, mean_value=None, var_noise_value=None,
-              same_correlation=False, simplex_domain=None):
+              same_correlation=False, simplex_domain=None, define_samplers=True):
         """
         :param type_kernel: [(str)] Must be in possible_kernels. If it's a product of kernels it
             should be a list as: [PRODUCT_KERNELS_SEPARABLE, NAME_1_KERNEL, NAME_2_KERNEL]
@@ -1063,6 +1063,8 @@ class GPFittingGaussian(object):
         :param var_noise_value: [float], It contains the variance of the noise of the model
         :param same_correlation: (boolean) If true, it uses the same correlations for the task
             kernel.
+        :param define_samplers: (boolean) If False, samplers for the hyperparameters are not
+            defined.
 
         :return: GPFittingGaussian
         """
@@ -1076,7 +1078,7 @@ class GPFittingGaussian(object):
                      type_bounds=type_bounds, random_seed=random_seed, training_name=training_name,
                      problem_name=problem_name, kernel_values=kernel_values, mean_value=mean_value,
                      var_noise_value=var_noise_value, simplex_domain=simplex_domain,
-                     **{SAME_CORRELATION: same_correlation})
+                     define_samplers=define_samplers, **{SAME_CORRELATION: same_correlation})
 
             return gp.fit_gp_regression()
 
@@ -1085,7 +1087,7 @@ class GPFittingGaussian(object):
                    type_bounds=type_bounds, random_seed=random_seed, training_name=training_name,
                    problem_name=problem_name, kernel_values=kernel_values, mean_value=mean_value,
                    var_noise_value=var_noise_value, simplex_domain=simplex_domain,
-                   **{SAME_CORRELATION: same_correlation})
+                   define_samplers=define_samplers, **{SAME_CORRELATION: same_correlation})
 
     def evaluate_cross_cov(self, points_1, points_2, parameters_kernel):
         """
