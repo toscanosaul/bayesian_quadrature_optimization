@@ -59,7 +59,8 @@ class GPFittingService(object):
             'n_samples_parameters': spec.get('n_samples_parameters', 0),
             'parallel_training': spec.get('parallel_training', True),
             'simplex_domain': spec.get('simplex_domain', None),
-            'objective_function': spec.get('objective_function', None)
+            'objective_function': spec.get('objective_function', None),
+            'define_samplers':  spec.get('define_samplers', True),
         }
 
         return cls.get_gp(**entry)
