@@ -106,6 +106,8 @@ def get_kernel_class(kernel_name):
         return ProductKernels
     if kernel_name == SCALED_KERNEL:
         return ScaledKernel
+    if kernel_name == ORNSTEIN_KERNEL:
+        return Ornstein
 
 
 def parameters_kernel_from_list_to_dict(params, type_kernels, dimensions):

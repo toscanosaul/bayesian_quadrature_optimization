@@ -75,7 +75,8 @@ logger = SBOLog(__name__)
 
 class GPFittingGaussian(object):
 
-    _possible_kernels_ = [MATERN52_NAME, TASKS_KERNEL_NAME, PRODUCT_KERNELS_SEPARABLE]
+    _possible_kernels_ = [MATERN52_NAME, TASKS_KERNEL_NAME, PRODUCT_KERNELS_SEPARABLE,
+                          ORNSTEIN_KERNEL]
 
     def __init__(self, type_kernel, training_data, dimensions=None, bounds_domain=None,
                  kernel_values=None, mean_value=None, var_noise_value=None, thinning=0, n_burning=0,
@@ -583,7 +584,7 @@ class GPFittingGaussian(object):
         samples_parameters = self.samples_parameters
         if len(samples_parameters) > 0:
             samples_parameters = [list(param) for param in samples_parameters]
-        
+
         if self.start_point_sampler is None:
             self.start_point_sampler = []
 
