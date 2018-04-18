@@ -90,8 +90,8 @@ class SliceSampling(object):
             of the model (i.e. variance of noise, mean, parameters of the kernel)
         :return: float
         """
-
         new_point = point + x * direction
+
 
         if fixed_parameters is not None:
             new_point = combine_vectors(new_point, fixed_parameters, self.indexes)
@@ -232,7 +232,8 @@ class SliceSampling(object):
             new_llh = self.directional_log_prob(new_z, direction, point, fixed_parameters,
                                                 *args_log_prob)
             if np.isnan(new_llh):
-                raise Exception("Slice sampler got a NaN")
+                new_llh = -np.inf #manual fix
+               # raise Exception("Slice sampler got a NaN")
 
             if new_llh > llh and self.acceptable(new_z, llh, start_lower, start_upper, direction,
                                                  point, fixed_parameters, *args_log_prob):
@@ -260,6 +261,7 @@ class SliceSampling(object):
 
         :return: (np.array(n)) Sample a new point
         """
+
         upper = self.sigma * npr.rand()
         lower = upper - self.sigma
         llh = np.log(npr.rand()) + self.directional_log_prob(0.0, direction, point,

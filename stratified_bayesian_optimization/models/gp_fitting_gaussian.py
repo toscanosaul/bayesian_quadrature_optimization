@@ -218,8 +218,17 @@ class GPFittingGaussian(object):
         """
 
         if self.length_scale_indexes is None:
-            self.slice_samplers.append(SliceSampling(wrapper_log_prob,
-                                                     range(self.dimension_parameters)))
+            ignore_index = None
+            if not self.noise or self.data.get('var_noise') is not None:
+                ignore_index = [0, 1]
+
+            slice_parameters = {
+                'max_steps_out': self.max_steps_out,
+                'component_wise': True,
+            }
+            self.slice_samplers.append(SliceSampling(
+                wrapper_log_prob, range(self.dimension_parameters),  ignore_index=ignore_index,
+                **slice_parameters))
         else:
             slice_parameters = {
                 'max_steps_out': self.max_steps_out,
