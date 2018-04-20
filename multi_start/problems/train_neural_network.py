@@ -126,4 +126,4 @@ if __name__ == '__main__':
     f_name = 'data/multi_start/neural_networks/nn_' + str(nn_model)
     model.load_state_dict(torch.load(f_name))
     logger.info('nn loaded successfully')
-    train_nn(model, n_epochs=n_epochs)
+    train_nn(model, n_epochs=n_epochs, name_model=str(nn_model))
