@@ -12,12 +12,12 @@ logger = SBOLog(__name__)
 class GreedyPolicy(object):
 
     def __init__(self, dict_stat_models, forward_point, epsilon=0.01, total_iterations=100,
-                 learning_rate=0.5, total_batches=10):
+                 a_learning_rate=0.5, total_batches=10):
         self.dict_stat_models = dict_stat_models
         self.epsilon = epsilon
         self.total_iterations = total_iterations
         self.forward_point = forward_point
-        self.learning_rate = learning_rate
+    #    self.a_learning_rate = a_learning_rate
         self.total_batches = total_batches
         self.chosen_points = []
 
@@ -54,14 +54,23 @@ class GreedyPolicy(object):
         self.chosen_points.append(point_ind)
 
         current_iteration = move_model.current_iteration
-        lr = self.learning_rate / np.sqrt(float(current_iteration))
+
+        # lr = float(current_iteration) / self.a_learning_rate
+        # lr = 1.0 / (1.0 + lr)
+
         batch_index = move_model.current_batch_index
 
         new_point, new_value = self.forward_point(
-            current_point, learning_rate=lr, batch_index=batch_index)
+            epoch=move_model.epoch, batch_index=batch_index, current_point=current_point)
         move_model.current_point = new_point
         move_model.current_iteration += 1
+
+        if move_model.current_batch_index + 1 > self.total_batches:
+            move_model.current_epoch += 1
+
         move_model.current_batch_index = (move_model.current_batch_index + 1) % self.total_batches
+
+
 
         move_model.add_observations(move_model.gp_model, current_iteration, new_value)
 

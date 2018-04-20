@@ -52,6 +52,7 @@ class StatModel(object):
         self.starting_point = starting_point
         self.current_point = starting_point
         self.current_batch_index = current_batch_index
+        self.current_epoch = 1
 
         self.raw_results = raw_results
         self.best_result = best_result
