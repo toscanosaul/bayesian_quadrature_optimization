@@ -6,6 +6,8 @@ import sys
 import matplotlib
 import matplotlib.pyplot as plt
 
+from scipy.optimize import curve_fit, leastsq, fmin_bfgs, fmin_l_bfgs_b, nnls
+
 from stratified_bayesian_optimization.lib.constant import (
     SCALED_KERNEL,
     MATERN52_NAME,
@@ -32,6 +34,7 @@ from stratified_bayesian_optimization.lib.la_functions import (
 from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.samplers.slice_sampling import SliceSampling
 from stratified_bayesian_optimization.util.json_file import JSONFile
+from multi_start.parametric_functions import ParametricFunctions
 
 logger = SBOLog(__name__)
 
@@ -41,7 +44,8 @@ class StatModel(object):
 
     def __init__(self, raw_results, best_result, current_iteration, get_value_next_iteration,
                  starting_point, current_batch_index, problem_name=None, max_iterations=1000,
-                 parametric_mean=False, square_root_factor=True, divide_kernel_prod_factor=True):
+                 parametric_mean=False, square_root_factor=True, divide_kernel_prod_factor=True,
+                 lower=None, upper=None):
         """
 
         :param raw_results: [float]
@@ -66,6 +70,11 @@ class StatModel(object):
         self.problem_name = problem_name
         self.max_iterations = max_iterations
         self.parametric_mean = parametric_mean
+
+        self.parametrics = None
+        if self.parametric_mean:
+            self.parametrics = ParametricFunctions(max_iterations, lower, upper)
+
         self.gp_model = None
         self.define_gp_model()
 
@@ -178,7 +187,7 @@ class StatModel(object):
         return cov_mat
 
 
-    def log_likelihood(self, gp_model, parameters_kernel, mean_parameters=None):
+    def log_likelihood(self, gp_model, parameters_kernel, mean_parameters=None, weights=None):
         """
         GP log likelihood: y(x) ~ f(x) + epsilon, where epsilon(x) are iid N(0,var_noise), and
         f(x) ~ GP(mean, cov)
@@ -196,7 +205,7 @@ class StatModel(object):
         chol = cholesky(cov, max_tries=7)
 
         if self.parametric_mean:
-            mean = self.compute_parametric_mean(mean_parameters)
+            mean = self.compute_parametric_mean(gp_model, weights, mean_parameters)
         else:
             mean = 0
         y_unbiased = gp_model.data['evaluations'] - mean
@@ -204,27 +213,51 @@ class StatModel(object):
 
         return -np.sum(np.log(np.diag(chol))) - 0.5 * np.dot(y_unbiased, solve)
 
-    def compute_parametric_mean(self, mean_parameters):
-        pass
+    def compute_parametric_mean(self, gp_model, weights, mean_parameters):
+        f = self.function_factor_kernel
+        X_data = gp_model.data['points']
+        mean_vector = np.zeros(len(X_data))
+        for i in range(len(mean_vector)):
+            val_1 = self.parametrics.weighted_combination(i + 1, weights, mean_parameters)
+            val_2 = self.parametrics.weighted_combination(i + 2, weights, mean_parameters)
+            mean_ = -np.log(val_1) / f(i + 1)
+            mean_ -= -np.log(val_2) / f(i + 2)
+            mean_vector[i] = mean_
+        return mean_vector
 
     def compute_prior_mean(self, mean_parameters):
         pass
 
-    def log_prob(self, parameters, gp_model, mean_parameters=None):
+    def log_prob(self, parameters, gp_model):
+        """
+
+        :param parameters: [kernel parameters, weights, mean parameters]
+        :param gp_model:
+        :return:
+        """
+
+        mean_parameters = None
+        weights = None
+        dim_kernel_params = gp_model.dimension_parameters
+        kernel_parameters = parameters[0:dim_kernel_params]
+
         lp = 0.0
         parameters_model = gp_model.get_parameters_model[2:]
         index = 0
 
         for parameter in parameters_model:
             dimension = parameter.dimension
-            lp += parameter.log_prior(parameters[index: index + dimension])
+            lp += parameter.log_prior(kernel_parameters[index: index + dimension])
             index += dimension
 
         if not np.isinf(lp) and self.parametric_mean:
-            lp += self.compute_prior_mean(mean_parameters)
+            weights = np.array(
+                parameters[dim_kernel_params:dim_kernel_params+self.parametrics.n_weights])
+            mean_parameters = parameters[self.parametrics.n_weights+dim_kernel_params:]
+            lp += self.parametrics.log_prior(mean_parameters, weights)
 
         if not np.isinf(lp):
-            lp += self.log_likelihood(gp_model, parameters, mean_parameters)
+            lp += self.log_likelihood(gp_model, kernel_parameters, mean_parameters, weights)
 
         return lp
 
@@ -345,7 +378,7 @@ class StatModel(object):
         return cov
 
 
-    def compute_posterior_params(self, gp_model, kernel_params, mean_parameters=None):
+    def compute_posterior_params(self, gp_model, kernel_params, mean_parameters=None, weights=None):
         ## Mean is zero. We may need to change when including mean
         ##Compute posterior parameters of f(x*)
 
@@ -361,7 +394,7 @@ class StatModel(object):
         chol = cholesky(cov, max_tries=7)
 
         if self.parametric_mean:
-            mean = self.compute_parametric_mean(mean_parameters)
+            mean = self.compute_parametric_mean(gp_model, weights, mean_parameters)
         else:
             mean = 0.
 
@@ -492,4 +525,187 @@ class StatModel(object):
             file_name += '_' + sufix
 
         JSONFile.write(stat_model_dict, file_name + '.json')
+
+    def log_prob_per_parametric_function(self, x, historical_data, function_name, weight=1.0):
+        """
+        log_prob for only one starting point
+        Historical data of only one starting point.
+
+        x: dictionary with arguments of function
+        historical_data: [float]
+        """
+
+        f = self.function_factor_kernel
+
+        function = self.parametrics.functions[function_name]
+        params = x
+
+        dom_x = range(1, len(historical_data) + 1)
+        evaluations = np.zeros(len(historical_data))
+        for i in dom_x:
+            first_1 = weight * function(i, **params) / f(i)
+            first_2 = weight * function(i + 1, **params) / f(i+1)
+            # val = -np.log(first_1) / f(i)
+            # val -= -np.log(first_2) / f(i + 1)
+            evaluations[i - 1] = first_1 - first_2
+
+        val = -1.0 * np.sum((evaluations - historical_data) ** 2)
+
+        return val
+
+    def log_prob_all_parametric_function(self, x, historical_data):
+        """
+        log_prob for only one starting point
+        Historical data of only one starting point.
+
+        x: [weights, parameters]
+        historical_data: [float]
+        """
+
+        f = self.function_factor_kernel
+
+        weights = x[0: self.parametrics.n_weights]
+        parameters = x[self.parametrics.n_weights:]
+
+        dom_x = range(1, len(historical_data) + 1)
+        evaluations = np.zeros(len(historical_data))
+        for i in dom_x:
+            first_1 = self.parametrics.weighted_combination(i, weights, parameters) / f(i)
+            first_2 = self.parametrics.weighted_combination(i+1, weights, parameters) / f(i+1)
+            # val = -np.log(first_1) / f(i)
+            # val -= -np.log(first_2) / f(i + 1)
+            evaluations[i - 1] = first_1 - first_2
+
+        val = -1.0 * np.sum((evaluations - historical_data) ** 2)
+
+        return val
+
+    def gradient_llh_all_functions(self, x, historical_data):
+        f = self.function_factor_kernel
+
+        weights = x[0: self.parametrics.n_weights]
+        parameters = x[self.parametrics.n_weights:]
+
+        evaluations = np.zeros(len(historical_data))
+
+        dom_x = range(1, len(historical_data) + 1)
+
+        gradient = np.zeros(self.parametrics.n_parameters + self.parametrics.n_weights)
+
+        for i in dom_x:
+            # evaluations[i - 1] = -np.log(weight * function(i, **params)) / f(i)
+            # evaluations[i - 1] -= -np.log(weight * function(i + 1, **params)) / f(i + 1)
+            # tmp = - weight * gradient_function(i, **params) / (f(i) * weight * function(i, **params))
+            # tmp -= -weight * gradient_function(i + 1, **params) / (
+            # f(i + 1) * weight * function(i + 1, **params))
+            # gradient_theta += tmp * (evaluations[i - 1] - historical_data[i - 1])
+            tmp = self.parametrics.gradient_weighted_combination(i, weights, parameters) / f(i)
+            tmp -= self.parametrics.gradient_weighted_combination(i+1, weights, parameters) / f(i+1)
+
+            first_1 = self.parametrics.weighted_combination(i, weights, parameters) / f(i)
+            first_2 = self.parametrics.weighted_combination(i+1, weights, parameters) / f(i+1)
+
+            evaluations[i-1] = first_1 - first_2
+
+            gradient += tmp * (evaluations[i-1] - historical_data[i-1])
+
+        gradient *= -2.0
+
+        return gradient
+
+    def mle_params_all_functions(
+            self, historical_data, lower=0.0, upper=1.0, total_iterations=100):
+        """
+        log_prob for only one starting point
+
+        :param historical_data: [float]
+        """
+        historical_data = np.array(historical_data)
+        n = len(historical_data)
+
+        def objective(params):
+            val = self.log_prob_all_parametric_function(params, historical_data)
+            return -1.0 * val
+
+        def gradient(params):
+            val = self.gradient_llh_all_functions(params, historical_data)
+            return -1.0 * val
+
+        params_st = self.parametrics.get_starting_values()
+        bounds = self.parametrics.get_bounds()
+
+        popt, fval, info = fmin_l_bfgs_b(
+            objective, fprime=gradient, x0=params_st, bounds=bounds, approx_grad=False)
+
+        weights = popt[0: self.parametrics.n_weights]
+        params = popt[self.parametrics.n_weights:]
+
+        if lower is not None:
+            value_1 = self.parametrics.weighted_combination(1, weights, params)
+            if value_1 < lower:
+                w = lower / value_1
+                popt[0: self.parametrics.n_weights] = w
+
+        if upper is not None:
+            value_2 = self.parametrics.weighted_combination(total_iterations, weights, params)
+            if value_2 > upper:
+                w = upper / value_2
+                popt[0: self.parametrics.n_weights] = w
+
+        return popt, fval, info
+
+    def fit_parametric_functions(self, historical_data):
+        lower = self.parametrics.lower
+        upper = self.parametrics.upper
+        total_iterations = self.parametrics.total_iterations
+
+        params = self.mle_params_all_functions(historical_data, lower, upper, total_iterations)
+
+        return params[0]
+
+    def gradient_llh_per_function(self, x, historical_data, function_name, weight=1.0):
+        """
+        Gradient of the llh respect to a specific function.
+
+        :param function: str
+        """
+        f = self.function_factor_kernel
+
+        function = self.functions[function_name]
+        gradient_function = self.gradients_functions[function_name]
+        params = x
+
+        evaluations = np.zeros(len(historical_data))
+
+        dom_x = range(1, len(historical_data) + 1)
+        gradient_theta = np.zeros(len(x))
+        gradient = np.zeros(len(x) + 1)
+        gradient_weight = 0.0
+        for i in dom_x:
+            # evaluations[i - 1] = -np.log(weight * function(i, **params)) / f(i)
+            # evaluations[i - 1] -= -np.log(weight * function(i + 1, **params)) / f(i + 1)
+            # tmp = - weight * gradient_function(i, **params) / (f(i) * weight * function(i, **params))
+            # tmp -= -weight * gradient_function(i + 1, **params) / (
+            # f(i + 1) * weight * function(i + 1, **params))
+            # gradient_theta += tmp * (evaluations[i - 1] - historical_data[i - 1])
+
+            tmp = weight * gradient_function(i, **params) / f(i)
+            tmp -= weight * gradient_function(i + 1, **params) / f(i+1)
+
+            evaluations[i-1] = weight * function(i, **params) / f(i)
+            evaluations[i-1] -= weight * function(i + 1, **params) / f(i+1)
+
+            gradient_theta += tmp * (evaluations[i-1] - historical_data[i-1])
+
+            tmp_grad = function(i, **params) / f(i)
+            tmp_grad -= function(i+1, **params) / f(i+1)
+
+            gradient_weight += tmp_grad * (evaluations[i-1] - historical_data[i-1])
+
+        gradient_theta *= -2.0
+
+        gradient[0:-1] = gradient_theta
+        gradient[-1] = -2.0 * gradient_weight
+
+        return gradient
 

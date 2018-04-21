@@ -108,9 +108,9 @@ def train_nn(model, n_epochs=20, name_model='a.json', random_seed=1):
             loss.backward()
             optimizer.step()
 
-    f_name = 'data/multi_start/neural_networks/training_results/'
-    f_name += name_model
-    JSONFile.write(values, f_name)
+        f_name = 'data/multi_start/neural_networks/training_results/'
+        f_name += name_model
+        JSONFile.write(values, f_name)
 
 
 if __name__ == '__main__':
