@@ -22,6 +22,7 @@ if __name__ == '__main__':
     parser.add_argument('learning_rate', default=1.0)
     parser.add_argument('method', help='real_gradient, grad_epoch, lipschitz, approx_lipschitz')
     parser.add_argument('lipschitz')
+    parser.add_argument('n_epochs', default=20)
 
     args = parser.parse_args()
 
@@ -31,6 +32,7 @@ if __name__ == '__main__':
     std = float(args.std)
     lr = float(args.learning_rate)
     method = args.method
+    n_epochs = int(args.n_epochs)
 
     np.random.seed(random_seed)
 
@@ -98,7 +100,7 @@ if __name__ == '__main__':
 
     n_burning = 50
 
-    n_epochs = 20
+    # n_epochs = 20
     n_batches = 1
     total_iterations = n_epochs * n_batches
 
