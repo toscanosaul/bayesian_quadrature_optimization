@@ -8,6 +8,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from scipy.optimize import curve_fit, leastsq, fmin_bfgs, fmin_l_bfgs_b, nnls
+from scipy.stats import norm
 
 from stratified_bayesian_optimization.lib.constant import (
     SCALED_KERNEL,
@@ -41,14 +42,15 @@ logger = SBOLog(__name__)
 
 
 
-class StatModel(object):
+class StatModelLipschitz(object):
 
     def __init__(self, raw_results, best_result, current_iteration, get_value_next_iteration,
                  starting_point, current_batch_index, current_epoch,
                  kwargs_get_value_next_iteration=None,
                  problem_name=None, max_iterations=1000,
                  parametric_mean=False, square_root_factor=True, divide_kernel_prod_factor=True,
-                 lower=None, upper=None, total_batches=10):
+                 lower=None, upper=None, total_batches=10, n_burning=500, n_thinning=10,
+                 lipschitz=None, type_model='lipschitz'):
         """
 
         :param raw_results: [float]
@@ -61,10 +63,15 @@ class StatModel(object):
         self.current_batch_index = current_batch_index
         self.total_batches = total_batches
         self.current_epoch = current_epoch
+        self.n_burning = n_burning
+        self.n_thinning = n_thinning
 
-        self.raw_results = raw_results
+        self.raw_results = raw_results #dictionary with points and values, and gradients
         self.best_result = best_result
         self.current_iteration = current_iteration
+
+        self.lipschitz = lipschitz
+        self.type_model = type_model
 
         self.differences = None
         self.points_differences = None
@@ -100,7 +107,7 @@ class StatModel(object):
     def process_data(self):
         differences = []
         for i in range(1, len(self.raw_results)):
-            diff = self.raw_results[i] - self.raw_results[i-1]
+            diff = -np.sqrt(i) * (np.array(self.raw_results['points'][i]) - np.array(self.raw_results['points'][i-1]))
             differences.append(diff)
         self.differences = differences
 
@@ -133,8 +140,8 @@ class StatModel(object):
             'points': None,
             'training_name': None,
             'mle': False,
-            'thinning': 10,
-            'n_burning': 500,
+            'thinning': self.n_thinning,
+            'n_burning': self.n_burning,
             'max_steps_out': 1000,
             'n_samples': 0,
             'random_seed': 1,
@@ -156,7 +163,7 @@ class StatModel(object):
         model.dimension_parameters -= 2
         model.best_result = self.best_result
         model.current_iteration = self.current_iteration
-        model.raw_results = list(self.raw_results)
+        model.raw_results = dict(self.raw_results)
         model.data['points'] = list(self.points_differences)
         model.mean_params = []
 
@@ -178,16 +185,15 @@ class StatModel(object):
         n = len(x_poins)
         cov_mat = np.zeros((n, n))
         for i in range(n):
-            diff = (raw_cov[i, i] / g(f(i+1), f(i+1))) \
-                   + (raw_cov[i + 1, i + 1] / g(f(i+2),f(i+2)))
+            diff = raw_cov[i, i] + raw_cov[i + 1, i + 1] * (float(i+1)/float(i+2))
 
-            diff -= (2.0 * raw_cov[i, i + 1] / (g(f(i + 2), f(i+1))))
+            diff -= 2.0 * raw_cov[i, i + 1] * np.sqrt((float(i+1)/float(i+2)))
             cov_mat[i, i] = diff
             for j in range(i + 1, n):
-                diff = (raw_cov[i, j] / (g(f(j + 1), f(i + 1)))) +\
-                       (raw_cov[i + 1, j + 1] / (g(f(j + 2), f(i + 2))))
-                diff -= ((raw_cov[i, j + 1] / (g(f(j + 2), f(i + 1)))) +
-                         (raw_cov[i + 1, j] / (g(f(j + 1), f(i + 2)))))
+                diff = (raw_cov[i, j])  +\
+                       (raw_cov[i + 1, j + 1] * np.sqrt((float(i+1)/float(i+2))) * np.sqrt((float(j+1)/float(j+2))))
+                diff -= ((raw_cov[i, j + 1] * np.sqrt((float(j+1)/float(j+2))))+
+                         (raw_cov[i + 1, j] * np.sqrt((float(i+1)/float(i+2)))))
                 cov_mat[i, j] = diff
                 cov_mat[j, i] = diff
         return cov_mat
@@ -224,8 +230,8 @@ class StatModel(object):
         X_data = gp_model.data['points']
         mean_vector = np.zeros(len(X_data))
         for i in range(len(mean_vector)):
-            val_1 = self.parametrics.weighted_combination(i + 1, weights, mean_parameters) / f(i+1)
-            val_2 = self.parametrics.weighted_combination(i + 2, weights, mean_parameters) / f(i+2)
+            val_1 = self.parametrics.weighted_combination(i + 1, weights, mean_parameters)
+            val_2 = self.parametrics.weighted_combination(i + 2, weights, mean_parameters) * np.sqrt((i+1)/(i+2))
             mean_vector[i] = val_1 - val_2
 
         return mean_vector
@@ -260,7 +266,6 @@ class StatModel(object):
 
         if not np.isinf(lp):
             lp += self.log_likelihood(gp_model, kernel_parameters, mean_parameters, weights)
-
         return lp
 
     def sample_parameters(self, gp_model, n_samples, start_point=None, random_seed=None):
@@ -292,6 +297,8 @@ class StatModel(object):
                 n_try = 0
                 points = start_point
                 while start_point_ is None and n_try < 10:
+                    # start_point_ = \
+                    #     gp_model.slice_samplers[0].slice_sample(points, None, *(gp_model,))
                     try:
                         start_point_ = \
                             gp_model.slice_samplers[0].slice_sample(points, None, *(gp_model, ))
@@ -337,6 +344,7 @@ class StatModel(object):
 
         if self.parametric_mean:
             dimension_sampler += self.parametrics.n_weights + self.parametrics.n_parameters
+
         gp_model.slice_samplers.append(SliceSampling(
             self.log_prob, range(dimension_sampler), ignore_index=ignore_index,
             **slice_parameters))
@@ -384,19 +392,22 @@ class StatModel(object):
 
         cov = np.zeros(len(X_hist))
         for i in range(len(X_hist)):
-            cov[i] = (raw_cov[0, i] / g(f(x[0]),f(i+1)))
-            cov[i] -= raw_cov[0, i+1] / g(f(x[0]), f(i+2))
+            cov[i] = raw_cov[0, i]
+            cov[i] -= raw_cov[0, i+1] * np.sqrt(float(i+1)/float(i+2))
         return cov
 
 
-    def compute_posterior_params(self, gp_model, kernel_params, mean_parameters=None, weights=None):
+    def compute_posterior_params(self, gp_model, kernel_params, mean_parameters=None, weights=None, iteration=None):
         ## Mean is zero. We may need to change when including mean
         ##Compute posterior parameters of f(x*)
 
         f = self.function_factor_kernel
         g = self.divisor_kernel
 
-        current_point = [gp_model.current_iteration]
+        if iteration is None:
+            current_point = [gp_model.current_iteration]
+        else:
+            current_point = [iteration]
 
         X_data = gp_model.data['points']
         vector_ = self.cov_diff_point(gp_model, kernel_params, current_point, X_data)
@@ -407,7 +418,7 @@ class StatModel(object):
         if self.parametric_mean:
             mean = self.compute_parametric_mean(gp_model, weights, mean_parameters)
             prior_mean = self.parametrics.weighted_combination(
-                current_point[0], weights, mean_parameters) / f(current_point[0])
+                current_point[0], weights, mean_parameters)
         else:
             mean = 0.
             prior_mean = 0.
@@ -417,15 +428,41 @@ class StatModel(object):
 
         part_2 = cho_solve(chol, vector_)
 
-        mean = gp_model.raw_results[-1] + np.dot(vector_, solve) + prior_mean
+        mean = np.dot(vector_, solve) + prior_mean
+
+        # mean = gp_model.raw_results['values'][-1][0] - \
+        #        np.array(gp_model.raw_results['gradients'][-1]) * (np.dot(vector_, solve) + prior_mean) \
+        #        / np.sqrt(gp_model.current_iteration)
 
         raw_cov = gp_model.kernel.evaluate_cov_defined_by_params(
-            kernel_params, np.array([current_point]), 1) / \
-                  g(f(current_point[0]), f(current_point[0]))
+            kernel_params, np.array([current_point]), 1)
 
         var = raw_cov - np.dot(vector_, part_2)
+        # var *= (np.array(gp_model.raw_results['gradients'][-1]) ** 2) / (float(gp_model.current_iteration))
 
-        return mean, var
+        return mean, var[0, 0]
+
+    def estimate_lipschitz(self, gp_model, mean, cov, kernel_params, mean_parameters=None, weights=None):
+        if self.type_model == 'lipschitz':
+            return self.lipschitz
+        mean_, cov_ = self.folded_normal(mean, cov)
+
+        diff = gp_model.raw_results['values'][-1] - gp_model.raw_results['values'][-2]
+
+        mean_2, cov_2 = self.compute_posterior_params(
+            gp_model, kernel_params, mean_parameters, weights, iteration=gp_model.current_iteration-1)
+        mean__, cov__ = self.folded_normal(mean_2, cov_2)
+        quotient = (1.0/np.sqrt(gp_model.current_iteration)) * mean_ - (1.0 / np.sqrt(gp_model.current_iteration - 1)) * mean__
+
+        return diff / quotient
+
+    def folded_normal(self, mean, cov):
+        std = np.sqrt(cov)
+        mean_ = std * np.sqrt(2.0 / np.pi) * np.exp(- (mean ** 2) / (2.0 * cov))
+        mean_ += mean * (1.0 - 2.0 * norm.cdf(- mean / std))
+
+        var = (mean ** 2) + cov - (mean_ ** 2)
+        return mean_, var
 
     def compute_posterior_params_marginalize(self, gp_model, n_samples=10, burning_parameters=True):
         if burning_parameters:
@@ -453,6 +490,12 @@ class StatModel(object):
 
             mean, cov = self.compute_posterior_params(
                 gp_model, kernel_params, mean_parameters, weights)
+            mean_, cov_ = self.folded_normal(mean, cov)
+            L = self.estimate_lipschitz(gp_model, mean, cov, kernel_params, mean_parameters, weights)
+
+
+            mean = gp_model.raw_results['values'][-1][0] + (L * mean_ ) / np.sqrt(gp_model.current_iteration)
+            cov = cov_ *  (L ** 2) / (gp_model.current_iteration)
             means.append(mean)
             covs.append(cov)
 
@@ -463,14 +506,23 @@ class StatModel(object):
 
         return mean, std, ci
 
-    def add_observations(self, gp_model, point, y, new_point_in_domain=None):
+    def add_observations(self, gp_model, point, y, new_point_in_domain=None, gradient=None):
         gp_model.current_iteration = point
-        previous_y = gp_model.raw_results[-1]
-        gp_model.raw_results.append(y)
         gp_model.best_result = max(gp_model.best_result, y)
-        gp_model.data['points'].append((point-1, point))
+        gp_model.data['points'].append((point - 1, point))
+
+        previous_x = np.array(gp_model.raw_results['points'][-1])
+
+        if new_point_in_domain is not None:
+            gp_model.raw_results['points'].append(new_point_in_domain)
+        gp_model.raw_results['values'].append(y)
+        if gradient is not None:
+            gp_model.raw_results['gradients'].append(gradient)
+
+
         gp_model.data['evaluations'] = np.concatenate(
-            (gp_model.data['evaluations'],[(y - previous_y)]))
+            (gp_model.data['evaluations'],np.sqrt(point) * (previous_x - new_point_in_domain)))
+
 
         if self.current_batch_index + 1 > self.total_batches:
             self.current_epoch += 1
@@ -481,21 +533,23 @@ class StatModel(object):
             self.current_point = new_point_in_domain
 
 
-    def accuracy(self, gp_model, start=3, iterations=21, sufix=None):
-        means = []
-        cis = []
+    def accuracy(self, gp_model, start=3, iterations=21, sufix=None, model=None):
+        means = {}
+        cis = {}
 
         mean, std, ci = self.compute_posterior_params_marginalize(gp_model)
-        means.append(mean)
-        cis.append(ci)
+        means[start] = mean
+        cis[start] = ci
 
         for i in range(start, iterations):
             print (i)
             if len(gp_model.raw_results) < i + 1:
-                self.add_observations(gp_model, i+1, self.get_value_next_iteration(i+1, **self.kwargs))
+                data_new = self.get_value_next_iteration(i+1, **self.kwargs)
+                self.add_observations(gp_model, i+1, data_new['value'], data_new['point'], data_new['gradient'])
             mean, std, ci = self.compute_posterior_params_marginalize(gp_model)
-            means.append(mean)
-            cis.append(ci)
+            means[i + 1] = mean
+            cis[i + 1] = ci
+
             print mean, ci
             value_tmp = self.get_value_next_iteration(i+1, **self.kwargs)
             print value_tmp
@@ -521,14 +575,25 @@ class StatModel(object):
 
         return means, cis
 
-    def plot_accuracy_results(self, means, cis, original_value, start=3, sufix=None):
+    def plot_accuracy_results(self, means, cis, original_value, start=3, final_iteration=10, sufix=None, n_epoch=1):
         plt.figure()
         x_lim = len(means)
-        points = range(start, x_lim + start)
-        plt.plot(points, means, 'b', label='means')
+
+
+        means_vec = []
+        cis_vec = []
+        points = []
+
+        for i in sorted(means):
+            points.append(i)
+            means_vec.append(means[i])
+            cis_vec.append(cis[i])
+
+       # points = range(start, final_iteration, n_epoch)
+        plt.plot(points, means_vec, 'b', label='means')
         plt.plot(points, len(points) * [original_value], label='final value')
-        plt.plot(points, [t[0] for t in cis],'g-', label='ci')
-        plt.plot(points, [t[1] for t in cis],'g-', label='ci')
+        plt.plot(points, [t[0] for t in cis_vec],'g-', label='ci')
+        plt.plot(points, [t[1] for t in cis_vec],'g-', label='ci')
 
         plt.legend()
         plt.ylabel('Objective function')
@@ -585,8 +650,8 @@ class StatModel(object):
         dom_x = range(1, len(historical_data) + 1)
         evaluations = np.zeros(len(historical_data))
         for i in dom_x:
-            first_1 = weight * function(i, **params) / f(i)
-            first_2 = weight * function(i + 1, **params) / f(i+1)
+            first_1 = weight * function(i, **params)
+            first_2 = weight * function(i + 1, **params) * np.sqrt((i) / (i+1))
             # val = -np.log(first_1) / f(i)
             # val -= -np.log(first_2) / f(i + 1)
             evaluations[i - 1] = first_1 - first_2
@@ -612,8 +677,8 @@ class StatModel(object):
         dom_x = range(1, len(historical_data) + 1)
         evaluations = np.zeros(len(historical_data))
         for i in dom_x:
-            first_1 = self.parametrics.weighted_combination(i, weights, parameters) / f(i)
-            first_2 = self.parametrics.weighted_combination(i+1, weights, parameters) / f(i+1)
+            first_1 = self.parametrics.weighted_combination(i, weights, parameters)
+            first_2 = self.parametrics.weighted_combination(i+1, weights, parameters) * np.sqrt((i) / (i+1))
             # val = -np.log(first_1) / f(i)
             # val -= -np.log(first_2) / f(i + 1)
             evaluations[i - 1] = first_1 - first_2
@@ -641,11 +706,11 @@ class StatModel(object):
             # tmp -= -weight * gradient_function(i + 1, **params) / (
             # f(i + 1) * weight * function(i + 1, **params))
             # gradient_theta += tmp * (evaluations[i - 1] - historical_data[i - 1])
-            tmp = self.parametrics.gradient_weighted_combination(i, weights, parameters) / f(i)
-            tmp -= self.parametrics.gradient_weighted_combination(i+1, weights, parameters) / f(i+1)
+            tmp = self.parametrics.gradient_weighted_combination(i, weights, parameters)
+            tmp -= self.parametrics.gradient_weighted_combination(i+1, weights, parameters) * np.sqrt((i) / (i+1))
 
-            first_1 = self.parametrics.weighted_combination(i, weights, parameters) / f(i)
-            first_2 = self.parametrics.weighted_combination(i+1, weights, parameters) / f(i+1)
+            first_1 = self.parametrics.weighted_combination(i, weights, parameters)
+            first_2 = self.parametrics.weighted_combination(i+1, weights, parameters) * np.sqrt((i) / (i+1))
 
             evaluations[i-1] = first_1 - first_2
 

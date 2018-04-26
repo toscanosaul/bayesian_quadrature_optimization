@@ -68,7 +68,7 @@ class ParametricFunctions(object):
         self.default_values = {
             'linear': [0.5, 0.5],
             'ilog2': [0.40999, 0.78],
-            'weibull': [.7, 0.1, 0.01, 1],
+            'weibull': [.7, 0.1, 0.02, 1],
             'janoschek': [0.73, 0.07,  0.355,  0.46],
             'exp_4': [0.8, -0.8,0.7, 0.3],
             'mmf': [.7,  0.1, 0.01,  5],
@@ -83,7 +83,7 @@ class ParametricFunctions(object):
         self.min_values = {
             'linear': [0.00001, 0.0001],
             'ilog2': [None, 0.6],
-            'weibull': [None, None, 1e-10, None],
+            'weibull': [None, 0.0, 1e-100, None],
             'janoschek': [0.000001, 0.000001, None, None],
             'exp_4': [0.5, None, 1.0, None],
             'mmf': [None, None, 1e-10, None],
@@ -94,6 +94,7 @@ class ParametricFunctions(object):
             'pow_3': [None, 0.60, None],
             'vapor_pressure': None,
         }
+
 
         self.max_values = {
             'linear': None,
@@ -125,6 +126,7 @@ class ParametricFunctions(object):
         weights: [float]
         params: [float], they are in the order given by list_functions
         """
+
         val = 0.0
 
         for index_f, funct in enumerate(self.list_functions):
@@ -187,9 +189,11 @@ class ParametricFunctions(object):
         historical_data: [float]
         """
 
+
         bounds = []
 
         index = 0
+        val = 0.0
         for f in self.list_functions:
             if self.min_values[f] is not None or self.max_values[f] is not None:
                 bd = []
@@ -211,26 +215,30 @@ class ParametricFunctions(object):
                 bd = len(self.parameters_functions[f]) * [[None, None]]
                 bounds += bd
 
-        for i in range(params):
+        for i in range(len(params)):
             if bounds[i][0] is not None and params[i] < bounds[i][0]:
-                return -np.inf
+          #      print "wrong_bo"
+                val = -np.inf
+                return val
             if bounds[i][1] is not None and params[i] > bounds[i][1]:
-                #             print "wrong_bo"
-                return -np.inf
+           #     print "wrong_bo"
+                val = -np.inf
+                return val
 
         if self.weighted_combination(1, weights, params) >= \
                 self.weighted_combination(self.total_iterations, weights, params):
-            #         print "no incease"
-            return -np.inf
+           # print "no incease"
+            val = -np.inf
 
         if self.lower is not None and self.weighted_combination(1, weights, params) < self.lower:
-            # print "no lower"
-            return - np.inf
+           # print "no lower"
+
+            val = - np.inf
         if self.upper is not None \
                 and self.weighted_combination(self.total_iterations, weights, params) > self.upper:
-            return -np.inf
-
-        return 0.0
+          #  print "no upper"
+            val = -np.inf
+        return val
 
     def get_starting_values(self):
         params_st = np.ones(self.n_weights + self.n_parameters)
@@ -539,6 +547,7 @@ class ParametricFunctions(object):
         delta = float(delta)
 
         return alpha - (alpha - beta) * np.exp(- np.power(k * x, delta))
+
 
     @staticmethod
     def grad_weibull(x, alpha, beta, k, delta):
