@@ -5,11 +5,14 @@ from stratified_bayesian_optimization.util.json_file import JSONFile
 import numpy as np
 from multi_start.gredy_policy import GreedyPolicy
 
+import argparse
+
 from multi_start.stat_model_domain import StatModel
 from multi_start.stat_model_domain_lipschitz import StatModelLipschitz
 
 
 def create_model(args):
+
     rs = int(args['rs'])
     lb = float(args['lb'])
     ub = float(args['ub'])
@@ -102,12 +105,21 @@ def get_values(i, data, method):
 
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('method', help='approx_lipschitz')
+
+
+    args_ = parser.parse_args()
+
+    method = args_.method
+
     n_points = 9
     points_index = range(n_points)
     random_seed = 5
 
     rs = 1540
-    method = 'approx_lipschitz'
+  #  method = 'approx_lipschitz'
     std = 1.0
     lr = 10.0
 
@@ -133,7 +145,7 @@ if __name__ == '__main__':
     for i in points_index:
         stat_models[i] = create_model(parameters[i])
 
-    policy = GreedyPolicy(stat_models, 'approx_lipschitz', type_model='approx_lipschitz')
+    policy = GreedyPolicy(stat_models, method, type_model=method)
 
     n_iterations = 1000
     policy.run_policy(n_iterations)
