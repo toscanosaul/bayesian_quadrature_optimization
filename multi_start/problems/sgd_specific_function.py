@@ -31,6 +31,7 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
     points = []
 
     gradients = []
+    stochastic_gradients = []
 
     if method == 'grad_epoch':
         gradients = {}
@@ -93,6 +94,7 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
                 gradient_ = gradient(point, *args, **kwargs)
             grad.append(gradient_)
         gradient_ = np.mean(np.array(grad), axis=0)
+        stochastic_gradients.append(gradient_)
 
         if not adam:
             v = momentum * v + gradient_
@@ -148,10 +150,14 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
         if method == 'grad_epoch' and iteration % n_epochs == (n_epochs - 1):
             gradients[iteration] = gradient(point, n_samples=n_samples)
 
+    gradient_ = np.array(gradient(point, *args, **kwargs))
+    stochastic_gradients.append(gradient_)
+
     results = {'points': points,
                'values': values,
                'gradients': gradients,
-               'n_epochs': n_epochs}
+               'n_epochs': n_epochs,
+               'stochastic_gradients': stochastic_gradients}
 
     f_name = 'data/multi_start/analytic_example/training_results/'
 

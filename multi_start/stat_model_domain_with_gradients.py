@@ -8,6 +8,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from scipy.optimize import curve_fit, leastsq, fmin_bfgs, fmin_l_bfgs_b, nnls
+from scipy.stats import norm
 
 from stratified_bayesian_optimization.lib.constant import (
     SCALED_KERNEL,
@@ -41,7 +42,7 @@ logger = SBOLog(__name__)
 
 
 
-class StatModel(object):
+class StatModelGradients(object):
 
     def __init__(self, raw_results, best_result, current_iteration, get_value_next_iteration,
                  starting_point, current_batch_index, current_epoch,
@@ -49,7 +50,7 @@ class StatModel(object):
                  problem_name=None, max_iterations=1000,
                  parametric_mean=False, square_root_factor=True, divide_kernel_prod_factor=True,
                  lower=None, upper=None, total_batches=10, n_burning=500, n_thinning=10,
-                 model_gradient='real_gradient'):
+                 lipschitz=None, type_model='lipschitz'):
         """
 
         :param raw_results: [float]
@@ -65,11 +66,12 @@ class StatModel(object):
         self.n_burning = n_burning
         self.n_thinning = n_thinning
 
-        self.model_gradient = model_gradient
-
         self.raw_results = raw_results #dictionary with points and values, and gradients
         self.best_result = best_result
         self.current_iteration = current_iteration
+
+        self.lipschitz = lipschitz
+        self.type_model = type_model
 
         self.differences = None
         self.points_differences = None
@@ -395,14 +397,17 @@ class StatModel(object):
         return cov
 
 
-    def compute_posterior_params(self, gp_model, kernel_params, mean_parameters=None, weights=None):
+    def compute_posterior_params(self, gp_model, kernel_params, mean_parameters=None, weights=None, iteration=None):
         ## Mean is zero. We may need to change when including mean
         ##Compute posterior parameters of f(x*)
 
         f = self.function_factor_kernel
         g = self.divisor_kernel
 
-        current_point = [gp_model.current_iteration]
+        if iteration is None:
+            current_point = [gp_model.current_iteration]
+        else:
+            current_point = [iteration]
 
         X_data = gp_model.data['points']
         vector_ = self.cov_diff_point(gp_model, kernel_params, current_point, X_data)
@@ -423,22 +428,41 @@ class StatModel(object):
 
         part_2 = cho_solve(chol, vector_)
 
-        if self.model_gradient == 'real_gradient':
-            grad = np.array(gp_model.raw_results['gradients'][-1])
-        elif self.model_gradient == 'grad_epoch':
-            grad = np.array(gp_model.raw_results['gradients'][gp_model.current_iteration - 1])
+        mean = np.dot(vector_, solve) + prior_mean
 
-        mean = gp_model.raw_results['values'][-1][0] - \
-               grad * (np.dot(vector_, solve) + prior_mean) \
-               / np.sqrt(gp_model.current_iteration)
+        # mean = gp_model.raw_results['values'][-1][0] - \
+        #        np.array(gp_model.raw_results['gradients'][-1]) * (np.dot(vector_, solve) + prior_mean) \
+        #        / np.sqrt(gp_model.current_iteration)
 
         raw_cov = gp_model.kernel.evaluate_cov_defined_by_params(
             kernel_params, np.array([current_point]), 1)
 
         var = raw_cov - np.dot(vector_, part_2)
-        var *= (grad ** 2) / (float(gp_model.current_iteration))
+        # var *= (np.array(gp_model.raw_results['gradients'][-1]) ** 2) / (float(gp_model.current_iteration))
 
-        return mean[0], var[0, 0]
+        return mean, var[0, 0]
+
+    def estimate_lipschitz(self, gp_model, mean, cov, kernel_params, mean_parameters=None, weights=None):
+        if self.type_model == 'lipschitz':
+            return self.lipschitz
+        mean_, cov_ = self.folded_normal(mean, cov)
+
+        diff = gp_model.raw_results['values'][-1] - gp_model.raw_results['values'][-2]
+
+        mean_2, cov_2 = self.compute_posterior_params(
+            gp_model, kernel_params, mean_parameters, weights, iteration=gp_model.current_iteration-1)
+        mean__, cov__ = self.folded_normal(mean_2, cov_2)
+        quotient = (1.0/np.sqrt(gp_model.current_iteration)) * mean_ - (1.0 / np.sqrt(gp_model.current_iteration - 1)) * mean__
+
+        return diff / quotient
+
+    def folded_normal(self, mean, cov):
+        std = np.sqrt(cov)
+        mean_ = std * np.sqrt(2.0 / np.pi) * np.exp(- (mean ** 2) / (2.0 * cov))
+        mean_ += mean * (1.0 - 2.0 * norm.cdf(- mean / std))
+
+        var = (mean ** 2) + cov - (mean_ ** 2)
+        return mean_, var
 
     def compute_posterior_params_marginalize(self, gp_model, n_samples=10, burning_parameters=True, get_vectors=False):
         if burning_parameters:
@@ -466,6 +490,12 @@ class StatModel(object):
 
             mean, cov = self.compute_posterior_params(
                 gp_model, kernel_params, mean_parameters, weights)
+            mean_, cov_ = self.folded_normal(mean, cov)
+            L = self.estimate_lipschitz(gp_model, mean, cov, kernel_params, mean_parameters, weights)
+
+
+            mean = gp_model.raw_results['values'][-1][0] + (L * mean_ ) / np.sqrt(gp_model.current_iteration)
+            cov = cov_ *  (L ** 2) / (gp_model.current_iteration)
             means.append(mean)
             covs.append(cov)
 
@@ -474,12 +504,11 @@ class StatModel(object):
 
         ci = [mean - 1.96 * std, mean + 1.96 * std]
         if get_vectors:
-            return means, covs
+            return means, covs, gp_model.raw_results['values'][-1][0]
 
         return mean, std, ci
 
-    def add_observations(self, gp_model, point, y, new_point_in_domain=None, gradient=None,
-                         model='real_gradient'):
+    def add_observations(self, gp_model, point, y, new_point_in_domain=None, gradient=None):
         gp_model.current_iteration = point
         gp_model.best_result = max(gp_model.best_result, y)
         gp_model.data['points'].append((point - 1, point))
@@ -490,14 +519,11 @@ class StatModel(object):
             gp_model.raw_results['points'].append(new_point_in_domain)
         gp_model.raw_results['values'].append(y)
         if gradient is not None:
-            if model == 'real_gradient':
-                gp_model.raw_results['gradients'].append(gradient)
-            else:
-                gp_model.raw_results['gradients'][point - 1] = gradient
+            gp_model.raw_results['gradients'].append(gradient)
 
 
         gp_model.data['evaluations'] = np.concatenate(
-            (gp_model.data['evaluations'],np.sqrt(point - 1) * (previous_x - new_point_in_domain)))
+            (gp_model.data['evaluations'],np.sqrt(point) * (previous_x - new_point_in_domain)))
 
 
         if self.current_batch_index + 1 > self.total_batches:
@@ -509,27 +535,23 @@ class StatModel(object):
             self.current_point = new_point_in_domain
 
 
-    def accuracy(self, gp_model, start=3, iterations=21, sufix=None, model='real_gradient'):
+    def accuracy(self, gp_model, start=3, iterations=21, sufix=None, model=None):
         means = {}
         cis = {}
 
-        if model == 'real_gradient' or (model == 'grad_epoch' and start - 1 in gp_model.raw_results['gradients']):
-            mean, std, ci = self.compute_posterior_params_marginalize(gp_model)
-            means[start] = mean
-            cis[start] = ci
+        mean, std, ci = self.compute_posterior_params_marginalize(gp_model)
+        means[start] = mean
+        cis[start] = ci
 
         for i in range(start, iterations):
             print (i)
-#            if len(gp_model.raw_results) < i + 1:
-
-            data_new = self.get_value_next_iteration(i+1, **self.kwargs)
-            self.add_observations(gp_model, i+1, data_new['value'], data_new['point'], data_new['gradient'], model)
-
-            if model == 'grad_epoch' and data_new['gradient'] is None:
-                continue
+            if len(gp_model.raw_results) < i + 1:
+                data_new = self.get_value_next_iteration(i+1, **self.kwargs)
+                self.add_observations(gp_model, i+1, data_new['value'], data_new['point'], data_new['gradient'])
             mean, std, ci = self.compute_posterior_params_marginalize(gp_model)
             means[i + 1] = mean
             cis[i + 1] = ci
+
             print mean, ci
             value_tmp = self.get_value_next_iteration(i+1, **self.kwargs)
             print value_tmp

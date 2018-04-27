@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import numpy as np
 from scipy.stats import norm
+from scipy.stats import foldnorm
 
 from stratified_bayesian_optimization.initializers.log import SBOLog
 from stratified_bayesian_optimization.util.json_file import JSONFile
@@ -11,83 +12,122 @@ logger = SBOLog(__name__)
 
 class GreedyPolicy(object):
 
-    def __init__(self, dict_stat_models, forward_point, epsilon=0.01, total_iterations=100,
-                 a_learning_rate=0.5):
+    def __init__(self, dict_stat_models, name_model, type_model='grad_epoch', epsilon=0.01, total_iterations=100,
+                 n_epochs=1, n_samples=10):
         self.dict_stat_models = dict_stat_models
         self.epsilon = epsilon
+        self.name_model = name_model
         self.total_iterations = total_iterations
-        self.forward_point = forward_point
+        self.type_model = type_model
     #    self.a_learning_rate = a_learning_rate
-        self.total_batches = dict_stat_models.total_batches
-        self.chosen_points = []
+        self.n_samples = n_samples
+        self.n_epochs = n_epochs
+        self.chosen_points = {}
+        self.evaluations_obj = {}
+
+        self.parameters = {}
+        self.get_parameters()
+
+        for i in dict_stat_models:
+            self.chosen_points[i] = list(dict_stat_models[i].gp_model.raw_results['points'])
+            self.evaluations_obj[i] = list(dict_stat_models[i].gp_model.raw_results['values'])
 
 
     def get_current_best_value(self):
         best_values = []
-        for model in self.dict_stat_models:
-            best_values.append(model.gp_model.best_result)
+        for index in self.dict_stat_models:
+            best_values.append(self.dict_stat_models[index].gp_model.best_result)
         return np.max(best_values)
 
-    def probability_being_better(self, n_samples=10):
+    def get_parameters(self):
+        for index in self.dict_stat_models:
+            model = self.dict_stat_models[index]
+            params = model.compute_posterior_params_marginalize(model.gp_model, n_samples=self.n_samples, get_vectors=True)
+            self.parameters[index] = params
+
+    def probability_being_better(self):
         y = self.get_current_best_value()
 
         probabilities = {}
         for index in self.dict_stat_models:
             model = self.dict_stat_models[index]
-            params = model.compute_posterior_params_marginalize(model.gp_model, n_samples=n_samples)
-            mean = params[0]
-            std = params[1]
+           # params = model.compute_posterior_params_marginalize(model.gp_model, n_samples=n_samples, get_vectors=True)
+            params = self.parameters[index]
+            values = []
 
-            val = 1.0 - norm.cdf(y + self.epsilon, loc=mean, scale=std)
-            probabilities[index] = val
+            means = params['means']
+            covs = params['covs']
+            value = params['value']
+
+            if self.type_model == 'grad_epoch' or self.type_model == 'real_gradient':
+                for i in range(self.n_samples):
+                    mean = means[i] + value
+                    var = covs[i]
+                    val = 1.0 - norm.cdf(y + self.epsilon, loc=mean, scale=np.sqrt(var))
+                    values.append(val)
+            else:
+                target = y - value
+                for i in range(self.n_samples):
+                    mean = means[i]
+                    var = covs[i]
+                    std = np.sqrt(var)
+                    c = mean / std
+                    val = 1.0 - foldnorm.cdf(target, c, scale=std)
+                    values.append(val)
+                    #TODO: FINISH THIS
+
+            probabilities[index] = np.mean(values)
 
         return probabilities
 
-    def choose_move_point(self, n_samples=10):
-        probabilites = self.probability_being_better(n_samples=n_samples)
+    def choose_move_point(self):
+        probabilites = self.probability_being_better()
 
         point_ind = max(probabilites, key=probabilites.get)
 
         move_model = self.dict_stat_models[point_ind]
-        current_point = move_model.current_point
 
-        self.chosen_points.append(point_ind)
+        for t in range(self.n_epochs):
+            current_point = move_model.current_point
 
-        current_iteration = move_model.current_iteration
+            i = move_model.gp_model.current_iteration
+            data_new = move_model.get_value_next_iteration(i + 1, **move_model.kwargs)
+            type_model = self.type_model
 
-        # lr = float(current_iteration) / self.a_learning_rate
-        # lr = 1.0 / (1.0 + lr)
+            self.chosen_points[point_ind].append(data_new['point'])
+            self.evaluations_obj[point_ind].append(data_new['value'])
 
-        batch_index = move_model.current_batch_index
+            move_model.add_observations(move_model.gp_model, i + 1, data_new['value'], data_new['point'], data_new['gradient'], type_model)
 
-        new_point, new_value = self.forward_point(
-            epoch=move_model.epoch, batch_index=batch_index, current_point=current_point)
-        move_model.current_point = new_point
-        move_model.current_iteration += 1
+            logger.info('Point chosen is: ')
+            logger.info(move_model.starting_point)
+            logger.info('value is: ')
+            logger.info(data_new['value'])
 
-        if move_model.current_batch_index + 1 > self.total_batches:
-            move_model.current_epoch += 1
-
-        move_model.current_batch_index = (move_model.current_batch_index + 1) % self.total_batches
-
-        move_model.add_observations(move_model.gp_model, current_iteration, new_value)
-
-        logger.info('Point chosen is: ')
-        logger.info(move_model.starting_point)
-        logger.info('value is: ')
-        logger.info(new_value)
-
+        params = move_model.compute_posterior_params_marginalize(move_model.gp_model, n_samples=self.n_samples, get_vectors=True)
+        self.parameters[point_ind] = params
         self.save_data()
+
+    def run_policy(self, number_iterations=100):
+        steps = number_iterations / self.n_epochs
+        for i in range(steps):
+            self.choose_move_point()
+        logger.info('best_solution is: ')
+        logger.info(self.get_current_best_value())
 
 
     def save_data(self, sufix=None):
         data = {}
         data['chosen_points'] = self.chosen_points
+        data['evaluations'] = self.evaluations_obj
+        data['parameters'] = self.parameters
 
         file_name = 'data/multi_start/chosen_points'
 
-        if sufix is not None:
-            file_name += '_' + sufix
+        if sufix is None:
+            sufix = self.name_model
+
+        file_name += '_' + sufix
 
         JSONFile.write(data, file_name + '.json')
 

@@ -6,6 +6,7 @@ import os
 
 import matplotlib
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 
 from scipy.optimize import curve_fit, leastsq, fmin_bfgs, fmin_l_bfgs_b, nnls
 from scipy.stats import norm
@@ -464,7 +465,7 @@ class StatModelLipschitz(object):
         var = (mean ** 2) + cov - (mean_ ** 2)
         return mean_, var
 
-    def compute_posterior_params_marginalize(self, gp_model, n_samples=10, burning_parameters=True):
+    def compute_posterior_params_marginalize(self, gp_model, n_samples=10, burning_parameters=True, get_vectors=False):
         if burning_parameters:
             parameters = self.sample_parameters(
                 gp_model, float(gp_model.n_burning) / (gp_model.thinning + 1))
@@ -478,6 +479,7 @@ class StatModelLipschitz(object):
 
         means = []
         covs = []
+
         for param in parameters:
             kernel_params = param[0: dim_kernel_params]
             mean_parameters = None
@@ -493,9 +495,9 @@ class StatModelLipschitz(object):
             mean_, cov_ = self.folded_normal(mean, cov)
             L = self.estimate_lipschitz(gp_model, mean, cov, kernel_params, mean_parameters, weights)
 
-
-            mean = gp_model.raw_results['values'][-1][0] + (L * mean_ ) / np.sqrt(gp_model.current_iteration)
-            cov = cov_ *  (L ** 2) / (gp_model.current_iteration)
+            # TODO: NOT SURE IF USING NP.ABS(L) or not
+            mean = gp_model.raw_results['values'][-1][0] + (np.abs(L) * mean_) / np.sqrt(gp_model.current_iteration)
+            cov = cov_ * (L ** 2) / (gp_model.current_iteration)
             means.append(mean)
             covs.append(cov)
 
@@ -503,10 +505,14 @@ class StatModelLipschitz(object):
         std = np.sqrt(np.mean(covs))
 
         ci = [mean - 1.96 * std, mean + 1.96 * std]
+        if get_vectors:
+            means = [t - gp_model.raw_results['values'][-1][0] for t in means]
+            return {'means': means, 'covs': covs, 'value': gp_model.raw_results['values'][-1][0]}
 
         return mean, std, ci
 
-    def add_observations(self, gp_model, point, y, new_point_in_domain=None, gradient=None):
+    def add_observations(self, gp_model, point, y, new_point_in_domain=None, gradient=None,
+                         model=None):
         gp_model.current_iteration = point
         gp_model.best_result = max(gp_model.best_result, y)
         gp_model.data['points'].append((point - 1, point))
@@ -521,7 +527,7 @@ class StatModelLipschitz(object):
 
 
         gp_model.data['evaluations'] = np.concatenate(
-            (gp_model.data['evaluations'],np.sqrt(point) * (previous_x - new_point_in_domain)))
+            (gp_model.data['evaluations'], np.sqrt(point - 1) * (previous_x - new_point_in_domain)))
 
 
         if self.current_batch_index + 1 > self.total_batches:
