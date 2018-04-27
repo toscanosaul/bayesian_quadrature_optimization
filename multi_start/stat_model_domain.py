@@ -474,7 +474,7 @@ class StatModel(object):
 
         ci = [mean - 1.96 * std, mean + 1.96 * std]
         if get_vectors:
-            return means, covs
+            return {'means': means, 'covs': covs, 'value': gp_model.raw_results['values'][-1][0]}
 
         return mean, std, ci
 

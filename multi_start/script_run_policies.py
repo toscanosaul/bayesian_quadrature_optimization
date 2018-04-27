@@ -70,6 +70,14 @@ def create_model(args):
             max_iterations=total_iterations, parametric_mean=False, lower=None, upper=None,
             n_burning=n_burning, total_batches=n_batches, type_model=method, lipschitz=None,
             n_thinning=10, kwargs_get_value_next_iteration=kwargs)
+    else:
+        model = StatModel(
+            training_data, best_results, n_training, functions_get_value,
+            points_domain[-1], 0,
+            n_training, problem_name=name_model,
+            max_iterations=total_iterations, parametric_mean=False, lower=None, upper=None,
+            n_burning=n_burning, total_batches=n_batches,model_gradient=method,
+            n_thinning=10, kwargs_get_value_next_iteration=kwargs)
     return model
 
 

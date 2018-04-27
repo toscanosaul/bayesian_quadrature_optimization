@@ -77,7 +77,7 @@ class GreedyPolicy(object):
                     var = covs[i]
                     std = np.sqrt(var)
                     c = mean / std
-                    val = 1.0 - foldnorm.cdf(target, c, scale=std)
+                    val = 1.0 - foldnorm.cdf(target + self.epsilon, c, scale=std)
                     values.append(val)
                     #TODO: FINISH THIS
 
@@ -112,7 +112,8 @@ class GreedyPolicy(object):
             self.chosen_points[point_ind].append(data_new['point'])
             self.evaluations_obj[point_ind].append(data_new['value'])
 
-            move_model.add_observations(move_model.gp_model, i + 1, data_new['value'], data_new['point'], data_new['gradient'], type_model)
+            move_model.add_observations(move_model.gp_model, i + 1, data_new['value'],
+                                        data_new['point'], data_new['gradient'], type_model)
 
             logger.info('Point chosen is: ')
             logger.info(point_ind)
@@ -120,7 +121,8 @@ class GreedyPolicy(object):
             logger.info('value is: ')
             logger.info(data_new['value'])
 
-        params = move_model.compute_posterior_params_marginalize(move_model.gp_model, n_samples=self.n_samples, get_vectors=True)
+        params = move_model.compute_posterior_params_marginalize(
+            move_model.gp_model, n_samples=self.n_samples, get_vectors=True)
         self.parameters[point_ind] = params
         self.save_data()
 
