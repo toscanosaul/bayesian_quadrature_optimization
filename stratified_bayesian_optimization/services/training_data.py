@@ -78,7 +78,7 @@ class TrainingDataService(object):
         :return: {'points': [[float]], 'evaluations': [float], 'var_noise': [float] or []}
         """
 
-        if gp_path_cache is not None:
+        if cache and gp_path_cache is not None:
             data = JSONFile.read(gp_path_cache)
             if data is not None:
                 return data['data']
