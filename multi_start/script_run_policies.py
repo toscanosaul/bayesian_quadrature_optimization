@@ -147,5 +147,7 @@ if __name__ == '__main__':
 
     policy = GreedyPolicy(stat_models, method, type_model=method)
 
+    print(policy.type_model)
+
     n_iterations = 1000
     policy.run_policy(n_iterations)
