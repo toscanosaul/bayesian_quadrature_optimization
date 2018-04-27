@@ -12,7 +12,7 @@ logger = SBOLog(__name__)
 
 def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, bounds=None, learning_rate=0.1,
         momentum=0.0, maxepoch=250, adam=True, betas=None, eps=1e-8, simplex_domain=None,
-        name_model='1', method='real_gradient', n_epochs=1, n_samples=100):
+        name_model='1', method='real_gradient', n_epochs=1, n_samples=100, gradient_samples=None):
     """
     SGD to minimize sum(i=0 -> n) (1/n) * f(x). Batch sizes are of size 1.
     ADAM: https://arxiv.org/pdf/1412.6980.pdf
@@ -65,6 +65,7 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
         previous = point.copy()
         t_ += 1
         grad = []
+
         for j in xrange(n):
             gradient_ = gradient(point, *args, **kwargs)
 
@@ -107,6 +108,12 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
             v_1 = v0 / (1 - (betas[1]) ** (t_))
             point = point - learning_rate * m_1 / (np.sqrt(v_1) + eps)
 
+        points.append(np.array(point))
+        values.append(function(point))
+
+        if exact_gradient is not None and method == 'real_gradient':
+            gradients.append(exact_gradient(point))
+
         in_domain = True
         if project:
             for dim, bound in enumerate(bounds):
@@ -140,18 +147,16 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
             if not adam:
                 for dim, bound in enumerate(bounds):
                     v[dim] = (point[dim] - old_p[dim]) / learning_rate
-        points.append(np.array(point))
-        values.append(function(point))
 
-        if exact_gradient is not None and method == 'real_gradient':
-            gradients.append(exact_gradient(point))
         #    gradients.append(np.array(gradient_))
-
-        if method == 'grad_epoch' and iteration % n_epochs == (n_epochs - 1):
-            gradients[iteration] = gradient(point, n_samples=n_samples)
 
     gradient_ = np.array(gradient(point, *args, **kwargs))
     stochastic_gradients.append(gradient_)
+
+    if method == 'grad_epoch':
+        for iteration in range(maxepoch):
+            if iteration % n_epochs == (n_epochs - 1):
+                gradients[iteration] = gradient_samples(points[iteration], n_samples)
 
     results = {'points': points,
                'values': values,
@@ -174,7 +179,7 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
     return results
 
 def objective(x):
-    return 0.5 * (x ** 2)
+    return 0.5 * (np.array(x) ** 2)
 
 def exact_gradient(x):
     return np.array(x)
@@ -204,16 +209,23 @@ if __name__ == '__main__':
 
     def gradient(x, n_samples=1):
         epsilon = np.random.normal(0, std, n_samples)
-        return x + np.mean(epsilon)
+        return np.array(x) + np.mean(epsilon)
+
+    def gradient_samples(z, m):
+        epsilon = np.random.normal(0, std, m)
+        return np.array(z) + np.mean(epsilon)
 
 
     np.random.seed(random_seed)
     start = np.random.uniform(lb, ub, 1)
+    sign = np.random.binomial(1, 0.5)
+    if sign == 0:
+        start = -1.0 * start
 
     results = SGD(start, gradient, batch_size, objective, maxepoch=n_epochs, adam=False,
                   name_model='std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, random_seed, lb, ub, lr, method),
                   exact_gradient=exact_gradient, learning_rate=lr, method=method, n_epochs=5,
-                  n_samples=100)
+                  n_samples=100, gradient_samples=gradient_samples)
     logger.info('sol')
     logger.info(results['points'][-1])
     logger.info(results['values'][-1])
