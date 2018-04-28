@@ -598,8 +598,8 @@ class StatModelLipschitz(object):
        # points = range(start, final_iteration, n_epoch)
         plt.plot(points, means_vec, 'b', label='means')
         plt.plot(points, len(points) * [original_value], label='final value')
-        plt.plot(points, [t[0] for t in cis_vec],'g-', label='ci')
-        plt.plot(points, [t[1] for t in cis_vec],'g-', label='ci')
+        plt.plot(points, [t[0] for t in cis_vec],'b--', label='ci')
+        plt.plot(points, [t[1] for t in cis_vec],'b--', label='ci')
 
         plt.legend()
         plt.ylabel('Objective function')

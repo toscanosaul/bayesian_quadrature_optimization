@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from stratified_bayesian_optimization.util.json_file import JSONFile
 import numpy as np
 from multi_start.gredy_policy import GreedyPolicy
+from multi_start.uniform_policy import UniformPolicy
 
 import argparse
 
@@ -108,11 +109,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('method', help='approx_lipschitz')
+    parser.add_argument('policy', help='uniform, greedy', default='greedy')
 
 
     args_ = parser.parse_args()
 
     method = args_.method
+    type_policy = args_.policy
 
     n_points = 9
     points_index = range(n_points)
@@ -145,9 +148,12 @@ if __name__ == '__main__':
     for i in points_index:
         stat_models[i] = create_model(parameters[i])
 
-    policy = GreedyPolicy(stat_models, method, type_model=method)
+    if type_policy == 'greedy':
+        policy = GreedyPolicy(stat_models, method, type_model=method)
+    elif type_policy == 'uniform':
+        policy = UniformPolicy(stat_models, method, type_model=method)
 
     print(policy.type_model)
 
-    n_iterations = 1000
+    n_iterations = 200
     policy.run_policy(n_iterations)
