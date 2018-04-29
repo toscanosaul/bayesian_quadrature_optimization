@@ -22,6 +22,9 @@ def create_model(args, n_training=3):
     method = args['method']
     problem_name = args['problem_name']
 
+    #TODO: ADD THIS AS A PARAMETER
+    lipschitz_cte = 2.0
+
     method_ = method
     if method == 'lipschitz' or method == 'approx_lipschitz':
         method_ = 'real_gradient'
@@ -67,12 +70,15 @@ def create_model(args, n_training=3):
     total_iterations = n_epochs * n_batches
 
     if method == 'approx_lipschitz' or method == 'lipschitz':
+        if method == 'approx_lipschitz':
+            lipschitz_cte = None
+
         model = StatModelLipschitz(
             training_data, best_results, n_training, functions_get_value,
             points_domain[-1], 0,
             n_training, specifications=name_model,problem_name=problem_name,
             max_iterations=total_iterations, parametric_mean=False, lower=None, upper=None,
-            n_burning=n_burning, total_batches=n_batches, type_model=method, lipschitz=None,
+            n_burning=n_burning, total_batches=n_batches, type_model=method, lipschitz=lipschitz_cte,
             n_thinning=10, kwargs_get_value_next_iteration=kwargs)
     else:
         model = StatModel(
