@@ -15,7 +15,7 @@ done
 
 python -m multi_start.problems.sgd_specific_function $rs 1 100 0.01 0.1 1 $lr real_gradient $problem 1
 python -m multi_start.problems.sgd_specific_function $rs 1 100 0.01 0.1 1 $lr grad_epoch $problem 1
-python -m multi_start.problems.sgd_specific_function $rs 1 100 0.0 1.0 1 $lr real_gradient $problem 1
-python -m multi_start.problems.sgd_specific_function $rs 1 100 0.0 1.0 1 $lr grad_epoch $problem 1
-python -m multi_start.problems.sgd_specific_function $rs 1 100 0.1 0.0 1 $lr real_gradient $problem 1
-python -m multi_start.problems.sgd_specific_function $rs 1 100 0.1 0.0 1 $lr grad_epoch $problem 1
+python -m multi_start.problems.sgd_specific_function $rs 1 100 0.1 1.0 1 $lr real_gradient $problem 1
+python -m multi_start.problems.sgd_specific_function $rs 1 100 0.1 1.0 1 $lr grad_epoch $problem 1
+python -m multi_start.problems.sgd_specific_function $rs 1 100 0.001 0.01 1 $lr real_gradient $problem 1
+python -m multi_start.problems.sgd_specific_function $rs 1 100 0.001 0.01 1 $lr grad_epoch $problem 1
