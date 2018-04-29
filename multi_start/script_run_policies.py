@@ -157,7 +157,7 @@ if __name__ == '__main__':
         tmp_d['lr'] = lr
         tmp_d['problem_name'] = problem_name
 
-        if problem_name == 'analytic_example':
+        if problem_name == 'quadratic':
             lb = 10 ** j
             ub = 10 ** (j + 1)
 
