@@ -14,6 +14,7 @@ from multi_start.stat_model_domain_lipschitz import StatModelLipschitz
 
 
 if __name__ == '__main__':
+    # python -m multi_start.script_run_accuracy_toy_example 100 2.0 2.5 10.0 0.2 real_gradient 0 10 problem6
     parser = argparse.ArgumentParser()
     parser.add_argument('rs', help='5')
     parser.add_argument('lb', help=-1)
@@ -23,6 +24,8 @@ if __name__ == '__main__':
     parser.add_argument('method', help='real_gradient, grad_epoch, lipschitz, approx_lipschitz')
     parser.add_argument('lipschitz')
     parser.add_argument('n_epochs', default=20)
+    parser.add_argument('problem_name', help='analytic_example, problem6')
+    parser.add_argument('optimal_value', help=0.0)
 
     args = parser.parse_args()
 
@@ -33,6 +36,8 @@ if __name__ == '__main__':
     lr = float(args.learning_rate)
     method = args.method
     n_epochs = int(args.n_epochs)
+    problem_name = args.problem_name
+    optimal_value = float(args.optimal_value)
 
     np.random.seed(random_seed)
 
@@ -41,8 +46,8 @@ if __name__ == '__main__':
         method_ = 'real_gradient'
 
     name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, random_seed, lb, ub, lr, method_)
-    dir_data = 'data/multi_start/analytic_example/training_results/'
 
+    dir_data = 'data/multi_start/' + problem_name +'/training_results/'
 
     data = JSONFile.read(dir_data + name_model)
 
@@ -109,28 +114,28 @@ if __name__ == '__main__':
         model = StatModelLipschitz(
             training_data, best_results, n_training, functions_get_value,
             points_domain[-1], 0,
-            n_training, problem_name=name_model,
+            n_training, specifications=name_model, problem_name=problem_name,
             max_iterations=total_iterations, parametric_mean=False, lower=None, upper=None,
             n_burning=n_burning, total_batches=n_batches, type_model=method, lipschitz=lipschitz)
     elif method == 'approx_lipschitz':
         model = StatModelLipschitz(
             training_data, best_results, n_training, functions_get_value,
             points_domain[-1], 0,
-            n_training, problem_name=name_model,
+            n_training, specifications=name_model, problem_name=problem_name,
             max_iterations=total_iterations, parametric_mean=False, lower=None, upper=None,
             n_burning=n_burning, total_batches=n_batches, type_model=method, lipschitz=None)
     else:
         model = StatModel(
             training_data, best_results, n_training, functions_get_value,
             points_domain[-1], 0,
-            n_training, problem_name=name_model,
+            n_training, specifications=name_model, problem_name=problem_name,
             max_iterations=total_iterations, parametric_mean=False, lower=None, upper=None,
             n_burning=n_burning, total_batches=n_batches, model_gradient=method)
 
 
-    results = model.accuracy(model.gp_model, start=n_training, iterations=total_iterations, sufix=name_model,
+    results = model.accuracy(model.gp_model, start=n_training, iterations=total_iterations, sufix=None,
                              model=method)
 
     model.plot_accuracy_results(
-        results[0], results[1], 0.0,
-        start=n_training, sufix=name_model, final_iteration=total_iterations)
+        results[0], results[1], results[2], optimal_value,
+        start=n_training, sufix=None, final_iteration=total_iterations)

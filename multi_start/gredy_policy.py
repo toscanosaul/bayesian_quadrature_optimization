@@ -13,13 +13,14 @@ logger = SBOLog(__name__)
 
 class GreedyPolicy(object):
 
-    def __init__(self, dict_stat_models, name_model, type_model='grad_epoch', epsilon=0.01, total_iterations=100,
+    def __init__(self, dict_stat_models, name_model, problem_name, type_model='grad_epoch', epsilon=0.01, total_iterations=100,
                  n_epochs=1, n_samples=10, stop_iteration_per_point=100):
         self.dict_stat_models = dict_stat_models
         self.epsilon = epsilon
         self.name_model = name_model
         self.total_iterations = total_iterations
         self.type_model = type_model
+        self.problem_name = problem_name
     #    self.a_learning_rate = a_learning_rate
         self.n_samples = n_samples
         self.n_epochs = n_epochs
@@ -95,7 +96,7 @@ class GreedyPolicy(object):
 
         point_ind = max(probabilites, key=probabilites.get)
 
-        self.chosen_index.append(point_ind)
+
 
         move_model = self.dict_stat_models[point_ind]
 
@@ -109,6 +110,7 @@ class GreedyPolicy(object):
                 self.points_done.append(point_ind)
             type_model = self.type_model
 
+            self.chosen_index.append(point_ind)
             self.chosen_points[point_ind].append(data_new['point'])
             self.evaluations_obj[point_ind].append(data_new['value'])
 
@@ -141,10 +143,16 @@ class GreedyPolicy(object):
         data['parameters'] = self.parameters
         data['chosen_index'] = self.chosen_index
 
-        file_name = 'data/multi_start/greedy_policy'
+        file_name = 'data/multi_start/'
 
+        file_name += self.problem_name + '/'
         if sufix is None:
             sufix = self.name_model
+
+        if not os.path.exists(file_name):
+            os.mkdir(file_name)
+
+        file_name += 'greedy_policy/'
 
         if not os.path.exists(file_name):
             os.mkdir(file_name)

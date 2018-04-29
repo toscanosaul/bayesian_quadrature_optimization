@@ -13,13 +13,14 @@ logger = SBOLog(__name__)
 
 class UniformPolicy(object):
 
-    def __init__(self, dict_stat_models, name_model, type_model='grad_epoch', n_epochs=1,
+    def __init__(self, dict_stat_models, name_model, problem_name, type_model='grad_epoch', n_epochs=1,
                  stop_iteration_per_point=100):
         self.dict_stat_models = dict_stat_models
         self.points_index = range(len(self.dict_stat_models))
         self.current_index = 0
 
         self.type_model = type_model
+        self.problem_name = problem_name
 
         self.name_model = name_model
         self.n_epochs = n_epochs
@@ -46,7 +47,6 @@ class UniformPolicy(object):
         point_ind = self.current_index
         move_model = self.dict_stat_models[point_ind]
 
-
         for t in range(self.n_epochs):
             current_point = move_model.current_point
             i = move_model.gp_model.current_iteration
@@ -54,6 +54,7 @@ class UniformPolicy(object):
 
             type_model = self.type_model
 
+            self.chosen_index.append(point_ind)
             self.chosen_points[point_ind].append(data_new['point'])
             self.evaluations_obj[point_ind].append(data_new['value'])
 
@@ -83,7 +84,9 @@ class UniformPolicy(object):
         data['evaluations'] = self.evaluations_obj
         data['chosen_index'] = self.chosen_index
 
-        file_name = 'data/multi_start/greedy_policy'
+        file_name = 'data/multi_start/'
+
+        file_name += self.problem_name + '/'
 
         if sufix is None:
             sufix = self.name_model
@@ -91,7 +94,12 @@ class UniformPolicy(object):
         if not os.path.exists(file_name):
             os.mkdir(file_name)
 
-        file_name += '/' + sufix
+        file_name += 'uniform_policy' + '/'
+
+        if not os.path.exists(file_name):
+            os.mkdir(file_name)
+
+        file_name += sufix
 
         JSONFile.write(data, file_name + '.json')
 

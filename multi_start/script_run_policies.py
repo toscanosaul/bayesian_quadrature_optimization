@@ -12,7 +12,7 @@ from multi_start.stat_model_domain import StatModel
 from multi_start.stat_model_domain_lipschitz import StatModelLipschitz
 
 
-def create_model(args):
+def create_model(args, n_training=3):
 
     rs = int(args['rs'])
     lb = float(args['lb'])
@@ -20,13 +20,14 @@ def create_model(args):
     std = float(args['std'])
     lr = float(args['lr'])
     method = args['method']
+    problem_name = args['problem_name']
 
     method_ = method
     if method == 'lipschitz' or method == 'approx_lipschitz':
         method_ = 'real_gradient'
 
     name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, rs, lb, ub, lr, method_)
-    dir_data = 'data/multi_start/analytic_example/training_results/'
+    dir_data = 'data/multi_start/' + problem_name + '/' + 'training_results/'
 
     data = JSONFile.read(dir_data + name_model)
 
@@ -43,7 +44,6 @@ def create_model(args):
     data['values'] = [-1.0 * np.array(t) for t in data['values']]
 
 
-    n_training = 3
 
     training_data = {'points': data['points'][0:n_training],
                      'values': data['values'][0:n_training], 'gradients': []}
@@ -70,7 +70,7 @@ def create_model(args):
         model = StatModelLipschitz(
             training_data, best_results, n_training, functions_get_value,
             points_domain[-1], 0,
-            n_training, problem_name=name_model,
+            n_training, specifications=name_model,problem_name=problem_name,
             max_iterations=total_iterations, parametric_mean=False, lower=None, upper=None,
             n_burning=n_burning, total_batches=n_batches, type_model=method, lipschitz=None,
             n_thinning=10, kwargs_get_value_next_iteration=kwargs)
@@ -78,7 +78,7 @@ def create_model(args):
         model = StatModel(
             training_data, best_results, n_training, functions_get_value,
             points_domain[-1], 0,
-            n_training, problem_name=name_model,
+            n_training, specifications=name_model, problem_name=problem_name,
             max_iterations=total_iterations, parametric_mean=False, lower=None, upper=None,
             n_burning=n_burning, total_batches=n_batches,model_gradient=method,
             n_thinning=10, kwargs_get_value_next_iteration=kwargs)
@@ -104,27 +104,42 @@ def get_values(i, data, method):
                 'gradient': None}
 
 
+bounds = {}
+bounds['problem6'] = {}
+bounds['problem6']['lb'] =[0, 0.5, 1.0, 1.5, 2.0, -0.5, -1.0, -1.5, -2.0, -2.5]
+bounds['problem6']['ub'] =[0.5, 1.0, 1.5, 2.0, 2.5, 0.0, -0.5, -1.0, -1.5,-2.0]
+
 
 if __name__ == '__main__':
-
+    # python -m multi_start.script_run_policies real_gradient uniform problem6 10 100 10.0 0.1 10
     parser = argparse.ArgumentParser()
     parser.add_argument('method', help='approx_lipschitz')
     parser.add_argument('policy', help='uniform, greedy', default='greedy')
+    parser.add_argument('problem_name', help='analytic_example')
+    parser.add_argument('n_starting_points', help=10)
+    parser.add_argument('rs', help=100)
+    parser.add_argument('std', help=0.5)
+    parser.add_argument('lr', help=0.1)
+    parser.add_argument('n_iterations', help=200)
+
 
 
     args_ = parser.parse_args()
 
+    problem_name = args_.problem_name
     method = args_.method
     type_policy = args_.policy
+    n_points = int(args_.n_starting_points)
+    n_iterations = int(args_.n_iterations)
 
-    n_points = 9
     points_index = range(n_points)
     random_seed = 5
 
-    rs = 1540
+    rs = int(args_.rs)
   #  method = 'approx_lipschitz'
-    std = 1.0
-    lr = 10.0
+    std = float(args_.std)
+    lr = float(args_.lr)
+    #lr = 10.0
 
     parameters = {}
     for i in range(n_points):
@@ -134,12 +149,17 @@ if __name__ == '__main__':
         tmp_d['std'] = std
         tmp_d['method'] = method
         tmp_d['lr'] = lr
+        tmp_d['problem_name'] = problem_name
 
-        lb = 10 ** j
-        ub = 10 ** (j + 1)
+        if problem_name == 'analytic_example':
+            lb = 10 ** j
+            ub = 10 ** (j + 1)
 
-        tmp_d['lb'] = lb
-        tmp_d['ub'] = ub
+            tmp_d['lb'] = lb
+            tmp_d['ub'] = ub
+        else:
+            tmp_d['lb'] = bounds[problem_name]['lb'][i]
+            tmp_d['ub'] = bounds[problem_name]['ub'][i]
 
         parameters[i] = tmp_d
 
@@ -149,11 +169,10 @@ if __name__ == '__main__':
         stat_models[i] = create_model(parameters[i])
 
     if type_policy == 'greedy':
-        policy = GreedyPolicy(stat_models, method, type_model=method)
+        policy = GreedyPolicy(stat_models, method, problem_name, type_model=method)
     elif type_policy == 'uniform':
-        policy = UniformPolicy(stat_models, method, type_model=method)
+        policy = UniformPolicy(stat_models, method, problem_name, type_model=method)
 
     print(policy.type_model)
 
-    n_iterations = 200
     policy.run_policy(n_iterations)

@@ -48,7 +48,7 @@ class StatModelLipschitz(object):
     def __init__(self, raw_results, best_result, current_iteration, get_value_next_iteration,
                  starting_point, current_batch_index, current_epoch,
                  kwargs_get_value_next_iteration=None,
-                 problem_name=None, max_iterations=1000,
+                 problem_name=None, specifications=None, max_iterations=1000,
                  parametric_mean=False, square_root_factor=True, divide_kernel_prod_factor=True,
                  lower=None, upper=None, total_batches=10, n_burning=500, n_thinning=10,
                  lipschitz=None, type_model='lipschitz'):
@@ -59,6 +59,7 @@ class StatModelLipschitz(object):
         :param current_iteration: int
 
         """
+        self.specifications = specifications
         self.starting_point = starting_point
         self.current_point = starting_point
         self.current_batch_index = current_batch_index
@@ -542,10 +543,12 @@ class StatModelLipschitz(object):
     def accuracy(self, gp_model, start=3, iterations=21, sufix=None, model=None):
         means = {}
         cis = {}
+        values_observed = {}
 
         mean, std, ci = self.compute_posterior_params_marginalize(gp_model)
         means[start] = mean
         cis[start] = ci
+        values_observed[start] = gp_model.raw_results['values'][-1]
 
         for i in range(start, iterations):
             print (i)
@@ -555,33 +558,35 @@ class StatModelLipschitz(object):
             mean, std, ci = self.compute_posterior_params_marginalize(gp_model)
             means[i + 1] = mean
             cis[i + 1] = ci
-
+            values_observed[i + 1] = data_new['value']
             print mean, ci
             value_tmp = self.get_value_next_iteration(i+1, **self.kwargs)
             print value_tmp
 
-        accuracy_results = {}
-        accuracy_results['means'] = means
-        accuracy_results['ci'] = cis
-        file_name = 'data/multi_start/accuracy_results/stat_model'
+            accuracy_results = {}
+            accuracy_results['means'] = means
+            accuracy_results['ci'] = cis
+            accuracy_results['values_observed'] = values_observed
+            file_name = 'data/multi_start/accuracy_results/stat_model'
 
-        if not os.path.exists('data/multi_start'):
-            os.mkdir('data/multi_start')
+            if not os.path.exists('data/multi_start'):
+                os.mkdir('data/multi_start')
 
-        if not os.path.exists('data/multi_start/accuracy_results'):
-            os.mkdir('data/multi_start/accuracy_results')
+            if not os.path.exists('data/multi_start/accuracy_results'):
+                os.mkdir('data/multi_start/accuracy_results/')
 
-        if self.problem_name is not None:
-            file_name += '_' + self.problem_name
+            if not os.path.exists('data/multi_start/accuracy_results/' + self.problem_name):
+                os.mkdir('data/multi_start/accuracy_results/' + self.problem_name)
 
-        if sufix is not None:
-            file_name += '_' + sufix
+            if sufix is None:
+                sufix = self.specifications
+            file_name = 'data/multi_start/accuracy_results/' + self.problem_name + '/' + sufix
 
-        JSONFile.write(accuracy_results, file_name + '.json')
+            JSONFile.write(accuracy_results, file_name + '.json')
 
-        return means, cis
+        return means, cis, values_observed
 
-    def plot_accuracy_results(self, means, cis, original_value, start=3, final_iteration=10, sufix=None, n_epoch=1):
+    def plot_accuracy_results(self, means, cis, values_observed, original_value, start=3, final_iteration=10, sufix=None, n_epoch=1):
         plt.figure()
         x_lim = len(means)
 
@@ -589,17 +594,20 @@ class StatModelLipschitz(object):
         means_vec = []
         cis_vec = []
         points = []
+        values_observed_vec = []
 
         for i in sorted(means):
             points.append(i)
             means_vec.append(means[i])
             cis_vec.append(cis[i])
+            values_observed_vec.append(values_observed[i])
 
        # points = range(start, final_iteration, n_epoch)
         plt.plot(points, means_vec, 'b', label='means')
         plt.plot(points, len(points) * [original_value], label='final value')
         plt.plot(points, [t[0] for t in cis_vec],'b--', label='ci')
         plt.plot(points, [t[1] for t in cis_vec],'b--', label='ci')
+        plt.plot(points, values_observed_vec, label='observations')
 
         plt.legend()
         plt.ylabel('Objective function')
@@ -611,13 +619,15 @@ class StatModelLipschitz(object):
             os.mkdir('data/multi_start')
 
         if not os.path.exists('data/multi_start/accuracy_plots'):
-            os.mkdir('data/multi_start/accuracy_plots')
+            os.mkdir('data/multi_start/accuracy_plots/')
 
-        if self.problem_name is not None:
-            file_name += '_' + self.problem_name
+        if not os.path.exists('data/multi_start/accuracy_plots/' + self.problem_name):
+            os.mkdir('data/multi_start/accuracy_plots/' + self.problem_name)
 
-        if sufix is not None:
-            file_name += '_' + sufix
+        if sufix is None:
+            sufix = self.specifications
+
+        file_name = 'data/multi_start/accuracy_plots/' + self.problem_name + '/' + sufix
         plt.savefig(file_name + '.pdf')
 
     def save_model(self, sufix=None):
