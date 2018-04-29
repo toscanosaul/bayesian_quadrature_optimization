@@ -109,6 +109,12 @@ bounds['problem6'] = {}
 bounds['problem6']['lb'] =[0, 0.5, 1.0, 1.5, 2.0, -0.5, -1.0, -1.5, -2.0, -2.5]
 bounds['problem6']['ub'] =[0.5, 1.0, 1.5, 2.0, 2.5, 0.0, -0.5, -1.0, -1.5,-2.0]
 
+bounds['problem5'] = {}
+bounds['problem5']['lb'] =[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.8, 1.0]
+bounds['problem5']['ub'] =[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 0.9, 1.1]
+
+
+
 
 if __name__ == '__main__':
     # python -m multi_start.script_run_policies real_gradient uniform problem6 10 100 10.0 0.1 10
@@ -122,7 +128,7 @@ if __name__ == '__main__':
     parser.add_argument('lr', help=0.1)
     parser.add_argument('n_iterations', help=200)
 
-
+    n_training = 3
 
     args_ = parser.parse_args()
 
@@ -143,7 +149,7 @@ if __name__ == '__main__':
 
     parameters = {}
     for i in range(n_points):
-        j = i - 3
+        j = i - n_training
         tmp_d = {}
         tmp_d['rs'] = rs
         tmp_d['std'] = std
@@ -166,7 +172,7 @@ if __name__ == '__main__':
     np.random.seed(random_seed)
     stat_models = {}
     for i in points_index:
-        stat_models[i] = create_model(parameters[i])
+        stat_models[i] = create_model(parameters[i], n_training=n_training)
 
     if type_policy == 'greedy':
         policy = GreedyPolicy(stat_models, method, problem_name, type_model=method)

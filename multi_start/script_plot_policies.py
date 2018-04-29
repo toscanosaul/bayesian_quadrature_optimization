@@ -135,9 +135,10 @@ if __name__ == '__main__':
 
     best_values = {}
     data_dict = {}
-    types = ['greedy_real_gradient', 'uniform']
+    type_1 = 'greedy_' + method
+    types = [type_1, 'uniform']
 
-    data_dict['greedy_real_gradient'] = data
+    data_dict[type_1] = data
     data_dict['uniform'] = data_2
 
     for t in types:

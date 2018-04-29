@@ -586,7 +586,8 @@ class StatModelLipschitz(object):
 
         return means, cis, values_observed
 
-    def plot_accuracy_results(self, means, cis, values_observed, original_value, start=3, final_iteration=10, sufix=None, n_epoch=1):
+    def plot_accuracy_results(self, means, cis, values_observed, original_value, start=3, final_iteration=10, sufix=None, n_epoch=1,
+                              start_plot=0):
         plt.figure()
         x_lim = len(means)
 
@@ -597,6 +598,8 @@ class StatModelLipschitz(object):
         values_observed_vec = []
 
         for i in sorted(means):
+            if int(i) < start_plot:
+                continue
             points.append(i)
             means_vec.append(means[i])
             cis_vec.append(cis[i])

@@ -38,11 +38,14 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
         gradients = {}
 
     gradient_batch = []
-    points.append(np.array(start))
-    values.append(function(start))
+    # points.append(np.array(start))
+    # values.append(function(start))
 
-    if exact_gradient is not None and method == 'real_gradient':
-        gradients.append(exact_gradient(start))
+    logger.info('start_value')
+    logger.info(function(start))
+
+    # if exact_gradient is not None and method == 'real_gradient':
+    #     gradients.append(exact_gradient(start))
 
     project = False
     if bounds is not None or simplex_domain is not None:
@@ -109,9 +112,6 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
             v_1 = v0 / (1 - (betas[1]) ** (t_))
             point = point - learning_rate * m_1 / (np.sqrt(v_1) + eps)
 
-        points.append(np.array(point))
-        values.append(function(point))
-
         if exact_gradient is not None and method == 'real_gradient':
             gradients.append(exact_gradient(point))
 
@@ -148,6 +148,9 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
             if not adam:
                 for dim, bound in enumerate(bounds):
                     v[dim] = (point[dim] - old_p[dim]) / learning_rate
+
+        points.append(np.array(point))
+        values.append(function(point))
 
         #    gradients.append(np.array(gradient_))
 
@@ -211,6 +214,16 @@ def gradient_problem_6(x, std, m):
     epsilon = np.random.normal(0, std, m)
     return exact_gradient_problem_6(x) + np.mean(epsilon)
 
+def problem_5(x):
+    return -(1.4 - 3.0*x) * np.sin(18.0 * x)
+
+def exact_gradient_problem_5(x):
+    return -1.4 * 18.0 * np.cos(18.0 * x) + (3.0 * np.sin(18.0 * x) + 3.0 * x * np.cos(18.0*x) * 18.0)
+
+def gradient_problem_5(x, std, m):
+    epsilon = np.random.normal(0, std, m)
+    return exact_gradient_problem_5(x) + np.mean(epsilon)
+
 
 
 if __name__ == '__main__':
@@ -228,6 +241,7 @@ if __name__ == '__main__':
     parser.add_argument('choose_sign_st')
 
 
+
     args = parser.parse_args()
 
     random_seed = int(args.rs)
@@ -241,6 +255,7 @@ if __name__ == '__main__':
     problem = args.problem
     choose_sign_st = bool(int(args.choose_sign_st))
 
+    bounds = None
 
     if problem == 'parabola':
         objective = objective_parabola
@@ -271,6 +286,18 @@ if __name__ == '__main__':
 
         def gradient_samples(z, m):
             return gradient_problem_6(z, std, m)
+    elif problem == 'problem5':
+        objective = problem_5
+        exact_gradient = exact_gradient_problem_5
+
+        def gradient(x, n_samples=1):
+            return gradient_problem_5(x, std, n_samples)
+
+        def gradient_samples(z, m):
+            return gradient_problem_5(z, std, m)
+
+
+        bounds = [[0.0, 1.2]]
 
 
     np.random.seed(random_seed)
@@ -286,7 +313,7 @@ if __name__ == '__main__':
     results = SGD(start, gradient, batch_size, objective, maxepoch=n_epochs, adam=False,
                   name_model='std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, random_seed, lb, ub, lr, method),
                   exact_gradient=exact_gradient, learning_rate=lr, method=method, n_epochs=5,
-                  n_samples=100, gradient_samples=gradient_samples, problem=problem)
+                  n_samples=100, gradient_samples=gradient_samples, problem=problem, bounds=bounds)
     logger.info('sol')
     logger.info(results['points'][-1])
     logger.info(results['values'][-1])
