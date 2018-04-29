@@ -257,7 +257,7 @@ if __name__ == '__main__':
 
     bounds = None
 
-    if problem == 'parabola':
+    if problem == 'quadratic':
         objective = objective_parabola
         exact_gradient = exact_gradient_parabola
 
