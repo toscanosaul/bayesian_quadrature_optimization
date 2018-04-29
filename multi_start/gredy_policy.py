@@ -13,7 +13,7 @@ logger = SBOLog(__name__)
 
 class GreedyPolicy(object):
 
-    def __init__(self, dict_stat_models, name_model, problem_name, type_model='grad_epoch', epsilon=0.01, total_iterations=100,
+    def __init__(self, dict_stat_models, name_model, problem_name, type_model='grad_epoch', epsilon=0.1, total_iterations=100,
                  n_epochs=1, n_samples=10, stop_iteration_per_point=100):
         self.dict_stat_models = dict_stat_models
         self.epsilon = epsilon
@@ -42,6 +42,12 @@ class GreedyPolicy(object):
     def get_current_best_value(self):
         best_values = []
         for index in self.dict_stat_models:
+            best_values.append(np.max(self.dict_stat_models[index].raw_results['values']))
+        return np.max(best_values)
+
+    def get_current_solution(self):
+        best_values = []
+        for index in self.dict_stat_models:
             best_values.append(self.dict_stat_models[index].raw_results['values'][-1])
         return np.max(best_values)
 
@@ -53,7 +59,7 @@ class GreedyPolicy(object):
 
     def probability_being_better(self):
         y = self.get_current_best_value()
-
+        print (y)
         probabilities = {}
         for index in self.dict_stat_models:
             model = self.dict_stat_models[index]
@@ -96,8 +102,6 @@ class GreedyPolicy(object):
 
         point_ind = max(probabilites, key=probabilites.get)
 
-
-
         move_model = self.dict_stat_models[point_ind]
 
 
@@ -134,7 +138,7 @@ class GreedyPolicy(object):
             self.choose_move_point()
             self.save_data()
         logger.info('best_solution is: ')
-        logger.info(self.get_current_best_value())
+        logger.info(self.get_current_solution())
 
     def save_data(self, sufix=None):
         data = {}
