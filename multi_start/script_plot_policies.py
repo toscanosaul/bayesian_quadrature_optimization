@@ -111,6 +111,7 @@ if __name__ == '__main__':
     parser.add_argument('problem_name', help='analytic_example')
     parser.add_argument('n_starting_points', help=10)
     parser.add_argument('n_iterations', help=200)
+   # parser.add_argument('method_2', help='real_gradient')
 
 
 
@@ -167,7 +168,7 @@ if __name__ == '__main__':
         os.mkdir(file_name)
 
 
-    file_name += 'best_solution'
+    file_name += type_1 + '_uniform' + '_' + 'best_solution'
 
     plt.savefig(file_name + '.pdf')
 
