@@ -133,6 +133,8 @@ if __name__ == '__main__':
     stat_models = {}
     stat_models_2 = {}
     points_index = range(n_restarts)
+
+    print (n_restarts)
     for i in points_index:
         stat_models[i] = create_model(parameters[i], n_training=n_training, n_epochs=n_epochs, burning=False)
         stat_models_2[i] = create_model(parameters[i], n_training=n_training, n_epochs=n_epochs, burning=False)

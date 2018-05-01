@@ -151,7 +151,7 @@ class StatModelLipschitz(object):
             'kernel_values': None,
             'mean_value': None,
             'var_noise_value': None,
-            'cache': True,
+            'cache': False,
             'same_correlation': True,
             'use_only_training_points': True,
             'optimization_method': 'SBO',
