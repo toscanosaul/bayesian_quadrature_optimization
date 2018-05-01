@@ -136,8 +136,8 @@ if __name__ == '__main__':
 
     print (n_restarts)
     for i in points_index:
-        stat_models[i] = create_model(parameters[i], n_training=n_training, n_epochs=n_epochs, burning=False)
-        stat_models_2[i] = create_model(parameters[i], n_training=n_training, n_epochs=n_epochs, burning=False)
+        stat_models[i] = create_model(parameters[i], n_training=n_training, n_epochs=n_epochs, burning=False, point=i)
+        stat_models_2[i] = create_model(parameters[i], n_training=n_training, n_epochs=n_epochs, burning=False, point=i)
 
     policy_greedy = GreedyPolicy(stat_models, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
     policy_uniform = UniformPolicy(stat_models_2, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
