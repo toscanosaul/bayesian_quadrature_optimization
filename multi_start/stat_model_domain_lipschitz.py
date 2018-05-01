@@ -51,7 +51,7 @@ class StatModelLipschitz(object):
                  problem_name=None, specifications=None, max_iterations=1000,
                  parametric_mean=False, square_root_factor=True, divide_kernel_prod_factor=True,
                  lower=None, upper=None, total_batches=10, n_burning=500, n_thinning=10,
-                 lipschitz=None, type_model='lipschitz'):
+                 lipschitz=None, type_model='lipschitz', burning=True):
         """
 
         :param raw_results: [float]
@@ -67,6 +67,7 @@ class StatModelLipschitz(object):
         self.current_epoch = current_epoch
         self.n_burning = n_burning
         self.n_thinning = n_thinning
+        self.burning = burning
 
         self.raw_results = raw_results #dictionary with points and values, and gradients
         self.best_result = best_result
@@ -368,7 +369,7 @@ class StatModelLipschitz(object):
             else:
                 gp_model.samples_parameters.append(z)
 
-            if gp_model.n_burning > 0:
+            if gp_model.n_burning > 0 and self.burning:
                 parameters = self.sample_parameters(
                     gp_model, float(gp_model.n_burning) / (gp_model.thinning + 1))
                 gp_model.samples_parameters = []
@@ -376,7 +377,6 @@ class StatModelLipschitz(object):
                 gp_model.start_point_sampler = parameters[-1]
             else:
                 gp_model.start_point_sampler = gp_model.samples_parameters[-1]
-
 
     def cov_diff_point(self, gp_model, kernel_params, x, X_hist):
         f = self.function_factor_kernel

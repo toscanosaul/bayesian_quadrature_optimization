@@ -178,6 +178,8 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
     if not os.path.exists(f_name + 'training_results'):
         os.mkdir(f_name + 'training_results')
     f_name += 'training_results' + '/' + name_model
+
+
     JSONFile.write(results, f_name)
 
     return results
@@ -237,7 +239,7 @@ if __name__ == '__main__':
     parser.add_argument('std', help=1.0)
     parser.add_argument('learning_rate', default=1.0)
     parser.add_argument('method', help='real_gradient, grad_epoch, no_gradient')
-    parser.add_argument('problem', help='rastrigin, parabola, problem6')
+    parser.add_argument('problem', help='rastrigin, quadratic, problem6')
     parser.add_argument('choose_sign_st')
 
 

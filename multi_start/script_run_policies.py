@@ -12,7 +12,7 @@ from multi_start.stat_model_domain import StatModel
 from multi_start.stat_model_domain_lipschitz import StatModelLipschitz
 
 
-def create_model(args, n_training=3):
+def create_model(args, n_training=3, n_epochs=100, burning=True):
 
     rs = int(args['rs'])
     lb = float(args['lb'])
@@ -34,7 +34,7 @@ def create_model(args, n_training=3):
 
     data = JSONFile.read(dir_data + name_model)
 
-    name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, random_seed, lb, ub, lr, method)
+    name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, rs, lb, ub, lr, method)
 
     if method == 'real_gradient':
         data['gradients'] = [-1.0 * np.array(t) for t in data['gradients']]
@@ -65,21 +65,20 @@ def create_model(args, n_training=3):
 
     n_burning = 50
 
-    n_epochs = 100
+
     n_batches = 1
     total_iterations = n_epochs * n_batches
 
     if method == 'approx_lipschitz' or method == 'lipschitz':
         if method == 'approx_lipschitz':
             lipschitz_cte = None
-
         model = StatModelLipschitz(
             training_data, best_results, n_training, functions_get_value,
             points_domain[-1], 0,
             n_training, specifications=name_model,problem_name=problem_name,
             max_iterations=total_iterations, parametric_mean=False, lower=None, upper=None,
             n_burning=n_burning, total_batches=n_batches, type_model=method, lipschitz=lipschitz_cte,
-            n_thinning=10, kwargs_get_value_next_iteration=kwargs)
+            n_thinning=10, kwargs_get_value_next_iteration=kwargs, burning=burning)
     else:
         model = StatModel(
             training_data, best_results, n_training, functions_get_value,
@@ -87,7 +86,7 @@ def create_model(args, n_training=3):
             n_training, specifications=name_model, problem_name=problem_name,
             max_iterations=total_iterations, parametric_mean=False, lower=None, upper=None,
             n_burning=n_burning, total_batches=n_batches,model_gradient=method,
-            n_thinning=10, kwargs_get_value_next_iteration=kwargs)
+            n_thinning=10, kwargs_get_value_next_iteration=kwargs, burning=burning)
     return model
 
 
@@ -178,7 +177,7 @@ if __name__ == '__main__':
     np.random.seed(random_seed)
     stat_models = {}
     for i in points_index:
-        stat_models[i] = create_model(parameters[i], n_training=n_training)
+        stat_models[i] = create_model(parameters[i], n_training=n_training, n_epochs=n_iterations)
 
     if type_policy == 'greedy':
         policy = GreedyPolicy(stat_models, method, problem_name, type_model=method)

@@ -50,7 +50,7 @@ class StatModel(object):
                  problem_name=None, specifications=None, max_iterations=1000,
                  parametric_mean=False, square_root_factor=True, divide_kernel_prod_factor=True,
                  lower=None, upper=None, total_batches=10, n_burning=500, n_thinning=10,
-                 model_gradient='real_gradient'):
+                 model_gradient='real_gradient', burning=True):
         """
 
         :param raw_results: [float]
@@ -66,6 +66,7 @@ class StatModel(object):
         self.current_epoch = current_epoch
         self.n_burning = n_burning
         self.n_thinning = n_thinning
+        self.burning = burning
 
         self.model_gradient = model_gradient
 
@@ -367,7 +368,7 @@ class StatModel(object):
             else:
                 gp_model.samples_parameters.append(z)
 
-            if gp_model.n_burning > 0:
+            if gp_model.n_burning > 0 and self.burning:
                 parameters = self.sample_parameters(
                     gp_model, float(gp_model.n_burning) / (gp_model.thinning + 1))
                 gp_model.samples_parameters = []

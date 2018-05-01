@@ -14,7 +14,7 @@ logger = SBOLog(__name__)
 class GreedyPolicy(object):
 
     def __init__(self, dict_stat_models, name_model, problem_name, type_model='grad_epoch', epsilon=0.1, total_iterations=100,
-                 n_epochs=1, n_samples=10, stop_iteration_per_point=100):
+                 n_epochs=1, n_samples=10, stop_iteration_per_point=100, random_seed=None, n_restarts=None):
         self.dict_stat_models = dict_stat_models
         self.epsilon = epsilon
         self.name_model = name_model
@@ -27,6 +27,8 @@ class GreedyPolicy(object):
         self.chosen_points = {}
         self.evaluations_obj = {}
 
+        self.random_seed = random_seed
+
         self.stop_iteration_per_point = stop_iteration_per_point
         self.points_done = []
 
@@ -37,6 +39,8 @@ class GreedyPolicy(object):
         for i in dict_stat_models:
             self.chosen_points[i] = list(dict_stat_models[i].gp_model.raw_results['points'])
             self.evaluations_obj[i] = list(dict_stat_models[i].gp_model.raw_results['values'])
+
+        self.n_restarts = n_restarts
 
 
     def get_current_best_value(self):
@@ -162,6 +166,12 @@ class GreedyPolicy(object):
             os.mkdir(file_name)
 
         file_name += '/' + sufix
+
+        if self.random_seed is not None:
+            file_name += '_random_seed_' + str(self.random_seed)
+
+        if self.n_restarts is not None:
+            file_name += '_n_restarts_' + str(self.n_restarts)
 
         JSONFile.write(data, file_name + '.json')
 

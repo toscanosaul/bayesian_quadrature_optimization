@@ -14,7 +14,7 @@ logger = SBOLog(__name__)
 class UniformPolicy(object):
 
     def __init__(self, dict_stat_models, name_model, problem_name, type_model='grad_epoch', n_epochs=1,
-                 stop_iteration_per_point=100):
+                 stop_iteration_per_point=100, random_seed=None, n_restarts=None):
         self.dict_stat_models = dict_stat_models
         self.points_index = range(len(self.dict_stat_models))
         self.current_index = 0
@@ -35,6 +35,9 @@ class UniformPolicy(object):
         for i in dict_stat_models:
             self.chosen_points[i] = list(dict_stat_models[i].gp_model.raw_results['points'])
             self.evaluations_obj[i] = list(dict_stat_models[i].gp_model.raw_results['values'])
+
+        self.random_seed = random_seed
+        self.n_restarts = n_restarts
 
 
     def get_current_best_value(self):
@@ -100,6 +103,12 @@ class UniformPolicy(object):
             os.mkdir(file_name)
 
         file_name += sufix
+
+        if self.random_seed is not None:
+            file_name += '_random_seed_' + str(self.random_seed)
+
+        if self.n_restarts is not None:
+            file_name += '_n_restarts_' + str(self.n_restarts)
 
         JSONFile.write(data, file_name + '.json')
 
