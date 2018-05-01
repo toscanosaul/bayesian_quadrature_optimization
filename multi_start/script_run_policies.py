@@ -12,7 +12,7 @@ from multi_start.stat_model_domain import StatModel
 from multi_start.stat_model_domain_lipschitz import StatModelLipschitz
 
 
-def create_model(args, n_training=3, n_epochs=100, burning=True):
+def create_model(args, n_training=3, n_epochs=100, burning=True, point=None):
 
     rs = int(args['rs'])
     lb = float(args['lb'])
@@ -29,12 +29,18 @@ def create_model(args, n_training=3, n_epochs=100, burning=True):
     if method == 'lipschitz' or method == 'approx_lipschitz':
         method_ = 'real_gradient'
 
-    name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, rs, lb, ub, lr, method_)
+    if point is None:
+        name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, rs, lb, ub, lr, method_)
+    else:
+        name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s_point_%d' % (std, rs, lb, ub, lr, method_, point)
     dir_data = 'data/multi_start/' + problem_name + '/' + 'training_results/'
 
     data = JSONFile.read(dir_data + name_model)
 
-    name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, rs, lb, ub, lr, method)
+    if point is None:
+        name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, rs, lb, ub, lr, method)
+    else:
+        name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s_point_%d' % (std, rs, lb, ub, lr, method, point)
 
     if method == 'real_gradient':
         data['gradients'] = [-1.0 * np.array(t) for t in data['gradients']]

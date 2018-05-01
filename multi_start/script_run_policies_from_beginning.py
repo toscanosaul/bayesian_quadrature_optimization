@@ -102,8 +102,8 @@ if __name__ == '__main__':
         logger.info(start)
 
         results = SGD(start, gradient, batch_size, objective, maxepoch=n_epochs, adam=False,
-                      name_model='std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (
-                      std, random_seed, lb, ub, lr, method_),
+                      name_model='std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s_point_%d' % (
+                      std, random_seed, lb, ub, lr, method_, i),
                       exact_gradient=exact_gradient, learning_rate=lr, method=method, n_epochs=5,
                       n_samples=100, gradient_samples=gradient_samples, problem=problem,
                       bounds=bounds)
