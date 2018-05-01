@@ -87,8 +87,14 @@ class GreedyPolicy(object):
                     mean = means[i]
                     var = covs[i]
                     std = np.sqrt(var)
-                    c = mean / std
-                    val = 1.0 - foldnorm.cdf(target + self.epsilon, c, scale=std)
+                    if std == 0.0:
+                        if mean >= target + self.epsilon:
+                            val = 1.0
+                        else:
+                            val = 0.0
+                    else:
+                        c = mean / std
+                        val = 1.0 - foldnorm.cdf(target + self.epsilon, c, scale=std)
                     values.append(val)
                     #TODO: FINISH THIS
 
@@ -105,6 +111,9 @@ class GreedyPolicy(object):
                 del probabilites[ind]
 
         point_ind = max(probabilites, key=probabilites.get)
+
+        if probabilites[point_ind] == 0:
+            point_ind = np.random.randint(0, len(probabilites), 1)[0]
 
         move_model = self.dict_stat_models[point_ind]
 
@@ -172,6 +181,7 @@ class GreedyPolicy(object):
 
         if self.n_restarts is not None:
             file_name += '_n_restarts_' + str(self.n_restarts)
+
 
         JSONFile.write(data, file_name + '.json')
 
