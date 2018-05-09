@@ -26,6 +26,8 @@ if __name__ == '__main__':
     parser.add_argument('n_epochs', default=20)
     parser.add_argument('problem_name', help='analytic_example, problem6')
     parser.add_argument('optimal_value', help=0.0)
+    parser.add_argument('only_plot', help=0)
+    parser.add_argument('n_iterations_plot', help=10)
 
     args = parser.parse_args()
 
@@ -38,6 +40,8 @@ if __name__ == '__main__':
     n_epochs = int(args.n_epochs)
     problem_name = args.problem_name
     optimal_value = float(args.optimal_value)
+    only_plot = bool(int(args.only_plot))
+    n_iterations_plot = int(args.n_iterations_plot)
 
     np.random.seed(random_seed)
 
@@ -133,9 +137,16 @@ if __name__ == '__main__':
             n_burning=n_burning, total_batches=n_batches, model_gradient=method)
 
 
-    results = model.accuracy(model.gp_model, start=n_training, iterations=total_iterations, sufix=None,
-                             model=method)
+    if not only_plot:
+        results = model.accuracy(model.gp_model, start=n_training, iterations=total_iterations,
+                                 sufix=None, model=method)
+
+    if only_plot:
+        file_name = 'data/multi_start/accuracy_results/' + problem_name + '/' + name_model
+
+        results_dict = JSONFile.read(file_name + '.json')
+        results = [results_dict['means'], results_dict['ci'], results_dict['values_observed']]
 
     model.plot_accuracy_results(
         results[0], results[1], results[2], optimal_value,
-        start=n_training, sufix=None, final_iteration=total_iterations)
+        sufix=None, n_iterations=n_iterations_plot)

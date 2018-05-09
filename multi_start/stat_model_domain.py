@@ -565,7 +565,7 @@ class StatModel(object):
 
         return means, cis, values_observed
 
-    def plot_accuracy_results(self, means, cis, values_observed, original_value, start=3, final_iteration=10, sufix=None, n_epoch=1):
+    def plot_accuracy_results(self, means, cis, values_observed, original_value, n_iterations=None, sufix=None, n_epoch=1):
         plt.figure()
         x_lim = len(means)
 
@@ -575,21 +575,32 @@ class StatModel(object):
         points = []
         values_observed_vec = []
 
+        means = {int(k): v for k, v in means.items()}
+        cis = {int(k): v for k, v in cis.items()}
+        values_observed = {int(k): v for k, v in values_observed.items()}
+
         for i in sorted(means):
             points.append(i)
             means_vec.append(means[i])
             cis_vec.append(cis[i])
             values_observed_vec.append(values_observed[i])
 
-       # points = range(start, final_iteration, n_epoch)
-        plt.plot(points, means_vec, 'b', label='means')
-        plt.plot(points, len(points) * [original_value], label='final value')
-        plt.plot(points, [t[0] for t in cis_vec],'b--', label='ci')
-        plt.plot(points, [t[1] for t in cis_vec],'b--', label='ci')
-        plt.plot(points, values_observed_vec, label='observations')
+        if n_iterations is not None:
+            means_vec = means_vec[0:n_iterations]
+            points = points[0:n_iterations]
+            cis_vec = cis_vec[0:n_iterations]
+            values_observed_vec = values_observed_vec[0:n_iterations]
+
+
+                # points = range(start, final_iteration, n_epoch)
+        plt.plot(points, means_vec, 'b', label='prediction of convergent value')
+        plt.plot(points, len(points) * [original_value], label='convergent value')
+        plt.plot(points, [t[0] for t in cis_vec],'b--', label='confidence interval')
+        plt.plot(points, [t[1] for t in cis_vec],'b--', label='confidence interval')
+        plt.plot(points, values_observed_vec, label='current value of objective function')
 
         plt.legend()
-        plt.ylabel('Objective function')
+        #plt.ylabel('Objective function')
         plt.xlabel('Iteration')
 
         file_name = 'data/multi_start/accuracy_plots/stat_model'

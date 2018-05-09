@@ -196,14 +196,21 @@ def gadient_parabola(x, std, m):
 
 
 def rastrigin(x):
-    return 10. + (x**2) - 10.0 * np.cos(2.0 * np.pi* x)
+    n = len(x)
+    return 10. * n + np.sum((x**2) - 10.0 * np.cos(2.0 * np.pi * x))
 
 def exact_gradient_rastrigin(x):
-    return 2.0 * x + 10.0 * np.sin(2.0 * np.pi * x) * (2.0 * np.pi)
+    n = len(x)
+    gradient = np.zeros(n)
+    for i in range(n):
+        value = 2.0 * x[i] + 10.0 * np.sin(2.0 * np.pi * x[i]) * (2.0 * np.pi)
+        gradient[i] = value
+    return gradient
 
 def gradient_rastrigin(x, std, m):
-    epsilon = np.random.normal(0, std, m)
-    return exact_gradient_rastrigin(x) + np.mean(epsilon)
+    n = len(x)
+    epsilon = np.random.normal(0, std, (n, m))
+    return exact_gradient_rastrigin(x) + np.mean(epsilon, axis=1)
 
 
 def problem_6(x):
@@ -229,7 +236,7 @@ def gradient_problem_5(x, std, m):
 
 
 if __name__ == '__main__':
-    # python -m multi_start.problems.sgd_specific_function 123 1 100 1 10 1.0 10.0 real_gradient rastrigin
+    # python -m multi_start.problems.sgd_specific_function 123 1 100 1 10 1.0 10.0 real_gradient rastrigin 0 2
     parser = argparse.ArgumentParser()
     parser.add_argument('rs', help='5')
     parser.add_argument('batch_size', help='2')
@@ -241,7 +248,7 @@ if __name__ == '__main__':
     parser.add_argument('method', help='real_gradient, grad_epoch, no_gradient')
     parser.add_argument('problem', help='rastrigin, quadratic, problem6')
     parser.add_argument('choose_sign_st')
-
+    parser.add_argument('dimension', help='dimension of domain')
 
 
     args = parser.parse_args()
@@ -249,15 +256,17 @@ if __name__ == '__main__':
     random_seed = int(args.rs)
     batch_size = int(args.batch_size)
     n_epochs = int(args.n_epochs)
-    lb = float(args.lb)
-    ub = float(args.ub)
+    lb = [float(args.lb)]
+    ub = [float(args.ub)]
     std = float(args.std)
     lr = float(args.learning_rate)
     method = args.method
     problem = args.problem
     choose_sign_st = bool(int(args.choose_sign_st))
+    dimension = int(args.dimension)
 
     bounds = None
+
 
     if problem == 'quadratic':
         objective = objective_parabola
@@ -279,6 +288,11 @@ if __name__ == '__main__':
 
         def gradient_samples(z, m):
             return gradient_rastrigin(z, std, m)
+
+        bounds = dimension * [[-5.12, 5.12]]
+        lb = dimension * [-5.12]
+        ub = dimension * [5.12]
+
     elif problem == 'problem6':
         objective = problem_6
         exact_gradient = exact_gradient_problem_6
@@ -303,17 +317,22 @@ if __name__ == '__main__':
 
 
     np.random.seed(random_seed)
-    start = np.random.uniform(lb, ub, 1)
+    start = np.zeros(dimension)
+    for i in range(dimension):
+        start[i] = np.random.uniform(lb[i], ub[i], 1)
     sign = np.random.binomial(1, 0.5)
 
     if choose_sign_st:
         if sign == 0:
             start = -1.0 * start
+
     logger.info('start')
     logger.info(start)
 
+
+
     results = SGD(start, gradient, batch_size, objective, maxepoch=n_epochs, adam=False,
-                  name_model='std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, random_seed, lb, ub, lr, method),
+                  name_model='std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, random_seed, lb[0], ub[0], lr, method),
                   exact_gradient=exact_gradient, learning_rate=lr, method=method, n_epochs=5,
                   n_samples=100, gradient_samples=gradient_samples, problem=problem, bounds=bounds)
     logger.info('sol')

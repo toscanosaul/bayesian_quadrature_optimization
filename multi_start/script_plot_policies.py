@@ -111,6 +111,7 @@ if __name__ == '__main__':
     parser.add_argument('problem_name', help='analytic_example')
     parser.add_argument('n_starting_points', help=10)
     parser.add_argument('n_iterations', help=200)
+    parser.add_argument('animation', help=0)
    # parser.add_argument('method_2', help='real_gradient')
 
 
@@ -119,7 +120,7 @@ if __name__ == '__main__':
     n_iterations = int(args_.n_iterations)
     method = args_.method
     problem = args_.problem_name
-
+    animation = bool(int(args_.animation))
 
     file_1 = 'data/multi_start/' + problem + '/' + 'greedy_policy/' + method + '.json'
     file_2 = 'data/multi_start/' + problem + '/' +'uniform_policy/' + method + '.json'
@@ -136,11 +137,11 @@ if __name__ == '__main__':
 
     best_values = {}
     data_dict = {}
-    type_1 = 'greedy_' + method
-    types = [type_1, 'uniform']
+    type_1 = 'greedy' #+ method
+    types = [type_1, 'equal_allocation']
 
     data_dict[type_1] = data
-    data_dict['uniform'] = data_2
+    data_dict['equal_allocation'] = data_2
 
     for t in types:
         best_values[t] = get_best_values(data_dict[t], n_restarts, n_training)
@@ -167,11 +168,12 @@ if __name__ == '__main__':
     if not os.path.exists(file_name):
         os.mkdir(file_name)
 
-
     file_name += type_1 + '_uniform' + '_' + 'best_solution'
 
     plt.savefig(file_name + '.pdf')
 
-    for t in data_dict:
-        plot_animation_policy(
-            data_dict[t], t, problem, n_restarts=n_restarts, n_training=n_training, n_iterations=n)
+    if animation:
+        for t in data_dict:
+            plot_animation_policy(
+                data_dict[t], t, problem, n_restarts=n_restarts, n_training=n_training,
+                n_iterations=n)

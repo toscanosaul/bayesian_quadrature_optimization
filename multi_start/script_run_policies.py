@@ -15,8 +15,8 @@ from multi_start.stat_model_domain_lipschitz import StatModelLipschitz
 def create_model(args, n_training=3, n_epochs=100, burning=True, point=None):
 
     rs = int(args['rs'])
-    lb = float(args['lb'])
-    ub = float(args['ub'])
+    lb = [float(t) for t in args['lb'] ]
+    ub = [float(t) for t in args['ub']]
     std = float(args['std'])
     lr = float(args['lr'])
     method = args['method']
@@ -30,17 +30,17 @@ def create_model(args, n_training=3, n_epochs=100, burning=True, point=None):
         method_ = 'real_gradient'
 
     if point is None:
-        name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, rs, lb, ub, lr, method_)
+        name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, rs, lb[0], ub[0], lr, method_)
     else:
-        name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s_point_%d' % (std, rs, lb, ub, lr, method_, point)
+        name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s_point_%d' % (std, rs, lb[0], ub[0], lr, method_, point)
     dir_data = 'data/multi_start/' + problem_name + '/' + 'training_results/'
 
     data = JSONFile.read(dir_data + name_model)
 
     if point is None:
-        name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, rs, lb, ub, lr, method)
+        name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, rs, lb[0], ub[0], lr, method)
     else:
-        name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s_point_%d' % (std, rs, lb, ub, lr, method, point)
+        name_model = 'std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s_point_%d' % (std, rs, lb[0], ub[0], lr, method, point)
 
     if method == 'real_gradient':
         data['gradients'] = [-1.0 * np.array(t) for t in data['gradients']]
@@ -50,12 +50,16 @@ def create_model(args, n_training=3, n_epochs=100, burning=True, point=None):
             new_grads[int(t)] = -1.0 * np.array(data['gradients'][t])
         data['gradients'] = new_grads
 
+    data['stochastic_gradients'] = [-1.0 * np.array(t) for t in data['stochastic_gradients']]
+
     data['values'] = [-1.0 * np.array(t) for t in data['values']]
+    data['points'] = [np.array(t) for t in data['points']]
 
 
 
     training_data = {'points': data['points'][0:n_training],
-                     'values': data['values'][0:n_training], 'gradients': []}
+                     'values': data['values'][0:n_training], 'gradients': [],
+                     'stochastic_gradients':data['stochastic_gradients'][0:n_training] }
     if method == 'real_gradient':
         training_data['gradients'] = data['gradients'][0:n_training]
     elif method == 'grad_epoch':

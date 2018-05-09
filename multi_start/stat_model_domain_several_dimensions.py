@@ -43,7 +43,7 @@ logger = SBOLog(__name__)
 
 
 
-class StatModelLipschitz(object):
+class StatModelDomainMultiDimensional(object):
 
     def __init__(self, raw_results, best_result, current_iteration, get_value_next_iteration,
                  starting_point, current_batch_index, current_epoch,
@@ -51,7 +51,7 @@ class StatModelLipschitz(object):
                  problem_name=None, specifications=None, max_iterations=1000,
                  parametric_mean=False, square_root_factor=True, divide_kernel_prod_factor=True,
                  lower=None, upper=None, total_batches=10, n_burning=500, n_thinning=10,
-                 lipschitz=None, type_model='lipschitz', burning=True):
+                 lipschitz=None, type_model='lipschitz', burning=True, dimensions=1):
         """
 
         :param raw_results: [float]
@@ -59,38 +59,24 @@ class StatModelLipschitz(object):
         :param current_iteration: int
 
         """
-        self.specifications = specifications
-        self.starting_point = starting_point
-        self.current_point = starting_point
-        self.current_batch_index = current_batch_index
-        self.total_batches = total_batches
-        self.current_epoch = current_epoch
-        self.n_burning = n_burning
-        self.n_thinning = n_thinning
-        self.burning = burning
 
         self.raw_results = raw_results #dictionary with points and values, and gradients
         self.best_result = best_result
         self.current_iteration = current_iteration
 
-        self.lipschitz = lipschitz
-        self.type_model = type_model
+        self.get_value_next_iteration = get_value_next_iteration
+        self.kwargs = {}
+        if kwargs_get_value_next_iteration is not None:
+            self.kwargs = kwargs_get_value_next_iteration
 
-        self.differences = None
-        self.points_differences = None
-        self.training_data = None
-        self.process_data()
+        self.starting_point = starting_point
+        self.current_batch_index = current_batch_index
+        self.current_epoch = current_epoch
 
         self.problem_name = problem_name
+        self.specifications = specifications
         self.max_iterations = max_iterations
         self.parametric_mean = parametric_mean
-
-        self.parametrics = None
-        if self.parametric_mean:
-            self.parametrics = ParametricFunctions(max_iterations, lower, upper)
-
-        self.gp_model = None
-        self.define_gp_model()
 
         self.function_factor_kernel = lambda x: float(x)
         if square_root_factor:
@@ -100,12 +86,118 @@ class StatModelLipschitz(object):
         if divide_kernel_prod_factor:
             self.divisor_kernel = lambda x, y: x * y
 
-        self.set_samplers(self.gp_model)
 
-        self.get_value_next_iteration = get_value_next_iteration
-        self.kwargs = {}
-        if kwargs_get_value_next_iteration is not None:
-            self.kwargs = kwargs_get_value_next_iteration
+        self.total_batches = total_batches
+        self.n_burning = n_burning
+        self.n_thinning = n_thinning
+        self.burning = burning
+        self.dimensions = dimensions
+
+        self.current_point = starting_point
+
+        self.lipschitz = lipschitz
+        self.type_model = type_model
+
+        ##change the following
+        self.differences = None
+        self.points_differences = None
+        self.training_data = None
+        self.process_data()
+
+        self.parametrics = None
+        if self.parametric_mean:
+            self.parametrics = ParametricFunctions(max_iterations, lower, upper)
+
+        self.gp_model = None
+        self.define_gp_model()
+
+        for i in self.gp_model:
+            self.set_samplers(self.gp_model[i])
+
+        ## We assume that f(x) = 0.5 * np.sum(a * (x-b) ** 2) + c
+        self.estimation_a = None
+        self.estimation_b = None
+        self.estimation_c = None
+        self.mean_grad = None
+        self.mean_grad_square = None
+        self.mean_x = None
+        self.mean_xgrad = None
+        self.mean_x_square = None
+        self.mean_evaluations = None
+        self.mean_evaluations_square = None
+        self.beta = None
+        self.beta_evaluations = None
+        self.last_evaluation = None
+        self.get_initial_estimation_objective_function()
+
+    def compute_beta(self):
+        self.beta = (self.mean_grad_square - (self.mean_grad * self.mean_grad)) / \
+                    (self.mean_grad_square)
+        n = len(self.beta)
+        for i in range(n):
+            self.beta[i] = max(self.beta[i], 0.9)
+            self.beta[i] = min(self.beta[i], 0.999)
+
+        self.beta_evaluations = \
+            (self.mean_evaluations_square - (self.mean_evaluations * self.mean_evaluations)) / \
+            (self.mean_evaluations_square)
+        self.beta_evaluations = max(self.beta_evaluations, 0.9)
+        self.beta_evaluations = min(self.beta_evaluations, 0.999)
+
+    def update_ema(self, gradient, point, evaluation):
+        self.mean_grad = self.beta * self.mean_grad + (1.0 - self.beta) * gradient
+        self.mean_grad_square = self.beta * self.mean_grad_square + (1.0 - self.beta) * (
+        gradient * gradient)
+        self.mean_x = self.beta * self.mean_x + (1.0 - self.beta) * point
+        self.mean_xgrad = self.beta * self.mean_xgrad + (1.0 - self.beta) * (point * gradient)
+        self.mean_x_square = self.beta * self.mean_x_square + (1.0 - self.beta) * (point * point)
+
+        self.mean_evaluations = self.beta_evaluations * self.mean_evaluations + \
+                               (1.0 - self.beta_evaluations) * evaluation
+        self.mean_evaluations_square = self.beta_evaluations * self.mean_evaluations_square + \
+                               (1.0 - self.beta_evaluations) * (evaluation ** 2)
+
+    def compute_params_objective(self):
+        self.estimation_a = self.mean_xgrad - (self.mean_x * self.mean_grad)
+        self.estimation_a /= (self.mean_x_square - (self.mean_x * self.mean_x))
+
+        self.estimation_b = self.mean_x - ((self.mean_grad) / (self.estimation_a))
+        self.estimation_c = self.mean_evaluations
+
+    def compute_objective_model(self, x):
+        # f(x) = 0.5 * np.sum(a * (x-b) ** 2) + c
+        value = 0.5 * np.sum(self.estimation_a * ((x-self.estimation_b) ** 2)) + self.estimation_c
+        return value
+
+    def compute_gradient_model(self, x):
+        value = np.zeros(self.dimensions)
+        for i in range(self.dimensions):
+            value[i] = self.estimation_a[i] * (x[i] - self.estimation_b[i])
+        return value
+
+    def get_initial_estimation_objective_function(self):
+        gradients = self.raw_results['stochastic_gradients']
+        points = self.raw_results['points']
+        evaluations = self.raw_results['values']
+
+        n = len(evaluations)
+        self.mean_evaluations = evaluations[0]
+        self.mean_evaluations_square = evaluations[0] * evaluations[0]
+        self.mean_grad = gradients[0]
+        self.mean_grad_square = gradients[0] * gradients[0]
+        self.mean_x = points[0]
+        self.mean_xgrad = points[0] * gradients[0]
+        self.mean_x_square = points[0] * points[0]
+        self.compute_beta()
+
+        for i in range(1, n):
+            gradient = gradients[i]
+            point = points[i]
+            evaluation = evaluations[i]
+            self.update_ema(gradient, point, evaluation)
+            self.compute_beta()
+        self.compute_params_objective()
+        self.last_evaluation = self.compute_objective_model(point)
 
     def process_data(self):
         differences = []
@@ -129,48 +221,54 @@ class StatModelLipschitz(object):
 
         def toy_objective_function(x):
             return [np.sum(x)]
+        self.gp_model = {}
+        for i in range(self.dimensions):
+            tmp_training_data = {}
+            tmp_training_data['var_noise'] = []
+            tmp_training_data['points'] = list(self.training_data['points'])
+            tmp_training_data['evaluations'] = list([t[i] for t in self.training_data['evaluations']])
 
-        spec = {
-            'name_model': 'gp_fitting_gaussian',
-            'problem_name': self.problem_name,
-            'type_kernel': [ORNSTEIN_KERNEL],
-            'dimensions': [1],
-            'bounds_domain': [[1, self.max_iterations]],
-            'type_bounds': [0],
-            'n_training': 10,
-            'noise': False,
-            'training_data': self.training_data,
-            'points': None,
-            'training_name': None,
-            'mle': False,
-            'thinning': self.n_thinning,
-            'n_burning': self.n_burning,
-            'max_steps_out': 1000,
-            'n_samples': 0,
-            'random_seed': 1,
-            'kernel_values': None,
-            'mean_value': None,
-            'var_noise_value': None,
-            'cache': False,
-            'same_correlation': True,
-            'use_only_training_points': True,
-            'optimization_method': 'SBO',
-            'n_samples_parameters': 10,
-            'parallel_training': False,
-            'simplex_domain': None,
-            'objective_function': toy_objective_function,
-            'define_samplers': False
-        }
+            spec = {
+                'name_model': 'gp_fitting_gaussian',
+                'problem_name': self.problem_name,
+                'type_kernel': [ORNSTEIN_KERNEL],
+                'dimensions': [1],
+                'bounds_domain': [[1, self.max_iterations]],
+                'type_bounds': [0],
+                'n_training': 10,
+                'noise': False,
+                'training_data': tmp_training_data,
+                'points': None,
+                'training_name': None,
+                'mle': False,
+                'thinning': self.n_thinning,
+                'n_burning': self.n_burning,
+                'max_steps_out': 1000,
+                'n_samples': 0,
+                'random_seed': 1,
+                'kernel_values': None,
+                'mean_value': None,
+                'var_noise_value': None,
+                'cache': False,
+                'same_correlation': True,
+                'use_only_training_points': True,
+                'optimization_method': 'SBO',
+                'n_samples_parameters': 10,
+                'parallel_training': False,
+                'simplex_domain': None,
+                'objective_function': toy_objective_function,
+                'define_samplers': False
+            }
 
-        model = GPFittingService.from_dict(spec)
-        model.dimension_parameters -= 2
-        model.best_result = self.best_result
-        model.current_iteration = self.current_iteration
-        model.raw_results = dict(self.raw_results)
-        model.data['points'] = list(self.points_differences)
-        model.mean_params = []
+            model = GPFittingService.from_dict(spec)
+            model.dimension_parameters -= 2
+            model.best_result = self.best_result
+            model.current_iteration = self.current_iteration
+            model.raw_results = dict(self.raw_results) #maybe change this to only keep the dimension?
+            model.data['points'] = list(self.points_differences)
+            model.mean_params = []
 
-        self.gp_model = model
+            self.gp_model[i] = model
 
     def covariance_diff_kernel(self, gp_model, x_poins, params):
         # f = lambda x: np.sqrt(float(x))
@@ -444,92 +542,89 @@ class StatModelLipschitz(object):
 
         return mean, var[0, 0]
 
-    def estimate_lipschitz(self, gp_model, mean, cov, kernel_params, mean_parameters=None, weights=None):
-        if self.type_model == 'lipschitz':
-            return self.lipschitz
-        mean_, cov_ = self.folded_normal(mean, cov)
-
-        diff = gp_model.raw_results['values'][-1] - gp_model.raw_results['values'][-2]
-
-        mean_2, cov_2 = self.compute_posterior_params(
-            gp_model, kernel_params, mean_parameters, weights, iteration=gp_model.current_iteration-1)
-        mean__, cov__ = self.folded_normal(mean_2, cov_2)
-        quotient = (1.0/np.sqrt(gp_model.current_iteration)) * mean_ - (1.0 / np.sqrt(gp_model.current_iteration - 1)) * mean__
-
-        return diff / quotient
-
-    def folded_normal(self, mean, cov):
-        std = np.sqrt(cov)
-        mean_ = std * np.sqrt(2.0 / np.pi) * np.exp(- (mean ** 2) / (2.0 * cov))
-        mean_ += mean * (1.0 - 2.0 * norm.cdf(- mean / std))
-
-        var = (mean ** 2) + cov - (mean_ ** 2)
-        return mean_, var
-
-    def compute_posterior_params_marginalize(self, gp_model, n_samples=10, burning_parameters=True, get_vectors=False):
+    def compute_posterior_params_marginalize(self, gp_models, n_samples=10, burning_parameters=True, get_vectors=False):
         if burning_parameters:
-            parameters = self.sample_parameters(
-                gp_model, float(gp_model.n_burning) / (gp_model.thinning + 1))
-            gp_model.samples_parameters = []
-            gp_model.samples_parameters.append(parameters[-1])
-            gp_model.start_point_sampler = parameters[-1]
+            for i in gp_models:
+                gp_model = gp_models[i]
+                parameters = self.sample_parameters(
+                    gp_model, float(gp_model.n_burning) / (gp_model.thinning + 1))
+                gp_model.samples_parameters = []
+                gp_model.samples_parameters.append(parameters[-1])
+                gp_model.start_point_sampler = parameters[-1]
 
-        parameters = self.sample_parameters(gp_model, n_samples)
-
-        dim_kernel_params = gp_model.dimension_parameters
+        parameters = {}
+        for i in gp_models:
+            gp_model = gp_models[i]
+            parameters[i] = self.sample_parameters(gp_model, n_samples)
 
         means = []
         covs = []
 
-        for param in parameters:
-            kernel_params = param[0: dim_kernel_params]
-            mean_parameters = None
-            weights = None
+        value_function = self.compute_objective_model(self.current_point)
+        value_gradient = self.compute_gradient_model(self.current_point)
 
-            if self.parametric_mean:
-                mean_params = param[dim_kernel_params:]
-                weights = mean_params[0:self.parametrics.n_weights]
-                mean_parameters = mean_params[self.parametrics.n_weights:]
 
-            mean, cov = self.compute_posterior_params(
-                gp_model, kernel_params, mean_parameters, weights)
-            mean_, cov_ = self.folded_normal(mean, cov)
-            L = self.estimate_lipschitz(gp_model, mean, cov, kernel_params, mean_parameters, weights)
+        for i in range(n_samples):
+            param = {}
+            for j in gp_models:
+                param[j] = parameters[j][i]
+            mean_vect = np.zeros(self.dimensions)
+            cov_vect = np.zeros(self.dimensions)
+            for j in gp_models:
+                dim_kernel_params = gp_models[j].dimension_parameters
+                kernel_params = param[j][0: dim_kernel_params]
+                mean_parameters = None
+                weights = None
 
-            # TODO: NOT SURE IF USING NP.ABS(L) or not
-            mean = gp_model.raw_results['values'][-1][0] + (np.abs(L) * mean_) / np.sqrt(gp_model.current_iteration)
-            cov = cov_ * (L ** 2) / (gp_model.current_iteration)
+                if self.parametric_mean:
+                    #TODO: FINISH THIS
+                    mean_parameters = None
+
+                mean, cov = self.compute_posterior_params(
+                    gp_models[j], kernel_params, mean_parameters, weights)
+                mean_vect[j] = mean
+                cov_vect[j] = cov
+            mean = - np.dot(value_gradient, mean_vect) / np.sqrt(gp_model.current_iteration)
+            cov = np.dot(value_gradient**2, cov_vect) / float(gp_model.current_iteration)
             means.append(mean)
             covs.append(cov)
 
-        mean = np.mean(means)
+        mean = value_function + np.mean(means)
         std = np.sqrt(np.mean(covs))
 
         ci = [mean - 1.96 * std, mean + 1.96 * std]
+
         if get_vectors:
-            means = [t - gp_model.raw_results['values'][-1][0] for t in means]
-            return {'means': means, 'covs': covs, 'value': gp_model.raw_results['values'][-1][0]}
+            return {'means': means, 'covs': covs, 'value': value_function}
 
         return mean, std, ci
 
-    def add_observations(self, gp_model, point, y, new_point_in_domain=None, gradient=None,
-                         model=None):
-        gp_model.current_iteration = point
-        gp_model.best_result = max(gp_model.best_result, y)
-        gp_model.data['points'].append((point - 1, point))
-
-        previous_x = np.array(gp_model.raw_results['points'][-1])
-
-        if new_point_in_domain is not None:
-            gp_model.raw_results['points'].append(new_point_in_domain)
-        gp_model.raw_results['values'].append(y)
-        if gradient is not None:
-            gp_model.raw_results['gradients'].append(gradient)
+    def add_observations(self, gp_models, point, y, new_point_in_domain=None, gradient=None,
+                         model=None, stochastic_gradient=None):
 
 
-        gp_model.data['evaluations'] = np.concatenate(
-            (gp_model.data['evaluations'], np.sqrt(point - 1) * (previous_x - new_point_in_domain)))
+        self.update_ema(stochastic_gradient, new_point_in_domain, y)
+        self.compute_beta()
+        self.compute_params_objective()
 
+        value_function = self.compute_objective_model(new_point_in_domain)
+
+        for i in gp_models:
+            gp_model = gp_models[i]
+            gp_model.current_iteration = point
+            gp_model.data['points'].append((point - 1, point))
+
+            previous_x = np.array(gp_model.raw_results['points'][-1])
+            if new_point_in_domain is not None:
+                gp_model.raw_results['points'].append(new_point_in_domain)
+            gp_model.raw_results['values'].append(y)
+            if gradient is not None:
+                gp_model.raw_results['gradients'].append(gradient)
+
+            gp_model.data['evaluations'] = np.concatenate(
+                (gp_model.data['evaluations'], np.array([np.sqrt(point - 1) * (previous_x[i] - new_point_in_domain[i])])))
+
+            gp_model.best_result = value_function
 
         if self.current_batch_index + 1 > self.total_batches:
             self.current_epoch += 1
@@ -538,9 +633,12 @@ class StatModelLipschitz(object):
 
         if new_point_in_domain is not None:
             self.current_point = new_point_in_domain
+        self.best_result = value_function
+        self.last_evaluation = value_function
 
 
     def accuracy(self, gp_model, start=3, iterations=21, sufix=None, model=None):
+        #TODO: UPDATE THIS FUNCTION
         means = {}
         cis = {}
         values_observed = {}
@@ -588,6 +686,7 @@ class StatModelLipschitz(object):
 
     def plot_accuracy_results(self, means, cis, values_observed, original_value, n_iterations=None, sufix=None, n_epoch=1,
                               start_plot=0):
+        # TODO: UPDATE THIS FUNCTION
         plt.figure()
         x_lim = len(means)
 
@@ -644,6 +743,7 @@ class StatModelLipschitz(object):
         plt.savefig(file_name + '.pdf')
 
     def save_model(self, sufix=None):
+        # TODO: UPDATE THIS FUNCTION
         stat_model_dict = {}
         stat_model_dict['current_point'] = self.current_point
         stat_model_dict['starting_point'] = self.starting_point
