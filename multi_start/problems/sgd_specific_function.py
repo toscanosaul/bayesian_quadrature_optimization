@@ -13,7 +13,7 @@ logger = SBOLog(__name__)
 def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, bounds=None, learning_rate=0.1,
         momentum=0.0, maxepoch=250, adam=True, betas=None, eps=1e-8, simplex_domain=None,
         name_model='1', method='real_gradient', n_epochs=1, n_samples=100, gradient_samples=None,
-        problem=None):
+        problem=None, exact_objective=None):
     """
     SGD to minimize sum(i=0 -> n) (1/n) * f(x). Batch sizes are of size 1.
     ADAM: https://arxiv.org/pdf/1412.6980.pdf
@@ -32,6 +32,7 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
     points = []
 
     gradients = []
+    exact_values = []
     stochastic_gradients = []
 
     if method == 'grad_epoch':
@@ -101,6 +102,14 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
         gradient_ = np.mean(np.array(grad), axis=0)
         stochastic_gradients.append(gradient_)
 
+        if exact_gradient is not None and method == 'real_gradient':
+            gradients.append(exact_gradient(point))
+        points.append(np.array(point))
+        values.append(function(point))
+
+        if exact_objective is not None:
+            exact_values.append(exact_objective(point))
+
         if not adam:
             v = momentum * v + gradient_
             old_p = point.copy()
@@ -112,8 +121,7 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
             v_1 = v0 / (1 - (betas[1]) ** (t_))
             point = point - learning_rate * m_1 / (np.sqrt(v_1) + eps)
 
-        if exact_gradient is not None and method == 'real_gradient':
-            gradients.append(exact_gradient(point))
+
 
         in_domain = True
         if project:
@@ -149,10 +157,19 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
                 for dim, bound in enumerate(bounds):
                     v[dim] = (point[dim] - old_p[dim]) / learning_rate
 
-        points.append(np.array(point))
-        values.append(function(point))
+        # points.append(np.array(point))
+        # values.append(function(point))
 
         #    gradients.append(np.array(gradient_))
+
+
+    if exact_gradient is not None and method == 'real_gradient':
+        gradients.append(exact_gradient(point))
+    points.append(np.array(point))
+    values.append(function(point))
+
+    if exact_objective is not None:
+        exact_values.append(exact_objective(point))
 
     gradient_ = np.array(gradient(point, *args, **kwargs))
     stochastic_gradients.append(gradient_)
@@ -166,7 +183,8 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
                'values': values,
                'gradients': gradients,
                'n_epochs': n_epochs,
-               'stochastic_gradients': stochastic_gradients}
+               'stochastic_gradients': stochastic_gradients,
+               'exact_values': exact_values}
 
     f_name = 'data/multi_start/analytic_example/training_results/'
 
@@ -198,6 +216,9 @@ def gadient_parabola(x, std, m):
 def rastrigin(x):
     n = len(x)
     return 10. * n + np.sum((x**2) - 10.0 * np.cos(2.0 * np.pi * x))
+
+def rastrigin_noisy(x, std):
+    return rastrigin(x) + np.random.normal(0, std, 1)
 
 def exact_gradient_rastrigin(x):
     n = len(x)
@@ -280,8 +301,13 @@ if __name__ == '__main__':
             epsilon = np.random.normal(0, std, m)
             return np.array(z) + np.mean(epsilon)
     elif problem == 'rastrigin':
-        objective = rastrigin
         exact_gradient = exact_gradient_rastrigin
+
+        exact_objective = rastrigin
+        exact_gradient = exact_gradient_rastrigin
+
+        def objective(x):
+            return rastrigin_noisy(x, std)
 
         def gradient(x, n_samples=1):
             return gradient_rastrigin(x, std, n_samples)
@@ -334,7 +360,8 @@ if __name__ == '__main__':
     results = SGD(start, gradient, batch_size, objective, maxepoch=n_epochs, adam=False,
                   name_model='std_%f_rs_%d_lb_%f_ub_%f_lr_%f_%s' % (std, random_seed, lb[0], ub[0], lr, method),
                   exact_gradient=exact_gradient, learning_rate=lr, method=method, n_epochs=5,
-                  n_samples=100, gradient_samples=gradient_samples, problem=problem, bounds=bounds)
+                  n_samples=100, gradient_samples=gradient_samples, problem=problem, bounds=bounds,
+                  exact_objective=exact_objective)
     logger.info('sol')
     logger.info(results['points'][-1])
     logger.info(results['values'][-1])

@@ -53,6 +53,7 @@ class GreedyPolicy(object):
         best_values = []
         for index in self.dict_stat_models:
             best_values.append(self.dict_stat_models[index].last_evaluation)
+        logger.info(best_values)
         return np.max(best_values)
 
     def get_parameters(self):
@@ -110,7 +111,7 @@ class GreedyPolicy(object):
 
         for t in range(self.n_epochs):
             current_point = move_model.current_point
-            i = move_model.gp_model.current_iteration
+            i = move_model.gp_model[0].current_iteration
             data_new = move_model.get_value_next_iteration(i + 1, **move_model.kwargs)
 
             if i == self.stop_iteration_per_point - 1:
@@ -119,10 +120,12 @@ class GreedyPolicy(object):
 
             self.chosen_index.append(point_ind)
             self.chosen_points[point_ind].append(data_new['point'])
-            self.evaluations_obj[point_ind].append(data_new['value'])
+            self.evaluations_obj[point_ind].append(data_new['exact_value'])
 
             move_model.add_observations(move_model.gp_model, i + 1, data_new['value'],
-                                        data_new['point'], data_new['gradient'], type_model)
+                                        data_new['point'], data_new['gradient'], type_model,
+                                        data_new['stochastic_gradient'])
+
 
             logger.info('Point chosen is: ')
             logger.info(point_ind)
@@ -174,7 +177,7 @@ class GreedyPolicy(object):
 
 
         JSONFile.write(data, file_name + '.json')
-
-        for i in self.dict_stat_models:
-            model = self.dict_stat_models[i]
-            model.save_model(str(i))
+        #
+        # for i in self.dict_stat_models:
+        #     model = self.dict_stat_models[i]
+        #     model.save_model(str(i))

@@ -141,7 +141,8 @@ class StatModelDomainMultiDimensional(object):
         self.beta_evaluations = \
             (self.mean_evaluations_square - (self.mean_evaluations * self.mean_evaluations)) / \
             (self.mean_evaluations_square)
-        self.beta_evaluations = max(self.beta_evaluations, 0.9)
+
+        self.beta_evaluations = max(self.beta_evaluations, 0.1)
         self.beta_evaluations = min(self.beta_evaluations, 0.999)
 
     def update_ema(self, gradient, point, evaluation):
@@ -156,17 +157,29 @@ class StatModelDomainMultiDimensional(object):
                                (1.0 - self.beta_evaluations) * evaluation
         self.mean_evaluations_square = self.beta_evaluations * self.mean_evaluations_square + \
                                (1.0 - self.beta_evaluations) * (evaluation ** 2)
+        self.compute_params_objective()
+
+        if self.estimation_c is None:
+            new_error = evaluation - self.compute_objective_model(point)
+            self.estimation_c = new_error
+        else:
+            new_error = evaluation - self.compute_objective_model(point) + self.estimation_c
+            self.estimation_c = self.beta_evaluations * self.estimation_c + \
+                                (1.0 - self.beta_evaluations) * new_error
 
     def compute_params_objective(self):
         self.estimation_a = self.mean_xgrad - (self.mean_x * self.mean_grad)
         self.estimation_a /= (self.mean_x_square - (self.mean_x * self.mean_x))
 
         self.estimation_b = self.mean_x - ((self.mean_grad) / (self.estimation_a))
-        self.estimation_c = self.mean_evaluations
+     #   self.estimation_c = self.mean_evaluations
 
     def compute_objective_model(self, x):
         # f(x) = 0.5 * np.sum(a * (x-b) ** 2) + c
-        value = 0.5 * np.sum(self.estimation_a * ((x-self.estimation_b) ** 2)) + self.estimation_c
+        add = 0.0
+        if self.estimation_c is not None:
+            add = self.estimation_c
+        value = 0.5 * np.sum(self.estimation_a * ((x-self.estimation_b) ** 2)) + add
         return value
 
     def compute_gradient_model(self, x):
@@ -190,14 +203,17 @@ class StatModelDomainMultiDimensional(object):
         self.mean_x_square = points[0] * points[0]
         self.compute_beta()
 
+
         for i in range(1, n):
             gradient = gradients[i]
             point = points[i]
             evaluation = evaluations[i]
             self.update_ema(gradient, point, evaluation)
             self.compute_beta()
+
         self.compute_params_objective()
         self.last_evaluation = self.compute_objective_model(point)
+
 
     def process_data(self):
         differences = []
@@ -601,8 +617,6 @@ class StatModelDomainMultiDimensional(object):
 
     def add_observations(self, gp_models, point, y, new_point_in_domain=None, gradient=None,
                          model=None, stochastic_gradient=None):
-
-
         self.update_ema(stochastic_gradient, new_point_in_domain, y)
         self.compute_beta()
         self.compute_params_objective()
@@ -638,7 +652,7 @@ class StatModelDomainMultiDimensional(object):
 
 
     def accuracy(self, gp_model, start=3, iterations=21, sufix=None, model=None):
-        #TODO: UPDATE THIS FUNCTION
+        #TODO: UPDATE THIS FUNCTION. NOW IT'S WRONG!!
         means = {}
         cis = {}
         values_observed = {}

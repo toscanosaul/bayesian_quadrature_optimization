@@ -3,8 +3,10 @@ from __future__ import absolute_import
 import numpy as np
 
 from multi_start.problems.sgd_specific_function import *
-from multi_start.script_run_policies import *
 from multi_start.stat_model_domain_several_dimensions import StatModelDomainMultiDimensional
+
+from multi_start.greedy_policy_multivariate import GreedyPolicy
+from multi_start.uniform_policy_multivariate import UniformPolicy
 
 
 def create_model_multivariate(args, dimensions, n_training=3, n_epochs=100, burning=True, point=None):
@@ -85,8 +87,15 @@ def create_model_multivariate(args, dimensions, n_training=3, n_epochs=100, burn
     return model
 
 
+def get_values(i, data, method):
+    data_ = data
+    return {'point': data_['points'][i - 1], 'value': data_['values'][i - 1],
+            'gradient': None, 'stochastic_gradient': data_['stochastic_gradients'][i-1],
+            'exact_value': data_['exact_values'][i-1]}
+
+
 if __name__ == '__main__':
-    # python -m multi_start.script_run_policies_from_beginning 1 20 0.1 0.1 100 problem5 2
+    # python -m multi_start.script_run_policies_multivariate 1 20 0.1 0.01 100 rastrigin 2
     parser = argparse.ArgumentParser()
     parser.add_argument('rs', help=5)
     parser.add_argument('n_restarts', help=10)
@@ -112,6 +121,7 @@ if __name__ == '__main__':
     ub = [1.0]
 
     bounds = None
+    exact_objective = None
 
     if problem == 'quadratic':
         objective = objective_parabola
@@ -128,8 +138,11 @@ if __name__ == '__main__':
         lb = [-10.0]
         ub = [10.0]
     elif problem == 'rastrigin':
-        objective = rastrigin
+        exact_objective = rastrigin
         exact_gradient = exact_gradient_rastrigin
+
+        def objective(x):
+            return rastrigin_noisy(x, std)
 
         def gradient(x, n_samples=1):
             return gradient_rastrigin(x, std, n_samples)
@@ -189,7 +202,7 @@ if __name__ == '__main__':
                       std, random_seed, lb[0], ub[0], lr, method_, i),
                       exact_gradient=exact_gradient, learning_rate=lr, method=method, n_epochs=5,
                       n_samples=100, gradient_samples=gradient_samples, problem=problem,
-                      bounds=bounds)
+                      bounds=bounds, exact_objective=exact_objective)
         logger.info('sol')
         logger.info(results['points'][-1])
         logger.info(results['values'][-1])
