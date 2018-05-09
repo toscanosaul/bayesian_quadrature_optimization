@@ -10,11 +10,15 @@ plt.switch_backend('agg')
 import argparse
 from stratified_bayesian_optimization.util.json_file import JSONFile
 
-def get_best_values(data, n_restarts=9, n_training=3):
+def get_best_values(data, n_restarts=9, n_training=3, sign=True):
     chosen = data['chosen_index']
     current_value = []
+    # TODO: TEMPORAL CHANGE
     for i in range(n_restarts):
-        current_value.append(data['evaluations'][str(i)][n_training - 1])
+        if sign:
+            current_value.append(-1.0 * data['evaluations'][str(i)][n_training - 1])
+        else:
+            current_value.append(data['evaluations'][str(i)][n_training - 1])
 
     index_points = {}
 
@@ -26,7 +30,12 @@ def get_best_values(data, n_restarts=9, n_training=3):
 
     for i in range(n_iterations):
         j = int(data['chosen_index'][i])
-        current_value[j] = data['evaluations'][str(j)][index_points[j]]
+
+        if sign:
+            current_value.append(-1.0 * data['evaluations'][str(i)][n_training - 1])
+        else:
+            current_value[j] = data['evaluations'][str(j)][index_points[j]]
+
         best_values.append(np.max(current_value))
         index_points[j] += 1
     return best_values
@@ -77,7 +86,8 @@ if __name__ == '__main__':
 
   #  types = [types[0]]
 
-    n_training = 3
+    # temporal change from 3 to 4
+    n_training = 4
     n = n_iterations
 
     best_values_rs = {}

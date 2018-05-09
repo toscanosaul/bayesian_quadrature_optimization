@@ -50,6 +50,7 @@ def create_model_multivariate(args, dimensions, n_training=3, n_epochs=100, burn
     data['stochastic_gradients'] = [-1.0 * np.array(t) for t in data['stochastic_gradients']]
 
     data['values'] = [-1.0 * np.array(t) for t in data['values']]
+    data['exact_values'] = [-1.0 * np.array(t) for t in data['exact_values']]
     data['points'] = [np.array(t) for t in data['points']]
 
 
