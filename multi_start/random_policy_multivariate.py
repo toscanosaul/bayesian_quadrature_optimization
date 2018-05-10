@@ -101,7 +101,7 @@ class RandomPolicy(object):
         if not os.path.exists(file_name):
             os.mkdir(file_name)
 
-        file_name += 'uniform_policy' + '/'
+        file_name += 'random_policy' + '/'
 
         if not os.path.exists(file_name):
             os.mkdir(file_name)

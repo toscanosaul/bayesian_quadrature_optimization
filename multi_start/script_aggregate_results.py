@@ -60,6 +60,7 @@ if __name__ == '__main__':
 
     prefix_file_1 = 'data/multi_start/' + problem + '/' + 'greedy_policy/' + method + '_random_seed_'
     prefix_file_2 = 'data/multi_start/' + problem + '/' +'uniform_policy/' + method + '_random_seed_'
+    prefix_file_3 = 'data/multi_start/' + problem + '/' + 'random_policy/' + method + '_random_seed_'
 
     data = {}
     data_2 = {}
