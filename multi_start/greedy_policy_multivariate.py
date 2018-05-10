@@ -13,7 +13,7 @@ logger = SBOLog(__name__)
 
 class GreedyPolicy(object):
 
-    def __init__(self, dict_stat_models, name_model, problem_name, type_model='grad_epoch', epsilon=0.1, total_iterations=100,
+    def __init__(self, dict_stat_models, name_model, problem_name, type_model='grad_epoch', epsilon=1.0, total_iterations=100,
                  n_epochs=1, n_samples=10, stop_iteration_per_point=100, random_seed=None, n_restarts=None):
         self.dict_stat_models = dict_stat_models
         self.epsilon = epsilon

@@ -7,6 +7,7 @@ from multi_start.stat_model_domain_several_dimensions import StatModelDomainMult
 
 from multi_start.greedy_policy_multivariate import GreedyPolicy
 from multi_start.uniform_policy_multivariate import UniformPolicy
+from multi_start.random_policy_multivariate import RandomPolicy
 
 
 def create_model_multivariate(args, dimensions, n_training=3, n_epochs=100, burning=True, point=None):
@@ -229,18 +230,22 @@ if __name__ == '__main__':
     np.random.seed(random_seed)
     stat_models = {}
     stat_models_2 = {}
+    stat_models_3 = {}
     points_index = range(n_restarts)
 
     print (n_restarts)
     for i in points_index:
         stat_models[i] = create_model_multivariate(parameters[i],dimension, n_training=n_training, n_epochs=n_epochs, burning=False, point=i)
         stat_models_2[i] = create_model_multivariate(parameters[i],dimension, n_training=n_training, n_epochs=n_epochs, burning=False, point=i)
+        stat_models_3[i] = create_model_multivariate(parameters[i],dimension, n_training=n_training, n_epochs=n_epochs, burning=False, point=i)
 
     policy_greedy = GreedyPolicy(stat_models, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
     policy_uniform = UniformPolicy(stat_models_2, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
+    policy_random =RandomPolicy(stat_models_3, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
 
     policy_greedy.run_policy(n_epochs - n_training)
     policy_uniform.run_policy(n_epochs - n_training)
+    policy_random.run_policy(n_epochs - n_training)
 
 
 

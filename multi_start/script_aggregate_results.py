@@ -10,15 +10,12 @@ plt.switch_backend('agg')
 import argparse
 from stratified_bayesian_optimization.util.json_file import JSONFile
 
-def get_best_values(data, n_restarts=9, n_training=3, sign=True):
+def get_best_values(data, n_restarts=9, n_training=3, sign=False):
     chosen = data['chosen_index']
     current_value = []
     # TODO: TEMPORAL CHANGE
     for i in range(n_restarts):
-        if sign:
-            current_value.append(-1.0 * data['evaluations'][str(i)][n_training - 1])
-        else:
-            current_value.append(data['evaluations'][str(i)][n_training - 1])
+        current_value.append(data['evaluations'][str(i)][n_training - 1][0])
 
     index_points = {}
 
@@ -30,12 +27,11 @@ def get_best_values(data, n_restarts=9, n_training=3, sign=True):
 
     for i in range(n_iterations):
         j = int(data['chosen_index'][i])
-
         if sign:
-            current_value.append(-1.0 * data['evaluations'][str(i)][n_training - 1])
+
+            current_value[j] = -1.0 * data['evaluations'][str(j)][index_points[j]]
         else:
             current_value[j] = data['evaluations'][str(j)][index_points[j]]
-
         best_values.append(np.max(current_value))
         index_points[j] += 1
     return best_values
@@ -81,13 +77,13 @@ if __name__ == '__main__':
             data_2[i] = None
 
 
-    type_1 = 'greedy' #+ method
+    type_1 = 'MLS' #+ method
     types = [type_1, 'equal_allocation']
 
   #  types = [types[0]]
 
     # temporal change from 3 to 4
-    n_training = 4
+    n_training = 3
     n = n_iterations
 
     best_values_rs = {}
@@ -104,8 +100,9 @@ if __name__ == '__main__':
         data_dict['equal_allocation'] = data_2[i]
 
         for t in types:
-            if data_dict[t] is not None:
+            if data_dict[type_1] is not None and data_dict['equal_allocation'] is not None:
                 best_values[t] = get_best_values(data_dict[t], n_restarts, n_training)
+
                 for r in range(len(best_values[t])):
                     if r not in best_values_rs[t]:
                         best_values_rs[t][r] = []
