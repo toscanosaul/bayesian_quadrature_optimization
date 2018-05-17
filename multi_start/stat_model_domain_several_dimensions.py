@@ -59,6 +59,7 @@ class StatModelDomainMultiDimensional(object):
         :param current_iteration: int
 
         """
+        #TODO: ADD BIAS CORRECTIONS IN W
 
         self.raw_results = raw_results #dictionary with points and values, and gradients
         self.best_result = best_result
@@ -163,7 +164,8 @@ class StatModelDomainMultiDimensional(object):
             new_error = evaluation - self.compute_objective_model(point)
             self.estimation_c = new_error
         else:
-            new_error = evaluation - self.compute_objective_model(point) + self.estimation_c
+        #    new_error = evaluation - self.compute_objective_model(point) + self.estimation_c
+            new_error = evaluation - self.compute_objective_model(point)
             self.estimation_c = self.beta_evaluations * self.estimation_c + \
                                 (1.0 - self.beta_evaluations) * new_error
 

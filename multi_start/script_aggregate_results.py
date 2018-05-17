@@ -64,6 +64,7 @@ if __name__ == '__main__':
 
     data = {}
     data_2 = {}
+    data_3 = {}
     for i in range(lower_random_seed, upper_random_seed):
         file_1 = prefix_file_1 + str(i) + '_n_restarts_' + str(n_restarts) + '.json'
         try:
@@ -77,9 +78,15 @@ if __name__ == '__main__':
         except Exception as e:
             data_2[i] = None
 
+        file_3 = prefix_file_3 + str(i) + '_n_restarts_' + str(n_restarts)+ '.json'
+        try:
+            data_3[i] = JSONFile.read(file_3)
+        except Exception as e:
+            data_3[i] = None
+
 
     type_1 = 'MLS' #+ method
-    types = [type_1, 'equal_allocation']
+    types = [type_1, 'equal_allocation', 'random_allocation']
 
   #  types = [types[0]]
 
@@ -93,12 +100,13 @@ if __name__ == '__main__':
         best_values_rs[t] = {}
 
     for i in range(lower_random_seed, upper_random_seed):
-        data_list = [data[i], data_2[i]]
+        data_list = [data[i], data_2[i], data_3[i]]
         best_values = {}
         data_dict = {}
 
         data_dict[type_1] = data[i]
         data_dict['equal_allocation'] = data_2[i]
+        data_dict['random_allocation'] = data_3[i]
 
         for t in types:
             if data_dict[type_1] is not None and data_dict['equal_allocation'] is not None:
@@ -140,6 +148,11 @@ if __name__ == '__main__':
 
     if len(types) == 2:
         colors[types[1]] = 'r'
+
+    if len(types) == 3:
+        colors[types[1]] = 'r'
+        colors[types[2]] = 'g'
+
     for t in types:
         z = best_values[t][0:n]
         lci = ci_lower[t][0:n]
@@ -163,6 +176,6 @@ if __name__ == '__main__':
         os.mkdir(file_name)
 
 
-    file_name += type_1 + '_uniform' + '_' + 'best_solution'
+    file_name += type_1 + '_random_'  + '_uniform' + '_' + 'best_solution'
 
     plt.savefig(file_name + '.pdf')
