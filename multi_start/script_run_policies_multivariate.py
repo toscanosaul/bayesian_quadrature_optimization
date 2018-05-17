@@ -104,7 +104,7 @@ if __name__ == '__main__':
     parser.add_argument('std', help=1.0)
     parser.add_argument('lr', default=1.0)
     parser.add_argument('n_epochs', default=20)
-    parser.add_argument('problem_name', help='quadratic, problem6, problem5')
+    parser.add_argument('problem_name', help='quadratic, problem6, problem5, rosenbrock')
     parser.add_argument('dimension', help='dimension of the domain')
 
     args = parser.parse_args()
@@ -183,6 +183,22 @@ if __name__ == '__main__':
         ub = [1.2]
 
         bounds = [[0.0, 1.2]]
+    elif problem == 'rosenbrock':
+        exact_objective = rosenbrock
+        exact_gradient = exact_gradient_rosenbrock
+
+        def objective(x):
+            return rosenbrock_noisy(x, std)
+
+        def gradient(x, n_samples=1):
+            return gradient_rosenbrock(x, std, n_samples)
+
+        def gradient_samples(z, m):
+            return gradient_rosenbrock(z, std, m)
+
+        bounds = dimension * [[-3.0, 3.0]]
+        lb = dimension * [-3.0]
+        ub = dimension * [3.0]
 
     np.random.seed(random_seed)
 

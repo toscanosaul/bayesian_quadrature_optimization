@@ -197,7 +197,8 @@ def SGD(start, gradient, n, function, exact_gradient=None, args=(), kwargs={}, b
         os.mkdir(f_name + 'training_results')
     f_name += 'training_results' + '/' + name_model
 
-
+    print "optimal_value!!!"
+    print exact_values[-1]
     JSONFile.write(results, f_name)
 
     return results
@@ -233,6 +234,34 @@ def gradient_rastrigin(x, std, m):
     epsilon = np.random.normal(0, std, (n, m))
     return exact_gradient_rastrigin(x) + np.mean(epsilon, axis=1)
 
+def rosenbrock(x):
+    n = len(x)
+    sum = 0.0
+    for i in range(n-1):
+        sum += 100.0 * ((x[i+1] - (x[i] ** 2)) ** 2) + ((1.0 - x[i]) ** 2)
+    return sum
+
+def rosenbrock_noisy(x, std):
+    return rosenbrock(x) + np.random.normal(0, std, 1)
+
+def exact_gradient_rosenbrock(x):
+    n = len(x)
+    gradient = np.zeros(n)
+
+    value = -400.0 * x[0] * (x[1] - (x[0] ** 2)) - 2.0 * (1.0 - x[0])
+    gradient[0] = value
+    for i in range(1, n):
+        value = 200.0 * (x[i] - (x[i-1] ** 2))
+        if i < n - 1:
+            value += -400.0 * x[i] * (x[i+1] - (x[i] ** 2)) - 2.0 * (1.0 - x[i])
+        gradient[i] = value
+    return gradient
+
+def gradient_rosenbrock(x, std, m):
+    n = len(x)
+    epsilon = np.random.normal(0, std, (n, m))
+    return exact_gradient_rosenbrock(x) + np.mean(epsilon, axis=1)
+
 
 def problem_6(x):
     return -(x + np.sin(x)) * np.exp(-x**2)
@@ -267,7 +296,7 @@ if __name__ == '__main__':
     parser.add_argument('std', help=1.0)
     parser.add_argument('learning_rate', default=1.0)
     parser.add_argument('method', help='real_gradient, grad_epoch, no_gradient')
-    parser.add_argument('problem', help='rastrigin, quadratic, problem6')
+    parser.add_argument('problem', help='rastrigin, quadratic, problem6, rosenbrock')
     parser.add_argument('choose_sign_st')
     parser.add_argument('dimension', help='dimension of domain')
 
@@ -301,8 +330,6 @@ if __name__ == '__main__':
             epsilon = np.random.normal(0, std, m)
             return np.array(z) + np.mean(epsilon)
     elif problem == 'rastrigin':
-        exact_gradient = exact_gradient_rastrigin
-
         exact_objective = rastrigin
         exact_gradient = exact_gradient_rastrigin
 
@@ -340,6 +367,23 @@ if __name__ == '__main__':
 
 
         bounds = [[0.0, 1.2]]
+    elif problem == 'rosenbrock':
+        exact_objective = rosenbrock
+        exact_gradient = exact_gradient_rosenbrock
+
+        def objective(x):
+            return rosenbrock_noisy(x, std)
+
+        def gradient(x, n_samples=1):
+            return gradient_rosenbrock(x, std, n_samples)
+
+        def gradient_samples(z, m):
+            return gradient_rosenbrock(z, std, m)
+
+        bounds = None
+        lb = ['None']
+        ub = ['None']
+
 
 
     np.random.seed(random_seed)
