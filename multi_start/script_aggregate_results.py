@@ -60,7 +60,8 @@ if __name__ == '__main__':
 
     prefix_file_1 = 'data/multi_start/' + problem + '/' + 'greedy_policy/' + method + '_random_seed_'
     prefix_file_2 = 'data/multi_start/' + problem + '/' +'uniform_policy/' + method + '_random_seed_'
-    prefix_file_3 = 'data/multi_start/' + problem + '/' + 'random_policy/' + method + '_random_seed_'
+   # prefix_file_3 = 'data/multi_start/' + problem + '/' + 'random_policy/' + method + '_random_seed_'
+    prefix_file_3 = 'data/multi_start/' + problem + '/' + 'swersky_greedy_policy/' + method + '_random_seed_'
 
     data = {}
     data_2 = {}
@@ -86,7 +87,8 @@ if __name__ == '__main__':
 
 
     type_1 = 'MLS' #+ method
-    types = [type_1, 'equal_allocation', 'random_allocation']
+   # types = [type_1, 'equal_allocation', 'random_allocation']
+    types = [type_1, 'equal_allocation', 'swk']
 
   #  types = [types[0]]
 
@@ -176,6 +178,6 @@ if __name__ == '__main__':
         os.mkdir(file_name)
 
 
-    file_name += type_1 + '_random_'  + '_uniform' + '_' + 'best_solution'
+    file_name += type_1 + '_random_'  + '_uniform' + '_' + 'swk_'+ 'best_solution'
 
     plt.savefig(file_name + '.pdf')

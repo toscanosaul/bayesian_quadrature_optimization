@@ -26,7 +26,7 @@ from stratified_bayesian_optimization.lib.constant import (
 )
 
 if __name__ == '__main__':
-    simplex_domain = None
+    simplex_domain = [1]
     # usage: python -m scripts.generate_multiple_spec > data/multiple_specs/multiple_test_spec.json
 
     # script used to generate spec file to run BGO

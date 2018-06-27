@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 
 import numpy as np
+from scipy.stats import norm
+from scipy.optimize import curve_fit, leastsq, fmin_bfgs, fmin_l_bfgs_b, nnls
 
 class ParametricFunctions(object):
 
@@ -240,7 +242,90 @@ class ParametricFunctions(object):
             val = -np.inf
         return val
 
+    def log_prob(self, x, sigma, historical_data):
+        """
+        log_prob for only one starting point
+        Historical data of only one starting point.
+
+        x: [float], x[0:len(list_functions)] are the weights
+        historical_data: [float]
+        """
+
+        total_iterations = self.total_iterations
+
+        if sigma < 0:
+            return -np.inf
+
+        bounds = []
+
+        index = 0
+        for f in self.list_functions:
+            if self.min_values[f] is not None or self.max_values[f] is not None:
+                bd = []
+                if self.min_values[f] is not None:
+                    n_bounds = len(self.min_values[f])
+                else:
+                    n_bounds = len(self.max_values[f])
+
+                for i in range(n_bounds):
+                    bd_ = [None, None]
+                    if self.min_values[f] is not None:
+                        bd_[0] = self.min_values[f][i]
+                    if self.max_values[f] is not None:
+                        bd_[1] = self.max_values[f][i]
+                    bd += [bd_]
+                bounds += bd
+
+            else:
+                bd = len(self.parameters_functions[f]) * [[None, None]]
+                bounds += bd
+
+        n_functions = len(self.list_functions)
+        weights = np.array(x[0:n_functions])
+        params = x[n_functions:]
+        n_iterations = len(historical_data)
+
+
+        for i in range(n_functions, len(x)):
+            if bounds[i - n_functions][0] is not None and x[i] < bounds[i - n_functions][0]:
+                print "bounds"
+                print i - n_functions
+                print bounds[i - n_functions][0], x[i]
+                return -np.inf
+            if bounds[i - n_functions][1] is not None and x[i] > bounds[i - n_functions][1]:
+                print "bounds"
+                print i - n_functions
+                print bounds[i - n_functions][0], x[i]
+                return -np.inf
+        if np.any(weights < 0):
+            print "weights"
+            return - np.inf
+
+        if self.weighted_combination(1, weights, params) >= self.weighted_combination(total_iterations,
+                                                                            weights, params):
+            return - np.inf
+
+        if self.lower is not None and self.weighted_combination(1, weights, params) < self.lower:
+            print "no lower"
+
+            val = - np.inf
+        if self.upper is not None \
+                and self.weighted_combination(self.total_iterations, weights, params) > self.upper:
+            print "no upper"
+            val = -np.inf
+
+
+        val = 0.0
+        for index, y in enumerate(historical_data):
+            mean = self.weighted_combination(index + 1, weights, params)
+            val += np.log(norm.pdf(y, loc=mean, scale=sigma))
+
+        return val
+
     def get_starting_values(self):
+
+
+
         params_st = np.ones(self.n_weights + self.n_parameters)
         start_index = 0
         n_functions = self.n_weights
@@ -251,6 +336,225 @@ class ParametricFunctions(object):
                 params_st[n_functions + start_index:n_functions + start_index + n_par] = parameters
             start_index += n_par
         return params_st
+
+    def get_starting_values_mle(self, historical_data):
+
+        bounds = []
+
+        index = 0
+        for f in self.list_functions:
+            if self.min_values[f] is not None or self.max_values[f] is not None:
+                bd = []
+                if self.min_values[f] is not None:
+                    n_bounds = len(self.min_values[f])
+                else:
+                    n_bounds = len(self.max_values[f])
+
+                for i in range(n_bounds):
+                    bd_ = [None, None]
+                    if self.min_values[f] is not None:
+                        bd_[0] = self.min_values[f][i]
+                    if self.max_values[f] is not None:
+                        bd_[1] = self.max_values[f][i]
+                    bd += [bd_]
+                bounds += bd
+
+            else:
+                bd = len(self.parameters_functions[f]) * [[None, None]]
+                bounds += bd
+
+
+        st_params = []
+        st_weights = []
+        for function_n in self.list_functions:
+            params_names = self.parameters_functions[function_n]
+            result = self.mle_params_per_function(historical_data, function_n, choose_sigma=True,
+                                             choose_weights=True)
+            st_params += list(result[0][0:len(params_names)])
+            st_weights += list([result[0][-1]])
+
+        print st_params
+
+        for i in range(len(st_params)):
+            if bounds[i][0] is not None and st_params[i] < bounds[i][0]:
+                st_params[i] = bounds[i][0] + 0.1
+            if bounds[i][1] is not None and st_params[i] > bounds[i][1]:
+                st_params[i] = bounds[i][1] - 0.1
+
+
+
+        x = range(1, len(historical_data) + 1)
+        evaluations = np.array(
+            [self.weighted_combination(t, st_weights / np.sum(st_weights), st_params) for t in x])
+        sigma_sq = np.mean((evaluations - historical_data) ** 2)
+
+        start_params = list(st_weights / np.sum(st_weights)) + list(st_params) + [
+            np.sqrt(sigma_sq)]
+        start_params = np.array(start_params)
+
+        return start_params
+        #return start_params, st_params, st_weights / np.sum(st_weights), sigma_sq
+
+    def mle_params_per_function(self, historical_data, function_name, choose_sigma=False,
+                                choose_weights=False):
+        """
+        log_prob for only one starting point
+
+        :param historical_data: [float]
+        """
+        historical_data = np.array(historical_data)
+        n = len(historical_data)
+        x = range(1, n + 1)
+        function = self.functions[function_name]
+
+        def objective(params):
+
+            param_tmp = {}
+            params_names = self.parameters_functions[function_name]
+            for ind, name in enumerate(params_names):
+                param_tmp[name] = params[ind]
+
+            if choose_sigma:
+                sigma_sq = params[len(params_names)] ** 2
+            else:
+                #             evaluations = np.array([function(t, **param_tmp) for t in x])
+                #             sigma_sq = np.mean((evaluations - historical_data) ** 2)
+                sigma_sq = 10.0
+            if choose_sigma:
+                args_lp = list(params[0:-1])
+            else:
+                args_lp = list(params)
+
+            if choose_sigma:
+                add = len(param_tmp) + 1
+            else:
+                add = len(param_tmp)
+            weight = 1.0
+            if choose_weights:
+                weight = params[add]
+
+            val = self.log_prob_per_function(param_tmp, np.sqrt(sigma_sq), historical_data,
+                                        function_name, weight=weight)
+
+            return -1.0 * val
+
+        def gradient(params):
+            param_tmp = {}
+            params_names = self.parameters_functions[function_name]
+            for ind, name in enumerate(params_names):
+                param_tmp[name] = params[ind]
+
+            if choose_sigma:
+                sigma_sq = params[len(param_tmp)] ** 2
+            else:
+                #             evaluations = np.array([function(t, **param_tmp) for t in x])
+                #             sigma_sq = np.mean((evaluations - historical_data) ** 2)
+                sigma_sq = 10.0
+            if choose_sigma:
+                args_lp = list(params[0:-1])
+            else:
+                args_lp = list(params)
+
+            if choose_sigma:
+                add = len(param_tmp) + 1
+            else:
+                add = len(param_tmp)
+            weight = 1.0
+            if choose_weights:
+                weight = params[add]
+
+            val = self.gradient_llh_function(param_tmp, np.sqrt(sigma_sq), historical_data,
+                                        function_name, choose_sigma=choose_sigma, weight=weight,
+                                        choose_weight=choose_weights)
+
+            for t in val:
+                if t != t:
+                    print "grad"
+                    print param_tmp
+                    print params
+                    print sigma_sq
+                    print function_name
+                    df
+            return -1.0 * val
+
+        n_params_function = len(self.parameters_functions[function_name])
+
+        if not choose_weights:
+            if not choose_sigma:
+                params_st = np.ones(n_params_function)
+            else:
+                params_st = np.ones(n_params_function + 1)
+                params_st[-1] = 0.5
+        else:
+            if not choose_sigma:
+                params_st = np.ones(n_params_function + 1)
+                params_st[-1] = 1.0
+            else:
+                params_st = np.ones(n_params_function + 2)
+                params_st[n_params_function] = 0.5
+                params_st[-1] = 1.0
+
+        bounds = []
+
+        if self.default_values[function_name] is not None:
+            params_st[0:len(self.default_values[function_name])] = self.default_values[function_name]
+
+        if self.min_values[function_name] is not None:
+            bd = []
+            for t in self.min_values[function_name]:
+                bd += [[t, None]]
+            bounds += bd
+
+            if choose_sigma:
+                bounds += [[0.00000001, None]]
+
+            if choose_weights:
+                bounds += [[0., None]]
+
+        if self.max_values[function_name] is not None:
+            bd = []
+            for it, t in enumerate(self.max_values[function_name]):
+                if t is not None and len(bounds) > 0:
+                    bounds[it][1] = t
+                elif len(bounds) == 0:
+                    bd += [[None, t]]
+
+            if len(bounds) == 0:
+                bounds += bd
+                if choose_sigma:
+                    bounds += [[0.00000001, None]]
+                if choose_weights:
+                    bounds += [[0., None]]
+
+        if self.max_values[function_name] is None and self.min_values[function_name] is None:
+            bounds = len(self.default_values[function_name]) * [[None, None]]
+            if choose_sigma:
+                bounds += [[0.00000001, None]]
+            if choose_weights:
+                bounds += [[0., None]]
+
+        popt, fval, info = fmin_l_bfgs_b(objective,
+                                         fprime=gradient,
+                                         x0=params_st,
+                                         bounds=bounds,
+                                         approx_grad=False)
+        if not choose_sigma:
+            param_tmp = {}
+            params_names = self.parameters_functions[function_name]
+            for ind, name in enumerate(params_names):
+                param_tmp[name] = popt[ind]
+            evaluations = np.array([function(t, **param_tmp) for t in x])
+            sigma_sq = np.sqrt(np.mean((evaluations - historical_data) ** 2))
+            return popt, fval, info, sigma_sq
+        else:
+            param_tmp = {}
+            params_names = self.parameters_functions[function_name]
+            for ind, name in enumerate(params_names):
+                param_tmp[name] = popt[ind]
+
+            evaluations = np.array([function(t, **param_tmp) for t in x])
+            return popt, fval, info, evaluations
+
 
     def get_bounds(self):
         bounds = []
@@ -585,3 +889,83 @@ class ParametricFunctions(object):
         grad[0] = -1.0 / (np.log(x + 1))
         grad[1] = 1.0
         return grad
+
+
+    def log_prob_per_function(self, x, sigma, historical_data, function_name,
+                              weight=1.0, L=None, U=None):
+        """
+        log_prob for only one starting point
+        Historical data of only one starting point.
+
+        x: dictionary with arguments of function
+        historical_data: [float]
+        """
+        total_iterations = self.total_iterations
+        function = self.functions[function_name]
+        params = x
+        # n_iterations = len(historical_data)
+        # params_names = self.parameters_functions[function_name]
+
+        dom_x = range(1, len(historical_data) + 1)
+        evaluations = np.zeros(len(historical_data))
+        for i in dom_x:
+            evaluations[i - 1] = weight * function(i, **params)
+
+        val = -1.0 * np.sum((evaluations - historical_data) ** 2) / (sigma ** 2) - np.log(sigma ** 2)
+
+        return val
+
+
+    def gradient_llh_function(self, x, sigma, historical_data, function_name, choose_sigma=True,
+                              choose_weight=True, weight=1.0):
+        """
+        Gradient of the llh respect to a specific function.
+
+        :param function: str
+        """
+        function = self.functions[function_name]
+        gradient_function = self.gradients_functions[function_name]
+        params = x
+        n_iterations = len(historical_data)
+
+        bounds = []
+
+        if not choose_weight:
+            if choose_sigma:
+                gradient = np.zeros(len(x) + 1)
+            else:
+                gradient = np.zeros(len(x))
+        else:
+            if choose_sigma:
+                gradient = np.zeros(len(x) + 2)
+            else:
+                gradient = np.zeros(len(x) + 1)
+        evaluations = np.zeros(len(historical_data))
+
+        dom_x = range(1, len(historical_data) + 1)
+        gradient_theta = np.zeros(len(x))
+        for i in dom_x:
+            evaluations[i - 1] = weight * function(i, **params)
+            gradient_theta += weight * gradient_function(i, **params) * (
+            evaluations[i - 1] - historical_data[i - 1])
+
+        gradient_theta *= (-2.0 / (sigma ** 2))
+
+        gradient[0: len(x)] = gradient_theta
+
+        if choose_sigma:
+            gradient_sigma = 2.0 * np.sum((historical_data - evaluations) ** 2) * \
+                             np.power(sigma, 3) - 2.0 / sigma
+            gradient[len(x)] = gradient_sigma
+
+        if choose_weight:
+            if choose_sigma:
+                add = len(x) + 1
+            else:
+                add = len(x)
+            for i in dom_x:
+                evaluations[i - 1] = weight * function(i, **params)
+                gradient[add] += (-2.0 / (sigma ** 2)) * function(i, **params) * (
+                evaluations[i - 1] - historical_data[i - 1])
+
+        return gradient

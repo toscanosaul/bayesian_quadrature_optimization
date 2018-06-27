@@ -173,6 +173,9 @@ def get_default_values_kernel(kernel_name, dim, same_correlation=False, **parame
     :return: [float]
     """
 
+    if kernel_name[0] == 'swersky_kernel':
+        return [1.0, 1.0]
+
     if kernel_name[0] == ORNSTEIN_KERNEL:
         sigma2 = parameters_priors.get(SIGMA2_NAME, [1.0])
 

@@ -56,6 +56,7 @@ class BGO(object):
         gp_model = GPFittingService.from_dict(spec)
 
         simplex_domain = spec.get('simplex_domain', None)
+
         noise = spec.get('noise')
         quadrature = None
         acquisition_function = None
@@ -400,7 +401,9 @@ class BGO(object):
             'optimal_solution': np.array(n),
         }
         """
+        spec.simplex_domain = None
         bgo = cls.from_spec(spec)
+
         debug = spec.get('debug')
         monte_carlo_sbo = spec.get('monte_carlo_sbo')
         n_samples_mc = spec.get('n_samples_mc')

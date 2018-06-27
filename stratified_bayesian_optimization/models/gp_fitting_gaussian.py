@@ -367,6 +367,7 @@ class GPFittingGaussian(object):
 
         parameters_priors = prior_parameters_values['kernel_values']
 
+
         parameters_priors = parameters_kernel_from_list_to_dict(parameters_priors, self.type_kernel,
                                                                 self.dimensions)
 
@@ -749,6 +750,8 @@ class GPFittingGaussian(object):
         cached = self._get_cached_data((var_noise, tuple(parameters_kernel)), CHOL_COV, cache=cache)
         if cached is not False:
             return cached
+
+        historical_points = np.array(historical_points)
 
         n = historical_points.shape[0]
 

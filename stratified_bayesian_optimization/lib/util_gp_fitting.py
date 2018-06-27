@@ -16,6 +16,7 @@ from stratified_bayesian_optimization.kernels.scaled_kernel import ScaledKernel
 from stratified_bayesian_optimization.kernels.matern52 import Matern52
 from stratified_bayesian_optimization.kernels.ornstein import Ornstein
 from stratified_bayesian_optimization.kernels.tasks_kernel import TasksKernel
+from stratified_bayesian_optimization.kernels.swersky import Swk
 from stratified_bayesian_optimization.kernels.product_kernels import ProductKernels
 from stratified_bayesian_optimization.lib.util import (
     get_number_parameters_kernel,
@@ -41,6 +42,10 @@ def get_kernel_default(kernel_name, dimension, bounds=None, default_values=None,
 
     :return: kernel object
     """
+
+    if kernel_name[0] == 'swersky_kernel':
+        return Swk.define_default_kernel(1)
+
 
     if kernel_name[0] == SCALED_KERNEL:
         if kernel_name[1] == MATERN52_NAME:
@@ -108,6 +113,8 @@ def get_kernel_class(kernel_name):
         return ScaledKernel
     if kernel_name == ORNSTEIN_KERNEL:
         return Ornstein
+    if kernel_name == 'swersky_kernel':
+        return Swk
 
 
 def parameters_kernel_from_list_to_dict(params, type_kernels, dimensions):
@@ -221,6 +228,13 @@ def define_prior_parameters_using_data(data, type_kernel, dimensions, sigma2=Non
             parameters = \
                 ScaledKernel.define_prior_parameters(data, len(indexes), var_evaluations=sigma2)
             parameters_priors[SIGMA2_NAME] = parameters[SIGMA2_NAME]
+
+    if 'swersky_kernel' in type_kernel:
+        parameters_priors = {
+            'alpha': 1.0,
+            'beta': 1.0
+        }
+
 
 
     return parameters_priors

@@ -90,6 +90,8 @@ class SliceSampling(object):
             of the model (i.e. variance of noise, mean, parameters of the kernel)
         :return: float
         """
+
+
         new_point = point + x * direction
 
 
