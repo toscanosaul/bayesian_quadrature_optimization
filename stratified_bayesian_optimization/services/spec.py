@@ -238,7 +238,7 @@ class SpecService(object):
             method_opt_mcs=None, maxepochs=None, n_samples_parameters_means=None,
             maxepoch_means=None, threshold_sbos=None, parallel_trainings=None,
             optimize_only_posterior_means=None, start_optimize_posterior_means=None,
-            simplex_domain=None):
+            simplex_domain=None, test=False):
 
         """
         Generate dict that represents multiple run specs

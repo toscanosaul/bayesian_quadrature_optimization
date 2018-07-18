@@ -772,6 +772,8 @@ if __name__ == '__main__':
     # optimize_only_posterior_means = [False]
     # start_optimize_posterior_means = [0]
 
+
+
     specs = SpecService.generate_dict_multiple_spec(
         n_specs=n_specs, problem_names=problem_name, dim_xs=dim_x, bounds_domain_xs=bounds_domain_x,
         training_names=training_name, type_kernels=type_kernel, dimensionss=dimensions,

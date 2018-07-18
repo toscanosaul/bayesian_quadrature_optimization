@@ -29,15 +29,16 @@ def get_best_values(data, n_restarts=9, n_training=3, sign=False):
         j = int(data['chosen_index'][i])
         if sign:
 
-            current_value[j] = -1.0 * data['evaluations'][str(j)][index_points[j]]
+            current_value[j] = -1.0 * data['evaluations'][str(j)][index_points[j]][0]
         else:
-            current_value[j] = data['evaluations'][str(j)][index_points[j]]
+            current_value[j] = data['evaluations'][str(j)][index_points[j]][0]
+
         best_values.append(np.max(current_value))
         index_points[j] += 1
     return best_values
 
 if __name__ == '__main__':
-    # python -m multi_start.script_aggregate_results approx_lipschitz problem5 20 97 1 20
+    # python -m multi_start.script_aggregate_results approx_lipschitz problem5 20 50 1 20
 
     parser = argparse.ArgumentParser()
     parser.add_argument('method', help='approx_lipschitz')
@@ -61,7 +62,7 @@ if __name__ == '__main__':
     prefix_file_1 = 'data/multi_start/' + problem + '/' + 'greedy_policy/' + method + '_random_seed_'
     prefix_file_2 = 'data/multi_start/' + problem + '/' +'uniform_policy/' + method + '_random_seed_'
    # prefix_file_3 = 'data/multi_start/' + problem + '/' + 'random_policy/' + method + '_random_seed_'
-    prefix_file_3 = 'data/multi_start/' + problem + '/' + 'swersky_greedy_policy/' + method + '_random_seed_'
+    prefix_file_3 = 'data/multi_start/' + problem + '/' + 'swersky_greedy_policy/' + 'swersky' + '_random_seed_'
 
     data = {}
     data_2 = {}
@@ -80,6 +81,7 @@ if __name__ == '__main__':
             data_2[i] = None
 
         file_3 = prefix_file_3 + str(i) + '_n_restarts_' + str(n_restarts)+ '.json'
+
         try:
             data_3[i] = JSONFile.read(file_3)
         except Exception as e:
@@ -108,10 +110,10 @@ if __name__ == '__main__':
 
         data_dict[type_1] = data[i]
         data_dict['equal_allocation'] = data_2[i]
-        data_dict['random_allocation'] = data_3[i]
+        data_dict['swk'] = data_3[i]
 
         for t in types:
-            if data_dict[type_1] is not None and data_dict['equal_allocation'] is not None:
+            if data_dict[type_1] is not None and data_dict['equal_allocation'] is not None and data_dict['swk'] is not None:
                 best_values[t] = get_best_values(data_dict[t], n_restarts, n_training)
 
                 for r in range(len(best_values[t])):
