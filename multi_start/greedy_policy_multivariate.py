@@ -38,7 +38,7 @@ class GreedyPolicy(object):
 
         for i in dict_stat_models:
             self.chosen_points[i] = list(dict_stat_models[i].gp_model[0].raw_results['points'])
-            self.evaluations_obj[i] = list(dict_stat_models[i].gp_model[0].raw_results['values'])
+            self.evaluations_obj[i] = list(dict_stat_models[i].gp_model[0].raw_results['exact_values'])
 
         self.n_restarts = n_restarts
 
@@ -138,8 +138,9 @@ class GreedyPolicy(object):
         self.parameters[point_ind] = params
         self.save_data()
 
-    def run_policy(self, number_iterations=100):
+    def run_policy(self, number_iterations=100, sufix=None):
         steps = number_iterations / self.n_epochs
+        self.save_data(sufix=sufix)
         for i in range(steps):
             self.choose_move_point()
             self.save_data()

@@ -57,8 +57,9 @@ def create_model_multivariate(args, dimensions, n_training=3, n_epochs=100, burn
 
 
     training_data = {'points': data['points'][0:n_training],
-                     'values': data['values'][0:n_training], 'gradients': [],
-                     'stochastic_gradients':data['stochastic_gradients'][0:n_training] }
+                     'values': data['exact_values'][0:n_training], 'gradients': [],
+                     'stochastic_gradients':data['stochastic_gradients'][0:n_training],
+                     'exact_values': data['exact_values'][0:n_training]}
     if method == 'real_gradient':
         training_data['gradients'] = data['gradients'][0:n_training]
     elif method == 'grad_epoch':
@@ -257,11 +258,8 @@ if __name__ == '__main__':
 
     policy_greedy = GreedyPolicy(stat_models, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
     policy_uniform = UniformPolicy(stat_models_2, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
-    policy_random =RandomPolicy(stat_models_3, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
+    policy_random = RandomPolicy(stat_models_3, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
 
-    policy_greedy.run_policy(n_epochs - n_training)
-    policy_uniform.run_policy(n_epochs - n_training)
-    policy_random.run_policy(n_epochs - n_training)
-
-
-
+    policy_greedy.run_policy(n_epochs - n_training, sufix="train")
+    policy_uniform.run_policy(n_epochs - n_training, sufix="train")
+    policy_random.run_policy(n_epochs - n_training, sufix="train")
