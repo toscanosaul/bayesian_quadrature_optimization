@@ -81,15 +81,15 @@ def create_model_multivariate(args, dimensions, n_training=3, n_epochs=100, burn
 
     model = None
 
-    # model = StatModelDomainMultiDimensional(
-    #     training_data, best_results, n_training, functions_get_value,
-    #     points_domain[-1], 0,
-    #     n_training, specifications=name_model, problem_name=problem_name,
-    #     max_iterations=total_iterations, parametric_mean=False, lower=None, upper=None,
-    #     n_burning=n_burning, total_batches=n_batches, type_model=method, lipschitz=lipschitz_cte,
-    #     n_thinning=10, kwargs_get_value_next_iteration=kwargs, burning=burning, dimensions=dimensions)
+    model = StatModelDomainMultiDimensional(
+        training_data, best_results, n_training, functions_get_value,
+        points_domain[-1], 0,
+        n_training, specifications=name_model, problem_name=problem_name,
+        max_iterations=total_iterations, parametric_mean=False, lower=None, upper=None,
+        n_burning=n_burning, total_batches=n_batches, type_model=method, lipschitz=lipschitz_cte,
+        n_thinning=10, kwargs_get_value_next_iteration=kwargs, burning=burning, dimensions=dimensions)
 
-    return training_data
+    return model
 
 
 def get_values(i, data, method):
@@ -257,28 +257,28 @@ if __name__ == '__main__':
         stat_models[i] = create_model_multivariate(parameters[i],dimension, n_training=n_training, n_epochs=n_epochs, burning=False, point=i)
         stat_models_2[i] = create_model_multivariate(parameters[i],dimension, n_training=n_training, n_epochs=n_epochs, burning=False, point=i)
         stat_models_3[i] = create_model_multivariate(parameters[i],dimension, n_training=n_training, n_epochs=n_epochs, burning=False, point=i)
-
-    data = {}
-    data['chosen_points'] = {}
-
-    for i in points_index:
-        data['chosen_points'][i] = stat_models[i]['exact_values']
-
-    file_name = 'data/multi_start/'
-
-    file_name += 'ros' + '/'
-
-    if not os.path.exists(file_name):
-        os.mkdir(file_name)
-
-    file_name += 'training_data'
-    file_name += '_random_seed_' + str(random_seed)
-    JSONFile.write(data, file_name + '.json')
-
-    # policy_greedy = GreedyPolicy(stat_models, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
-    # policy_uniform = UniformPolicy(stat_models_2, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
-    # policy_random = RandomPolicy(stat_models_3, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
     #
-    # policy_greedy.run_policy(n_epochs - n_training, sufix="train")
-    # policy_uniform.run_policy(n_epochs - n_training, sufix="train")
-    # policy_random.run_policy(n_epochs - n_training, sufix="train")
+    # data = {}
+    # data['chosen_points'] = {}
+    #
+    # for i in points_index:
+    #     data['chosen_points'][i] = stat_models[i]['exact_values']
+    #
+    # file_name = 'data/multi_start/'
+    #
+    # file_name += 'ros' + '/'
+    #
+    # if not os.path.exists(file_name):
+    #     os.mkdir(file_name)
+    #
+    # file_name += 'training_data'
+    # file_name += '_random_seed_' + str(random_seed)
+    # JSONFile.write(data, file_name + '.json')
+
+    policy_greedy = GreedyPolicy(stat_models, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
+    policy_uniform = UniformPolicy(stat_models_2, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
+    policy_random = RandomPolicy(stat_models_3, method, problem_name, type_model=method, random_seed=random_seed, n_restarts=n_restarts)
+
+    policy_greedy.run_policy(n_epochs - n_training)
+    policy_uniform.run_policy(n_epochs - n_training)
+    policy_random.run_policy(n_epochs - n_training)
