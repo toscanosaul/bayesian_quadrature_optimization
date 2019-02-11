@@ -21,7 +21,7 @@ def toy_example(x):
 
     value = get_burn(thickness_cp, twist_cp, match_number)
 
-    return [value]
+    return [-1.0 * value]
 
 def integrate_toy_example(x):
     """
@@ -33,7 +33,7 @@ def integrate_toy_example(x):
     twist_cp = np.array(x[3:])
 
     value = get_burn_flight_conditions(thickness_cp, twist_cp, points=points_, weight=weights_)
-    return [value]
+    return [-1.0 * value]
 
 
 def main(*params):
