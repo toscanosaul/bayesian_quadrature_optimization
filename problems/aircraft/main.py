@@ -16,10 +16,11 @@ def toy_example(x):
     :return: [float]
     """
     thickness_cp = np.array(x[0: 3])
-    twist_cp = np.array(x[3: -1])
-    match_number = x[-1]
+    twist_cp = np.array(x[3: -2])
+    match_number = x[-2]
+    height = x[-1]
 
-    value = get_burn(thickness_cp, twist_cp, match_number)
+    value = get_burn(thickness_cp, twist_cp, match_number, height)
 
     return [-1.0 * value]
 

@@ -12,6 +12,15 @@ from openmdao.api import ScipyOptimizeDriver
 grav_constant = 9.81
 n_scenarios = 8
 
+
+data_heights = {}
+data_heights[7000] = {'g':9.785, 'ro': 0.5900, 'visc': 1.561*1e-5, 'speed':312.251}
+data_heights[10000] = {'g':9.776, 'ro': 0.4135, 'visc': 1.458*1e-5, 'speed':299.469}
+data_heights[20000] = {'g':9.745, 'ro': 0.08891, 'visc':1.422*1e-5, 'speed':294.999}
+data_heights[30000] = {'g':9.715, 'ro': 0.01841, 'visc':1.475*1e-5, 'speed':304.839}
+data_heights[40000] = {'g':9.684, 'ro': 0.003996, 'visc':1.601*1e-5, 'speed':323.991}
+data_heights[50000] = {'g':9.654, 'ro': 0.001027, 'visc':1.704*1e-5, 'speed':334.417}
+
 def weights_points(n=8, mean=0.84, std=0.0067):
     """
     Compute weights of different flight conditions, i.e. different Mach numbers.
@@ -47,16 +56,19 @@ points, weight = weights_points(n_scenarios)
 
 def get_burn_flight_conditions(thickness_cp, twist_cp, points=points, weight=weight):
     sol = 0.0
+    count = 0.0
     for match_number in points:
-        ans = get_burn(thickness_cp, twist_cp, match_number)
-        sol += ans
+        for height in data_heights:
+            ans = get_burn(thickness_cp, twist_cp, match_number, height)
+            sol += ans
+            count += 1
 
-    return sol * weight
+    return sol / float(count)
 
 
-def get_burn(thickness_cp, twist_cp, match_number):
+def get_burn(thickness_cp, twist_cp, match_number, height):
     surface = get_dict(thickness_cp, twist_cp)
-    prob = get_problem(surface, match_number)
+    prob = get_problem(surface, match_number, height)
     prob.run_driver()
 
     return prob['AS_point_0.fuelburn'][0]
@@ -122,22 +134,22 @@ def get_dict(thickness_cp, twist_cp_):
     return surface
 
 
-def get_problem(surface, match_number=0.84):
+def get_problem(surface, match_number=0.84, height=7000):
     # Create the problem and assign the model group
     prob = Problem()
 
-    # Add problem information as an independent variables component
-    speed_of_sound = 295.4
-    v = match_number * speed_of_sound
-    cte = 1.e6 / 248.13599999999997
-    re = cte * v
+    grav_constant = data_heights[height]['g']
+    v = match_number * data_heights[height]['speed']
+    re = data_heights[height]['ro'] * data_heights[height]['speed'] * match_number / data_heights[height]['visc']
+    rho = data_heights[height]['ro']
+    speed_of_sound = data_heights[height]['speed']
 
     indep_var_comp = IndepVarComp()
     indep_var_comp.add_output('v', val=v, units='m/s')  # change this too
     indep_var_comp.add_output('alpha', val=5., units='deg')
     indep_var_comp.add_output('Mach_number', val=match_number)
     indep_var_comp.add_output('re', val=re, units='1/m')  # change this too
-    indep_var_comp.add_output('rho', val=0.38, units='kg/m**3')
+    indep_var_comp.add_output('rho', val=rho, units='kg/m**3')
     indep_var_comp.add_output('CT', val=grav_constant * 17.e-6, units='1/s')
     indep_var_comp.add_output('R', val=11.165e6, units='m')
     indep_var_comp.add_output('W0', val=0.4 * 3e5, units='kg')

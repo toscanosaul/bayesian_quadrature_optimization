@@ -827,21 +827,24 @@ if __name__ == '__main__':
     #sbo
     dim_x = [8]
 
+    heights = [40000, 50000, 30000, 10000, 20000, 7000]
+    mach_numbers =  [0.8322926591514808,  0.8338867889125835, 0.8366730174675625, 0.8389325581307193,
+                     0.8410674418692806, 0.8433269825324374, 0.8461132110874164, 0.8477073408485192]
+
     bounds_domain_x = [[(0.01, 0.5), (0.01, 0.5), (0.01, 0.5), (10.0, 15.0), (10.0, 15.0),
                         (10.0, 15.0), (10.0, 15.0), (10.0, 15.0)]]
-    domain_random = [0.8322926591514808,  0.8338867889125835, 0.8366730174675625, 0.8389325581307193,
-                     0.8410674418692806, 0.8433269825324374, 0.8461132110874164, 0.8477073408485192]
+    domain_random = [[m, h] for m in mach_numbers for h in heights]
+
     problem_name = ['aircraft']
     training_name = [None]
     type_kernel = [[SCALED_KERNEL, MATERN52_NAME]]
     dimensions = [[9]]
     bounds_domain = [[[0.01, 0.5], [0.01, 0.5], [0.01, 0.5], [10.0, 15.0], [10.0, 15.0], [10.0, 15.0],
-                      [10.0, 15.0], [10.0, 15.0], [0.8322926591514808,  0.8338867889125835, 0.8366730174675625, 0.8389325581307193,
-                     0.8410674418692806, 0.8433269825324374, 0.8461132110874164, 0.8477073408485192]]]
+                      [10.0, 15.0], [10.0, 15.0], mach_numbers, heights]]
     n_training = [3]
     random_seed = range(1, 201)
     n_specs = len(random_seed)
-    type_bounds = [[0, 0, 0, 0, 0, 0, 0, 0, 1]]
+    type_bounds = [[0, 0, 0, 0, 0, 0, 0, 0, 1, 1]]
     x_domain = [[0, 1, 2,3,4,5,6,7]]
     number_points_each_dimension = [[6, 6, 11, 6, 1, 1, 1, 1]]
     mle = [False]
@@ -876,8 +879,8 @@ if __name__ == '__main__':
     parallel_training = [False]
     noises = [False]
     n_sampless = [0]
-    parameters_distributions = [{'weights': [0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
-                                             0.125, 0.125],
+    n_points = len(domain_random)
+    parameters_distributions = [{'weights': n_points * [1.0 / float(n_points)],
                                   'domain_random': domain_random}]
     optimize_only_posterior_means = [False]
     start_optimize_posterior_means = [0]
@@ -896,7 +899,7 @@ if __name__ == '__main__':
     # n_training = [2]
     # random_seed = range(1, 10)
     # n_specs = len(random_seed)
-    # type_bounds = [[0, 0, 0, 0, 0, 0, 0, 0, 1]]
+    # type_bounds = [[0, 0, 0, 0, 0, 0, 0, 0]]
     # x_domain = [[0, 1, 2, 3, 4, 5, 6, 7]]
     # number_points_each_dimension = [[6, 6, 11, 6, 1, 1, 1, 1]]
     # mle = [False]
