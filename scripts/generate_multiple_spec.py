@@ -838,7 +838,7 @@ if __name__ == '__main__':
     problem_name = ['aircraft']
     training_name = [None]
     type_kernel = [[SCALED_KERNEL, MATERN52_NAME]]
-    dimensions = [[9]]
+    dimensions = [[10]]
     bounds_domain = [[[0.01, 0.5], [0.01, 0.5], [0.01, 0.5], [10.0, 15.0], [10.0, 15.0], [10.0, 15.0],
                       [10.0, 15.0], [10.0, 15.0], mach_numbers, heights]]
     n_training = [3]
