@@ -886,54 +886,70 @@ if __name__ == '__main__':
     start_optimize_posterior_means = [0]
 
     #EI
-    # ##branin- EI
-    # dim_x = [8]
-    # bounds_domain_x = [[(0.01, 0.5), (0.01, 0.5), (0.01, 0.5), (10.0, 15.0), (10.0, 15.0),
-    #                    (10.0, 15.0), (10.0, 15.0), (10.0, 15.0)]]
-    # problem_name = ['aircraft_EI']
-    # training_name = [None]
-    # type_kernel = [[SCALED_KERNEL, MATERN52_NAME]]
-    # dimensions = [[8]]
-    # bounds_domain = [[(0.01, 0.5), (0.01, 0.5), (0.01, 0.5), (10.0, 15.0), (10.0, 15.0),
-    #                    (10.0, 15.0), (10.0, 15.0), (10.0, 15.0)]]
-    # n_training = [2]
-    # random_seed = range(1, 10)
-    # n_specs = len(random_seed)
-    # type_bounds = [[0, 0, 0, 0, 0, 0, 0, 0]]
-    # x_domain = [[0, 1, 2, 3, 4, 5, 6, 7]]
-    # number_points_each_dimension = [[6, 6, 11, 6, 1, 1, 1, 1]]
-    # mle = [False]
-    # distribution = [UNIFORM_FINITE]
-    # parallel = [True]
-    # thinning = [10]
-    # n_burning = [100]
-    # max_steps_out = [1000]
-    # n_iterations = [15]
-    # same_correlation = [True]
-    # debug = [False]
-    # number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
-    # monte_carlo_sbo = [True]
-    # n_samples_mc = [5]
-    # n_restarts_mc = [5]
-    # n_best_restarts_mc = [0]
-    # factr_mc = [1e12]
-    # maxiter_mc = [10]
-    # n_restarts = [1]
-    # n_best_restarts = [0]
-    # use_only_training_points = [True]
-    # method_optimization = [EI_METHOD]
-    # n_samples_parameters = [5]
-    # n_restarts_mean = [1]
-    # n_best_restarts_mean = [0]
-    # method_opt_mc = [DOGLEG]
-    # maxepoch = [10]
-    # n_samples_parameters_mean = [10]
-    # maxepoch_mean = [10]
-    # threshold_sbo = [0.001]
-    # parallel_training = [False]
-    # noises = [True]
-    # n_sampless = [5]
-    # parameters_distributions = None
+    #aircraft- EI
+    dim_x = [8]
+
+    heights = [40000, 50000, 30000, 10000, 20000, 7000]
+    mach_numbers =  [0.8322926591514808,  0.8338867889125835, 0.8366730174675625, 0.8389325581307193,
+                     0.8410674418692806, 0.8433269825324374, 0.8461132110874164, 0.8477073408485192]
+
+    bounds_domain_x = [[(0.01, 0.5), (0.01, 0.5), (0.01, 0.5), (10.0, 15.0), (10.0, 15.0),
+                        (10.0, 15.0), (10.0, 15.0), (10.0, 15.0)]]
+    domain_random = [[m, h] for m in mach_numbers for h in heights]
+
+    problem_name = ['aircraft_ei']
+    training_name = [None]
+    type_kernel = [[SCALED_KERNEL, MATERN52_NAME]]
+
+    dimensions = [[8]]
+    bounds_domain = [[[0.01, 0.5], [0.01, 0.5], [0.01, 0.5], [10.0, 15.0], [10.0, 15.0], [10.0, 15.0],
+                      [10.0, 15.0], [10.0, 15.0]]]
+
+    n_training = [1]
+    random_seed = range(1, 100)
+    n_specs = len(random_seed)
+    type_bounds = [[0, 0, 0, 0, 0, 0, 0, 0]]
+    x_domain = [[0, 1, 2, 3, 4, 5, 6, 7]]
+
+    number_points_each_dimension = [[6, 6, 11, 6, 1, 1, 1, 1]]
+    mle = [False]
+    distribution = [UNIFORM_FINITE]
+    parallel = [True]
+
+    thinning = [10]
+    n_burning = [500]
+    max_steps_out = [1000]
+    n_iterations = [35]
+    same_correlation = [True]
+    debug = [False]
+    number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
+    monte_carlo_sbo = [True]
+    n_samples_mc = [5]
+    n_restarts_mc = [5]
+    n_best_restarts_mc = [0]
+    factr_mc = [1e12]
+    maxiter_mc = [10]
+    n_restarts = [10]
+    n_best_restarts = [0]
+    use_only_training_points = [True]
+    method_optimization = [SBO_METHOD]
+
+    n_samples_parameters = [5]
+    n_restarts_mean = [100]
+    n_best_restarts_mean = [10]
+    method_opt_mc = [LBFGS_NAME]
+    maxepoch = [50]
+    n_samples_parameters_mean = [5]
+    maxepoch_mean = [50]
+    threshold_sbo = [0.001]
+    parallel_training = [False]
+    noises = [False]
+    n_sampless = [0]
+    n_points = len(domain_random)
+    parameters_distributions = [{'weights': n_points * [1.0 / float(n_points)],
+                                  'domain_random': domain_random}]
+    optimize_only_posterior_means = [False]
+    start_optimize_posterior_means = [0]
 
 
     specs = SpecService.generate_dict_multiple_spec(
