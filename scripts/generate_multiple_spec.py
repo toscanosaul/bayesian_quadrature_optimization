@@ -932,7 +932,7 @@ if __name__ == '__main__':
     n_restarts = [10]
     n_best_restarts = [0]
     use_only_training_points = [True]
-    method_optimization = [SBO_METHOD]
+    method_optimization = [EI_METHOD]
 
     n_samples_parameters = [5]
     n_restarts_mean = [100]
