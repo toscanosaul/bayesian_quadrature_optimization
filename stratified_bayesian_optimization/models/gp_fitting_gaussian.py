@@ -360,7 +360,6 @@ class GPFittingGaussian(object):
         prior_parameters_values = self.get_values_parameters_from_data(
             self.kernel_values, self.mean_value, self.var_noise_value, self.type_kernel,
             self.dimensions, **self.additional_kernel_parameters)
-
         if not self.noise or self.data.get('var_noise') is not None:
             self.mean_value = [0.0]
             self.var_noise_value = [0.0]
