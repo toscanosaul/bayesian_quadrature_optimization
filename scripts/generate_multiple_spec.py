@@ -919,7 +919,7 @@ if __name__ == '__main__':
     thinning = [10]
     n_burning = [500]
     max_steps_out = [1000]
-    n_iterations = [35]
+    n_iterations = [15]
     same_correlation = [True]
     debug = [False]
     number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
