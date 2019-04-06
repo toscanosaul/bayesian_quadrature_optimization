@@ -1006,7 +1006,7 @@ if __name__ == '__main__':
     maxepoch_mean = [50]
     threshold_sbo = [0.001]
     parallel_training = [False]
-    n_sampless = [5]
+    n_sampless = [0]
     domain_random = [[i] for i in range(n_tasks)]
     n_points = len(domain_random)
     parameters_distributions = [{'weights': n_points * [1.0 / float(n_points)],
