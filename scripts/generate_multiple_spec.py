@@ -952,6 +952,68 @@ if __name__ == '__main__':
     start_optimize_posterior_means = [0]
 
 
+    ### aircraft_multi_task
+
+    dim_x = [8]
+
+    n_tasks = 48
+
+    heights = [40000, 50000, 30000, 10000, 20000, 7000]
+    mach_numbers =  [0.8322926591514808,  0.8338867889125835, 0.8366730174675625, 0.8389325581307193,
+                     0.8410674418692806, 0.8433269825324374, 0.8461132110874164, 0.8477073408485192]
+
+    bounds_domain_x = [[(0.01, 0.5), (0.01, 0.5), (0.01, 0.5), (10.0, 15.0), (10.0, 15.0),
+                        (10.0, 15.0), (10.0, 15.0), (10.0, 15.0)]]
+    problem_name = ['aircraft_mt']
+    training_name = [None]
+    type_kernel = [[PRODUCT_KERNELS_SEPARABLE, MATERN52_NAME, TASKS_KERNEL_NAME]]
+
+    dimensions = [[9, 8, n_tasks]]
+    bounds_domain = [[[0.01, 0.5], [0.01, 0.5], [0.01, 0.5], [10.0, 15.0], [10.0, 15.0], [10.0, 15.0],
+                      [10.0, 15.0], [10.0, 15.0], range(n_tasks)]]
+    n_training = [3]
+    random_seed = range(1, 1001)
+    n_specs = len(random_seed)
+    type_bounds = [[0, 0, 0, 0, 0, 0, 0, 0, 1, 1]]
+    x_domain = [[0, 1, 2,3,4,5,6,7]]
+    number_points_each_dimension = [[6, 6, 11, 6, 1, 1, 1, 1]]
+    mle = [False]
+    distribution = [WEIGHTED_UNIFORM_FINITE]
+    parallel = [True]
+    thinning = [10]
+    n_burning = [500]
+    max_steps_out = [1000]
+    n_iterations = [35]
+    same_correlation = [True]
+    debug = [False]
+    number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
+    monte_carlo_sbo = [True]
+    n_samples_mc = [5]
+    n_restarts_mc = [5]
+    n_best_restarts_mc = [0]
+    factr_mc = [1e12]
+    maxiter_mc = [10]
+    n_restarts = [10]
+    n_best_restarts = [0]
+    use_only_training_points = [True]
+    method_optimization = [MULTI_TASK_METHOD]
+    n_samples_parameters = [5]
+    n_restarts_mean = [100]
+    n_best_restarts_mean = [10]
+    method_opt_mc = [LBFGS_NAME]
+    maxepoch = [50]
+    n_samples_parameters_mean = [5]
+    maxepoch_mean = [50]
+    threshold_sbo = [0.001]
+    parallel_training = [False]
+    n_sampless = [5]
+    domain_random = [[i] for i in range(n_tasks)]
+    n_points = len(domain_random)
+    parameters_distributions = [{'weights': n_points * [1.0 / float(n_points)],
+                                 'domain_random': domain_random}]
+
+
+
     specs = SpecService.generate_dict_multiple_spec(
         n_specs=n_specs, problem_names=problem_name, dim_xs=dim_x, bounds_domain_xs=bounds_domain_x,
         training_names=training_name, type_kernels=type_kernel, dimensionss=dimensions,
