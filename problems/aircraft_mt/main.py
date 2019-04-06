@@ -22,7 +22,7 @@ def toy_example(x):
     """
     thickness_cp = np.array(x[0: 3])
     twist_cp = np.array(x[3: -1])
-    task = x[-1]
+    task = int(x[-1])
 
     height = domain_random[task][1]
     match_number = domain_random[task][0]

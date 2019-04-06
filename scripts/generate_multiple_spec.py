@@ -974,7 +974,7 @@ if __name__ == '__main__':
     n_training = [3]
     random_seed = range(1, 1001)
     n_specs = len(random_seed)
-    type_bounds = [[0, 0, 0, 0, 0, 0, 0, 0, 1, 1]]
+    type_bounds = [[0, 0, 0, 0, 0, 0, 0, 0, 1]]
     x_domain = [[0, 1, 2,3,4,5,6,7]]
     number_points_each_dimension = [[6, 6, 11, 6, 1, 1, 1, 1]]
     mle = [False]
