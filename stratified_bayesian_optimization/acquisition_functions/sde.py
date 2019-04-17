@@ -398,7 +398,8 @@ class SDE(object):
             hessian=None, tol=None,
             minimize=False)
 
-        args = (False, None, True, 0, optimization, self, control, parameters_kernel)
+        run_parallel = True
+        args = (False, None, run_parallel, 0, optimization, self, control, parameters_kernel)
         sol = Parallel.run_function_different_arguments_parallel(
             wrapper_optimize, start_points, *args)
         solutions = []
