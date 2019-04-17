@@ -31,6 +31,7 @@ class Objective(object):
         :param method: (str) bgo method
         :param n_samples_parameters: int
         """
+
         self.evaluated_points = []
         self.objective_values = []
         self.model_objective_values = []
