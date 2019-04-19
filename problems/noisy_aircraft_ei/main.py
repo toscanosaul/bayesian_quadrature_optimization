@@ -47,7 +47,7 @@ def integrate_toy_example(x):
     twist_cp = np.array(x[3:])
 
     value = get_burn_flight_conditions(thickness_cp, twist_cp, points=points_, weight=weights_)
-    return [-1.0 * value]
+    return [-1.0 * value, 0.0]
 
 
 def main(n_samples, *params):
