@@ -1097,7 +1097,7 @@ if __name__ == '__main__':
                       [10.0, 15.0], [10.0, 15.0]]]
 
     n_training = [1]
-    random_seed = range(1, 100)
+    random_seed = range(1, 2000)
     n_specs = len(random_seed)
     type_bounds = [[0, 0, 0, 0, 0, 0, 0, 0]]
     x_domain = [[0, 1, 2, 3, 4, 5, 6, 7]]
