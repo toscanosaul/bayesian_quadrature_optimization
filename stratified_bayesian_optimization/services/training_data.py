@@ -211,10 +211,11 @@ class TrainingDataService(object):
         points = JSONFile.read(training_path)
         if points is not None:
             return points
+
         points = DomainService.get_points_domain(n_training, bounds_domain, type_bounds=type_bounds,
                                                  random_seed=random_seed,
                                                  simplex_domain=simplex_domain)
-
+        print(points)
         JSONFile.write(points, training_path)
 
         return points

@@ -3,7 +3,8 @@ from __future__ import absolute_import
 import numpy as np
 from copy import deepcopy
 
-from problems.vendor_problem.vendor import simulation
+from problems.vendor_problem.vendor import simulation, conditional_simulation
+
 
 
 runlength = 5
@@ -28,12 +29,16 @@ def toy_example(n_samples, x):
     :return: [float, float]
 
     """
-    inv_levels = x[0:-n_products]
+    inv_levels = x[0:-4]
     inv_levels = [int(a) for a in inv_levels]
 
-    sum = x[-n_products:]
-    val = simulation(inv_levels, n_samples, n_customers, n_products, cost, sell_price,
-                     sum_exp=sum, seed=1)
+    relative_order = x[-4:]
+    if np.sum(relative_order) > n_customers:
+        print("error")
+        dffas
+
+    val = conditional_simulation(inv_levels, n_samples, n_customers, n_products, cost, sell_price,
+                                 relative_order=relative_order, seed=1)
 
     return val
 
@@ -44,7 +49,8 @@ def integrate_toy_example(x):
     :param x: n_products * [int]
     :return: [float]
     """
-    val = simulation(x, 10000, n_customers, n_products, cost, sell_price, seed=1)
+
+    val = simulation(x, 100000, n_customers, n_products, cost, sell_price, seed=1)
     return val
 
 def main(n_samples, *params):

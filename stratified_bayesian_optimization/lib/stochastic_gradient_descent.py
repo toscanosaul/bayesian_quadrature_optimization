@@ -96,13 +96,13 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
                     in_domain = False
                     break
                 if simplex_domain is not None:
-                    if np.sum(point) > simplex_domain:
+                    if np.sum(point[2:]) > simplex_domain:
                         in_domain = False
                         break
                     #TODO:Only for citibike, generalize later
-                    if simplex_domain - np.sum(point) > 3717.0:
-                        in_domain = False
-                        break
+                 #   if simplex_domain - np.sum(point) > 3717.0:
+                 #       in_domain = False
+                 #       break
 
         if project and not in_domain:
             for dim, bound in enumerate(bounds):
@@ -111,11 +111,11 @@ def SGD(start, gradient, n, args=(), kwargs={}, bounds=None, learning_rate=0.1, 
                 if bound[1] is not None:
                     point[dim] = min(bound[1], point[dim])
             if simplex_domain is not None:
-                if np.sum(point) > simplex_domain:
-                    point = simplex_domain * (point / np.sum(point))
+                if np.sum(point[2:]) > simplex_domain:
+                    point[2:] = simplex_domain * (point[2:] / np.sum(point[2:]))
 
-                if simplex_domain - np.sum(point) > 3717.0:
-                    point = (simplex_domain - 3717.0) * (point / np.sum(point))
+             #   if simplex_domain - np.sum(point) > 3717.0:
+             #       point = (simplex_domain - 3717.0) * (point / np.sum(point))
             if not adam:
                 for dim, bound in enumerate(bounds):
                     v[dim] = (point[dim] - old_p[dim]) / learning_rate

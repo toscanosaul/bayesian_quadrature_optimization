@@ -73,6 +73,7 @@ EXPONENTIAL = 'exponential'
 GAMMA = 'gamma'
 WEIGHTED_UNIFORM_FINITE = 'weighted_uniform_finite'
 WEIGHTS = 'weights'
+MULTINOMIAL_DISTRIBUTION = 'multinomial_distribution'
 
 #Cache Quadrature
 QUADRATURES = 'quadrature'

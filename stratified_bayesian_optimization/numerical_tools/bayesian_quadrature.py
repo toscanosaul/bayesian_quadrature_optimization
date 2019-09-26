@@ -30,6 +30,7 @@ from stratified_bayesian_optimization.lib.constant import (
     WEIGHTS,
     DEFAULT_N_SAMPLES,
     DEFAULT_N_PARAMETERS,
+    MULTINOMIAL_DISTRIBUTION,
 )
 from stratified_bayesian_optimization.lib.la_functions import (
     cho_solve,
@@ -39,6 +40,7 @@ from stratified_bayesian_optimization.services.domain import (
 )
 from stratified_bayesian_optimization.lib.expectations import (
     uniform_finite,
+    multi_expect,
     gradient_uniform_finite,
     gradient_uniform_finite_resp_candidate,
     hessian_uniform_finite,
@@ -100,6 +102,15 @@ class BayesianQuadrature(object):
             'hessian_expectation': hessian_uniform_finite,
             'parameter': None,
         },
+        MULTINOMIAL_DISTRIBUTION: {
+            'expectation': multi_expect,
+         #   'grad_expectation': gradient_multi,
+           # 'grad_expectation_candidate': gradient_multi_respect_candidate,
+           # 'hessian_expectation': hessian_multi,
+           # 'parameter': None,
+            #just for the inventory problem,with only two products
+
+        }
     }
 
     def __init__(self, gp_model, x_domain, distribution, parameters_distribution=None,
@@ -750,7 +761,7 @@ class BayesianQuadrature(object):
         if start is None:
             start_points = DomainService.get_points_domain(
                 n_restarts + 1, bounds_x, type_bounds=len(self.x_domain) * [0],
-                simplex_domain=self.simplex_domain)
+                simplex_domain=None)
             if index_cache in self.optimal_solutions and \
                             len(self.optimal_solutions[index_cache]) > 0:
                 start = self.optimal_solutions[index_cache][-1]['solution']
@@ -823,7 +834,7 @@ class BayesianQuadrature(object):
                 wrapper_evaluate_gradient_sample_params_bq,
                 minimize=False,
                 full_gradient=grad_function,
-                args=args_, debug=True, simplex_domain=self.simplex_domain,
+                args=args_, debug=True, simplex_domain=None,
                 **{'maxepoch': maxepoch}
             )
 

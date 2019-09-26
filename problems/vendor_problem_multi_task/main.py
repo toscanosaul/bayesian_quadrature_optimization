@@ -52,7 +52,7 @@ def integrate_toy_example(x):
     :param x: n_products * [int]
     :return: [float]
     """
-    val = simulation(x, 10000, n_customers, n_products, cost, sell_price, seed=1)
+    val = simulation(x, 100000, n_customers, n_products, cost, sell_price, seed=1)
     return val
 
 def main(n_samples, *params):

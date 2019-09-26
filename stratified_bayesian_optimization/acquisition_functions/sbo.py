@@ -1837,7 +1837,7 @@ class SBO(object):
                 wrapper_grad_voi_sgd,
                 minimize=False,
                 full_gradient=wrapper_gradient_voi,
-                args=args_, debug=False,
+                args=args_, debug=False, simplex_domain=self.bq.simplex_domain,
                 **{'maxepoch': maxepoch}
             )
             #TODO: THINK ABOUT N_THREADS. Do we want to run it in parallel?

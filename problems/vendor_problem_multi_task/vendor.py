@@ -5,7 +5,7 @@ import numpy as np
 
 
 def simulation(x, runlength, n_customers, n_products, cost, sell_price, mu=1.0, sum_gumbel=None,
-               set_gumbel=None, seed=None):
+               set_gumbel=None, seed=None, util_product=0.5):
     """
     See http://simopt.org/wiki/images/e/e8/DynamicSubstitution.pdf
     :param x: ([int]) inventory levels
@@ -31,7 +31,7 @@ def simulation(x, runlength, n_customers, n_products, cost, sell_price, mu=1.0, 
 
     n = n_products
     T = n_customers
-    u = np.ones(n)  # product constant
+    u = util_product * np.ones(n)  # product constant
 
     x = np.array([x])
 

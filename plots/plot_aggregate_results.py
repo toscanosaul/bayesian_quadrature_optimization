@@ -44,9 +44,12 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True, title_plot
     n_trainings = set(multiple_spec.get('n_trainings'))
     methods = set(multiple_spec.get('method_optimizations'))
 
+
     results = {}
     file_path_plot = None
     for problem in problem_names:
+        if problem == 'aircraft_ei':
+            continue
         dir = path.join(PROBLEM_DIR, problem, AGGREGATED_RESULTS)
         if not os.path.exists(dir):
             continue
@@ -114,7 +117,10 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True, title_plot
     for id, method in enumerate(results):
         label = str(method)
         if label == SBO_METHOD:
-            label = 'ibo'
+            label = 'bqo'
+
+        if label == 'ei':
+            label = 'noisy_ei'
         x_axis = results[method][0]
         y_values = results[method][1]
         ci_u = results[method][2]
@@ -131,10 +137,14 @@ def plot_aggregate_results(multiple_spec, negative=True, square=True, title_plot
     if y_label is None:
         y_label = 'Cross Validation Error'
 
+    y_label = 'Fuel burn'
+
     plt.xlabel('Number of Samples', fontsize=22)
     plt.ylabel(y_label, fontsize=22)
     plt.legend(loc=3, ncol=2, mode="expand", borderaxespad=0.)
 #    plt.title(title_plot, fontsize=22)
     plt.subplots_adjust(left=0.13, right=0.99, top=0.92, bottom=0.12)
     plt.tight_layout()
-    plt.savefig(file_path_plot)
+    plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
+    plt.tight_layout()
+    plt.savefig(file_path_plot, bbox_inches = "tight")

@@ -5,8 +5,131 @@ import numpy as np
 from scipy.stats import gamma
 
 
+def cdf(x, mu):
+    """
+    cdf of a gumbel based on simpot document
+    :param x:
+    :param mu:
+    :return:
+    """
+    gamma = -1.0 * special.psi(1)
+    return np.exp(-np.exp(-((x / mu) + gamma)))
+
+
+def probability_1(utility, mu):
+    """
+    probability of E1 > E2 > E3, where E3 is not to buy anything
+    or E2 > E1 > E3. (E3=0)
+    :return:
+    """
+    cte1 = (1 - cdf(-utility, mu))
+    gamma = -1.0 * special.psi(1)
+    cte = 0.5 * (1.0 - np.exp(-2.0 * np.exp(-((-utility / mu)+gamma))))
+
+    return cte1 - cte
+
+def probability_2(utility, mu):
+    """
+    probability of E1 > E3 > E2, where E3 is not to buy anything
+    or E2 > E3 > E1 (E3=0)
+    :return:
+    """
+    return cdf(-utility, mu) * (1 - cdf(-utility, mu))
+
+def probability_3(utility, mu):
+    """
+    probability of E3 > E1 > E2, where E3 is not to buy anything
+    or E3 > E2 > E1 (E3=0)
+    :return:
+    """
+    return 1 - 2.0 * probability_2(utility, mu) - 2.0 * probability_1(utility, mu)
+
+
+utility = 0.5
+mu = 1.0
+
+p1 =probability_1(utility, mu)
+p2 = probability_1(utility, mu)
+p3 = probability_2(utility, mu)
+p4 = probability_2(utility, mu)
+p5 = probability_3(utility, mu)
+
+
+
+
+def conditional_simulation(x, runlength, n_customers, n_products, cost, sell_price, mu=1.0,
+                           sum_exp=None, set_sum_exp=None, seed=None, relative_order=None):
+    """
+    relative_order = [n1, n2, n3, n4]
+    n1: E1 > E2 > E3, E2>E1>E3, E1 > E3> E2, E2 > E3 > E1
+    (E3=0)
+    E3 is no product
+    """
+    if seed is not None:
+        np.random.seed(seed)
+
+    N = n_customers
+    solutions = []
+
+    for l in range(runlength):
+
+        # permutations
+        z = list(range(N))
+        for i in range(N):
+            integer = np.random.randint(N - i, size=1)[0] + i
+            tmp = z[i]
+            z[i] = z[integer]
+            z[integer] = tmp
+
+        initial = [int(y) for y in x]
+
+        inventory = list(initial)
+
+        for j in z:
+            if j < relative_order[0]:
+                """
+                we are in E1 > E2 > no_product
+                """
+                if inventory[0] > 0:
+                    inventory[0] -= 1
+                elif inventory[1] > 0:
+                    inventory[1] -= 1
+            elif j >= relative_order[0] and j < np.sum(relative_order[0: 2]):
+                """
+                we are in E2> E1 > no_product
+                """
+                if inventory[1] > 0:
+                    inventory[1] -= 1
+                elif inventory[0] > 0:
+                    inventory[0] -= 1
+            elif j >= np.sum(relative_order[0: 2]) and j < np.sum(relative_order[0: 3]):
+                """
+                we are in E1 > no_product> E2
+                """
+                if inventory[0] > 0:
+                    inventory[0] -= 1
+            elif j >= np.sum(relative_order[0: 3]) and j < np.sum(relative_order[0: 4]):
+                """
+                we are in E2 > no_product > E1
+                """
+
+                if inventory[1] > 0:
+                    inventory[1] -= 1
+
+        numSold = np.array(initial) - np.array(inventory)
+
+        cost = np.array(cost)
+        sell_price = np.array(sell_price)
+        unitProfit = sell_price - cost
+
+        singleRepProfit = np.dot(numSold, unitProfit)
+        solutions.append(singleRepProfit)
+    return np.mean(solutions), np.var(solutions) / float(runlength)
+
+
 def simulation(x, runlength, n_customers, n_products, cost, sell_price, mu=1.0, sum_exp=None,
-               set_sum_exp=None, seed=None):
+               set_sum_exp=None, seed=None, util_product=0.5):
+
     """
     See http://simopt.org/wiki/images/e/e8/DynamicSubstitution.pdf
     :param x: ([int]) inventory levels
@@ -33,11 +156,12 @@ def simulation(x, runlength, n_customers, n_products, cost, sell_price, mu=1.0, 
 
     n = n_products
     T = n_customers
-    u = np.ones(n)  # product constant
+    u = util_product * np.ones(n)  # product constant
 
     x = np.array([x])
 
     if sum_exp is None and set_sum_exp is None:
+
         gumbel = np.random.gumbel(mu * special.psi(1.0), mu, [n, runlength, T])
     elif sum_exp is not None:
         gumbel_array = np.zeros([n, runlength, T])
@@ -100,8 +224,9 @@ def simulation(x, runlength, n_customers, n_products, cost, sell_price, mu=1.0, 
     singleRepProfit=np.dot(numSold, unitProfit)
     singleRepProfit -= np.dot(inventory, cost)
     fn = np.mean(singleRepProfit)
-    FnVar = np.var(singleRepProfit)/runlength
+    FnVar = np.var(singleRepProfit)/float(runlength)
 
+    print (fn, FnVar)
     return [fn, FnVar]
 
 

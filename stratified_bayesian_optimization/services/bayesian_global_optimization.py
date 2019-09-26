@@ -401,7 +401,7 @@ class BGO(object):
             'optimal_solution': np.array(n),
         }
         """
-        spec.simplex_domain = None
+      #  spec.simplex_domain = None
         bgo = cls.from_spec(spec)
 
         debug = spec.get('debug')
