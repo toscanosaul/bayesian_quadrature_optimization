@@ -353,7 +353,8 @@ if __name__ == '__main__':
     n_sampless = [3]
 
     parameters_distributions = [{'weights': weights,
-                                  'domain_random': domain_random}]
+                                  'domain_random': domain_random,
+                                 'n_samples':10}]
 
     # #### multi_task
     # dim_x = [2]

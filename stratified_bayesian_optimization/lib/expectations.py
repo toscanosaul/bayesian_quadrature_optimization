@@ -7,7 +7,8 @@ from scipy.stats import gamma
 N_SAMPLES = 10
 
 
-def uniform_finite(f, point, index_points, domain_random, index_random, weights=None, double=False):
+def uniform_finite(f, point, index_points, domain_random, index_random, weights=None, double=False,
+                   n_samples=None):
     """
     Computes the expectation of f(z), where z=(point, x) which is equal to:
         mean(f((point, x)): x in domain_random), where
@@ -22,8 +23,16 @@ def uniform_finite(f, point, index_points, domain_random, index_random, weights=
     :param index_random: [int]
     :param weights: np.array(l), weights to compute a weighted average
     :param double: boolean
+    :param n_samples: take a sample of the whole domain_random instead of using all the elements
     :return: np.array
     """
+
+    if n_samples is not None and n_samples > 0:
+        index = np.random.choice(len(domain_random), n_samples, replace=True, p=weights)
+        domain_random = [domain_random[i] for i in index]
+        weights = None
+
+
     domain_random = np.array(domain_random)
 
     dim_random = domain_random.shape[1]
@@ -132,7 +141,7 @@ def multi_expect(f, point, index_points, domain_random, index_random, weights,
 
 
 def gradient_uniform_finite(f, point, index_points, domain_random, index_random, points_2,
-                            parameters_kernel, weights=None):
+                            parameters_kernel, weights=None, n_samples=None):
     """
     Computes the gradient of the expectation of f(z, point_), where z=(point, x), for each
     point_ in points_2.
@@ -146,6 +155,12 @@ def gradient_uniform_finite(f, point, index_points, domain_random, index_random,
     :param parameters_kernel: np.array(n)
     :return: np.array(kxm)
     """
+
+    if n_samples is not None and n_samples > 0:
+        index = np.random.choice(len(domain_random), n_samples, replace=True, p=weights)
+        domain_random = [domain_random[i] for i in index]
+        weights = None
+
     domain_random = np.array(domain_random)
 
     dim_random = domain_random.shape[1]
@@ -224,7 +239,7 @@ def gradient_gamma(f, point, index_points, index_random, points_2, parameters_ke
     return gradient
 
 def hessian_uniform_finite(f, point, index_points, domain_random, index_random, points_2,
-                            parameters_kernel, weights=None):
+                            parameters_kernel, weights=None, n_samples=None):
     """
     Computes the Hessian of the expectation of f(z, point_), where z=(point, x), for each
     point_ in points_2.
@@ -238,6 +253,12 @@ def hessian_uniform_finite(f, point, index_points, domain_random, index_random, 
     :param parameters_kernel:
     :return: np.array(mxkxk)
     """
+
+    if n_samples is not None and n_samples > 0:
+        index = np.random.choice(len(domain_random), n_samples, replace=True, p=weights)
+        domain_random = [domain_random[i] for i in index]
+        weights = None
+
     domain_random = np.array(domain_random)
 
     dim_random = domain_random.shape[1]

@@ -175,6 +175,7 @@ class BayesianQuadrature(object):
             parameters_distribution = {'weights': np.array(self.parameters_distribution['weights'])}
             parameters_distribution['domain_random'] = \
                 np.array(self.parameters_distribution['domain_random'])
+            parameters_distribution['n_samples'] = self.parameters_distribution.get('n_samples')
             self.arguments_expectation = parameters_distribution
             self.task_continue = True
         elif self.parameters_distribution is not None:
@@ -289,6 +290,7 @@ class BayesianQuadrature(object):
         """
 
         n = self.dimension_domain
+
         f = lambda x: self.gp.evaluate_cross_cov(x[:, 0:n], x[:, n:], parameters_kernel)
 
         parameters = {
