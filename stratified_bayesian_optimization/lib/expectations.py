@@ -306,7 +306,8 @@ def hessian_gamma(f, point, index_points, index_random, points_2, parameters_ker
 
 
 def gradient_uniform_finite_resp_candidate(f, candidate_point, index_points, domain_random,
-                                           index_random, points, parameters_kernel, weights=None):
+                                           index_random, points, parameters_kernel, weights=None,
+                                           n_samples=None):
     """
     Computes the gradient of the expectation of f(z, candidate_point) respect to candidate_point,
     where z=(point, x) for each point in points.
@@ -320,6 +321,12 @@ def gradient_uniform_finite_resp_candidate(f, candidate_point, index_points, dom
     :param parameters_kernel: np.array(n)
     :return: np.array(kxm)
     """
+
+    if n_samples is not None and n_samples > 0:
+        index = np.random.choice(len(domain_random), n_samples, replace=True, p=weights)
+        domain_random = [domain_random[i] for i in index]
+        weights = None
+        
     domain_random = np.array(domain_random)
 
     dim_random = domain_random.shape[1]
