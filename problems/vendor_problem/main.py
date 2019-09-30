@@ -29,6 +29,7 @@ def toy_example(n_samples, x):
     :return: [float, float]
 
     """
+    x = [int(a) for a in x]
     inv_levels = x[0:-4]
     inv_levels = [int(a) for a in inv_levels]
 
