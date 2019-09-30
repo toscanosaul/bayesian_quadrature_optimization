@@ -326,7 +326,7 @@ if __name__ == '__main__':
     thinning = [10]
     n_burning = [500]
     max_steps_out = [1000]
-    n_iterations = [35]
+    n_iterations = [50]
     same_correlation = [True]
     debug = [False]
     number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
@@ -404,8 +404,8 @@ if __name__ == '__main__':
     # parameters_distributions = None
 
     ##EI
-    customers = 1000
-    #
+    # customers = 10
+    # #
     # dim_x = [2]
     # bounds_domain_x = [[(0, customers), (0, customers)]]
     # problem_name = ['vendor_problem_ei']
@@ -425,7 +425,7 @@ if __name__ == '__main__':
     # thinning = [10]
     # n_burning = [500]
     # max_steps_out = [1000]
-    # n_iterations = [35]
+    # n_iterations = [50]
     # same_correlation = [True]
     # debug = [False]
     # number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
