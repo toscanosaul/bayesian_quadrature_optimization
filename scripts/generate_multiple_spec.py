@@ -406,7 +406,7 @@ if __name__ == '__main__':
     #EI
     customers = 10
     #
-    
+
     simplex_domain = [None]
     dim_x = [2]
     bounds_domain_x = [[(0, customers), (0, customers)]]

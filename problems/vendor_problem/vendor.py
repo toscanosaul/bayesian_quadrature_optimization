@@ -123,7 +123,9 @@ def conditional_simulation(x, runlength, n_customers, n_products, cost, sell_pri
         unitProfit = sell_price - cost
 
         singleRepProfit = np.dot(numSold, unitProfit)
+        singleRepProfit -= np.dot(inventory, cost)
         solutions.append(singleRepProfit)
+
     return np.mean(solutions), np.var(solutions) / float(runlength)
 
 
