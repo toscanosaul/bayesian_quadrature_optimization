@@ -284,7 +284,7 @@ if __name__ == '__main__':
     customers = 10000
     N = customers
 
-    delta = 0.2
+    delta = 0.1
     l1, l2 = N * p1 - delta * np.sqrt(N * p1 * (1 - p1)), N * p1 + delta * np.sqrt(
         N * p1 * (1 - p1))
     s1, s2 = N * p2 - delta * np.sqrt(N * p2 * (1 - p2)), N * p2 + delta * np.sqrt(
@@ -420,56 +420,56 @@ if __name__ == '__main__':
     # n_sampless = [5]
     # parameters_distributions = None
 
-    #EI
-    customers = 10000
+    # #EI
+    # customers = 10000
+    # #
     #
-
-    simplex_domain = [None]
-    dim_x = [2]
-    bounds_domain_x = [[(0, customers), (0, customers)]]
-    problem_name = ['vendor_problem_ei']
-    training_name = [None]
-    type_kernel = [[SCALED_KERNEL, MATERN52_NAME]]
-    dimensions = [[2]]
-    bounds_domain = [[[0, customers], [0, customers]]]
-    n_training = [4]
-    random_seed = range(1, 501)
-    n_specs = len(random_seed)
-    type_bounds = [[0, 0]]
-    x_domain = [[0, 1]]
-    number_points_each_dimension = [[6, 6]]
-    mle = [False]
-    distribution = [GAMMA]
-    parallel = [True]
-    thinning = [10]
-    n_burning = [500]
-    max_steps_out = [1000]
-    n_iterations = [50]
-    same_correlation = [True]
-    debug = [False]
-    number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
-    monte_carlo_sbo = [True]
-    n_samples_mc = [5]
-    n_restarts_mc = [5]
-    n_best_restarts_mc = [0]
-    factr_mc = [1e12]
-    maxiter_mc = [10]
-    n_restarts = [10]
-    n_best_restarts = [0]
-    use_only_training_points = [True]
-    method_optimization = [EI_METHOD]
-    n_samples_parameters = [5]
-    n_restarts_mean = [100]
-    n_best_restarts_mean = [10]
-    method_opt_mc = [DOGLEG]
-    maxepoch = [10]
-    n_samples_parameters_mean = [20]
-    maxepoch_mean = [20]
-    threshold_sbo = [0.001]
-    parallel_training = [False]
-    noises = [True]
-    n_sampless = [3]
-    parameters_distributions = [{'scale': [1.0], 'a': [customers]}]
+    # simplex_domain = [None]
+    # dim_x = [2]
+    # bounds_domain_x = [[(0, customers), (0, customers)]]
+    # problem_name = ['vendor_problem_ei']
+    # training_name = [None]
+    # type_kernel = [[SCALED_KERNEL, MATERN52_NAME]]
+    # dimensions = [[2]]
+    # bounds_domain = [[[0, customers], [0, customers]]]
+    # n_training = [4]
+    # random_seed = range(1, 501)
+    # n_specs = len(random_seed)
+    # type_bounds = [[0, 0]]
+    # x_domain = [[0, 1]]
+    # number_points_each_dimension = [[6, 6]]
+    # mle = [False]
+    # distribution = [GAMMA]
+    # parallel = [True]
+    # thinning = [10]
+    # n_burning = [500]
+    # max_steps_out = [1000]
+    # n_iterations = [50]
+    # same_correlation = [True]
+    # debug = [False]
+    # number_points_each_dimension_debug = [[10, 10, 10, 10, 10, 10]]
+    # monte_carlo_sbo = [True]
+    # n_samples_mc = [5]
+    # n_restarts_mc = [5]
+    # n_best_restarts_mc = [0]
+    # factr_mc = [1e12]
+    # maxiter_mc = [10]
+    # n_restarts = [10]
+    # n_best_restarts = [0]
+    # use_only_training_points = [True]
+    # method_optimization = [EI_METHOD]
+    # n_samples_parameters = [5]
+    # n_restarts_mean = [100]
+    # n_best_restarts_mean = [10]
+    # method_opt_mc = [DOGLEG]
+    # maxepoch = [10]
+    # n_samples_parameters_mean = [20]
+    # maxepoch_mean = [20]
+    # threshold_sbo = [0.001]
+    # parallel_training = [False]
+    # noises = [True]
+    # n_sampless = [3]
+    # parameters_distributions = [{'scale': [1.0], 'a': [customers]}]
 
     #BRANIN-SBO
 
