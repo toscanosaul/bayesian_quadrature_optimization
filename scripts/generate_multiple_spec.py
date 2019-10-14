@@ -281,7 +281,7 @@ if __name__ == '__main__':
 
     ######### inventory
     # #### SBO
-    customers = 10000
+    customers = 1000
     N = customers
 
     delta = 0.1
