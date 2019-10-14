@@ -6,7 +6,7 @@ from copy import deepcopy
 from problems.vendor_problem.vendor import simulation
 
 
-n_customers = 10000
+n_customers = 1000
 n_products = 2
 cost = [5, 10]
 sell_price = [8, 18]

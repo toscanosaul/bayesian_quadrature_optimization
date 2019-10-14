@@ -7,7 +7,7 @@ from problems.vendor_problem.vendor import simulation, conditional_simulation
 
 
 
-n_customers = 10000
+n_customers = 1000
 n_products = 2
 cost = [5, 10]
 sell_price = [8, 18]
@@ -50,7 +50,7 @@ def integrate_toy_example(x):
     :return: [float]
     """
 
-    val = simulation(x, 100000, n_customers, n_products, cost, sell_price, seed=1)
+    val = simulation(x, 1000, n_customers, n_products, cost, sell_price, seed=1)
     return val
 
 def main(n_samples, *params):
