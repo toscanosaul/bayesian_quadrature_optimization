@@ -9,7 +9,7 @@ from problems.vendor_problem.vendor import simulation
 
 
 runlength = 5
-n_customers = 1000
+n_customers = 10000
 n_products = 2
 cost = [5, 10]
 sell_price = [8, 18]
