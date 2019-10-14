@@ -284,7 +284,7 @@ if __name__ == '__main__':
     customers = 10000
     N = customers
 
-    delta = 0.5
+    delta = 0.2
     l1, l2 = N * p1 - delta * np.sqrt(N * p1 * (1 - p1)), N * p1 + delta * np.sqrt(
         N * p1 * (1 - p1))
     s1, s2 = N * p2 - delta * np.sqrt(N * p2 * (1 - p2)), N * p2 + delta * np.sqrt(
