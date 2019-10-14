@@ -133,22 +133,20 @@ class DomainService(object):
             s = np.random.uniform(0, 1, (n_samples, 4))
       #      s[:, 0] = s[:, 0] * bounds_domain[0][1] + (1 - s[:, 0]) * lower
 
-            s[:, 0] = s[:, 0] * bounds_domain[2][1] + (1 - s[:, 0]) * 0
+            s[:, 0] = s[:, 0] * bounds_domain[2][1] + (1 - s[:, 0]) * bounds_domain[2][0]
             s[:, 0] = np.floor(s[:, 0])
 
             for j in range(n_samples):
                # s[j, 1] = s[j, 1] * min(bounds_domain[1][1], simplex_domain - 2 * lower - s[j, 0]) + (1 - s[
                #     j, 1]) * lower
-                tmp = bounds_domain[2][1] - s[j, 0]
+                tmp = s[j, 1] * bounds_domain[3][1] + (1 - s[j, 1]) * bounds_domain[3][0]
+                s[j, 1] = min(np.floor(tmp), simplex_domain - s[j, 0])
 
-                s[j, 1] = np.floor(s[j, 1] * tmp)
+                tmp = s[j, 2] * bounds_domain[4][1] + (1 - s[j, 2]) * bounds_domain[4][0]
+                s[j, 2] = min(np.floor(tmp), simplex_domain - s[j, 0] - s[j, 1])
 
-                tmp = bounds_domain[2][1] - s[j, 0] - s[j, 1]
-
-                s[j, 2] = np.floor(s[j, 2] * tmp)
-
-                tmp = bounds_domain[2][1] - s[j, 0] - s[j, 1] - s[j, 2]
-                s[j, 3] = np.floor(s[j, 3] * tmp)
+                tmp = s[j, 3] * bounds_domain[5][1] + (1 - s[j, 3]) * bounds_domain[5][0]
+                s[j, 3] = min(np.floor(tmp), simplex_domain - s[j, 0] - s[j, 1] - s[j, 2])
 
 
              #   s[j, 1] =

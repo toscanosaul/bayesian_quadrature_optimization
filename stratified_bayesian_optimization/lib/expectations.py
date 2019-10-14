@@ -28,8 +28,13 @@ def uniform_finite(f, point, index_points, domain_random, index_random, weights=
     """
 
     if n_samples is not None and n_samples > 0:
+        original_random = list(domain_random)
         index = np.random.choice(len(domain_random), n_samples, replace=True, p=weights)
         domain_random = [domain_random[i] for i in index]
+
+        if double:
+            index = np.random.choice(len(domain_random), n_samples, replace=True, p=weights)
+            domain_random_2 = [original_random[i] for i in index]
         weights = None
 
 
@@ -43,8 +48,22 @@ def uniform_finite(f, point, index_points, domain_random, index_random, weights=
 
     new_points[:, index_random] = domain_random
 
+    if double and n_samples is not None and n_samples > 0:
+        domain_random_2 = np.array(domain_random_2)
+
+        dim_random = domain_random_2.shape[1]
+
+        new_points_2 = np.zeros((domain_random_2.shape[0], dim_random + point.shape[1]))
+
+        new_points_2[:, index_points] = np.repeat(point, domain_random_2.shape[0], axis=0)
+
+        new_points_2[:, index_random] = domain_random_2
+    else:
+        new_points_2 = new_points
+
+
     if double:
-        new_points = np.concatenate([new_points, new_points], axis=1)
+        new_points = np.concatenate([new_points, new_points_2], axis=1)
         values = f(new_points)
         if weights is not None:
             weights = weights.reshape((1, len(weights)))

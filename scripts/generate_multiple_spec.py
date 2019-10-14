@@ -281,8 +281,18 @@ if __name__ == '__main__':
 
     ######### inventory
     # #### SBO
-    customers = 10
+    customers = 10000
     N = customers
+
+    delta = 0.5
+    l1, l2 = N * p1 - delta * np.sqrt(N * p1 * (1 - p1)), N * p1 + delta * np.sqrt(
+        N * p1 * (1 - p1))
+    s1, s2 = N * p2 - delta * np.sqrt(N * p2 * (1 - p2)), N * p2 + delta * np.sqrt(
+        N * p2 * (1 - p2))
+    d1, d2 = N * p3 - delta * np.sqrt(N * p3 * (1 - p3)), N * p3 + delta * np.sqrt(
+        N * p3 * (1 - p3))
+    e1, e2 = N * p4 - delta * np.sqrt(N * p4 * (1 - p4)), N * p4 + delta * np.sqrt(
+        N * p4 * (1 - p4))
 
     log_factorials = {}
     log_factorials[0] = 0
@@ -292,19 +302,22 @@ if __name__ == '__main__':
 
     weights = []
     domain_random = []
-    for n1 in range(N + 1):
-        for n2 in range(N + 1 - n1):
-            for n3 in range(N + 1 - n1 - n2):
-                for n4 in range(N + 1 - n1 - n2 - n3):
-                    if n1 + n2 + n3 + n4 > N:
-                        continue
+    for n1 in range(int(l1) - 1, int(l2) + 1):
+        for n2 in range(int(s1) - 1, int(s2) + 1):
+            for n3 in range(int(d1) - 1, int(d2) + 1):
+                for n4 in range(int(e1) - 1, int(e2) + 1):
                     n5 = N - n1 - n2 - n3 - n4
+                    if n5 < 0:
+                        continue
                     domain_random.append([n1, n2, n3, n4])
                     l_prob = n1 * np.log(p1) + n2 * np.log(p2) + n3 * np.log(p3) + n4 * np.log(
                         p4) + n5 * np.log(p5)
                     term_2 = log_factorials[N] - log_factorials[n1] - log_factorials[n2] - \
                              log_factorials[n3] - log_factorials[n4] - log_factorials[n5]
                     weights.append(np.exp(l_prob + term_2))
+
+    cte = np.sum(weights)
+    weights /= cte
 
     simplex_domain = [customers]
     dim_x = [2]
@@ -313,7 +326,11 @@ if __name__ == '__main__':
     training_name = [None]
     type_kernel = [[SCALED_KERNEL, MATERN52_NAME]]
     dimensions = [[6]]
-    bounds_domain = [[[0, customers], [0, customers], [0, customers], [0, customers], [0, customers], [0, customers]]]
+
+
+    bounds_domain = [[[0, customers], [0, customers], [ int(l1) - 1, int(l2) + 1],
+                      [int(s1) - 1, int(s2) + 1], [int(d1) - 1, int(d2) + 1],
+                      [int(e1) - 1, int(e2) + 1]]]
     n_training = [4]
     random_seed = range(1, 500)
     n_specs = len(random_seed)
@@ -404,7 +421,7 @@ if __name__ == '__main__':
     # parameters_distributions = None
 
     #EI
-    # customers = 10
+    # customers = 10000
     # #
     #
     # simplex_domain = [None]
