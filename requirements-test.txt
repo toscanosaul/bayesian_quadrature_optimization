@@ -4,36 +4,53 @@
 #
 #    pip-compile --no-index --output-file requirements-test.txt requirements-test.in
 #
-
-appdirs==1.4.3            # via setuptools
-args==0.1.0               # via clint
-clint==0.5.1              # via twine
-colorama==0.3.7           # via zest.releaser
-contextlib2==0.5.4        # via vcrpy
+args==0.1.0
+    # via clint
+clint==0.5.1
+    # via twine
+colorama==0.3.7
+    # via zest.releaser
 coverage==4.0.3
+    # via
+    #   -r requirements-test.in
+    #   pytest-cov
 doubles==1.2.1
+    # via -r requirements-test.in
 flake8==2.5.4
-funcsigs==1.0.2           # via mock
-mccabe==0.4.0             # via flake8
-mock==2.0.0               # via vcrpy
-packaging==16.8           # via setuptools
-pbr==2.1.0                # via mock
-pep8==1.7.0               # via flake8
-pkginfo==1.4.1            # via twine
-py==1.4.33                # via pytest
-pyflakes==1.0.0           # via flake8
-pyparsing==2.2.0          # via packaging
+    # via -r requirements-test.in
+mccabe==0.4.0
+    # via flake8
+pep8==1.7.0
+    # via flake8
+pkginfo==1.4.1
+    # via twine
+py==1.10.0
+    # via pytest
+pyflakes==1.0.0
+    # via flake8
 pytest-cov==2.2.1
+    # via -r requirements-test.in
 pytest==2.9.1
-pyyaml==3.12              # via vcrpy
-requests-toolbelt==0.7.1  # via twine
-requests==2.13.0          # via requests-toolbelt, twine
-six==1.10.0               # via mock, packaging, setuptools, vcrpy, zest.releaser
-twine==1.8.1              # via zest.releaser
+    # via
+    #   -r requirements-test.in
+    #   pytest-cov
+pyyaml==3.12
+    # via vcrpy
+requests-toolbelt==0.7.1
+    # via twine
+requests==2.13.0
+    # via
+    #   requests-toolbelt
+    #   twine
+six==1.10.0
+    # via
+    #   vcrpy
+    #   zest.releaser
+twine==1.8.1
+    # via zest.releaser
 vcrpy==1.10.5
-wrapt==1.10.10            # via vcrpy
+    # via -r requirements-test.in
+wrapt==1.10.10
+    # via vcrpy
 zest.releaser==6.6.4
-
-# The following packages are commented out because they are
-# considered to be unsafe in a requirements file:
-# setuptools                # via twine, zest.releaser
+    # via -r requirements-test.in
