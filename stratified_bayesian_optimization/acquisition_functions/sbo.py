@@ -1631,33 +1631,6 @@ class SBO(object):
         elif n_samples_parameters > 0 and len(self.bq.gp.samples_parameters) < n_parameters:
             self.bq.gp.sample_parameters(n_parameters - len(self.bq.gp.samples_parameters))
 
-        # if n_samples_parameters > 0 and compute_max_mean_bayesian:
-        #     parameters = self.bq.gp.samples_parameters[-n_parameters:]
-        #
-        #     parameters_dict = {}
-        #     for i, parameter in enumerate(parameters):
-        #         index_cache = (parameter[0], parameter[1], tuple(parameter[2:]))
-        #
-        #         if index_cache not in self.bq.max_mean:
-        #             parameters_dict[i] = parameter
-        #
-        #     if len(parameters_dict) > 0:
-        #         args = (False, None, parallel, 0, self.bq, random_seed, LBFGS_NAME, 100)
-        #
-        #         sol = Parallel.run_function_different_arguments_parallel(
-        #             wrapper_optimize_posterior_mean, parameters_dict, *args)
-        #
-        #         for i in sol:
-        #             opt = sol.get(i)
-        #             par = parameters_dict[i]
-        #             index_cache = (par[0], par[1], tuple(par[2:]))
-        #             self.bq.max_mean[index_cache] = opt['optimal_value']
-        #
-        #             if index_cache not in self.bq.optimal_solutions:
-        #                 self.bq.optimal_solutions[index_cache] = []
-        #
-        #             self.bq.optimal_solutions[index_cache].append(opt)
-
         bounds = self.bq.bounds
 
         #TODO: CHANGE ei.optimize with n_samples_parameters
@@ -1681,26 +1654,10 @@ class SBO(object):
                                 n_samples_parameters=5, maxepoch=50)
             st_ei = st_ei['solution']
             st_ei = st_ei.reshape((1, len(st_ei)))
-            # n_restarts -= 1
-            # n_best_restarts -= 1
-
         if start is None:
             if self.bq.separate_tasks and n_restarts > 0 and not self.bq.task_continue:
                 tasks = self.bq.tasks
                 n_tasks = len(tasks)
-
-             #   n_restarts = int(np.ceil(float(n_restarts) / n_tasks) * n_tasks)
-               # n_restarts = max(1, n_restarts / n_tasks)
-
-                # ind = [[i] for i in range(n_restarts)]
-                # np.random.shuffle(ind)
-                # task_chosen = np.zeros((n_restarts, 1))
-                # n_task_per_group = n_restarts / n_tasks
-                #
-                # for i in xrange(n_tasks):
-                #     for j in xrange(n_task_per_group):
-                #         tk = ind[j + i * n_task_per_group]
-                #         task_chosen[tk, 0] = i
 
                 new_points = DomainService.get_points_domain(
                     100, bounds, type_bounds=self.bq.type_bounds)
